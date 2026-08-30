@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 
-// Allow up to 600s — streaming means tokens arrive continuously
-export const maxDuration = 600;
+// Vercel Hobby plan cap is 300s
+export const maxDuration = 300;
 
 const RAG_API_URL  = process.env.RAG_API_URL   || 'http://localhost:8000';
 const OLLAMA_URL   = process.env.OLLAMA_BASE_URL || 'http://localhost:11434';
@@ -126,7 +126,7 @@ export async function POST(req: Request) {
         method:  'POST',
         headers: { 'Content-Type': 'application/json' },
         body:    JSON.stringify({ message, rag: true }),
-        signal:  AbortSignal.timeout(590_000),
+        signal:  AbortSignal.timeout(290_000),
       });
       if (!ragRes.ok) throw new Error(`RAG server error (${ragRes.status})`);
       const ragData = await ragRes.json();
@@ -148,7 +148,7 @@ export async function POST(req: Request) {
         think:   false,
         options: { num_predict: 1024 },
       }),
-      signal: AbortSignal.timeout(590_000),
+      signal: AbortSignal.timeout(290_000),
     });
     if (!ollamaRes.ok) throw new Error(`Ollama error: ${ollamaRes.status}`);
     const ollamaData = await ollamaRes.json();
