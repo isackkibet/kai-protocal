@@ -13,6 +13,7 @@
   "dependencies": {
     "@avalanche-sdk/chainkit": "0.3.13",
     "@avalanche-sdk/client": "0.1.2",
+    "@next/swc-linux-x64-gnu": "^16.3.3",
     "@prisma/client": "^6.19.3",
     "@tanstack/react-query": "^5.101.4",
     "clsx": "^2.1.1",

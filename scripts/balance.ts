@@ -9,9 +9,9 @@ if (!walletAddress) {
 
 const deployments = JSON.parse(
   await readFile(new URL("../deployments.json", import.meta.url), "utf8"),
-) as { nuvariToken: `0x${string}` };
+) as { contracts: { nuvariToken: { address: `0x${string}` } } };
 const { viem } = await network.create();
-const token = await viem.getContractAt("NuvariToken", deployments.nuvariToken);
+const token = await viem.getContractAt("NuvariToken", deployments.contracts.nuvariToken.address);
 const balance = await token.read.balanceOf([getAddress(walletAddress)]);
 
 console.log(`NVR balance: ${formatUnits(balance, 18)}`);

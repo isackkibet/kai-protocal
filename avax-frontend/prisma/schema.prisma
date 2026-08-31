@@ -148,3 +148,26 @@ model Activity {
   @@map("activities")
 }
 
+// ─── Payments (Paystack) ──────────────────────────────────────────────────────
+/// A Paystack transaction persisted to Neon Postgres.
+/// Reference is unique and used for idempotent upserts on webhook/verify.
+model Payment {
+  id      String @id @default(cuid())
+  reference String @unique
+  amount_subunits BigInt @default(0) // amount in currency smallest unit (1 KES = 100)
+  currency String @default("KES")
+  status  String @default("pending") // pending | success | failed | abandoned
+  email   String?
+  nft_id  String?
+  nft_name String?
+  wallet  String?
+  metadata Json?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([status])
+  @@index([createdAt])
+  @@index([wallet])
+  @@map("payments")
+}
+

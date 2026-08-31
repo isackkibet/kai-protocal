@@ -83,7 +83,6 @@ contract KaiAgentRegistry is Ownable, EIP712 {
     error PerTxLimitExceeded(uint256 attempted, uint256 limit);
     error InvalidSignature();
     error DeadlineExpired();
-    error InvalidNonce();
 
     // ── Constructor ──────────────────────────────────────────────────────────
     constructor() Ownable(msg.sender) EIP712("KaiAgentRegistry", "1") {}
