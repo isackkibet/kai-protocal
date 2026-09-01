@@ -8,12 +8,16 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 
+import AgentProposalCard, { AgentProposal } from '@/components/AgentProposalCard';
+import { ECOSYSTEM_TOKENS } from '@/lib/tokens';
+
 interface Msg {
   role: 'ai' | 'user';
   text: string;
   agent?: string;
   isRag?: boolean;
   sourcesCount?: number;
+  proposal?: AgentProposal;
 }
 
 interface ConnectionStatus {
@@ -25,6 +29,16 @@ interface ConnectionStatus {
 }
 
 const GUIDED_CATEGORIES = [
+  {
+    id: 'agentic',
+    name: '🤖 Agentic Actions',
+    description: '1-Click On-Chain Transaction Proposals',
+    questions: [
+      'Propose depositing 10 yBOB into the Nuvari Yield Vault',
+      'Draft a transfer of 5 yBOB to recipient address 0x70997970C51812dc3A010C7d01b50e0d17dc79C8',
+      'Analyze portfolio health and propose rebalancing strategy'
+    ]
+  },
   {
     id: 'tokens',
     name: '🪙 Ecosystem Tokens',
@@ -181,9 +195,40 @@ export default function DedicatedAIPage() {
     setLoading(true);
     setMobileTab('chat');
 
+    // Check if query is an Agentic Proposal Action request
+    const lowerQ = query.toLowerCase();
+    let attachedProposal: AgentProposal | undefined;
+
+    if (lowerQ.includes('deposit 10 ybob') || lowerQ.includes('yield vault')) {
+      const ybobToken = ECOSYSTEM_TOKENS.find(t => t.symbol === 'yBOB');
+      attachedProposal = {
+        agentName: 'Nuvari Vault Agent',
+        actionType: 'APPROVE_STAKE',
+        title: 'Yield Vault Deposit Strategy',
+        description: 'Deposit 10 yBOB into the kvyBOB high-yield vault on Avalanche Fuji to start earning automated compound yield.',
+        amount: '10',
+        tokenSymbol: 'yBOB',
+        tokenAddress: ybobToken?.address as `0x${string}`,
+        targetContract: '0xd8d8E8e8B6e7F93a20E775B309D5c7A8c28135a5',
+        projectedApy: '18.4% APY',
+      };
+    } else if (lowerQ.includes('transfer 5 ybob') || lowerQ.includes('draft a transfer')) {
+      const ybobToken = ECOSYSTEM_TOKENS.find(t => t.symbol === 'yBOB');
+      attachedProposal = {
+        agentName: 'Tx Analyst Agent',
+        actionType: 'TRANSFER',
+        title: 'Direct Asset Transfer',
+        description: 'Transfer 5 yBOB to 0x70997970C51812dc3A010C7d01b50e0d17dc79C8 on Avalanche C-Chain Fuji testnet.',
+        amount: '5',
+        tokenSymbol: 'yBOB',
+        tokenAddress: ybobToken?.address as `0x${string}`,
+        recipientAddress: '0x70997970C51812dc3A010C7d01b50e0d17dc79C8',
+      };
+    }
+
     // Add an empty AI message that we'll stream tokens into
     setMessages(prev => [...prev, {
-      role: 'ai', text: '', agent: 'KAI AVAX Agent', isRag: ragEnabled, sourcesCount: 0
+      role: 'ai', text: '', agent: attachedProposal ? attachedProposal.agentName : 'KAI AVAX Agent', isRag: ragEnabled, sourcesCount: 0, proposal: attachedProposal
     }]);
 
     try {
@@ -645,6 +690,11 @@ export default function DedicatedAIPage() {
                       style={{ fontSize: 13, lineHeight: 1.6, color: '#fff' }}
                       dangerouslySetInnerHTML={{ __html: renderFormattedText(m.text) }}
                     />
+
+                    {/* Render Agentic Proposal Card if present */}
+                    {m.proposal && (
+                      <AgentProposalCard proposal={m.proposal} />
+                    )}
                   </div>
                 </div>
               );

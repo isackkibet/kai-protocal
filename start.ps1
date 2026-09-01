@@ -23,7 +23,12 @@ try {
     $waited = 0
     do {
         Start-Sleep -Seconds 2; $waited += 2
-        try { Invoke-RestMethod "http://localhost:11434/api/tags" -TimeoutSec 2 | Out-Null; break } catch {}
+        try {
+            Invoke-RestMethod "http://localhost:11434/api/tags" -TimeoutSec 2 | Out-Null
+            break
+        } catch {
+            # retry
+        }
     } while ($waited -lt 30)
     Write-Host "   OK Ollama started." -ForegroundColor Green
 }
@@ -70,7 +75,9 @@ do {
         $h = Invoke-RestMethod "http://127.0.0.1:8000/health" -TimeoutSec 2
         Write-Host "   OK AI Agent running — model: $($h.model)" -ForegroundColor Green
         break
-    } catch {}
+    } catch {
+        # retry
+    }
 } while ($waited -lt 90)
 if ($waited -ge 90) {
     Write-Host "   WARNING: Agent did not respond in 90s — check the AI Agent window." -ForegroundColor Red

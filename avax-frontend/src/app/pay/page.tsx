@@ -6,7 +6,7 @@
  * Tabs:
  *   📷 Scan   — camera QR scanner. Parses EIP-681 URIs
  *               (ethereum:<address>?value=&token=...) and plain 0x addresses.
- *               After scanning lets the user pay with yBOB ERC-20 or M-Pesa.
+ *               After scanning lets the user pay with yBOB ERC-20 or Paystack.
  *
  *   📥 Receive — generates a QR code for the connected wallet address.
  *               User picks token + amount → QR encodes an EIP-681 URI so
@@ -25,7 +25,7 @@ import { avalancheFuji } from "wagmi/chains";
 import { parseUnits, formatUnits, maxUint256 } from "viem";
 import {
   ArrowLeft, QrCode, Scan, Send, Copy, CheckCircle,
-  ExternalLink, RefreshCw, Phone, X, ChevronDown,
+  ExternalLink, RefreshCw, CreditCard, X, ChevronDown,
 } from "lucide-react";
 import WalletConnectModal from "@/components/WalletConnectModal";
 import RealisticQR from "@/components/ui/RealisticQR";
@@ -209,14 +209,12 @@ export default function PayPage() {
   const [sendTo,      setSendTo]      = useState("");
   const [sendToken,   setSendToken]   = useState(TOKENS[1]); // yBOB default
   const [sendAmount,  setSendAmount]  = useState("");
-  const [mpesaPhone,  setMpesaPhone]  = useState("");
-  const [mpesaBusy,   setMpesaBusy]   = useState(false);
+  const [paystackEmail, setPaystackEmail] = useState("");
+  const [paystackBusy,  setPaystackBusy]  = useState(false);
 
-  // M-Pesa mode + status
-  type MpesaMode = "stk" | "b2c";
-  type MpesaStatus = { type: "pending" | "success" | "error"; message: string; detail?: string[] };
-  const [mpesaMode,   setMpesaMode]   = useState<MpesaMode>("stk");
-  const [mpesaStatus, setMpesaStatus] = useState<MpesaStatus | null>(null);
+  // Paystack status
+  type PayStatus = { type: "pending" | "success" | "error"; message: string; detail?: string[] };
+  const [paystackStatus, setPaystackStatus] = useState<PayStatus | null>(null);
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   // ── Live yBOB balance ──────────────────────────────────────────────────────
@@ -288,108 +286,85 @@ export default function PayPage() {
     }
   };
 
-  // ── M-Pesa STK Push (charge the sender's phone) ──────────────────────────
-  const handleMpesaSTK = async () => {
-    const clean = mpesaPhone.replace(/\D/g, "");
-    setMpesaBusy(true);
-    setMpesaStatus({ type: "pending", message: "Sending STK push to your phone…" });
+  // ── Paystack (open hosted checkout, poll for confirmation) ──────────────
+  const handlePaystack = async () => {
+    if (!paystackEmail || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(paystackEmail)) {
+      setPaystackStatus({ type: "error", message: "Please enter a valid email address." });
+      return;
+    }
+    if (!sendAmount || parseFloat(sendAmount) <= 0) {
+      setPaystackStatus({ type: "error", message: "Enter an amount first." });
+      return;
+    }
+
+    setPaystackBusy(true);
+    setPaystackStatus({ type: "pending", message: "Opening Paystack checkout…" });
+
     try {
-      const res  = await fetch("/api/mpesa/stk", {
-        method: "POST", headers: { "Content-Type": "application/json" },
+      const reference = `KAI-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+      const res = await fetch("/api/paystack/initiate", {
+        method:  "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          phone:     clean,
-          nftId:     "send",
+          email:     paystackEmail,
+          priceUsd:  parseFloat(sendAmount),
+          reference,
           nftName:   `${sendAmount} ${sendToken.symbol}`,
-          priceYbob: parseFloat(sendAmount),
+          wallet:    address,
         }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error);
 
-      setMpesaStatus({
+      // Open Paystack hosted page in a new tab
+      window.open(data.authorizationUrl, "_blank");
+
+      setPaystackStatus({
         type: "pending",
-        message: "📲 Check your phone — enter M-Pesa PIN",
+        message: "💳 Complete payment in the Paystack tab",
         detail: [
-          `Amount: KES ${data.amountKes?.toLocaleString()}`,
-          `Reference: ${data.checkoutRequestId?.slice(0, 16)}…`,
+          `KES ${data.amountKes?.toLocaleString()} (${sendAmount} ${sendToken.symbol})`,
+          `Reference: ${data.reference}`,
         ],
       });
 
-      // Poll the callback endpoint every 5s for up to 60s
+      // Poll /api/paystack/verify every 5s for up to 90s
       if (pollRef.current) clearInterval(pollRef.current);
       let attempts = 0;
       pollRef.current = setInterval(async () => {
         attempts++;
         try {
-          const r    = await fetch(`/api/mpesa/callback?checkoutRequestId=${data.checkoutRequestId}`);
+          const r    = await fetch(`/api/paystack/verify?reference=${data.reference}`);
           const poll = await r.json();
           if (poll.status === "success") {
             clearInterval(pollRef.current!);
-            setMpesaStatus({
+            setPaystackStatus({
               type: "success",
               message: "✅ Payment confirmed!",
               detail: [
-                `Receipt: ${poll.mpesaReceiptNumber ?? "—"}`,
-                `Amount: KES ${poll.amount?.toLocaleString() ?? "—"}`,
-                `Phone: ${poll.phoneNumber ?? clean}`,
+                `Paid KES ${poll.amountKes?.toLocaleString()}`,
+                `Email: ${poll.email}`,
+                `Ref: ${poll.reference}`,
               ],
             });
-          } else if (poll.status === "failed") {
+          } else if (poll.status === "failed" || poll.status === "abandoned") {
             clearInterval(pollRef.current!);
-            setMpesaStatus({ type: "error", message: `❌ ${poll.resultDesc ?? "Payment failed"}` });
-          } else if (attempts >= 12) {
+            setPaystackStatus({ type: "error", message: `❌ Payment ${poll.status}` });
+          } else if (attempts >= 18) {
             clearInterval(pollRef.current!);
-            // Fall back to direct Safaricom query
-            const qr   = await fetch("/api/mpesa/query", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ checkoutRequestId: data.checkoutRequestId }) });
-            const qd   = await qr.json();
-            if (qd.success) {
-              setMpesaStatus({ type: "success", message: "✅ Payment confirmed!", detail: [`Via direct query`] });
-            } else {
-              setMpesaStatus({ type: "pending", message: "⏱️ Check your M-Pesa SMS for confirmation", detail: [qd.resultDesc ?? ""] });
-            }
+            setPaystackStatus({
+              type: "pending",
+              message: "⏱️ Check your email for Paystack confirmation",
+              detail: [`Ref: ${data.reference}`],
+            });
           }
         } catch { /* ignore polling errors */ }
       }, 5000);
 
     } catch (e: unknown) {
-      setMpesaStatus({ type: "error", message: `❌ ${e instanceof Error ? e.message : "STK push failed"}` });
+      setPaystackStatus({ type: "error", message: `❌ ${e instanceof Error ? e.message : "Paystack failed"}` });
     } finally {
-      setMpesaBusy(false);
-    }
-  };
-
-  // ── M-Pesa B2C (send money TO a recipient phone) ─────────────────────────
-  const handleMpesaB2C = async () => {
-    const clean = mpesaPhone.replace(/\D/g, "");
-    setMpesaBusy(true);
-    setMpesaStatus({ type: "pending", message: "Sending payment to recipient…" });
-    try {
-      const amountKes = Math.ceil(parseFloat(sendAmount || "0") * 130);
-      const res = await fetch("/api/mpesa/b2c", {
-        method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          phone:     clean,
-          amountKes,
-          occasion:  `${sendAmount} ${sendToken.symbol}`,
-          remarks:   "KAIVAX platform payment",
-        }),
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error);
-
-      setMpesaStatus({
-        type: "success",
-        message: "✅ B2C payment queued!",
-        detail: [
-          `KES ${amountKes.toLocaleString()} → ${clean}`,
-          `Conversation ID: ${data.conversationId?.slice(0, 16)}…`,
-          "Recipient will receive an M-Pesa notification",
-        ],
-      });
-    } catch (e: unknown) {
-      setMpesaStatus({ type: "error", message: `❌ ${e instanceof Error ? e.message : "B2C failed"}` });
-    } finally {
-      setMpesaBusy(false);
+      setPaystackBusy(false);
     }
   };
 
@@ -408,7 +383,7 @@ export default function PayPage() {
         <div>
           <h1 style={{ fontSize: 22, fontWeight: 900, color: "#fff", margin: 0 }}>💳 Pay & Receive</h1>
           <p style={{ fontSize: 11, color: "rgba(255,255,255,0.4)", margin: "3px 0 0" }}>
-            Scan to pay · Generate QR · Send tokens · M-Pesa
+            Scan to pay · Generate QR · Send tokens · Paystack
           </p>
         </div>
       </div>
@@ -754,119 +729,97 @@ export default function PayPage() {
             <div style={{ flex: 1, height: 1, background: "rgba(255,255,255,0.08)" }} />
           </div>
 
-          {/* M-Pesa */}
-          <div className="glass" style={{ borderRadius: 16, padding: 16, border: "1px solid rgba(34,197,94,0.25)" }}>
+          {/* Paystack */}
+          <div className="glass" style={{ borderRadius: 16, padding: 16, border: "1px solid rgba(0,125,211,0.35)" }}>
             {/* Header */}
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
               <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                <div style={{ width: 32, height: 32, borderRadius: "50%", background: "rgba(34,197,94,0.15)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16 }}>🇰🇪</div>
+                <div style={{
+                  width: 32, height: 32, borderRadius: "50%",
+                  background: "linear-gradient(135deg,#007DD3,#00B87A)",
+                  display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16,
+                }}>🔵</div>
                 <div>
-                  <p style={{ fontSize: 13, fontWeight: 800, color: "#22C55E", margin: 0 }}>M-Pesa</p>
-                  <p style={{ fontSize: 10, color: "rgba(255,255,255,0.4)", margin: 0 }}>Safaricom Kenya</p>
+                  <p style={{ fontSize: 13, fontWeight: 800, color: "#00B87A", margin: 0 }}>Paystack</p>
+                  <p style={{ fontSize: 10, color: "rgba(255,255,255,0.4)", margin: 0 }}>Card · Mobile Money · KES</p>
                 </div>
               </div>
               {sendAmount && (
                 <div style={{ textAlign: "right" }}>
-                  <p style={{ fontSize: 16, fontWeight: 900, color: "#22C55E", margin: 0 }}>KES {Math.ceil(parseFloat(sendAmount || "0") * 130).toLocaleString()}</p>
-                  <p style={{ fontSize: 9, color: "rgba(255,255,255,0.35)", margin: 0 }}>≈ {sendAmount} {sendToken.symbol}</p>
+                  <p style={{ fontSize: 16, fontWeight: 900, color: "#00B87A", margin: 0 }}>
+                    KES {Math.ceil(parseFloat(sendAmount || "0") * 130).toLocaleString()}
+                  </p>
+                  <p style={{ fontSize: 9, color: "rgba(255,255,255,0.35)", margin: 0 }}>
+                    ≈ {sendAmount} {sendToken.symbol}
+                  </p>
                 </div>
               )}
             </div>
 
-            {/* Mode toggle: STK (charge me) vs B2C (send to recipient) */}
-            <div style={{ display: "flex", gap: 0, background: "rgba(0,0,0,0.3)", padding: 3, borderRadius: 10, marginBottom: 14 }}>
-              {([
-                ["stk",  "💳 Charge My Phone",   "You pay from your M-Pesa"],
-                ["b2c",  "📤 Send to Number", "Recipient gets the money"],
-              ] as const).map(([m, label, hint]) => (
-                <button key={m} onClick={() => setMpesaMode(m)}
-                  style={{
-                    flex: 1, padding: "8px 6px", borderRadius: 7, border: "none", cursor: "pointer",
-                    background: mpesaMode === m ? "rgba(34,197,94,0.2)" : "transparent",
-                    color: mpesaMode === m ? "#22C55E" : "rgba(255,255,255,0.4)",
-                    fontWeight: 700, fontSize: 11, transition: "all 0.2s",
-                    outline: mpesaMode === m ? "1.5px solid rgba(34,197,94,0.4)" : "none",
-                  }}>
-                  {label}
-                </button>
-              ))}
-            </div>
-
-            {/* Phone input label changes based on mode */}
+            {/* Email input */}
             <label style={{ fontSize: 10, fontWeight: 700, color: "rgba(255,255,255,0.4)", display: "block", marginBottom: 6, letterSpacing: 1 }}>
-              {mpesaMode === "stk" ? "YOUR M-PESA NUMBER" : "RECIPIENT M-PESA NUMBER"}
+              YOUR EMAIL (required by Paystack)
             </label>
-            <div style={{ display: "flex", gap: 8, marginBottom: 8 }}>
-              <div style={{ flex: 1, position: "relative" }}>
-                <span style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", fontSize: 13, color: "rgba(255,255,255,0.4)", fontWeight: 700 }}>+</span>
-                <input
-                  type="tel"
-                  placeholder="254700000000"
-                  value={mpesaPhone}
-                  onChange={e => {
-                    const v = e.target.value.replace(/[^\d]/g, "");
-                    setMpesaPhone(v);
-                    setMpesaStatus(null);
-                  }}
-                  style={{
-                    width: "100%", background: "rgba(0,0,0,0.3)", border: "1px solid rgba(255,255,255,0.1)",
-                    borderRadius: 10, padding: "10px 12px 10px 28px", fontSize: 14, color: "#fff",
-                    outline: "none", fontFamily: "monospace", boxSizing: "border-box",
-                  }}
-                />
-              </div>
-            </div>
+            <input
+              type="email"
+              placeholder="you@example.com"
+              value={paystackEmail}
+              onChange={e => { setPaystackEmail(e.target.value); setPaystackStatus(null); }}
+              style={{
+                width: "100%", background: "rgba(0,0,0,0.3)", border: "1px solid rgba(255,255,255,0.1)",
+                borderRadius: 10, padding: "10px 14px", fontSize: 14, color: "#fff",
+                outline: "none", fontFamily: "inherit", boxSizing: "border-box", marginBottom: 12,
+              }}
+            />
 
-            {/* Phone format hint */}
-            <p style={{ fontSize: 10, color: "rgba(255,255,255,0.3)", margin: "0 0 12px" }}>
-              Format: 2547XXXXXXXX or 2541XXXXXXXX · {mpesaMode === "stk" ? "STK push sent to your phone" : "Money sent directly to recipient"}
+            <p style={{ fontSize: 10, color: "rgba(255,255,255,0.3)", margin: "0 0 12px", lineHeight: 1.5 }}>
+              A new tab will open with the Paystack checkout. Complete payment there, then come back — confirmation will appear here automatically.
             </p>
 
-            {/* Send button */}
+            {/* Pay button */}
             <button
-              onClick={mpesaMode === "stk"
-                ? () => handleMpesaSTK()
-                : () => handleMpesaB2C()
-              }
-              disabled={mpesaBusy || !mpesaPhone.match(/^254[17]\d{8}$/) || !sendAmount || parseFloat(sendAmount) <= 0}
+              onClick={handlePaystack}
+              disabled={paystackBusy || !paystackEmail || !sendAmount || parseFloat(sendAmount) <= 0}
               style={{
                 width: "100%", padding: "12px", borderRadius: 10, border: "none", fontWeight: 800, fontSize: 14,
-                background: mpesaBusy || !mpesaPhone.match(/^254[17]\d{8}$/) || !sendAmount
+                background: paystackBusy || !paystackEmail || !sendAmount
                   ? "rgba(255,255,255,0.08)"
-                  : "linear-gradient(135deg,#22C55E,#16a34a)",
-                color: "#fff", cursor: mpesaBusy ? "not-allowed" : "pointer",
-                opacity: !mpesaPhone.match(/^254[17]\d{8}$/) || !sendAmount ? 0.5 : 1,
+                  : "linear-gradient(135deg,#007DD3,#00B87A)",
+                color: "#fff", cursor: paystackBusy ? "not-allowed" : "pointer",
+                opacity: !paystackEmail || !sendAmount ? 0.5 : 1,
                 display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
               }}>
-              <Phone size={16} />
-              {mpesaBusy
+              <CreditCard size={16} />
+              {paystackBusy
                 ? "⏳ Processing…"
-                : mpesaMode === "stk"
-                  ? `Charge KES ${Math.ceil(parseFloat(sendAmount || "0") * 130).toLocaleString()} via STK`
-                  : `Send KES ${Math.ceil(parseFloat(sendAmount || "0") * 130).toLocaleString()} to ${mpesaPhone || "…"}`}
+                : `Pay KES ${Math.ceil(parseFloat(sendAmount || "0") * 130).toLocaleString()} via Paystack`}
             </button>
 
             {/* Live status / receipt */}
-            {mpesaStatus && (
+            {paystackStatus && (
               <div style={{
                 marginTop: 12, padding: "12px 14px", borderRadius: 10, fontSize: 12,
-                background: mpesaStatus.type === "success"
-                  ? "rgba(34,197,94,0.1)"
-                  : mpesaStatus.type === "error"
+                background: paystackStatus.type === "success"
+                  ? "rgba(0,184,122,0.1)"
+                  : paystackStatus.type === "error"
                     ? "rgba(239,68,68,0.1)"
-                    : "rgba(251,191,36,0.08)",
-                border: `1px solid ${mpesaStatus.type === "success" ? "rgba(34,197,94,0.3)" : mpesaStatus.type === "error" ? "rgba(239,68,68,0.3)" : "rgba(251,191,36,0.2)"}`,
+                    : "rgba(0,125,211,0.08)",
+                border: `1px solid ${
+                  paystackStatus.type === "success" ? "rgba(0,184,122,0.3)"
+                  : paystackStatus.type === "error" ? "rgba(239,68,68,0.3)"
+                  : "rgba(0,125,211,0.3)"
+                }`,
                 color: "#fff",
               }}>
-                <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: mpesaStatus.detail ? 6 : 0 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: paystackStatus.detail ? 6 : 0 }}>
                   <span style={{ fontSize: 16 }}>
-                    {mpesaStatus.type === "success" ? "✅" : mpesaStatus.type === "error" ? "❌" : "⏳"}
+                    {paystackStatus.type === "success" ? "✅" : paystackStatus.type === "error" ? "❌" : "⏳"}
                   </span>
-                  <span style={{ fontWeight: 700 }}>{mpesaStatus.message}</span>
+                  <span style={{ fontWeight: 700 }}>{paystackStatus.message}</span>
                 </div>
-                {mpesaStatus.detail && (
+                {paystackStatus.detail && (
                   <div style={{ display: "flex", flexDirection: "column", gap: 4, marginLeft: 24 }}>
-                    {mpesaStatus.detail.map((line, i) => (
+                    {paystackStatus.detail.map((line, i) => (
                       <p key={i} style={{ fontSize: 11, color: "rgba(255,255,255,0.6)", margin: 0 }}>{line}</p>
                     ))}
                   </div>
