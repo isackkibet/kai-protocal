@@ -1,0 +1,44 @@
+{
+  "name": "avax-frontend",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "eslint",
+    "tokens:compile": "hardhat compile",
+    "tokens:deploy:fuji": "hardhat run scripts/deploy-ecosystem-tokens.cjs --network fuji"
+  },
+  "dependencies": {
+    "@avalanche-sdk/chainkit": "0.3.13",
+    "@avalanche-sdk/client": "0.1.2",
+    "@prisma/client": "^6.19.3",
+    "@tanstack/react-query": "^5.101.4",
+    "clsx": "^2.1.1",
+    "framer-motion": "^13.1.1",
+    "html5-qrcode": "2.3.8",
+    "lucide-react": "^1.33.0",
+    "next": "16.3.2",
+    "prisma": "^6.19.3",
+    "react": "19.2.8",
+    "react-dom": "19.2.8",
+    "viem": "^2.55.19",
+    "wagmi": "^3.7.6",
+    "zustand": "^5.0.15"
+  },
+  "devDependencies": {
+    "@nomicfoundation/hardhat-ethers": "^3.0.8",
+    "@tailwindcss/postcss": "^4",
+    "@types/node": "^20",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "dotenv": "^16.6.1",
+    "eslint": "^9",
+    "eslint-config-next": "16.3.2",
+    "ethers": "^6.13.5",
+    "hardhat": "^2.22.18",
+    "tailwindcss": "^4",
+    "typescript": "^5"
+  }
+}

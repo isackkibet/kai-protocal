@@ -1,0 +1,156 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String?   @unique
+  emailVerified DateTime?
+  image         String?
+  role          UserRole  @default(MEMBER)
+  walletAddress String?   @unique
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  accounts      Account[]
+  sessions      Session[]
+  kaiProfile    KaiUser?
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+  user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+/// A KAI Nuvari platform user profile.
+/// Linked to the Auth.js User via authUserId for session-aware queries.
+model KaiUser {
+  id         String      @id @default(cuid())
+  name       String
+  email      String      @unique
+  phone      String?
+  createdAt  DateTime    @default(now())
+  updatedAt  DateTime    @updatedAt
+  authUserId String?     @unique
+  activities Activity[]
+  authUser   User?       @relation(fields: [authUserId], references: [id])
+  wallets    KaiWallet[]
+
+  @@map("kai_users")
+}
+
+/// A blockchain wallet belonging to a KAI user.
+/// Supports multiple chains. Private keys are NEVER stored here.
+model KaiWallet {
+  id        String   @id @default(cuid())
+  userId    String
+  chain     Chain
+  address   String
+  balance   Decimal  @default(0) @db.Decimal(38, 18)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  user      KaiUser  @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([address])
+  @@map("kai_wallets")
+}
+
+/// An audit-style record of important user actions on the KAI platform.
+model Activity {
+  id          String         @id @default(cuid())
+  userId      String
+  type        ActivityType
+  description String?
+  amount      Decimal?       @db.Decimal(38, 18)
+  status      ActivityStatus @default(PENDING)
+  createdAt   DateTime       @default(now())
+  user        KaiUser        @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([type])
+  @@map("activities")
+}
+
+model Payment {
+  id              String   @id @default(cuid())
+  reference       String   @unique
+  amount_subunits BigInt   @default(0)
+  currency        String   @default("KES")
+  status          String   @default("pending")
+  email           String?
+  nft_id          String?
+  nft_name        String?
+  wallet          String?
+  metadata        Json?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([createdAt])
+  @@index([status])
+  @@index([wallet])
+  @@map("payments")
+}
+
+
+enum UserRole {
+  MEMBER
+  FOREST_GUARDIAN
+  SME
+  ADMIN
+}
+
+enum Chain {
+  ARBITRUM
+  AVALANCHE
+}
+
+enum ActivityType {
+  WALLET_CREATED
+  DEPOSIT
+  WITHDRAWAL
+  INVESTMENT
+  POLICY_CREATED
+  TRANSACTION
+}
+
+enum ActivityStatus {
+  PENDING
+  COMPLETED
+  FAILED
+}
