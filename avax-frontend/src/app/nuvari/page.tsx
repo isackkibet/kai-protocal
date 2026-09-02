@@ -183,6 +183,7 @@ export default function KaiPlayground() {
     if (!selectedOp) return;
     setIsRunning(true);
     setRightTab("terminal");
+    setMobilePanel("terminal");
 
     const owner = address || formValues.owner || formValues.settlor || formValues.memberAccount || OWNER_ACCOUNT;
     const exec: ExecResult = {
@@ -251,6 +252,7 @@ export default function KaiPlayground() {
     else if (op.category === "quick") setActiveSection("quick-start");
     else if (op.category === "query") setActiveSection("queries");
     else setActiveSection(op.service as ServiceSection);
+    setMobilePanel("form");
   };
 
   const payload = {
@@ -268,18 +270,50 @@ export default function KaiPlayground() {
   const statusColor = (s?: ExecResult["status"]) =>
     s === "completed" ? "#22c55e" : s === "failed" ? "#ef4444" : s === "running" ? "#f59e0b" : "#60a5fa";
 
+  // ── Mobile panel state (which of the 4 panels is visible) ──────────────────
+  const [mobilePanel, setMobilePanel] = useState<"nav"|"ops"|"form"|"terminal">("nav");
+
   // ═══════════════════════════════════════════════════════
   // RENDER
   // ═══════════════════════════════════════════════════════
   return (
-    <div style={{ display:"flex", flexDirection:"column", alignItems:"center", height:"100vh", background:"#080c09", color:"#fff", fontFamily:"'Inter',system-ui,sans-serif", overflow:"hidden" }}>
-      <div style={{ display:"flex", flex: 1, minHeight: 0, width:"100%", maxWidth:"1600px" }}>
+    <div style={{ display:"flex", flexDirection:"column", height:"100dvh", background:"#080c09", color:"#fff", fontFamily:"'Inter',system-ui,sans-serif", overflow:"hidden" }}>
+
+      {/* ── MOBILE TOP BAR (hidden on desktop) ─────────── */}
+      <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", padding:"10px 14px", borderBottom:"1px solid rgba(255,255,255,0.07)", background:"#0b0f0c", flexShrink:0 }} className="mobile-topbar">
+        <div style={{ display:"flex", alignItems:"center", gap:8 }}>
+          <span style={{ fontSize:15, fontWeight:900, letterSpacing:"-0.5px" }}>
+            <span style={{ color:"#e84142" }}>KAI</span>VAX
+          </span>
+          <span style={{ fontSize:8, background:"rgba(232,65,66,0.15)", border:"1px solid rgba(232,65,66,0.3)", color:"#e84142", borderRadius:4, padding:"1px 5px", textTransform:"uppercase", letterSpacing:"0.5px" }}>Policy</span>
+        </div>
+        <div style={{ display:"flex", gap:4 }}>
+          {([
+            { id:"nav",      label:"Menu",    icon:<Shield size={14}/> },
+            { id:"ops",      label:"Ops",     icon:<Database size={14}/> },
+            { id:"form",     label:"Config",  icon:<FileText size={14}/> },
+            { id:"terminal", label:"Log",     icon:<TerminalSquare size={14}/> },
+          ] as const).map(p => (
+            <button key={p.id} onClick={() => setMobilePanel(p.id)} style={{
+              display:"flex", flexDirection:"column", alignItems:"center", gap:2,
+              padding:"5px 8px", borderRadius:8, border:"none", cursor:"pointer",
+              background: mobilePanel===p.id ? "rgba(232,65,66,0.15)" : "rgba(255,255,255,0.04)",
+              color: mobilePanel===p.id ? "#e84142" : "rgba(255,255,255,0.38)",
+            }}>
+              {p.icon}
+              <span style={{ fontSize:8, fontWeight:700, letterSpacing:0.3 }}>{p.label}</span>
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div style={{ display:"flex", flex: 1, minHeight: 0, width:"100%" }}>
 
       {/* ── LEFT SIDEBAR ──────────────────────────────── */}
-      <div style={{ width:"220px", flexShrink:0, borderRight:"1px solid rgba(255,255,255,0.07)", display:"flex", flexDirection:"column", background:"#0b0f0c" }}>
+      <div style={{ width:"min(220px, 40vw)", flexShrink:0, borderRight:"1px solid rgba(255,255,255,0.07)", display:"flex", flexDirection:"column", background:"#0b0f0c" }} className={`panel-sidebar ${mobilePanel === "nav" ? "mobile-show" : "mobile-hide"}`}>
         
-        {/* Logo */}
-        <div style={{ padding:"16px 16px 12px", borderBottom:"1px solid rgba(255,255,255,0.06)" }}>
+        {/* Logo — desktop only */}
+        <div style={{ padding:"16px 16px 12px", borderBottom:"1px solid rgba(255,255,255,0.06)" }} className="desktop-only">
           <div style={{ display:"flex", alignItems:"center", gap:"8px" }}>
             <span style={{ fontSize:"16px", fontWeight:"900", letterSpacing:"-0.5px" }}>
               <span style={{ color:"#e84142" }}>KAI</span>VAX
@@ -323,7 +357,7 @@ export default function KaiPlayground() {
             const isActive = activeSection === nav.id;
             const color    = nav.color ?? "rgba(255,255,255,0.5)";
             return (
-              <button key={nav.id} onClick={() => { setActiveSection(nav.id); setSearchQuery(""); }}
+              <button key={nav.id} onClick={() => { setActiveSection(nav.id); setSearchQuery(""); setMobilePanel("ops"); }}
                 style={{ width:"100%", background: isActive ? `${color}12` : "transparent", border:`1px solid ${isActive ? color + "30" : "transparent"}`, borderRadius:"6px", padding:"8px 10px", textAlign:"left", cursor:"pointer", display:"flex", alignItems:"center", gap:"8px", color: isActive ? color : "rgba(255,255,255,0.45)", marginBottom:"2px", transition:"all 0.15s" }}>
                 <span style={{ color: isActive ? color : "rgba(255,255,255,0.3)" }}>{nav.icon}</span>
                 <span style={{ fontSize:"12px", fontWeight: isActive ? "600" : "400" }}>{nav.label}</span>
@@ -346,7 +380,7 @@ export default function KaiPlayground() {
       </div>
 
       {/* ── CENTER: Op List ───────────────────────────── */}
-      <div style={{ width:"260px", flexShrink:0, borderRight:"1px solid rgba(255,255,255,0.07)", display:"flex", flexDirection:"column", background:"#0c100d" }}>
+      <div style={{ width:"260px", flexShrink:0, borderRight:"1px solid rgba(255,255,255,0.07)", display:"flex", flexDirection:"column", background:"#0c100d" }} className={`panel-ops ${mobilePanel === "ops" ? "mobile-show" : "mobile-hide"}`}>
 
         {/* Section Header */}
         <div style={{ padding:"12px 14px", borderBottom:"1px solid rgba(255,255,255,0.06)" }}>
@@ -472,7 +506,7 @@ export default function KaiPlayground() {
       </div>
 
       {/* ── CENTER: Config Form ───────────────────────── */}
-      <div style={{ flex:1, display:"flex", flexDirection:"column", minWidth:0, borderRight:"1px solid rgba(255,255,255,0.07)" }}>
+      <div style={{ flex:1, display:"flex", flexDirection:"column", minWidth:0, borderRight:"1px solid rgba(255,255,255,0.07)" }} className={`panel-form ${mobilePanel === "form" ? "mobile-show" : "mobile-hide"}`}>
         
         {/* Op Title + Execute button */}
         <div style={{ padding:"14px 20px", borderBottom:"1px solid rgba(255,255,255,0.07)", display:"flex", justifyContent:"space-between", alignItems:"center", background:"rgba(255,255,255,0.01)", flexShrink:0 }}>
@@ -625,7 +659,7 @@ export default function KaiPlayground() {
 
       </div>
       {/* ── BOTTOM: Activity + Result ──────────────────── */}
-      <div style={{ height:"280px", flexShrink:0, display:"flex", flexDirection:"column", background:"#0a0e0b", borderTop:"1px solid rgba(255,255,255,0.1)" }}>
+      <div style={{ height:"min(280px, 35dvh)", flexShrink:0, display:"flex", flexDirection:"column", background:"#0a0e0b", borderTop:"1px solid rgba(255,255,255,0.1)" }} className={`panel-terminal ${mobilePanel === "terminal" ? "mobile-show" : "mobile-hide"}`}>
 
         {/* Tabs */}
         <div style={{ display:"flex", borderBottom:"1px solid rgba(255,255,255,0.07)", flexShrink:0 }}>
@@ -716,8 +750,69 @@ export default function KaiPlayground() {
         )}
       </div>
 
-      {/* Spin animation */}
-      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+      {/* Spin animation + responsive layout */}
+      <style>{`
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        /* ── Mobile: show only the active panel ── */
+        @media (max-width: 767px) {
+          .mobile-topbar { display: flex !important; }
+          .desktop-only  { display: none !important; }
+
+          /* Sidebar / ops panel become full-width when active */
+          .panel-sidebar, .panel-ops {
+            position: fixed !important;
+            inset: 0 !important;
+            width: 100% !important;
+            z-index: 20 !important;
+            overflow-y: auto !important;
+          }
+          .panel-form {
+            position: fixed !important;
+            inset: 0 !important;
+            width: 100% !important;
+            z-index: 20 !important;
+            overflow-y: auto !important;
+          }
+          .panel-terminal {
+            position: fixed !important;
+            inset: 0 !important;
+            height: 100dvh !important;
+            width: 100% !important;
+            z-index: 20 !important;
+          }
+
+          /* All panels hidden by default on mobile */
+          .panel-sidebar.mobile-hide,
+          .panel-ops.mobile-hide,
+          .panel-form.mobile-hide,
+          .panel-terminal.mobile-hide { display: none !important; }
+
+          .panel-sidebar.mobile-show,
+          .panel-ops.mobile-show,
+          .panel-form.mobile-show,
+          .panel-terminal.mobile-show { display: flex !important; flex-direction: column !important; }
+
+          /* Account for the mobile topbar height */
+          .panel-sidebar.mobile-show,
+          .panel-ops.mobile-show,
+          .panel-form.mobile-show,
+          .panel-terminal.mobile-show {
+            top: 52px !important;
+          }
+        }
+
+        /* ── Desktop: hide mobile topbar, show all panels ── */
+        @media (min-width: 768px) {
+          .mobile-topbar  { display: none !important; }
+          .desktop-only   { display: block !important; }
+          .panel-sidebar  { display: flex !important; }
+          .panel-ops      { display: flex !important; }
+          .panel-form     { display: flex !important; }
+          .panel-terminal { display: flex !important; }
+          .mobile-hide, .mobile-show { /* reset — all visible */ }
+        }
+      `}</style>
     </div>
   );
 }

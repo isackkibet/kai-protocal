@@ -1,47 +1,42 @@
 'use client';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Home, Layers, Pickaxe, BrainCircuit, Vault, Shield, CreditCard } from 'lucide-react';
+import { Home, Bot, Gift, UserCircle2, Newspaper } from 'lucide-react';
 
-const navItems = [
-  { name: 'Home',     href: '/',        icon: Home },
-  { name: 'Airdrop',  href: '/mine',    icon: Pickaxe },
-  { name: 'Pay',      href: '/pay',     icon: CreditCard },
-  { name: 'Policy',   href: '/nuvari',  icon: Shield },
-  { name: 'Agent',    href: '/ai',      icon: BrainCircuit },
+const NAV = [
+  { name: 'Home',    href: '/',        icon: Home        },
+  { name: 'Airdrop', href: '/mine',    icon: Gift        },
+  { name: 'Info Hub', href: '/hub',   icon: Newspaper   },
+  { name: 'Profile', href: '/profile', icon: UserCircle2 },
+  { name: 'Agent',   href: '/ai',      icon: Bot         },
 ];
 
 export default function BottomNav() {
-  const pathname = usePathname();
+  const path = usePathname();
   return (
     <nav className="bottom-nav">
-      {navItems.map(({ name, href, icon: Icon }) => {
-        const active = pathname === href;
+      {NAV.map(({ name, href, icon: Icon }) => {
+        const active = href === '/' ? path === '/' : path?.startsWith(href);
         return (
-          <Link key={name} href={href}
-            style={{
-              display:"flex", flexDirection:"column", alignItems:"center",
-              justifyContent:"center", gap:"2px", textDecoration:"none",
-              color: active ? "#e84142" : "rgba(255,255,255,0.4)",
-              transition: "color 0.2s ease",
-              minWidth: "52px",
-            }}>
-            {name === "KAI" ? (
-              <div style={{
-                width: 44, height: 44, borderRadius:"50%",
-                background: active ? "linear-gradient(135deg,#FFD700,#F97316)" : "rgba(255,215,0,0.1)",
-                border: active ? "2px solid #FFD700" : "2px solid rgba(255,215,0,0.3)",
-                display:"flex", alignItems:"center", justifyContent:"center",
-                boxShadow: active ? "0 0 20px rgba(255,215,0,0.5)" : "none",
-              }}>
-                <Icon size={20} color={active ? "#1B4332" : "#FFD700"} strokeWidth={2.5} />
-              </div>
-            ) : (
-              <>
-                <Icon size={20} strokeWidth={active ? 2.5 : 1.8} />
-                <span style={{ fontSize:10, fontWeight: active ? 700 : 500 }}>{name}</span>
-              </>
-            )}
+          <Link key={name} href={href} style={{
+            display: 'flex', flexDirection: 'column', alignItems: 'center',
+            justifyContent: 'center', gap: 4, textDecoration: 'none',
+            position: 'relative', padding: '4px 8px', borderRadius: 14,
+            minWidth: 48, transition: 'all 0.2s ease',
+            background: active ? 'rgba(232,65,66,0.10)' : 'transparent',
+          }}>
+            {active && <span style={{
+              position: 'absolute', top: 0, left: '20%', right: '20%',
+              height: 2, borderRadius: '0 0 4px 4px',
+              background: 'linear-gradient(90deg, transparent, #e84142, transparent)',
+            }} />}
+            <Icon size={20} strokeWidth={active ? 2.4 : 1.7}
+              color={active ? '#e84142' : 'rgba(255,255,255,0.32)'}
+              style={{ transition: 'all 0.2s', transform: active ? 'scale(1.08)' : 'scale(1)' }} />
+            <span style={{
+              fontSize: 8.5, fontWeight: active ? 800 : 500, letterSpacing: 0.3,
+              color: active ? '#e84142' : 'rgba(255,255,255,0.30)', transition: 'all 0.2s',
+            }}>{name}</span>
           </Link>
         );
       })}
