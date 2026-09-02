@@ -1,0 +1,5 @@
+{
+  "buildCommand": "npm run build --prefix avax-frontend",
+  "outputDirectory": "avax-frontend/.next",
+  "installCommand": "npm install --prefix avax-frontend"
+}
