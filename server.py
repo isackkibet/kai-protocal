@@ -34,6 +34,15 @@ from agents.policy_recommender import PolicyRecommenderAgent
 from agents.code_gen          import CodeGenAgent
 from agents.doc_summarizer    import DocSummarizerAgent
 
+# ── KAI Ecosystem agents ──────────────────────────────────────────────────────
+from agents.did_tracker      import (DIDTrackerAgent, log_action, authorize,
+                                     revoke, is_authorized, get_audit_log)
+from agents.glacier_balance  import GlacierBalanceAgent, fetch_portfolio
+from agents.liquidity_manager import LiquidityManagerAgent, get_pool_state, calculate_il
+from agents.yield_optimizer  import YieldOptimizerAgent, scan_all_yields
+from agents.onboarding       import OnboardingAgent, STEP_GUIDES
+from agents.kai_navigator    import KaiNavigatorAgent, INTENT_ROUTES
+
 # ── Agentic Rails imports ─────────────────────────────────────────────────────
 from agents.identity   import (
     list_agent_dids, resolve_did, resolve_address,
@@ -51,9 +60,17 @@ portfolio_agent = PortfolioHealthAgent()
 auditor_agent   = ContractAuditorAgent()
 dao_agent       = DAODrafterAgent()
 pricing_agent   = CommodityPricingAgent()
-policy_agent    = PolicyRecommenderAgent()
-codegen_agent   = CodeGenAgent()
-doc_agent       = DocSummarizerAgent()
+policy_agent     = PolicyRecommenderAgent()
+codegen_agent    = CodeGenAgent()
+doc_agent        = DocSummarizerAgent()
+
+# ── KAI Ecosystem agent singletons ───────────────────────────────────────────
+did_tracker_agent   = DIDTrackerAgent()
+glacier_agent       = GlacierBalanceAgent()
+liquidity_agent     = LiquidityManagerAgent()
+yield_agent         = YieldOptimizerAgent()
+onboarding_agent    = OnboardingAgent()
+navigator_agent     = KaiNavigatorAgent()
 
 # ── App ────────────────────────────────────────────────────────────────────────
 app = FastAPI(title="KAI Multi-Agent Server", version="3.0.0")
@@ -488,12 +505,22 @@ def list_agents():
             {"name": "doc_summarizer",     "endpoints": ["/agents/docs/ask",            "/agents/docs/stream",
                                                           "/agents/docs/ingest",         "/agents/docs/list",
                                                           "/agents/docs/collection"],                                    "description": "Document Q&A via local RAG"},
+            # ── KAI Ecosystem agents ────────────────────────────────────────
+            {"name": "did_tracker",       "endpoints": ["/agents/did/activity",  "/agents/did/stream",
+                                                         "/agents/did/authorize", "/agents/did/revoke"],                 "description": "W3C DID activity tracker with audit log and authorization"},
+            {"name": "glacier_balance",   "endpoints": ["/agents/balance",        "/agents/balance/stream"],            "description": "Glacier API: AVAX + token balances, tx history, NFTs"},
+            {"name": "liquidity_manager", "endpoints": ["/agents/liquidity",      "/agents/liquidity/stream",
+                                                         "/agents/liquidity/il",  "/agents/liquidity/pools"],            "description": "KAI LP position manager: IL calc, pool analytics, rebalancing"},
+            {"name": "yield_optimizer",   "endpoints": ["/agents/yield",          "/agents/yield/stream"],              "description": "Scans all vaults + pools for best risk-adjusted APY"},
+            {"name": "onboarding",        "endpoints": ["/agents/onboarding",     "/agents/onboarding/stream",
+                                                         "/agents/onboarding/progress", "/agents/onboarding/steps"],    "description": "KAI learner step-by-step onboarding assistant"},
+            {"name": "kai_navigator",     "endpoints": ["/agents/kai",            "/agents/kai/stream"],                "description": "KAI master navigator: answers any question, routes to features"},
         ],
         "rails": {
-            "x402":   "/agents/x402/info",
+            "x402":     "/agents/x402/info",
             "identity": "/agents/identity/list",
-            "escrow": "/agents/escrow/list",
-            "audit":  "/agents/rails/audit",
+            "escrow":   "/agents/escrow/list",
+            "audit":    "/agents/rails/audit",
         },
     }
 
@@ -789,3 +816,260 @@ async def rails_preflight(body: PreflightRequest):
     except ValueError as e:
         raise HTTPException(429, str(e))
 
+
+
+# ═════════════════════════════════════════════════════════════════════════════
+# KAI ECOSYSTEM AGENTS
+# ═════════════════════════════════════════════════════════════════════════════
+
+# ─── 1. DID Activity Tracker ─────────────────────────────────────────────────
+
+class DIDActivityRequest(BaseModel):
+    query:     str = "summarise"
+    agent_did: Optional[str] = None
+    action:    Optional[str] = None
+    limit:     int = 50
+
+class DIDAuthorizeRequest(BaseModel):
+    granter_did:  str
+    grantee_did:  str
+    capability:   str
+    expires_in_s: int = 86400
+    conditions:   dict = Field(default_factory=dict)
+
+class DIDRevokeRequest(BaseModel):
+    granter_did: str
+    grantee_did: str
+    capability:  str
+
+class DIDLogRequest(BaseModel):
+    agent_did:  str
+    action:     str
+    details:    dict = Field(default_factory=dict)
+    outcome:    str = "success"
+    caller_did: Optional[str] = None
+
+@app.post("/agents/did/activity")
+async def did_activity(body: DIDActivityRequest):
+    return await did_tracker_agent.run(
+        query=body.query, agent_did=body.agent_did,
+        action=body.action, limit=body.limit,
+    )
+
+@app.post("/agents/did/stream")
+async def did_stream(body: DIDActivityRequest):
+    return StreamingResponse(
+        did_tracker_agent.stream(query=body.query, agent_did=body.agent_did, limit=body.limit),
+        media_type="text/event-stream",
+        headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
+    )
+
+@app.post("/agents/did/log")
+async def did_log(body: DIDLogRequest):
+    entry = log_action(
+        agent_did=body.agent_did, action=body.action,
+        details=body.details, outcome=body.outcome, caller_did=body.caller_did,
+    )
+    return {"logged": True, "entry": entry}
+
+@app.post("/agents/did/authorize")
+async def did_authorize(body: DIDAuthorizeRequest):
+    record = authorize(
+        granter_did=body.granter_did, grantee_did=body.grantee_did,
+        capability=body.capability, expires_in_s=body.expires_in_s,
+        conditions=body.conditions,
+    )
+    return {"authorized": True, "record": record}
+
+@app.post("/agents/did/revoke")
+async def did_revoke(body: DIDRevokeRequest):
+    record = revoke(body.granter_did, body.grantee_did, body.capability)
+    return {"revoked": True, "record": record}
+
+@app.get("/agents/did/log")
+async def did_get_log(agent_did: Optional[str] = None, action: Optional[str] = None, limit: int = 50):
+    return {"entries": get_audit_log(agent_did=agent_did, action=action, limit=limit)}
+
+@app.get("/agents/did/check")
+async def did_check_auth(grantee_did: str, capability: str):
+    from agents.did_tracker import is_authorized as _is_auth
+    authorized = _is_auth(grantee_did, capability)
+    return {"grantee_did": grantee_did, "capability": capability, "authorized": authorized}
+
+
+# ─── 2. Glacier Balance Checker ──────────────────────────────────────────────
+
+class BalanceRequest(BaseModel):
+    address:  str
+    question: Optional[str] = None
+
+@app.post("/agents/balance")
+async def balance_check(body: BalanceRequest):
+    if not body.address.strip():
+        raise HTTPException(400, "address is required")
+    return await glacier_agent.run(address=body.address, question=body.question)
+
+@app.post("/agents/balance/stream")
+async def balance_stream(body: BalanceRequest):
+    return StreamingResponse(
+        glacier_agent.stream(address=body.address, question=body.question),
+        media_type="text/event-stream",
+        headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
+    )
+
+@app.get("/agents/balance/{address}")
+async def balance_get(address: str):
+    data = await fetch_portfolio(address)
+    return data
+
+
+# ─── 3. Liquidity Manager ────────────────────────────────────────────────────
+
+class LiquidityRequest(BaseModel):
+    question:      str = "Show all pools and best LP opportunity"
+    pair:          Optional[str] = None
+    lp_balance:    float = 0.0
+    initial_price: float = 0.0
+    wallet:        Optional[str] = None
+
+class ILRequest(BaseModel):
+    initial_price: float
+    current_price: float
+    initial_a:     float
+    initial_b:     float
+
+@app.post("/agents/liquidity")
+async def liquidity_check(body: LiquidityRequest):
+    return await liquidity_agent.run(
+        question=body.question, pair=body.pair,
+        lp_balance=body.lp_balance, initial_price=body.initial_price,
+        wallet=body.wallet,
+    )
+
+@app.post("/agents/liquidity/stream")
+async def liquidity_stream(body: LiquidityRequest):
+    return StreamingResponse(
+        liquidity_agent.stream(question=body.question, pair=body.pair),
+        media_type="text/event-stream",
+        headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
+    )
+
+@app.post("/agents/liquidity/il")
+async def liquidity_il(body: ILRequest):
+    result = calculate_il(
+        initial_price=body.initial_price, current_price=body.current_price,
+        initial_a=body.initial_a, initial_b=body.initial_b,
+    )
+    return result
+
+@app.get("/agents/liquidity/pools")
+async def liquidity_pools():
+    import asyncio as _asyncio
+    pools = await _asyncio.gather(*[get_pool_state(p) for p in ["NVR/yBOB", "YTOKEN/YGOLD", "GAMI/CENTS"]])
+    return {"pools": list(pools)}
+
+
+# ─── 4. Yield Optimizer ──────────────────────────────────────────────────────
+
+class YieldRequest(BaseModel):
+    question:       str = "What are the best yield opportunities?"
+    risk_tolerance: str = "medium"
+    amount_usd:     float = 0.0
+    goals:          list[str] = Field(default_factory=lambda: ["yield"])
+    wallet:         Optional[str] = None
+
+@app.post("/agents/yield")
+async def yield_check(body: YieldRequest):
+    return await yield_agent.run(
+        question=body.question, risk_tolerance=body.risk_tolerance,
+        amount_usd=body.amount_usd, goals=body.goals, wallet=body.wallet,
+    )
+
+@app.post("/agents/yield/stream")
+async def yield_stream(body: YieldRequest):
+    return StreamingResponse(
+        yield_agent.stream(
+            question=body.question, risk_tolerance=body.risk_tolerance,
+            amount_usd=body.amount_usd, wallet=body.wallet,
+        ),
+        media_type="text/event-stream",
+        headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
+    )
+
+@app.get("/agents/yield/scan")
+async def yield_scan(wallet: Optional[str] = None):
+    data = await scan_all_yields(wallet=wallet)
+    return data
+
+
+# ─── 5. Onboarding Assistant ─────────────────────────────────────────────────
+
+class OnboardingRequest(BaseModel):
+    user_id:       str = "default"
+    question:      str = "Where do I start?"
+    step:          Optional[int] = None
+    complete_step: Optional[int] = None
+    experience:    str = "beginner"
+
+@app.post("/agents/onboarding")
+async def onboarding_ask(body: OnboardingRequest):
+    return await onboarding_agent.run(
+        user_id=body.user_id, question=body.question,
+        step=body.step, complete_step=body.complete_step,
+        experience=body.experience,
+    )
+
+@app.post("/agents/onboarding/stream")
+async def onboarding_stream(body: OnboardingRequest):
+    return StreamingResponse(
+        onboarding_agent.stream(
+            user_id=body.user_id, question=body.question,
+            step=body.step, experience=body.experience,
+        ),
+        media_type="text/event-stream",
+        headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
+    )
+
+@app.get("/agents/onboarding/steps")
+async def onboarding_steps():
+    return {"steps": STEP_GUIDES, "total": len(STEP_GUIDES)}
+
+@app.get("/agents/onboarding/progress/{user_id}")
+async def onboarding_progress(user_id: str):
+    from agents.onboarding import _load_progress
+    progress = _load_progress()
+    user = progress.get(user_id, {"current_step": 1, "completed": [], "user_id": user_id})
+    return {**user, "progress_pct": len(user.get("completed", [])) * 10}
+
+
+# ─── 6. KAI Navigator (Master Assistant) ─────────────────────────────────────
+
+class NavigatorRequest(BaseModel):
+    question:   str
+    context:    dict = Field(default_factory=dict)
+    wallet:     Optional[str] = None
+    user_level: str = "intermediate"
+
+@app.post("/agents/kai")
+async def kai_navigate(body: NavigatorRequest):
+    if not body.question.strip():
+        raise HTTPException(400, "question is required")
+    return await navigator_agent.run(
+        question=body.question, context=body.context or None,
+        wallet=body.wallet, user_level=body.user_level,
+    )
+
+@app.post("/agents/kai/stream")
+async def kai_stream(body: NavigatorRequest):
+    return StreamingResponse(
+        navigator_agent.stream(
+            question=body.question, context=body.context or None,
+            wallet=body.wallet, user_level=body.user_level,
+        ),
+        media_type="text/event-stream",
+        headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
+    )
+
+@app.get("/agents/kai/routes")
+async def kai_routes():
+    return {"routes": INTENT_ROUTES, "description": "Intent → page mapping for KAI Nuvari"}
