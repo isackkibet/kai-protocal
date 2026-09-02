@@ -1,5 +1,5 @@
 """
-KAI AI Agent Server v4.0
+KAI AI Agent Server v5.0
 FastAPI application exposing:
   - Original RAG chat endpoints  (/chat, /stream, /health)
   - 8 specialised agent endpoints (/agents/*)
@@ -7,6 +7,12 @@ FastAPI application exposing:
   - W3C DID identity              (/agents/identity/*)
   - Escrow management             (/agents/escrow/*)
   - Agentic audit log             (/agents/rails/*)
+  - Onboarding suite              (/agents/onboard/*)
+  - Trust score engine            (/agents/onboard/trust)
+  - Hat switcher / intent         (/agents/onboard/hat)
+  - Unified profiler              (/agents/onboard/profile)
+  - Content curator               (/agents/onboard/content)
+  - Payment approver              (/agents/onboard/payment-risk)
 All powered by local Ollama — no external API keys required.
 """
 
@@ -43,6 +49,13 @@ from agents.yield_optimizer  import YieldOptimizerAgent, scan_all_yields
 from agents.onboarding       import OnboardingAgent, STEP_GUIDES
 from agents.kai_navigator    import KaiNavigatorAgent, INTENT_ROUTES
 
+# ── Onboarding suite imports ──────────────────────────────────────────────────
+from agents.trust_score      import TrustScoreAgent, compute_score
+from agents.hat_switcher     import HatSwitcherAgent, classify_hat
+from agents.unified_profiler import UnifiedProfilerAgent
+from agents.content_curator  import ContentCuratorAgent
+from agents.payment_approver import PaymentApproverAgent, assess_risk
+
 # ── Agentic Rails imports ─────────────────────────────────────────────────────
 from agents.identity   import (
     list_agent_dids, resolve_did, resolve_address,
@@ -71,6 +84,13 @@ liquidity_agent     = LiquidityManagerAgent()
 yield_agent         = YieldOptimizerAgent()
 onboarding_agent    = OnboardingAgent()
 navigator_agent     = KaiNavigatorAgent()
+
+# ── Onboarding agent singletons ────────────────────────────────────────────────
+trust_score_agent   = TrustScoreAgent()
+hat_agent           = HatSwitcherAgent()
+profiler_agent      = UnifiedProfilerAgent()
+curator_agent       = ContentCuratorAgent()
+payment_risk_agent  = PaymentApproverAgent()
 
 # ── App ────────────────────────────────────────────────────────────────────────
 app = FastAPI(title="KAI Multi-Agent Server", version="3.0.0")
@@ -1073,3 +1093,183 @@ async def kai_stream(body: NavigatorRequest):
 @app.get("/agents/kai/routes")
 async def kai_routes():
     return {"routes": INTENT_ROUTES, "description": "Intent → page mapping for KAI Nuvari"}
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# ONBOARDING SUITE  — /agents/onboard/*
+# ═══════════════════════════════════════════════════════════════════════════════
+
+# ── Pydantic models ─────────────────────────────────────────────────────────
+
+class TrustScoreRequest(BaseModel):
+    forest_score: float = 0.0
+    msme_score:   float = 0.0
+    chama_score:  float = 0.0
+    user_name:    str   = "Community Member"
+
+class HatRequest(BaseModel):
+    message:   str = ""
+    user_name: str = "User"
+
+class ProfileRequest(BaseModel):
+    message:        str   = ""
+    wallet_address: str   = ""
+    phone_number:   str   = ""
+    name:           str   = "Community Member"
+    language:       str   = "SWAHILI"
+    cfa_group:      str   = ""
+    business_name:  str   = ""
+    chama_name:     str   = ""
+    forest_score:   float = 0.0
+    msme_score:     float = 0.0
+    chama_score:    float = 0.0
+
+class ContentRequest(BaseModel):
+    hat:       str  = "CHAMA_SAVER"
+    interests: list = []
+    context:   str  = ""
+
+class PaymentRiskRequest(BaseModel):
+    route:   str = ""
+    payer:   str = ""
+    amount:  int = 0
+    nonce:   str = ""
+    service: str = ""
+
+
+# ── 1. Trust Score ──────────────────────────────────────────────────────────
+
+@app.post("/agents/onboard/trust")
+async def onboard_trust(body: TrustScoreRequest):
+    result = await trust_score_agent.run(
+        forest_score=body.forest_score,
+        msme_score=body.msme_score,
+        chama_score=body.chama_score,
+        user_name=body.user_name,
+    )
+    return result
+
+@app.post("/agents/onboard/trust/stream")
+async def onboard_trust_stream(body: TrustScoreRequest):
+    async def gen():
+        async for chunk in trust_score_agent.stream(
+            forest_score=body.forest_score,
+            msme_score=body.msme_score,
+            chama_score=body.chama_score,
+            user_name=body.user_name,
+        ):
+            yield chunk
+    return StreamingResponse(gen(), media_type="text/event-stream")
+
+
+# ── 2. Hat Switcher / Intent Classifier ────────────────────────────────────
+
+@app.post("/agents/onboard/hat")
+async def onboard_hat(body: HatRequest):
+    result = await hat_agent.run(message=body.message, user_name=body.user_name)
+    return result
+
+@app.post("/agents/onboard/hat/stream")
+async def onboard_hat_stream(body: HatRequest):
+    async def gen():
+        async for chunk in hat_agent.stream(message=body.message, user_name=body.user_name):
+            yield chunk
+    return StreamingResponse(gen(), media_type="text/event-stream")
+
+
+# ── 3. Unified Profiler / Onboarding ──────────────────────────────────────
+
+@app.post("/agents/onboard/profile")
+async def onboard_profile(body: ProfileRequest):
+    result = await profiler_agent.run(
+        message=body.message,
+        wallet_address=body.wallet_address,
+        phone_number=body.phone_number,
+        name=body.name,
+        language=body.language,
+        cfa_group=body.cfa_group,
+        business_name=body.business_name,
+        chama_name=body.chama_name,
+        forest_score=body.forest_score,
+        msme_score=body.msme_score,
+        chama_score=body.chama_score,
+    )
+    return result
+
+@app.post("/agents/onboard/profile/stream")
+async def onboard_profile_stream(body: ProfileRequest):
+    async def gen():
+        async for chunk in profiler_agent.stream(
+            message=body.message,
+            name=body.name,
+            cfa_group=body.cfa_group,
+            business_name=body.business_name,
+            chama_name=body.chama_name,
+        ):
+            yield chunk
+    return StreamingResponse(gen(), media_type="text/event-stream")
+
+
+# ── 4. Content Curator ─────────────────────────────────────────────────────
+
+@app.post("/agents/onboard/content")
+async def onboard_content(body: ContentRequest):
+    result = await curator_agent.run(
+        hat=body.hat,
+        interests=body.interests,
+        context=body.context,
+    )
+    return result
+
+@app.post("/agents/onboard/content/stream")
+async def onboard_content_stream(body: ContentRequest):
+    async def gen():
+        async for chunk in curator_agent.stream(
+            hat=body.hat,
+            interests=body.interests,
+            context=body.context,
+        ):
+            yield chunk
+    return StreamingResponse(gen(), media_type="text/event-stream")
+
+
+# ── 5. Payment Risk Assessor ───────────────────────────────────────────────
+
+@app.post("/agents/onboard/payment-risk")
+async def onboard_payment_risk(body: PaymentRiskRequest):
+    result = await payment_risk_agent.run(
+        route=body.route,
+        payer=body.payer,
+        amount=body.amount,
+        nonce=body.nonce,
+        service=body.service,
+    )
+    return result
+
+@app.post("/agents/onboard/payment-risk/stream")
+async def onboard_payment_risk_stream(body: PaymentRiskRequest):
+    async def gen():
+        async for chunk in payment_risk_agent.stream(
+            route=body.route,
+            payer=body.payer,
+            amount=body.amount,
+            nonce=body.nonce,
+            service=body.service,
+        ):
+            yield chunk
+    return StreamingResponse(gen(), media_type="text/event-stream")
+
+
+# ── Convenience: quick hat classification (GET) ────────────────────────────
+
+@app.get("/agents/onboard/classify")
+async def quick_classify(message: str = ""):
+    """Fast GET endpoint for hat classification — useful for UI intent routing."""
+    from agents.hat_switcher import classify_hat as _clf, HAT_ROUTES, HAT_DESCRIPTIONS
+    hat, conf = _clf(message)
+    return {
+        "hat":             hat,
+        "confidence":      conf,
+        "description":     HAT_DESCRIPTIONS[hat],
+        "dashboard_route": HAT_ROUTES[hat],
+    }
