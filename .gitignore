@@ -13,6 +13,23 @@ chrome_langchain_db/
 
 # Env (never commit real keys)
 .env
+.env.local
 
 # Uploads
 uploads/
+
+# Node
+node_modules/
+
+# Next.js build output
+.next/
+avax-frontend/.next/
+
+# Hardhat / Foundry artifacts
+artifacts/
+cache/
+avax-frontend/artifacts/
+avax-frontend/cache/
+
+# Prisma generated
+avax-frontend/node_modules/
