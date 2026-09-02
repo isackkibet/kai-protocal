@@ -175,116 +175,136 @@ export default function AIPage() {
   return (
     <div style={{
       height: '100dvh', display: 'flex', flexDirection: 'column',
-      background: '#08080a', color: '#f8f8fa', overflow: 'hidden',
+      background: '#060608',
+      color: '#f0f0ff', overflow: 'hidden',
       fontFamily: 'var(--font-sans)',
+      position: 'relative',
     }}>
+      {/* ── Aurora background ──────────────────────────────── */}
+      <div style={{
+        position: 'absolute', inset: 0, pointerEvents: 'none', zIndex: 0,
+        background: `
+          radial-gradient(ellipse 70% 50% at 10% 0%,   rgba(232,65,66,0.18) 0%, transparent 60%),
+          radial-gradient(ellipse 50% 40% at 90% 100%, rgba(176,28,28,0.10) 0%, transparent 55%),
+          radial-gradient(ellipse 40% 35% at 50% 50%,  rgba(232,65,66,0.04) 0%, transparent 70%)
+        `,
+      }} />
 
-      {/* ── TOP BAR ────────────────────────────────────── */}
+      {/* ── TOP BAR ──────────────────────────────────────────── */}
       <header style={{
-        display: 'flex', alignItems: 'center', gap: 9, padding: '9px 14px',
-        flexShrink: 0, background: 'rgba(8,8,10,0.98)',
-        borderBottom: '1px solid rgba(232,65,66,0.13)',
-        boxShadow: '0 1px 0 rgba(255,255,255,0.03)',
+        display: 'flex', alignItems: 'center', gap: 10, padding: '10px 16px',
+        flexShrink: 0, zIndex: 10,
+        background: 'rgba(6,6,8,0.97)',
+        borderBottom: '1px solid rgba(232,65,66,0.20)',
+        boxShadow: '0 1px 0 rgba(255,255,255,0.03), 0 4px 20px rgba(0,0,0,0.40)',
       }}>
-        <Link href="/" style={{ color: 'rgba(255,255,255,0.35)', textDecoration: 'none', display: 'flex', alignItems: 'center', marginRight: 2 }}>
+        <Link href="/" style={{ color: 'rgba(255,255,255,0.30)', textDecoration: 'none', display: 'flex', alignItems: 'center', marginRight: 2 }}>
           <ChevronLeft size={20} />
         </Link>
 
-        {/* Bot avatar */}
+        {/* Bot avatar — AVAX style */}
         <div style={{
-          width: 34, height: 34, borderRadius: '50%', flexShrink: 0,
-          background: 'linear-gradient(135deg,#e84142,#7c1d1d)',
+          width: 36, height: 36, borderRadius: '50%', flexShrink: 0,
+          background: 'linear-gradient(135deg, #ff4d4e 0%, #e84142 45%, #7c1d1d 100%)',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
-          boxShadow: '0 0 12px rgba(232,65,66,0.28)',
+          boxShadow: '0 0 0 2px rgba(232,65,66,0.25), 0 0 16px rgba(232,65,66,0.35)',
         }}>
-          <Bot size={17} color="#fff" />
+          <Bot size={18} color="#fff" strokeWidth={1.8} />
         </div>
 
         <div style={{ flex: 1, minWidth: 0 }}>
-          <p style={{ fontSize: 14, fontWeight: 800, margin: 0, lineHeight: 1.1, color: '#f8f8fa' }}>KAI Agent</p>
-          <p style={{ fontSize: 10, margin: 0, lineHeight: 1, fontWeight: 700,
-            color: online === true ? '#4ade80' : online === false ? '#f87171' : 'rgba(255,255,255,0.35)' }}>
-            {online === true ? '● Online' : online === false ? '● Offline — start server' : '● Checking…'}
+          <p style={{ fontSize: 14, fontWeight: 800, margin: 0, lineHeight: 1.1, color: '#ffffff', letterSpacing: '-0.2px' }}>KAI Agent</p>
+          <p style={{ fontSize: 10, margin: 0, lineHeight: 1.2, fontWeight: 700,
+            color: online === true ? '#4ade80' : online === false ? '#f87171' : 'rgba(255,255,255,0.30)',
+            display: 'flex', alignItems: 'center', gap: 4,
+          }}>
+            <span style={{ fontSize: 7 }}>●</span>
+            {online === true ? 'Online · Avalanche Fuji' : online === false ? 'Offline — start server' : 'Checking…'}
           </p>
         </div>
 
         {/* RAG toggle */}
         <button onClick={() => setRag(v => !v)} style={{
-          display: 'flex', alignItems: 'center', gap: 5, padding: '5px 9px', borderRadius: 8, cursor: 'pointer',
-          background: rag ? 'rgba(232,65,66,0.12)' : 'rgba(255,255,255,0.05)',
-          border: `1px solid ${rag ? 'rgba(232,65,66,0.32)' : 'rgba(255,255,255,0.09)'}`,
-          color: rag ? '#e84142' : 'rgba(255,255,255,0.40)', fontSize: 10, fontWeight: 800, flexShrink: 0,
+          display: 'flex', alignItems: 'center', gap: 5, padding: '5px 10px', borderRadius: 8, cursor: 'pointer',
+          background: rag ? 'rgba(232,65,66,0.14)' : 'rgba(255,255,255,0.04)',
+          border: `1px solid ${rag ? 'rgba(232,65,66,0.38)' : 'rgba(255,255,255,0.08)'}`,
+          color: rag ? '#ff6b6b' : 'rgba(255,255,255,0.35)', fontSize: 10, fontWeight: 800, flexShrink: 0,
+          transition: 'all 0.18s',
         }}>
           <Database size={11} /> RAG {rag ? 'ON' : 'OFF'}
         </button>
 
         {/* Health refresh */}
         <button onClick={checkHealth} style={{
-          width: 30, height: 30, borderRadius: 8, flexShrink: 0, cursor: 'pointer',
+          width: 32, height: 32, borderRadius: 8, flexShrink: 0, cursor: 'pointer',
           background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
+          transition: 'all 0.18s',
         }}>
-          <RefreshCw size={12} color="rgba(255,255,255,0.38)" />
+          <RefreshCw size={13} color="rgba(255,255,255,0.38)" />
         </button>
 
         {/* Tools toggle */}
         <button onClick={() => setToolsOpen(v => !v)} style={{
-          display: 'flex', alignItems: 'center', gap: 5, padding: '5px 10px', borderRadius: 8, cursor: 'pointer', flexShrink: 0,
-          background: toolsOpen ? 'rgba(232,65,66,0.16)' : 'rgba(255,255,255,0.05)',
-          border: `1px solid ${toolsOpen ? 'rgba(232,65,66,0.38)' : 'rgba(255,255,255,0.09)'}`,
-          color: toolsOpen ? '#e84142' : 'rgba(255,255,255,0.50)', fontSize: 11, fontWeight: 800,
+          display: 'flex', alignItems: 'center', gap: 5, padding: '5px 11px', borderRadius: 8, cursor: 'pointer', flexShrink: 0,
+          background: toolsOpen ? 'rgba(232,65,66,0.18)' : 'rgba(255,255,255,0.04)',
+          border: `1px solid ${toolsOpen ? 'rgba(232,65,66,0.45)' : 'rgba(255,255,255,0.08)'}`,
+          color: toolsOpen ? '#ff6b6b' : 'rgba(255,255,255,0.45)', fontSize: 11, fontWeight: 800,
+          transition: 'all 0.18s',
+          boxShadow: toolsOpen ? '0 0 12px rgba(232,65,66,0.20)' : 'none',
         }}>
-          <Wrench size={12} color={toolsOpen ? '#e84142' : 'rgba(255,255,255,0.42)'} /> Tools
+          <Wrench size={12} color={toolsOpen ? '#ff6b6b' : 'rgba(255,255,255,0.38)'} /> Tools
         </button>
       </header>
 
-      {/* ── BODY ──────────────────────────────────────── */}
-      <div style={{ flex: 1, display: 'flex', overflow: 'hidden' }}>
+      {/* ── BODY ──────────────────────────────────────────────── */}
+      <div style={{ flex: 1, display: 'flex', overflow: 'hidden', position: 'relative', zIndex: 1 }}>
 
         {/* ── CHAT ── */}
         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', minWidth: 0 }}>
 
           {/* Messages */}
-          <div style={{ flex: 1, overflowY: 'auto', padding: '16px 14px', display: 'flex', flexDirection: 'column', gap: 16 }}>
+          <div style={{ flex: 1, overflowY: 'auto', padding: '20px 16px', display: 'flex', flexDirection: 'column', gap: 18 }}>
             {msgs.map((m, i) => {
               const isUser = m.role === 'user';
               return (
                 <div key={i} style={{
-                  display: 'flex', gap: 9,
+                  display: 'flex', gap: 10,
                   flexDirection: isUser ? 'row-reverse' : 'row',
                   alignItems: 'flex-end',
                 }}>
                   {/* Bot avatar */}
                   {!isUser && (
                     <div style={{
-                      width: 28, height: 28, borderRadius: '50%', flexShrink: 0, marginBottom: 2,
-                      background: 'linear-gradient(135deg,#e84142,#7c1d1d)',
+                      width: 30, height: 30, borderRadius: '50%', flexShrink: 0, marginBottom: 2,
+                      background: 'linear-gradient(135deg,#ff4d4e,#e84142,#7c1d1d)',
                       display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      boxShadow: '0 0 10px rgba(232,65,66,0.28)',
                     }}>
-                      <Bot size={13} color="#fff" />
+                      <Bot size={14} color="#fff" strokeWidth={1.8} />
                     </div>
                   )}
 
-                  <div style={{ maxWidth: '76%', display: 'flex', flexDirection: 'column', gap: 4, alignItems: isUser ? 'flex-end' : 'flex-start' }}>
+                  <div style={{ maxWidth: '78%', display: 'flex', flexDirection: 'column', gap: 5, alignItems: isUser ? 'flex-end' : 'flex-start' }}>
                     {/* Agent label */}
                     {!isUser && m.agent && (
-                      <span style={{ fontSize: 9, fontWeight: 800, color: 'rgba(232,65,66,0.65)', letterSpacing: 0.5, textTransform: 'uppercase', marginLeft: 2 }}>
+                      <span style={{ fontSize: 9, fontWeight: 800, color: 'rgba(232,65,66,0.70)', letterSpacing: 0.8, textTransform: 'uppercase', marginLeft: 4 }}>
                         {m.agent}{m.sources ? ` · ${m.sources} sources` : ''}
                       </span>
                     )}
 
                     {/* Bubble */}
                     <div style={{
-                      padding: '10px 14px',
-                      borderRadius: isUser ? '16px 16px 4px 16px' : '4px 16px 16px 16px',
+                      padding: '11px 15px',
+                      borderRadius: isUser ? '18px 18px 4px 18px' : '4px 18px 18px 18px',
                       background: isUser
-                        ? 'linear-gradient(135deg,#e84142,#b91c1c)'
-                        : 'rgba(20,20,26,0.95)',
-                      border: isUser ? 'none' : '1px solid rgba(255,255,255,0.07)',
-                      fontSize: 13.5, lineHeight: 1.65, color: '#f3f4f6',
+                        ? 'linear-gradient(135deg, #ff4d4e 0%, #e84142 50%, #b91c1c 100%)'
+                        : 'linear-gradient(135deg, rgba(22,12,14,0.96) 0%, rgba(18,14,20,0.94) 100%)',
+                      border: isUser ? 'none' : '1px solid rgba(232,65,66,0.16)',
+                      fontSize: 13.5, lineHeight: 1.70, color: isUser ? '#ffffff' : '#e8e8f0',
                       boxShadow: isUser
-                        ? '0 2px 14px rgba(232,65,66,0.22)'
-                        : '0 2px 12px rgba(0,0,0,0.30)',
+                        ? '0 4px 18px rgba(232,65,66,0.35), 0 1px 0 rgba(255,255,255,0.12) inset'
+                        : '0 2px 16px rgba(0,0,0,0.40)',
                       wordBreak: 'break-word',
                     }}
                       dangerouslySetInnerHTML={{ __html: fmt(m.text || (loading && i === msgs.length - 1 ? '…' : '')) }}
@@ -298,15 +318,15 @@ export default function AIPage() {
 
             {/* Typing dots */}
             {loading && (
-              <div style={{ display: 'flex', gap: 9, alignItems: 'flex-end' }}>
-                <div style={{ width: 28, height: 28, borderRadius: '50%', background: 'linear-gradient(135deg,#e84142,#7c1d1d)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                  <Loader2 size={13} color="#fff" style={{ animation: 'spin 1s linear infinite' }} />
+              <div style={{ display: 'flex', gap: 10, alignItems: 'flex-end' }}>
+                <div style={{ width: 30, height: 30, borderRadius: '50%', background: 'linear-gradient(135deg,#ff4d4e,#7c1d1d)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, boxShadow: '0 0 10px rgba(232,65,66,0.28)' }}>
+                  <Loader2 size={14} color="#fff" style={{ animation: 'spin 1s linear infinite' }} />
                 </div>
-                <div style={{ padding: '10px 14px', borderRadius: '4px 16px 16px 16px', background: 'rgba(20,20,26,0.95)', border: '1px solid rgba(255,255,255,0.07)', display: 'flex', gap: 5, alignItems: 'center' }}>
+                <div style={{ padding: '11px 16px', borderRadius: '4px 18px 18px 18px', background: 'rgba(22,12,14,0.96)', border: '1px solid rgba(232,65,66,0.16)', display: 'flex', gap: 6, alignItems: 'center' }}>
                   {[0,1,2].map(n => (
                     <div key={n} style={{
-                      width: 5, height: 5, borderRadius: '50%', background: '#e84142',
-                      opacity: 0.5, animation: `pulse-gold ${0.8 + n*0.2}s ease-in-out infinite`,
+                      width: 6, height: 6, borderRadius: '50%', background: '#e84142',
+                      animation: `kai-dot ${0.8 + n*0.18}s ease-in-out infinite`,
                     }} />
                   ))}
                 </div>
@@ -318,28 +338,36 @@ export default function AIPage() {
 
           {/* Quick suggestion chips */}
           <div style={{
-            padding: '0 14px 8px', display: 'flex', gap: 6,
+            padding: '0 16px 8px', display: 'flex', gap: 7,
             overflowX: 'auto', scrollbarWidth: 'none', flexShrink: 0,
           }}>
-            {['What tokens does KAI have?', 'Best APY right now?', 'How do I swap tokens?', 'Explain impermanent loss'].map(q => (
+            {['What tokens does KAI have?', 'Best vault APY?', 'How do I swap tokens?', 'How does M-Pesa work?', 'Explain KAI governance'].map(q => (
               <button key={q} onClick={() => send(q)} style={{
-                flexShrink: 0, padding: '5px 12px', borderRadius: 999, cursor: 'pointer',
-                background: 'rgba(232,65,66,0.07)', border: '1px solid rgba(232,65,66,0.18)',
-                color: 'rgba(248,248,250,0.55)', fontSize: 11, fontWeight: 600, whiteSpace: 'nowrap',
-                transition: 'all 0.15s',
+                flexShrink: 0, padding: '5px 13px', borderRadius: 999, cursor: 'pointer',
+                background: 'rgba(232,65,66,0.08)', border: '1px solid rgba(232,65,66,0.22)',
+                color: 'rgba(240,240,255,0.60)', fontSize: 11, fontWeight: 600, whiteSpace: 'nowrap',
+                transition: 'all 0.16s',
               }}
-                onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = 'rgba(232,65,66,0.14)'; }}
-                onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = 'rgba(232,65,66,0.07)'; }}
+                onMouseEnter={e => {
+                  (e.currentTarget as HTMLButtonElement).style.background = 'rgba(232,65,66,0.18)';
+                  (e.currentTarget as HTMLButtonElement).style.color = '#ffffff';
+                  (e.currentTarget as HTMLButtonElement).style.borderColor = 'rgba(232,65,66,0.45)';
+                }}
+                onMouseLeave={e => {
+                  (e.currentTarget as HTMLButtonElement).style.background = 'rgba(232,65,66,0.08)';
+                  (e.currentTarget as HTMLButtonElement).style.color = 'rgba(240,240,255,0.60)';
+                  (e.currentTarget as HTMLButtonElement).style.borderColor = 'rgba(232,65,66,0.22)';
+                }}
               >{q}</button>
             ))}
           </div>
 
-          {/* Input */}
+          {/* ── Input bar ── */}
           <div style={{
-            padding: '8px 14px 12px', flexShrink: 0,
-            borderTop: '1px solid rgba(255,255,255,0.06)',
-            background: 'rgba(8,8,10,0.98)',
-            display: 'flex', gap: 8, alignItems: 'flex-end',
+            padding: '10px 16px 14px', flexShrink: 0,
+            borderTop: '1px solid rgba(232,65,66,0.14)',
+            background: 'rgba(6,6,8,0.98)',
+            display: 'flex', gap: 9, alignItems: 'flex-end',
           }}>
             <textarea
               ref={inputRef}
@@ -350,55 +378,72 @@ export default function AIPage() {
                 e.target.style.height = Math.min(e.target.scrollHeight, 110) + 'px';
               }}
               onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); } }}
-              placeholder="Ask KAI anything… (Enter to send)"
+              placeholder="Ask KAI anything about DeFi, tokens, vaults…  (Enter to send)"
               rows={1}
               style={{
-                flex: 1, background: 'rgba(255,255,255,0.045)',
-                border: '1px solid rgba(255,255,255,0.09)', borderRadius: 12,
-                padding: '10px 14px', color: '#f8f8fa', fontSize: 14,
+                flex: 1,
+                background: 'rgba(255,255,255,0.04)',
+                border: '1px solid rgba(232,65,66,0.18)',
+                borderRadius: 14,
+                padding: '11px 15px',
+                color: '#f0f0ff', fontSize: 14,
                 resize: 'none', outline: 'none', fontFamily: 'inherit',
-                lineHeight: 1.5, minHeight: 42, maxHeight: 110,
-                caretColor: '#e84142', transition: 'border-color 0.2s',
+                lineHeight: 1.55, minHeight: 44, maxHeight: 110,
+                caretColor: '#e84142',
+                transition: 'border-color 0.2s, box-shadow 0.2s',
               }}
-              onFocus={e  => (e.target.style.borderColor = 'rgba(232,65,66,0.48)')}
-              onBlur={e   => (e.target.style.borderColor = 'rgba(255,255,255,0.09)')}
+              onFocus={e => {
+                e.target.style.borderColor = 'rgba(232,65,66,0.55)';
+                e.target.style.boxShadow = '0 0 0 3px rgba(232,65,66,0.12)';
+              }}
+              onBlur={e => {
+                e.target.style.borderColor = 'rgba(232,65,66,0.18)';
+                e.target.style.boxShadow = 'none';
+              }}
             />
             <button
               onClick={() => send()}
               disabled={!input.trim() || loading}
               style={{
-                width: 42, height: 42, borderRadius: 12, flexShrink: 0, cursor: input.trim() && !loading ? 'pointer' : 'not-allowed',
+                width: 44, height: 44, borderRadius: 13, flexShrink: 0,
+                cursor: input.trim() && !loading ? 'pointer' : 'not-allowed',
                 background: input.trim() && !loading
-                  ? 'linear-gradient(135deg,#e84142,#b91c1c)'
-                  : 'rgba(255,255,255,0.04)',
-                border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                boxShadow: input.trim() && !loading ? '0 0 14px rgba(232,65,66,0.32)' : 'none',
+                  ? 'linear-gradient(135deg, #ff4d4e 0%, #e84142 50%, #b91c1c 100%)'
+                  : 'rgba(255,255,255,0.05)',
+                border: input.trim() && !loading ? 'none' : '1px solid rgba(255,255,255,0.08)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                boxShadow: input.trim() && !loading ? '0 4px 18px rgba(232,65,66,0.45)' : 'none',
                 transition: 'all 0.2s',
               }}
             >
-              <Send size={16} color={input.trim() && !loading ? '#fff' : 'rgba(255,255,255,0.22)'} />
+              <Send size={17} color={input.trim() && !loading ? '#fff' : 'rgba(255,255,255,0.22)'} />
             </button>
           </div>
         </div>
 
-        {/* ── TOOLS PANEL ─────────────────────────────── */}
+        {/* ── TOOLS PANEL ──────────────────────────────────────── */}
         {toolsOpen && (
           <div style={{
-            width: 272, flexShrink: 0, display: 'flex', flexDirection: 'column',
-            background: 'rgba(12,12,16,0.99)', borderLeft: '1px solid rgba(232,65,66,0.14)',
+            width: 280, flexShrink: 0, display: 'flex', flexDirection: 'column',
+            background: 'rgba(8,6,8,0.99)', borderLeft: '1px solid rgba(232,65,66,0.18)',
             overflow: 'hidden',
           }}>
             {/* Panel header */}
             <div style={{
-              padding: '11px 14px', borderBottom: '1px solid rgba(255,255,255,0.06)',
+              padding: '12px 16px', borderBottom: '1px solid rgba(232,65,66,0.14)',
               display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0,
-              background: 'rgba(232,65,66,0.04)',
+              background: 'rgba(232,65,66,0.05)',
             }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
-                <Wrench size={13} color="#e84142" />
-                <span style={{ fontSize: 13, fontWeight: 800, color: '#f8f8fa' }}>Agent Tools</span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <div style={{
+                  width: 24, height: 24, borderRadius: 7, background: 'rgba(232,65,66,0.16)',
+                  border: '1px solid rgba(232,65,66,0.30)', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                }}>
+                  <Wrench size={12} color="#e84142" />
+                </div>
+                <span style={{ fontSize: 13, fontWeight: 800, color: '#ffffff', letterSpacing: '-0.2px' }}>Agent Tools</span>
               </div>
-              <button onClick={() => setToolsOpen(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'rgba(255,255,255,0.38)', display: 'flex' }}>
+              <button onClick={() => setToolsOpen(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'rgba(255,255,255,0.35)', display: 'flex', padding: 4, borderRadius: 6 }}>
                 <X size={15} />
               </button>
             </div>
@@ -413,30 +458,38 @@ export default function AIPage() {
                     <button
                       onClick={() => setActiveGroup(open ? '' : group.group)}
                       style={{
-                        width: '100%', display: 'flex', alignItems: 'center', gap: 9,
-                        padding: '10px 14px', cursor: 'pointer', border: 'none',
-                        background: open ? `${group.color}10` : 'transparent',
+                        width: '100%', display: 'flex', alignItems: 'center', gap: 10,
+                        padding: '11px 16px', cursor: 'pointer', border: 'none',
+                        background: open ? `${group.color}12` : 'transparent',
                         borderBottom: '1px solid rgba(255,255,255,0.04)',
-                        color: open ? group.color : 'rgba(248,248,250,0.50)',
+                        color: open ? group.color : 'rgba(240,240,255,0.48)',
                         fontSize: 12, fontWeight: 700, textAlign: 'left', transition: 'all 0.15s',
                       }}>
-                      <Icon size={14} color={open ? group.color : 'rgba(255,255,255,0.30)'} strokeWidth={1.8} />
+                      <Icon size={14} color={open ? group.color : 'rgba(255,255,255,0.28)'} strokeWidth={1.8} />
                       <span style={{ flex: 1 }}>{group.group}</span>
-                      <ChevronRight size={12} style={{ transform: open ? 'rotate(90deg)' : 'none', transition: 'transform 0.2s', opacity: 0.5 }} />
+                      <ChevronRight size={12} style={{ transform: open ? 'rotate(90deg)' : 'none', transition: 'transform 0.2s', opacity: 0.45 }} />
                     </button>
 
                     {open && (
-                      <div style={{ background: 'rgba(0,0,0,0.22)', padding: '5px 10px 8px' }}>
+                      <div style={{ background: 'rgba(0,0,0,0.25)', padding: '6px 10px 10px' }}>
                         {group.items.map(item => (
                           <button key={item.label} onClick={() => useTool(item.q)} style={{
-                            width: '100%', textAlign: 'left', padding: '8px 10px', borderRadius: 9, cursor: 'pointer',
+                            width: '100%', textAlign: 'left', padding: '8px 11px', borderRadius: 10, cursor: 'pointer',
                             background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)',
-                            color: 'rgba(248,248,250,0.70)', fontSize: 11.5, marginBottom: 5,
-                            display: 'flex', alignItems: 'center', gap: 7, lineHeight: 1.35,
+                            color: 'rgba(240,240,255,0.65)', fontSize: 11.5, marginBottom: 5,
+                            display: 'flex', alignItems: 'center', gap: 8, lineHeight: 1.35,
                             transition: 'all 0.15s',
                           }}
-                            onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = `${group.color}13`; (e.currentTarget as HTMLButtonElement).style.color = '#f8f8fa'; }}
-                            onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = 'rgba(255,255,255,0.03)'; (e.currentTarget as HTMLButtonElement).style.color = 'rgba(248,248,250,0.70)'; }}
+                            onMouseEnter={e => {
+                              (e.currentTarget as HTMLButtonElement).style.background = `${group.color}14`;
+                              (e.currentTarget as HTMLButtonElement).style.color = '#ffffff';
+                              (e.currentTarget as HTMLButtonElement).style.borderColor = `${group.color}30`;
+                            }}
+                            onMouseLeave={e => {
+                              (e.currentTarget as HTMLButtonElement).style.background = 'rgba(255,255,255,0.03)';
+                              (e.currentTarget as HTMLButtonElement).style.color = 'rgba(240,240,255,0.65)';
+                              (e.currentTarget as HTMLButtonElement).style.borderColor = 'rgba(255,255,255,0.06)';
+                            }}
                           >
                             <ChevronRight size={10} color={group.color} style={{ flexShrink: 0 }} />
                             {item.label}
@@ -454,7 +507,14 @@ export default function AIPage() {
 
       <style>{`
         @keyframes spin { to { transform: rotate(360deg); } }
-        @keyframes pulse-gold { 0%,100%{opacity:.4;transform:scale(.85)} 50%{opacity:1;transform:scale(1.1)} }
+        @keyframes kai-dot {
+          0%,100% { opacity: 0.35; transform: translateY(0); }
+          50%      { opacity: 1;    transform: translateY(-3px); }
+        }
+        ::-webkit-scrollbar { width: 3px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: rgba(232,65,66,0.30); border-radius: 2px; }
+        textarea::placeholder { color: rgba(240,240,255,0.22) !important; }
       `}</style>
     </div>
   );
