@@ -154,3 +154,324 @@ enum ActivityStatus {
   COMPLETED
   FAILED
 }
+
+// ═══════════════════════════════════════════════════════════════
+//  KAI EXTENDED SCHEMA — CFA / MSME / CHAMA
+//  Added from docs/digital-mrv-db-design.md
+//              docs/msme-chama-intelligent-ledger-prd.md
+// ═══════════════════════════════════════════════════════════════
+
+// ── 1. COMMUNITY FOREST ASSOCIATION (CFA) ───────────────────────
+
+model CommunityForest {
+  id             String         @id @default(cuid())
+  name           String
+  did            String         @unique
+  locationRegion String
+  boundaryGeoJson Json          @default("{}")
+  establishedAt  DateTime
+  treasuryWallet String?
+  totalHectares  Float          @default(0)
+  carbonCredits  Float          @default(0)
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+
+  members        ForestMember[]
+  zones          ForestZone[]
+  patrols        PatrolLog[]
+  govProposals   GovProposal[]
+  forestProducts ForestProduct[]
+
+  @@map("community_forests")
+}
+
+model ForestMember {
+  id          String          @id @default(cuid())
+  forestId    String
+  name        String
+  role        ForestMemberRole @default(GUARDIAN)
+  wallet      String?
+  phoneNumber String?
+  joinedAt    DateTime        @default(now())
+  isActive    Boolean         @default(true)
+
+  forest      CommunityForest  @relation(fields: [forestId], references: [id], onDelete: Cascade)
+  patrols     PatrolLog[]
+
+  @@index([forestId])
+  @@map("forest_members")
+}
+
+enum ForestMemberRole {
+  GUARDIAN
+  AUDITOR
+  ADMIN
+  TREASURER
+}
+
+model ForestZone {
+  id          String          @id @default(cuid())
+  forestId    String
+  zoneName    String
+  areaHa      Float
+  treeCount   Int             @default(0)
+  status      ZoneStatus      @default(ACTIVE)
+  createdAt   DateTime        @default(now())
+
+  forest      CommunityForest @relation(fields: [forestId], references: [id], onDelete: Cascade)
+  patrols     PatrolLog[]
+
+  @@map("forest_zones")
+}
+
+enum ZoneStatus {
+  ACTIVE
+  UNDER_THREAT
+  RESTORED
+  PROTECTED
+}
+
+model PatrolLog {
+  id           String          @id @default(cuid())
+  forestId     String
+  memberId     String
+  zoneId       String?
+  patrolDate   DateTime        @default(now())
+  durationMins Int             @default(0)
+  treesPlanted Int             @default(0)
+  incidentType String?
+  notes        String?
+  gpsLat       Float?
+  gpsLng       Float?
+  ipfsEvidenceHash String?
+  status       PatrolStatus    @default(COMPLETED)
+
+  forest       CommunityForest @relation(fields: [forestId], references: [id], onDelete: Cascade)
+  member       ForestMember    @relation(fields: [memberId], references: [id])
+  zone         ForestZone?     @relation(fields: [zoneId], references: [id])
+
+  @@index([forestId])
+  @@index([patrolDate])
+  @@map("patrol_logs")
+}
+
+enum PatrolStatus {
+  PLANNED
+  IN_PROGRESS
+  COMPLETED
+  FLAGGED
+}
+
+model ForestProduct {
+  id          String          @id @default(cuid())
+  forestId    String
+  name        String
+  category    String
+  apyPercent  Float           @default(0)
+  token       String
+  status      String          @default("Active")
+  memberCount Int             @default(0)
+  tvlKes      Float           @default(0)
+  createdAt   DateTime        @default(now())
+
+  forest      CommunityForest @relation(fields: [forestId], references: [id], onDelete: Cascade)
+
+  @@map("forest_products")
+}
+
+model GovProposal {
+  id          String          @id @default(cuid())
+  forestId    String
+  proposalRef String          @unique
+  title       String
+  description String?
+  votesFor    Int             @default(0)
+  votesAgainst Int            @default(0)
+  tokenSymbol String          @default("NVR")
+  status      ProposalStatus  @default(ACTIVE)
+  deadline    DateTime?
+  createdAt   DateTime        @default(now())
+
+  forest      CommunityForest @relation(fields: [forestId], references: [id], onDelete: Cascade)
+
+  @@map("gov_proposals")
+}
+
+enum ProposalStatus {
+  ACTIVE
+  PASSED
+  FAILED
+  EXPIRED
+}
+
+// ── 2. MSME INTELLIGENT LEDGER ───────────────────────────────────
+
+model MsmeBusiness {
+  id              String           @id @default(cuid())
+  businessName    String
+  ownerName       String
+  phoneNumber     String           @unique
+  walletAddress   String?
+  category        BusinessCategory @default(RETAIL_SHOP)
+  location        String
+  cashFlowScore   Float            @default(50.0)
+  creditLimit     Float            @default(0)
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+
+  ledgerEntries   LedgerEntry[]
+  cashFlowTokens  CashFlowToken[]
+
+  @@map("msme_businesses")
+}
+
+enum BusinessCategory {
+  AGRI_SUPPLIES
+  RETAIL_SHOP
+  HARDWARE
+  PHARMACEUTICAL
+  TEXTILE_CRAFTS
+  PRODUCE_DISTRIBUTOR
+}
+
+model LedgerEntry {
+  id               String      @id @default(cuid())
+  businessId       String
+  type             EntryType
+  amountKes        Float
+  counterpartyName String?
+  description      String
+  categoryTag      String
+  paymentMethod    String      @default("CASH")
+  receiptIpfsHash  String?
+  aiAdvice         String?
+  timestamp        DateTime    @default(now())
+
+  business         MsmeBusiness @relation(fields: [businessId], references: [id], onDelete: Cascade)
+
+  @@index([businessId])
+  @@index([type])
+  @@map("ledger_entries")
+}
+
+enum EntryType {
+  INCOME
+  EXPENSE
+  CREDIT_GIVEN
+  DEBT_OWED
+}
+
+model CashFlowToken {
+  id               String          @id @default(cuid())
+  tokenRef         String          @unique
+  businessId       String
+  invoiceAmountKes Float
+  discountPriceKes Float
+  maturityDate     DateTime
+  debtorName       String
+  status           TokenizedStatus @default(DRAFT)
+  nftTokenId       String?
+  fundedByInvestor String?
+  createdAt        DateTime        @default(now())
+
+  business         MsmeBusiness    @relation(fields: [businessId], references: [id], onDelete: Cascade)
+
+  @@map("cash_flow_tokens")
+}
+
+enum TokenizedStatus {
+  DRAFT
+  LISTED_FOR_FUNDING
+  FUNDED
+  SETTLED_PAID
+  DEFAULTED
+}
+
+// ── 3. CHAMA / SAVINGS GROUP ──────────────────────────────────────
+
+model ChamaGroup {
+  id                    String            @id @default(cuid())
+  groupName             String
+  registrationNumber    String?
+  cyclePeriodDays       Int               @default(30)
+  contributionAmount    Float
+  totalPoolBalanceKes   Float             @default(0)
+  yieldAllocatedKes     Float             @default(0)
+  activeVaultStrategy   VaultStrategyType @default(BALANCED_YBOB_VAULT)
+  groupWallet           String?
+  createdAt             DateTime          @default(now())
+  updatedAt             DateTime          @updatedAt
+
+  members               ChamaMember[]
+  contributions         ChamaContribution[]
+  yieldLogs             ChamaYieldLog[]
+
+  @@map("chama_groups")
+}
+
+enum VaultStrategyType {
+  CONSERVATIVE_KES_STABLE
+  BALANCED_YBOB_VAULT
+  HIGH_YIELD_AVAX_POOL
+}
+
+model ChamaMember {
+  id               String             @id @default(cuid())
+  chamaId          String
+  memberName       String
+  phoneNumber      String
+  role             ChamaRole          @default(MEMBER)
+  totalContributed Float              @default(0)
+  sharePercentage  Float              @default(0)
+  joinedAt         DateTime           @default(now())
+
+  chama            ChamaGroup         @relation(fields: [chamaId], references: [id], onDelete: Cascade)
+  contributions    ChamaContribution[]
+
+  @@index([chamaId])
+  @@map("chama_members")
+}
+
+enum ChamaRole {
+  CHAIRPERSON
+  TREASURER
+  SECRETARY
+  MEMBER
+}
+
+model ChamaContribution {
+  id         String        @id @default(cuid())
+  chamaId    String
+  memberId   String
+  amountKes  Float
+  paymentRef String
+  status     PaymentStatus @default(SUCCESS)
+  timestamp  DateTime      @default(now())
+
+  chama      ChamaGroup    @relation(fields: [chamaId], references: [id], onDelete: Cascade)
+  member     ChamaMember   @relation(fields: [memberId], references: [id])
+
+  @@index([chamaId])
+  @@map("chama_contributions")
+}
+
+enum PaymentStatus {
+  PENDING
+  SUCCESS
+  FAILED
+}
+
+model ChamaYieldLog {
+  id              String            @id @default(cuid())
+  chamaId         String
+  amountInvested  Float
+  yieldEarnedKes  Float
+  strategyUsed    VaultStrategyType
+  txHash          String?
+  generatedAt     DateTime          @default(now())
+
+  chama           ChamaGroup        @relation(fields: [chamaId], references: [id], onDelete: Cascade)
+
+  @@index([chamaId])
+  @@map("chama_yield_logs")
+}
