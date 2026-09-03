@@ -19,9 +19,10 @@ import { parseUnits, formatUnits, maxUint256 } from 'viem';
 import WalletConnectModal from '@/components/WalletConnectModal';
 import { ERC20_ABI } from '@/lib/erc20abi';
 import { ECOSYSTEM_TOKENS } from '@/lib/tokens';
+import { TREASURY as TREASURY_ADDR } from '@/lib/addresses';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
-const TREASURY = '0xB13727161583e38185530755a1A96D00fcCae870' as `0x${string}`;
+const TREASURY = (TREASURY_ADDR ?? '0xB13727161583e38185530755a1A96D00fcCae870') as `0x${string}`;
 const YBOB_TOKEN = ECOSYSTEM_TOKENS.find(t => t.symbol === 'yBOB');
 const YBOB_ADDR  = YBOB_TOKEN?.address as `0x${string}` | undefined;
 const YBOB_DEC   = YBOB_TOKEN?.decimals ?? 18;
