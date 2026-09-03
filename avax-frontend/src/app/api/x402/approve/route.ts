@@ -11,8 +11,9 @@
  */
 
 import { NextResponse } from 'next/server';
+import { walletAddress } from '@/lib/addresses';
 
-const OWNER = (process.env.WALLET_ADDRESS ?? '0xB13727161583e38185530755a1A96D00fcCae870').toLowerCase();
+const OWNER = walletAddress(process.env.WALLET_ADDRESS)?.toLowerCase() ?? '';
 
 export interface PendingPayment {
   id: string;

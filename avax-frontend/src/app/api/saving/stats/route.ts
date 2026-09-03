@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { REGISTRY_ADDRESS } from '@/lib/addresses';
 
 export async function GET() {
   const data = {
@@ -11,7 +12,7 @@ export async function GET() {
       totalPoolBalanceKes: 284_000,
       yieldAllocatedKes: 34_820,
       activeVaultStrategy: 'BALANCED_YBOB_VAULT',
-      groupWallet: '0x36C42829BF7e48cCF738f0632456ECE63ABEA2ED',
+      groupWallet: REGISTRY_ADDRESS ?? '0x36C42829BF7e48cCF738f0632456ECE63ABEA2ED',
     },
     stats: {
       totalMembers: 24,
