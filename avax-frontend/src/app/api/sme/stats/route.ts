@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { VAULT_ADDRESSES } from '@/lib/addresses';
 
 export async function GET() {
   const data = {
@@ -11,7 +12,7 @@ export async function GET() {
       location: 'Kipkelion, Kericho County',
       cashFlowScore: 74.5,
       creditLimit: 50_000,
-      walletAddress: '0x431A98d42f9F7d6529C676115D5E3Df3c2419DA2',
+      walletAddress: VAULT_ADDRESSES.yBOB ?? '0x431A98d42f9F7d6529C676115D5E3Df3c2419DA2',
     },
     stats: {
       totalIncomeKes: 284_600,

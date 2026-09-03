@@ -1,6 +1,7 @@
 "use client";
 
 import { Operation, OPERATIONS, KAI_ACCOUNT, OWNER_ACCOUNT } from "../../shared/operationSchemas";
+import { TREASURY as TREASURY_FROM_LIB } from "@/lib/addresses";
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { useAccount, useSendTransaction, useSwitchChain } from "wagmi";
 import { avalancheFuji } from "wagmi/chains";
@@ -31,7 +32,7 @@ interface ExecResult {
 type TermLine = { id: number; type: "cmd"|"info"|"success"|"warn"|"error"|"receipt"; text: string; link?: {label: string; url: string}; ts: string; };
 
 const FUJI_CHAIN_ID = avalancheFuji.id;
-const TREASURY_ADDRESS = "0xB13727161583e38185530755a1A96D00fcCae870" as `0x${string}`;
+const TREASURY_ADDRESS = (TREASURY_FROM_LIB ?? "0xB13727161583e38185530755a1A96D00fcCae870") as `0x${string}`;
 const POLICY_FEE_AVAX = "0.0001";
 
 // ═══════════════════════════════════════════════════════════
@@ -845,7 +846,7 @@ const BP_TEMPLATES: Record<string, {
 };
 
 const POLICY_FEE_BP = "0.0001";
-const TREASURY_BP: `0x${string}` = "0xB13727161583e38185530755a1A96D00fcCae870";
+const TREASURY_BP: `0x${string}` = (TREASURY_FROM_LIB ?? "0xB13727161583e38185530755a1A96D00fcCae870");
 
 // ─── BuildPolicyPanel component ───────────────────────────────────────────────
 interface BPProps {

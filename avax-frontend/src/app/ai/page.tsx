@@ -10,6 +10,7 @@ import {
 import Link from 'next/link';
 import AgentProposalCard, { AgentProposal } from '@/components/AgentProposalCard';
 import { ECOSYSTEM_TOKENS } from '@/lib/tokens';
+import { VAULT_ADDRESSES } from '@/lib/addresses';
 
 interface Msg {
   role: 'ai' | 'user';
@@ -79,7 +80,7 @@ function detectProposal(query: string): AgentProposal | undefined {
       title: 'Deposit yBOB into Vault',
       description: 'Deposit yBOB into the kvyBOB yield vault to earn 7.5% APY.',
       amount: '10', tokenSymbol: 'yBOB', tokenAddress: yBOB?.address as `0x${string}`,
-      targetContract: '0x431A98d42f9F7d6529C676115D5E3Df3c2419DA2',
+      targetContract: VAULT_ADDRESSES.yBOB ?? '0x431A98d42f9F7d6529C676115D5E3Df3c2419DA2',
       projectedApy: '7.5% APY',
     };
   }
