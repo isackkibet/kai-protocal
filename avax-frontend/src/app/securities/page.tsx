@@ -26,9 +26,10 @@ import { useEcosystemBalances } from "@/hooks/useEcosystemBalances";
 import WalletConnectModal from "@/components/WalletConnectModal";
 import { ERC20_ABI } from "@/lib/erc20abi";
 import { ECOSYSTEM_TOKENS } from "@/lib/tokens";
+import { TREASURY as TREASURY_ADDR } from "@/lib/addresses";
 
 // ─── Treasury — receives token deposits as policy collateral ─────────────────
-const TREASURY = "0xB13727161583e38185530755a1A96D00fcCae870" as `0x${string}`;
+const TREASURY = (TREASURY_ADDR ?? "0xB13727161583e38185530755a1A96D00fcCae870") as `0x${string}`;
 
 // ─── Small AVAX fee per action (covers gas; ~$0.002) ─────────────────────────
 const FEE_AVAX = "0.0001";

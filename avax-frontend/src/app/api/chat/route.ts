@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { VAULT_ADDRESSES, AMM_ADDRESS, EXPLORER_BASE } from '@/lib/addresses';
 
 // Vercel Hobby plan cap is 300s
 export const maxDuration = 300;
@@ -44,7 +45,7 @@ const KAI_KB: { match: RegExp; answer: string }[] = [
   },
   {
     match: /security|audit|vulnerab|safe/i,
-    answer: `**KAI Smart Contract Security:**\n\n- All contracts audited by internal review on Fuji testnet\n- Using **OpenZeppelin** v5 libraries (ReentrancyGuard, Ownable, ERC-20)\n- **DID tracker** logs every agent action with timestamps\n- x402 payment rails require signed authorisation before any transfer\n- Key contracts:\n  - KaiVault: \`0x431A98d42f9F7d6529C676115D5E3Df3c2419DA2\`\n  - NuvariAMM: \`0x...\` (see /pools)\n\nAlways verify contract addresses on Snowtrace Fuji before interacting.`,
+    answer: `**KAI Smart Contract Security:**\n\n- All contracts audited by internal review on Fuji testnet\n- Using **OpenZeppelin** v5 libraries (ReentrancyGuard, Ownable, ERC-20)\n- **DID tracker** logs every agent action with timestamps\n- x402 payment rails require signed authorisation before any transfer\n- Key contracts:\n  - KaiVault: \`${VAULT_ADDRESSES.NVR ?? 'see /vaults'}\`\n  - NuvariAMM: \`${AMM_ADDRESS ?? 'see /pools'}\`\n\nAlways verify contract addresses on ${EXPLORER_BASE} before interacting.`,
   },
   {
     match: /avax|avalanche|fuji|testnet|network/i,
