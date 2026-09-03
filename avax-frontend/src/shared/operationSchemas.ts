@@ -1,4 +1,6 @@
 
+import { walletAddress } from '@/lib/addresses';
+
 export type OpCategory = "transaction" | "query" | "template" | "quick" | "automation";
 
 export interface OpField {
@@ -14,8 +16,8 @@ export interface Operation {
   badge?: string;
 }
 
-export const KAI_ACCOUNT    = "0xB13727161583e38185530755a1A96D00fcCae870";
-export const OWNER_ACCOUNT  = "0xB13727161583e38185530755a1A96D00fcCae870";
+export const KAI_ACCOUNT    = walletAddress(process.env.NEXT_PUBLIC_KAI_ACCOUNT) ?? "0xB13727161583e38185530755a1A96D00fcCae870";
+export const OWNER_ACCOUNT  = walletAddress(process.env.NEXT_PUBLIC_OWNER_ACCOUNT) ?? "0xB13727161583e38185530755a1A96D00fcCae870";
 
 export const OPERATIONS: Operation[] = [
   // ── Quick Start ──────────────────────────────────────────
