@@ -59,7 +59,7 @@ const SEED_POSTS: Post[] = [
     creator: 'Beatrice Mutua', badge: 'AGRI_EXPERT', publishedAt: '2026-08-25', viewsCount: 215, likesCount: 38, tipsEarnedKes: 900, audioDurationSeconds: 482, language: 'SW', tags: ['Ledger','Voice','MSME'],
   },
   {
-    id: 'p5', slug: 'rwa-invoice-token-guide', title: 'Tokenise Your Unpaid Invoice — Step by Step',
+    id: 'p5', slug: 'rwa-invoice-token-guide', title: 'Tokenise Your Unpaid Invoice - Step by Step',
     summary: 'A comprehensive guide for small business owners on how to turn accounts receivable into on-chain RWA tokens on Avalanche Fuji and receive instant KES working capital.',
     contentType: 'EDUCATIONAL_GUIDE', category: 'MSME_GROWTH',
     creator: 'Joseph Kimani', badge: 'AGRI_EXPERT', publishedAt: '2026-08-24', viewsCount: 403, likesCount: 62, tipsEarnedKes: 1800, language: 'EN', tags: ['RWA','Invoice','Finance'],

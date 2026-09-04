@@ -384,7 +384,7 @@ export default function BridgeDashboard() {
             onClick={() => setShowWalletModal(true)}
             className="btn-gold px-6 py-3 rounded-xl text-xs font-bold w-full max-w-[200px]"
           >
-            🔗 Connect Wallet
+            Connect Wallet
           </button>
         </div>
       ) : (
@@ -453,7 +453,7 @@ export default function BridgeDashboard() {
                   {depositStatus.type === 'success' && depositStatus.orderId && (
                     <div className="mt-4 pt-3 border-t border-white/10 flex flex-col gap-2">
                       <p className="text-[10px] text-white/40">
-                        🛠️ LOCAL DEV MOCK TOOL: Since M-Pesa is mocked on the Python backend, click below to simulate the Safaricom Callback:
+                        LOCAL DEV MOCK TOOL: Since M-Pesa is mocked on the Python backend, click below to simulate the Safaricom Callback:
                       </p>
                       <div className="flex gap-2">
                         <button

@@ -276,37 +276,37 @@ export const OPERATIONS: Operation[] = [
   },
 
   // ── Templates (auto-fill) ─────────────────────────────────
-  { id: "tpl_motor", name: "Motor Insurance", category: "template", service: "insurance", description: "Pre-configured motor insurance policy with comprehensive cover and 14-day grace.", badge: "🚗 Motor",
+  { id: "tpl_motor", name: "Motor Insurance", category: "template", service: "insurance", description: "Pre-configured motor insurance policy with comprehensive cover and 14-day grace.", badge: "Motor",
     fields: [], template: { policyTitle: "Comprehensive Motor Cover", coverageType: "Motor", premium: 200, maxClaim: 4000, gracePeriod: 14, autoRenew: true }
   },
-  { id: "tpl_health", name: "Medical Insurance", category: "template", service: "insurance", description: "Group medical cover for SMEs and SACCOs with inpatient/outpatient benefits.", badge: "🏥 Medical",
+  { id: "tpl_health", name: "Medical Insurance", category: "template", service: "insurance", description: "Group medical cover for SMEs and SACCOs with inpatient/outpatient benefits.", badge: "Medical",
     fields: [], template: { policyTitle: "SME Group Medical Cover", coverageType: "Group Health", premium: 350, maxClaim: 10000, gracePeriod: 7, autoRenew: true }
   },
-  { id: "tpl_life", name: "Life Insurance", category: "template", service: "insurance", description: "Whole-life policy with beneficiary distribution and funeral benefits.", badge: "🫀 Life",
+  { id: "tpl_life", name: "Life Insurance", category: "template", service: "insurance", description: "Whole-life policy with beneficiary distribution and funeral benefits.", badge: "Life",
     fields: [], template: { policyTitle: "Life Cover Plus", coverageType: "Life", premium: 150, maxClaim: 50000, gracePeriod: 30, autoRenew: false }
   },
-  { id: "tpl_crop", name: "Crop & Climate Insurance", category: "template", service: "insurance", description: "Index-based crop insurance for smallholder farmers triggered by verified weather data.", badge: "🌾 Crop",
+  { id: "tpl_crop", name: "Crop & Climate Insurance", category: "template", service: "insurance", description: "Index-based crop insurance for smallholder farmers triggered by verified weather data.", badge: "Crop",
     fields: [], template: { policyTitle: "Climate Index Crop Cover", coverageType: "Crop & Climate Index", premium: 80, maxClaim: 2000, gracePeriod: 0, autoRenew: true }
   },
-  { id: "tpl_family_trust", name: "Family Trust", category: "template", service: "trust", description: "Standard family trust with age-based milestone releases and multi-sig governance.", badge: "👨‍👩‍👧 Family",
+  { id: "tpl_family_trust", name: "Family Trust", category: "template", service: "trust", description: "Standard family trust with age-based milestone releases and multi-sig governance.", badge: "Family",
     fields: [], template: { trustName: "Namuye Family Trust", trustType: "Family Trust", fundingAmount: 1000, autoReleaseOnMilestone: true, requireMultiSig: true }
   },
-  { id: "tpl_education_trust", name: "Education Trust", category: "template", service: "trust", description: "Education-linked trust releasing funds on university admission proof.", badge: "🎓 Education",
+  { id: "tpl_education_trust", name: "Education Trust", category: "template", service: "trust", description: "Education-linked trust releasing funds on university admission proof.", badge: "Education",
     fields: [], template: { trustName: "KAI Education Fund", trustType: "Education Trust", fundingAmount: 500, autoReleaseOnMilestone: true, requireMultiSig: false }
   },
-  { id: "tpl_estate_trust", name: "Estate Trust", category: "template", service: "trust", description: "Estate management trust with executor multi-sig and scheduled distributions.", badge: "🏛 Estate",
+  { id: "tpl_estate_trust", name: "Estate Trust", category: "template", service: "trust", description: "Estate management trust with executor multi-sig and scheduled distributions.", badge: "Estate",
     fields: [], template: { trustName: "Estate Management Trust", trustType: "Estate Trust", fundingAmount: 5000, autoReleaseOnMilestone: false, requireMultiSig: true }
   },
-  { id: "tpl_charitable_trust", name: "Charitable Trust", category: "template", service: "trust", description: "Charitable trust disbursing funds to verified beneficiary accounts monthly.", badge: "❤️ Charity",
+  { id: "tpl_charitable_trust", name: "Charitable Trust", category: "template", service: "trust", description: "Charitable trust disbursing funds to verified beneficiary accounts monthly.", badge: "Charity",
     fields: [], template: { trustName: "KAI Charitable Foundation", trustType: "Charitable Trust", fundingAmount: 2000, autoReleaseOnMilestone: true, requireMultiSig: false }
   },
-  { id: "tpl_personal_pension", name: "Personal Pension", category: "template", service: "pension", description: "Individual retirement plan with 30-year horizon and auto-invest.", badge: "👤 Personal",
+  { id: "tpl_personal_pension", name: "Personal Pension", category: "template", service: "pension", description: "Individual retirement plan with 30-year horizon and auto-invest.", badge: "Personal",
     fields: [], template: { planTitle: "Personal Retirement Vault", planType: "Personal Pension", monthlyContribution: 200, employerMatch: 0, vestingCliff: 12, autoInvest: true }
   },
-  { id: "tpl_sme_pension", name: "SME Pension", category: "template", service: "pension", description: "Corporate pension with 50% employer matching and 2-year vesting cliff.", badge: "🏢 SME",
+  { id: "tpl_sme_pension", name: "SME Pension", category: "template", service: "pension", description: "Corporate pension with 50% employer matching and 2-year vesting cliff.", badge: "SME",
     fields: [], template: { planTitle: "SME Employee Pension", planType: "SME Pension", monthlyContribution: 300, employerMatch: 50, vestingCliff: 24, autoInvest: true }
   },
-  { id: "tpl_informal_pension", name: "Informal Worker Pension", category: "template", service: "pension", description: "Micro-savings pension for informal workers with weekly low-entry contributions.", badge: "👷 Informal",
+  { id: "tpl_informal_pension", name: "Informal Worker Pension", category: "template", service: "pension", description: "Micro-savings pension for informal workers with weekly low-entry contributions.", badge: "Informal",
     fields: [], template: { planTitle: "Jua Kali Pension Plan", planType: "Informal Worker Pension", monthlyContribution: 30, employerMatch: 0, vestingCliff: 6, autoInvest: false }
   },
 ];

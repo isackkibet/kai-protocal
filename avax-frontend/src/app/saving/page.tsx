@@ -137,10 +137,10 @@ export default function SavingGroupPage() {
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
             <div style={{ padding: '6px 12px', borderRadius: 10, background: `${activeStrategy.color}18`, border: `1px solid ${activeStrategy.color}35`, display: 'flex', alignItems: 'center', gap: 7 }}>
               <Shield size={11} color={activeStrategy.color} />
-              <span style={{ fontSize: 10, fontWeight: 800, color: activeStrategy.color }}>{activeStrategy.label} — {activeStrategy.apy}% APY</span>
+              <span style={{ fontSize: 10, fontWeight: 800, color: activeStrategy.color }}>{activeStrategy.label} - {activeStrategy.apy}% APY</span>
             </div>
             <div style={{ padding: '5px 10px', borderRadius: 8, background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)' }}>
-              <span style={{ fontSize: 9, color: 'rgba(248,248,250,0.42)', fontWeight: 700 }}>⏱ {d.stats.nextPayoutDays}d to payout</span>
+              <span style={{ fontSize: 9, color: 'rgba(248,248,250,0.42)', fontWeight: 700 }}>{d.stats.nextPayoutDays}d to payout</span>
             </div>
           </div>
         </div>
@@ -333,7 +333,7 @@ export default function SavingGroupPage() {
                       {[
                         { label: 'Invested',  value: `KES ${(y.amountInvested/1000).toFixed(0)}K`, color: '#f8f8fa' },
                         { label: 'ROI',       value: `${roi}%`,                                     color: '#4ade80' },
-                        { label: 'Strategy',  value: strat?.risk ?? '—',                            color },
+                        { label: 'Strategy',  value: strat?.risk ?? '-',                            color },
                       ].map(s => (
                         <div key={s.label} style={{ textAlign: 'center', padding: '9px 5px', borderRadius: 10, background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}>
                           <p style={{ fontSize: 12, fontWeight: 900, color: s.color, margin: '0 0 2px' }}>{s.value}</p>

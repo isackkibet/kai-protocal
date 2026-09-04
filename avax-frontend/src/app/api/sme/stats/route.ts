@@ -47,11 +47,11 @@ export async function GET() {
       { month: 'Aug', income: 284_600, expense: 192_300 },
     ],
     products: [
-      { icon: '🏦', name: 'Working Capital Loan',    rate: '8% p.a.',  token: 'yBOB',  status: 'Available', cap: 'KES 50K'  },
-      { icon: '📦', name: 'Inventory Finance',       rate: '6% p.a.',  token: 'yBOB',  status: 'Available', cap: 'KES 20K'  },
-      { icon: '💱', name: 'FX Settlement (KES/USD)', rate: '0.3%',     token: 'CENTS', status: 'Active',    cap: '—'        },
-      { icon: '🪙', name: 'Merchant yBOB Account',  rate: '7.5% APY', token: 'yBOB',  status: 'Active',    cap: '∞'        },
-      { icon: '📊', name: 'Revenue-Based Finance',   rate: '12% p.a.', token: 'NVR',   status: 'Pending',   cap: 'KES 100K' },
+      { icon: '', name: 'Working Capital Loan',    rate: '8% p.a.',  token: 'yBOB',  status: 'Available', cap: 'KES 50K'  },
+      { icon: '', name: 'Inventory Finance',       rate: '6% p.a.',  token: 'yBOB',  status: 'Available', cap: 'KES 20K'  },
+      { icon: '', name: 'FX Settlement (KES/USD)', rate: '0.3%',     token: 'CENTS', status: 'Active',    cap: '-'        },
+      { icon: '', name: 'Merchant yBOB Account',  rate: '7.5% APY', token: 'yBOB',  status: 'Active',    cap: 'Infinite' },
+      { icon: '', name: 'Revenue-Based Finance',   rate: '12% p.a.', token: 'NVR',   status: 'Pending',   cap: 'KES 100K' },
     ],
   };
 

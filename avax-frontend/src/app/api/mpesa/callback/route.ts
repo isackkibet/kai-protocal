@@ -63,12 +63,12 @@ export async function POST(request: Request) {
 
     if (parsed.success) {
       console.log(
-        `[M-Pesa ✅] Receipt: ${parsed.mpesaReceiptNumber} | ` +
+        `[M-Pesa OK] Receipt: ${parsed.mpesaReceiptNumber} | ` +
         `KES ${parsed.amount} from ${parsed.phoneNumber}`,
       );
     } else {
       console.log(
-        `[M-Pesa ❌] ${parsed.resultDesc} (code ${parsed.resultCode})`,
+        `[M-Pesa FAIL] ${parsed.resultDesc} (code ${parsed.resultCode})`,
       );
     }
   } catch (err) {
