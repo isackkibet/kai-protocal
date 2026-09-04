@@ -105,7 +105,7 @@ export default function Home() {
   const avaxAmt = avaxBal ? Number(formatUnits(avaxBal.value, avaxBal.decimals)) : 0;
 
   const allTokens = [
-    { symbol: 'AVAX',  value: avaxAmt,                              color: '#e84142', deployed: true  },
+    { symbol: 'AVAX',  value: avaxAmt,                              color: '#10b981', deployed: true  },
     ...ECOSYSTEM_TOKENS.map(t => ({ symbol: t.symbol, value: tokenBals[t.symbol.toLowerCase()] ?? 0, color: t.color, deployed: !!t.address })),
   ];
 
@@ -417,28 +417,31 @@ export default function Home() {
 
             {/* Answer */}
             {agentA && (
-              <div style={{ margin: '0 12px 12px', padding: '10px 12px', background: 'rgba(232,65,66,0.05)', border: '1px solid rgba(232,65,66,0.15)', borderRadius: 10, fontSize: 11, color: 'var(--white-70)', lineHeight: 1.55, maxHeight: 130, overflowY: 'auto' }}>
+              <div style={{ margin: '0 12px 12px', padding: '10px 12px', background: 'rgba(16,185,129,0.05)', border: '1px solid rgba(16,185,129,0.15)', borderRadius: 10, fontSize: 11, color: 'var(--white-70)', lineHeight: 1.55, maxHeight: 130, overflowY: 'auto' }}>
                 {agentA}
               </div>
             )}
-          </div>
+          </motion.div>
         )}
+        </AnimatePresence>
 
         {/* FAB */}
-        <button
+        <motion.button
+          whileHover={{ scale: 1.1, rotate: 8 }}
+          whileTap={{ scale: 0.9 }}
           onClick={() => setAgentOpen(v => !v)}
           className="glow-pulse"
           style={{
             width: 52, height: 52, borderRadius: '50%', border: 'none', cursor: 'pointer',
-            background: agentOpen ? 'rgba(185,28,28,0.9)' : 'linear-gradient(135deg,#ff5a5b 0%,#e84142 50%,#b91c1c 100%)',
+            background: agentOpen ? 'rgba(4,120,88,0.9)' : 'linear-gradient(135deg,#34d399 0%,#10b981 50%,#047857 100%)',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
-            boxShadow: '0 4px 20px rgba(232,65,66,0.50), 0 1px 0 rgba(255,255,255,0.20) inset',
+            boxShadow: '0 4px 20px rgba(16,185,129,0.50), 0 1px 0 rgba(255,255,255,0.20) inset',
             transition: 'all 0.2s',
             transform: agentOpen ? 'scale(0.90) rotate(45deg)' : 'scale(1)',
           }}>
           <Bot size={24} color="#fff" />
-        </button>
-      </div>
+        </motion.button>
+      </motion.div>
 
       {showModal && <WalletConnectModal onClose={() => setShowModal(false)} />}
     </main>
