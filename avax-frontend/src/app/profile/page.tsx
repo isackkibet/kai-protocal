@@ -190,7 +190,7 @@ export default function ProfilePage() {
         setSaved(true);
         setToast('Profile saved ✓');
         setTimeout(() => { setSaved(false); setToast(''); }, 3000);
-      } else { setToast('Save failed — try again'); }
+      } else { setToast('Save failed - try again'); }
     } catch { setToast('Network error'); }
     finally { setSaving(false); }
   };
@@ -454,7 +454,7 @@ export default function ProfilePage() {
             </div>
 
             <Field label="Forest Region / County">
-              <Input value={profile.cfaRegion} onChange={set('cfaRegion')} placeholder="e.g. Rift Valley — Mau Complex" />
+              <Input value={profile.cfaRegion} onChange={set('cfaRegion')} placeholder="e.g. Rift Valley - Mau Complex" />
             </Field>
 
             {/* Quick links if already filled */}
@@ -479,10 +479,10 @@ export default function ProfilePage() {
               <p className="label-caps" style={{ marginBottom: 10 }}>Linked Forest Products</p>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
                 {[
-                  { emoji: '🍯', name: 'Honey Reserve',   apy: '14.0%', token: 'GAMI'  },
-                  { emoji: '🌿', name: 'Med. Herbs',       apy: '16.0%', token: 'GAMI'  },
-                  { emoji: '🌱', name: 'Seed Bank',        apy: '6.5%',  token: 'NVR'   },
-                  { emoji: '💧', name: 'Water Rights',     apy: '5.8%',  token: 'yBOB'  },
+                  { emoji: '', name: 'Honey Reserve',   apy: '14.0%', token: 'GAMI'  },
+                  { emoji: '', name: 'Med. Herbs',       apy: '16.0%', token: 'GAMI'  },
+                  { emoji: '', name: 'Seed Bank',        apy: '6.5%',  token: 'NVR'   },
+                  { emoji: '', name: 'Water Rights',     apy: '5.8%',  token: 'yBOB'  },
                 ].map(p => (
                   <div key={p.name} style={{ borderRadius: 12, padding: '11px 12px', background: 'rgba(34,197,94,0.05)', border: '1px solid rgba(34,197,94,0.12)' }}>
                     <span style={{ fontSize: 18, display: 'block', marginBottom: 5 }}>{p.emoji}</span>
@@ -553,9 +553,9 @@ export default function ProfilePage() {
               <p className="label-caps" style={{ marginBottom: 10 }}>Available Financial Products</p>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 7 }}>
                 {[
-                  { icon: '🏦', name: 'Working Capital Loan',  rate: '8% p.a.',  color: '#22c55e' },
-                  { icon: '📦', name: 'Inventory Finance',     rate: '6% p.a.',  color: '#3b82f6' },
-                  { icon: '🪙', name: 'Merchant yBOB Account', rate: '7.5% APY', color: '#a855f7' },
+                  { icon: '', name: 'Working Capital Loan',  rate: '8% p.a.',  color: '#22c55e' },
+                  { icon: '', name: 'Inventory Finance',     rate: '6% p.a.',  color: '#3b82f6' },
+                  { icon: '', name: 'Merchant yBOB Account', rate: '7.5% APY', color: '#a855f7' },
                 ].map(p => (
                   <div key={p.name} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 12px', borderRadius: 10, background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 9 }}>
@@ -610,7 +610,7 @@ export default function ProfilePage() {
                   <div style={{ flex: 1 }}>
                     <p style={{ fontSize: 13, fontWeight: 800, color: '#f8f8fa', margin: 0 }}>{profile.chamaName}</p>
                     <p style={{ fontSize: 10, color: 'rgba(248,248,250,0.40)', margin: 0 }}>
-                      {profile.chamaRole || 'Member'} · KES {profile.monthlyContrib || '—'} / month
+                      {profile.chamaRole || 'Member'} · KES {profile.monthlyContrib || '-'} / month
                       {profile.chamaRegNo && ` · ${profile.chamaRegNo}`}
                     </p>
                   </div>

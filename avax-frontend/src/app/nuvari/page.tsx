@@ -157,7 +157,7 @@ export default function KaiPlayground() {
       const health = await fetch("http://127.0.0.1:8000/health", { signal: AbortSignal.timeout(2000) }).catch(() => null);
       if (!health?.ok) {
         setAiAvailable(false);
-        setAiDraft("ℹ️ AI assistant offline — start the agent server to enable suggestions.\nYour policy will still work without it.");
+        setAiDraft("AI assistant offline - start the agent server to enable suggestions.\nYour policy will still work without it.");
         return;
       }
       setAiAvailable(true);
@@ -173,7 +173,7 @@ export default function KaiPlayground() {
       const data = await response.json();
       setAiDraft(data.text || data.response || "No recommendation returned.");
     } catch {
-      setAiDraft("ℹ️ AI assistant unavailable. Your policy works without it.");
+      setAiDraft("AI assistant unavailable. Your policy works without it.");
     } finally {
       setAiLoading(false);
     }
@@ -412,16 +412,16 @@ export default function KaiPlayground() {
             <div style={{ padding:"10px" }}>
               <div style={{ fontSize:"10px", color:"rgba(255,255,255,0.3)", textTransform:"uppercase", letterSpacing:"0.5px", marginBottom:"10px" }}>Policy Types</div>
               {[
-                { id:"pension", icon:"🏦", label:"KAIVAX Pension",  color:"#A78BFA" },
-                { id:"trust",   icon:"🤝", label:"KAI Trust",       color:"#FFD700" },
-                { id:"crop",    icon:"🌾", label:"Crop Insurance",  color:"#EAB308" },
-                { id:"forest",  icon:"🌲", label:"Forest Protection",color:"#22C55E" },
-                { id:"medical", icon:"🏥", label:"Medical Pool",    color:"#EF4444" },
-                { id:"rwa",     icon:"🏗️", label:"RWA Tokenization",color:"#F97316" },
-                { id:"honey",   icon:"🍯", label:"Honey Reserve",   color:"#F59E0B" },
-                { id:"milk",    icon:"🥛", label:"Milk Pool",       color:"#60A5FA" },
-                { id:"seeds",   icon:"🌱", label:"Seed Bank",       color:"#86EFAC" },
-                { id:"recipe",  icon:"📜", label:"Recipe IP Vault", color:"#F97316" },
+                { id:"pension", icon:"", label:"KAIVAX Pension",  color:"#A78BFA" },
+                { id:"trust",   icon:"", label:"KAI Trust",       color:"#FFD700" },
+                { id:"crop",    icon:"", label:"Crop Insurance",  color:"#EAB308" },
+                { id:"forest",  icon:"", label:"Forest Protection",color:"#22C55E" },
+                { id:"medical", icon:"", label:"Medical Pool",    color:"#EF4444" },
+                { id:"rwa",     icon:"", label:"RWA Tokenization",color:"#F97316" },
+                { id:"honey",   icon:"", label:"Honey Reserve",   color:"#F59E0B" },
+                { id:"milk",    icon:"", label:"Milk Pool",       color:"#60A5FA" },
+                { id:"seeds",   icon:"", label:"Seed Bank",       color:"#86EFAC" },
+                { id:"recipe",  icon:"", label:"Recipe IP Vault", color:"#F97316" },
               ].map(t => (
                 <button key={t.id} onClick={() => { setBpTemplate(t.id); setBpFields({}); setBpStatus(""); }}
                   style={{ width:"100%", background: bpTemplate===t.id ? `${t.color}18` : "rgba(255,255,255,0.02)", border:`1px solid ${bpTemplate===t.id ? t.color+"40" : "rgba(255,255,255,0.05)"}`, borderRadius:"6px", padding:"9px 11px", textAlign:"left", cursor:"pointer", marginBottom:"4px", display:"flex", alignItems:"center", gap:"8px", transition:"all 0.15s" }}>
@@ -878,17 +878,17 @@ function BuildPolicyPanel({
   const myPolicies = policies.filter(p => p.owner?.toLowerCase() === address?.toLowerCase());
 
   const handleCreate = async () => {
-    if (!address) { setStatus("⚠️ Connect your wallet first."); return; }
+    if (!address) { setStatus("Connect your wallet first."); return; }
     const missing = tmpl.fields.find(f => !fields[f.key]?.trim());
-    if (missing) { setStatus(`⚠️ Fill in "${missing.label}"`); return; }
+    if (missing) { setStatus(`Fill in "${missing.label}"`); return; }
 
-    setSubmitting(true); setStatus("Switching to Avalanche Fuji…"); setTxUrl(null);
+    setSubmitting(true); setStatus("Switching to Avalanche Fuji..."); setTxUrl(null);
     try {
       await switchChainAsync({ chainId: 43113 });
-      setStatus(`Paying ${POLICY_FEE_BP} AVAX registration fee…`);
+      setStatus(`Paying ${POLICY_FEE_BP} AVAX registration fee...`);
       const txHash = await sendTransactionAsync({ to: TREASURY_BP, value: parseEther(POLICY_FEE_BP) });
       setTxUrl(`https://testnet.snowtrace.io/tx/${txHash}`);
-      setStatus("Saving policy…");
+      setStatus("Saving policy...");
       const res = await fetch("/api/policies", {
         method: "POST", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ owner: address, serviceType: templateId, config: fields,
@@ -896,11 +896,11 @@ function BuildPolicyPanel({
       });
       if (!res.ok) throw new Error("API error");
       const { policy } = await res.json();
-      setStatus(`✅ Policy ${policy.policyId} created on Fuji!`);
+      setStatus(`Policy ${policy.policyId} created on Fuji!`);
       setFields({});
       refreshPolicies();
     } catch (e: any) {
-      setStatus(`❌ ${e.message?.slice(0, 100)}`);
+      setStatus(`${e.message?.slice(0, 100)}`);
     } finally { setSubmitting(false); }
   };
 
@@ -909,7 +909,7 @@ function BuildPolicyPanel({
 
       {/* Header */}
       <div>
-        <h2 style={{ margin:0, fontSize:16, fontWeight:800, color:"#fff" }}>🛡️ Build a Policy</h2>
+            <h2 style={{ margin:0, fontSize:16, fontWeight:800, color:"#fff" }}>Build a Policy</h2>
         <p style={{ margin:"4px 0 0", fontSize:11, color:"rgba(255,255,255,0.4)" }}>
           Create on-chain KAIVAX policies · {POLICY_FEE_BP} AVAX per registration · Fuji Snowtrace
         </p>
@@ -928,7 +928,7 @@ function BuildPolicyPanel({
       {/* Dynamic fields */}
       <div style={{ background:"rgba(0,0,0,0.25)", border:`1px solid ${tmpl.color}30`, borderRadius:12, padding:16 }}>
         <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:14 }}>
-          <span style={{ fontSize:20 }}>{tmpl.icon}</span>
+            <span style={{ fontSize:14, fontWeight:800, color:tmpl.color }}>{tmpl.label}</span>
           <span style={{ fontSize:14, fontWeight:800, color:tmpl.color }}>{tmpl.label}</span>
         </div>
         <div style={{ display:"flex", flexDirection:"column", gap:10 }}>
@@ -962,7 +962,7 @@ function BuildPolicyPanel({
         color: ["#FFD700","#EAB308","#22C55E","#86EFAC"].includes(tmpl.color) ? "#1B4332" : "#fff",
         cursor: submitting ? "not-allowed" : "pointer", opacity: submitting ? 0.7 : 1,
       }}>
-        {submitting ? "⏳ Signing…" : `🛡️ Create ${tmpl.label} · ${POLICY_FEE_BP} AVAX`}
+        {submitting ? "Signing..." : `Create ${tmpl.label} - ${POLICY_FEE_BP} AVAX`}
       </button>
 
       {/* My recent policies */}
@@ -974,7 +974,7 @@ function BuildPolicyPanel({
               const t = BP_TEMPLATES[p.serviceType];
               return (
                 <div key={p.policyId} style={{ background:"rgba(255,255,255,0.03)", border:"1px solid rgba(255,255,255,0.07)", borderRadius:10, padding:"10px 14px", display:"flex", alignItems:"center", gap:10 }}>
-                  <span style={{ fontSize:18 }}>{t?.icon ?? "📄"}</span>
+                   <span style={{ fontSize:18 }}>{t?.icon ?? ""}</span>
                   <div style={{ flex:1 }}>
                     <p style={{ fontSize:12, fontWeight:700, color:"#fff", margin:0 }}>{t?.label ?? p.serviceType}</p>
                     <p style={{ fontSize:10, fontFamily:"monospace", color:"rgba(255,255,255,0.3)", margin:"2px 0 0" }}>{p.policyId}</p>

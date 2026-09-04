@@ -264,7 +264,7 @@ export default function PoolDrawer({ token, onClose, stakedPositions, onStakeUpd
                       <span className="text-white/50">
                         {isLocked
                           ? `Locked until ${lockEnds?.toLocaleDateString()}`
-                          : "Lock period expired — can unstake"}
+                          : "Lock period expired - can unstake"}
                       </span>
                     </div>
                   )}
@@ -306,7 +306,7 @@ export default function PoolDrawer({ token, onClose, stakedPositions, onStakeUpd
                     <h3 className="text-sm font-bold text-white">Auto-Restake</h3>
                     <Toggle enabled={autoRestake} onToggle={() => setAutoRestake(!autoRestake)} />
                   </div>
-                  <p className="text-xs text-white/50">Automatically compound earned rewards back into your stake — maximizing APY through continuous reinvestment.</p>
+                  <p className="text-xs text-white/50">Automatically compound earned rewards back into your stake - maximizing APY through continuous reinvestment.</p>
                 </div>
               </div>
 

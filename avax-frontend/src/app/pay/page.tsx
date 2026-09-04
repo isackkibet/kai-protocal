@@ -404,8 +404,8 @@ export default function PayPage() {
       {statusMsg && (
         <div style={{
           margin: "0 16px 12px",
-          background: statusMsg.startsWith("❌") || statusMsg.startsWith("⚠️") ? "rgba(239,68,68,0.1)" : "rgba(34,197,94,0.08)",
-          border: `1px solid ${statusMsg.startsWith("❌") || statusMsg.startsWith("⚠️") ? "rgba(239,68,68,0.3)" : "rgba(34,197,94,0.2)"}`,
+          background: "rgba(34,197,94,0.08)",
+          border: "1px solid rgba(34,197,94,0.2)",
           padding: "10px 14px", borderRadius: 12, fontSize: 12, color: "#fff",
         }}>
           {statusMsg}
