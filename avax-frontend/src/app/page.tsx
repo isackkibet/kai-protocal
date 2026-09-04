@@ -178,7 +178,7 @@ export default function Home() {
             color: isConnected ? 'var(--green)' : 'var(--green)',
             fontSize: 11, fontWeight: 800,
           }}>
-          <span style={{ width: 7, height: 7, borderRadius: '50%', background: isConnected ? 'var(--green)' : 'var(--red)', boxShadow: `0 0 8px ${isConnected ? 'var(--green)' : 'var(--red)'}` }} />
+          <span style={{ width: 7, height: 7, borderRadius: '50%', background: isConnected ? 'var(--green)' : 'var(--green-dark)', boxShadow: `0 0 8px ${isConnected ? 'var(--green)' : 'var(--green-dark)'}` }} />
           {isConnected ? `${address?.slice(0,6)}…${address?.slice(-4)}` : 'Connect Wallet'}
         </button>
       </motion.header>
