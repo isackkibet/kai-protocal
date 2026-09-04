@@ -201,7 +201,7 @@ export default function CoNNFTMarketplace() {
       return;
     }
     setMpesaLoading(true);
-    setStatusMsg(`Sending KES prompt to ${clean}…`);
+    setStatusMsg(`Sending KES prompt to ${clean}...`);
     setTxUrl(null);
     try {
       const res = await fetch('/api/mpesa/stk', {
@@ -300,11 +300,11 @@ export default function CoNNFTMarketplace() {
 
       {/* Payment method badge */}
       <div style={{ margin: '12px 16px 0', display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px', borderRadius: 12, background: 'rgba(96,165,250,0.08)', border: '1px solid rgba(96,165,250,0.25)' }}>
-        <span style={{ fontSize: 18 }}>
+        <span style={{ fontSize: 18 }}></span>
         <div style={{ flex: 1 }}>
           <p style={{ fontSize: 11, fontWeight: 700, color: '#60a5fa', margin: 0 }}>Payment: yBOB Stable Token</p>
           <p style={{ fontSize: 10, color: 'rgba(255,255,255,0.4)', margin: 0 }}>
-            {yBobBal !== null ? `Your balance: ${yBobBal.toFixed(4)} yBOB` : isConnected ? 'Loading balance…' : 'Connect wallet to see balance'}
+            {yBobBal !== null ? `Your balance: ${yBobBal.toFixed(4)} yBOB` : isConnected ? 'Loading balance...' : 'Connect wallet to see balance'}
           </p>
         </div>
         <span style={{ fontSize: 10, fontWeight: 700, padding: '3px 8px', borderRadius: 6, background: 'rgba(96,165,250,0.15)', color: '#60a5fa', border: '1px solid rgba(96,165,250,0.3)' }}>
@@ -360,7 +360,7 @@ export default function CoNNFTMarketplace() {
         {isConnected ? (
           <div className="glass" style={{ padding: '10px 14px', borderRadius: 12, display: 'flex', justifyContent: 'space-between', alignItems: 'center', border: '1px solid rgba(34,197,94,0.3)' }}>
             <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.5)' }}>Connected</span>
-            <span style={{ fontSize: 12, fontWeight: 700, color: '#22C55E', fontFamily: 'monospace' }}>{address?.slice(0, 8)}…{address?.slice(-6)}</span>
+            <span style={{ fontSize: 12, fontWeight: 700, color: '#22C55E', fontFamily: 'monospace' }}>{address?.slice(0, 8)}...{address?.slice(-6)}</span>
           </div>
         ) : (
           <button onClick={() => setShowModal(true)} className="glass" style={{ width: '100%', padding: '12px', borderRadius: 12, textAlign: 'center', border: '1px dashed rgba(16,185,129,0.35)', background: 'rgba(16,185,129,0.05)', color: '#10b981', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>

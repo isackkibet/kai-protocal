@@ -235,7 +235,7 @@ export default function PoolsPage() {
       await publicClient?.waitForTransactionReceipt({ hash: appTx });
 
       // Swap
-      setStatusMsg(`Swapping ${swapAmt} ${swapIn} → ${swapOut}...`);
+      setStatusMsg(`Swapping ${swapAmt} ${swapIn} -> ${swapOut}...`);
       const swapTx = await writeContractAsync({
         address: AMM_ADDR, abi: AMM_ABI,
         functionName: "swap",
@@ -243,7 +243,7 @@ export default function PoolsPage() {
         chainId: avalancheFuji.id,
       });
       setTxUrl(`${EXPLORER}/tx/${swapTx}`);
-      setStatusMsg(`Swapped ${swapAmt} ${swapIn} → ${swapOut}! Tx: ${swapTx.slice(0,14)}...`);
+      setStatusMsg(`Swapped ${swapAmt} ${swapIn} -> ${swapOut}! Tx: ${swapTx.slice(0,14)}...`);
       setSwapAmt(""); setMinOut("0");
       await handleRefresh();
     } catch (e: unknown) {
@@ -380,7 +380,7 @@ export default function PoolsPage() {
           <div style={{ background: "rgba(0,0,0,0.3)", borderRadius: 14, padding: "12px 16px", border: "1px solid rgba(255,255,255,0.06)", marginBottom: 4 }}>
             <div className="flex justify-between mb-2">
               <span className="text-xs font-bold text-white/40 uppercase tracking-wide">You Pay</span>
-              <span className="text-xs text-white/30">Available pools: NVR↔yBOB · YTOKEN↔YGOLD · GAMI↔CENTS</span>
+              <span className="text-xs text-white/30">Available pools: NVR-yBOB · YTOKEN-YGOLD · GAMI-CENTS</span>
             </div>
             <div className="flex items-center gap-3">
               <input type="number" value={swapAmt} onChange={e => setSwapAmt(e.target.value)} placeholder="0.00"
@@ -412,7 +412,7 @@ export default function PoolsPage() {
               {/* Display-only quoted output */}
               <div style={{ flex: 1, fontSize: 28, fontWeight: 900, color: quoteFormatted ? "#fff" : "rgba(255,255,255,0.2)", fontFamily: "inherit", minHeight: 40, display: "flex", alignItems: "center" }}>
                 {quoteFetching ? (
-                  <span style={{ fontSize: 16, color: "#f59e0b" }}>calculating…</span>
+                  <span style={{ fontSize: 16, color: "#f59e0b" }}>calculating...</span>
                 ) : quoteFormatted ? (
                   quoteFormatted
                 ) : (
@@ -437,7 +437,7 @@ export default function PoolsPage() {
           {/* No pool warning */}
           {swapAmt && parseFloat(swapAmt) > 0 && !routingPool && (
             <div style={{ padding: "8px 12px", borderRadius: 8, background: "rgba(249,115,22,0.08)", border: "1px solid rgba(249,115,22,0.25)", fontSize: 11, color: "#F97316", marginBottom: 8 }}>
-              No liquidity pool exists for {swapIn} → {swapOut}. Try NVR↔yBOB, YTOKEN↔YGOLD, or GAMI↔CENTS.
+              {`No liquidity pool exists for ${swapIn} -> ${swapOut}. Try NVR-yBOB, YTOKEN-YGOLD, or GAMI-CENTS.`}
             </div>
           )}
 
@@ -450,12 +450,12 @@ export default function PoolsPage() {
             cursor: busy || !swapAmt || !AMM_ADDR || !quoteFormatted || !routingPool ? "not-allowed" : "pointer",
             opacity: busy || !swapAmt ? 0.6 : 1,
           }}>
-            {busy ? "⏳ Signing…"
+            {busy ? "Signing..."
               : !AMM_ADDR ? "Deploy AMM first"
               : !swapAmt ? "Enter an amount"
               : !routingPool ? "No pool for this pair"
-              : quoteFetching ? "Fetching quote…"
-              : `Swap ${swapAmt} ${swapIn} → ${quoteFormatted} ${swapOut}`}
+              : quoteFetching ? "Fetching quote..."
+              : `Swap ${swapAmt} ${swapIn} -> ${quoteFormatted} ${swapOut}`}
           </button>
         </div>
       )}
@@ -470,7 +470,7 @@ export default function PoolsPage() {
             <label className="text-xs font-bold text-white/40 uppercase tracking-wider block mb-2">Pool</label>
             <select value={liqPool} onChange={e => { setLiqPool(e.target.value); setLiqAmtA(""); setLiqAmtB(""); setLpAmt(""); }}
               style={{ width: "100%", background: "rgba(0,0,0,0.3)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 10, padding: "10px 14px", color: "#fff", fontSize: 14, fontWeight: 700 }}>
-              {POOLS.map(p => <option key={p.pair} value={p.pair}>{p.pair} {p.address ? "✓" : "(not deployed)"}</option>)}
+              {POOLS.map(p => <option key={p.pair} value={p.pair}>{p.pair} {p.address ? "" : "(not deployed)"}</option>)}
             </select>
           </div>
 
@@ -560,7 +560,7 @@ export default function PoolsPage() {
                   {p.address ? (
                     <a href={`${EXPLORER}/address/${p.address}`} target="_blank" rel="noopener noreferrer"
                       style={{ fontSize: 10, color: "#60a5fa", display: "flex", alignItems: "center", gap: 3 }}>
-                      {(p.address as string).slice(0,10)}… <ExternalLink size={10} />
+                      {(p.address as string).slice(0,10)}... <ExternalLink size={10} />
                     </a>
                   ) : <span className="text-xs text-orange-400">Not deployed</span>}
                 </div>

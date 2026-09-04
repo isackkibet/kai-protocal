@@ -7,12 +7,12 @@ import {
 import { useAccount } from "wagmi";
 
 const TEMPLATES = [
-  { icon: "⚡", name: "Governance Token",  standard: "ERC-20",  apy: "15.2%", use: "DAO voting, fee burns",          ready: true  },
-  { icon: "🪙", name: "Stable Token",      standard: "ERC-20",  apy: "7.5%",  use: "Settlement, micro-payments",     ready: true  },
-  { icon: "⚗️", name: "Yield ETF Token",   standard: "ERC-20",  apy: "14.8%", use: "Growth yield aggregation",       ready: true  },
-  { icon: "🔒", name: "RWA Asset Token",   standard: "ERC-20",  apy: "12.4%", use: "Gold-backed reserve asset",      ready: true  },
-  { icon: "🎮", name: "Rewards Token",     standard: "ERC-20",  apy: "22.0%", use: "Community incentives",           ready: true  },
-  { icon: "🍃", name: "Conservation NFT",  standard: "ERC-721", apy: "—",     use: "Biodiversity, carbon credits",   ready: false },
+  { icon: "", name: "Governance Token",  standard: "ERC-20",  apy: "15.2%", use: "DAO voting, fee burns",          ready: true  },
+  { icon: "", name: "Stable Token",      standard: "ERC-20",  apy: "7.5%",  use: "Settlement, micro-payments",     ready: true  },
+  { icon: "", name: "Yield ETF Token",   standard: "ERC-20",  apy: "14.8%", use: "Growth yield aggregation",       ready: true  },
+  { icon: "", name: "RWA Asset Token",   standard: "ERC-20",  apy: "12.4%", use: "Gold-backed reserve asset",      ready: true  },
+  { icon: "", name: "Rewards Token",     standard: "ERC-20",  apy: "22.0%", use: "Community incentives",           ready: true  },
+  { icon: "", name: "Conservation NFT",  standard: "ERC-721", apy: "-",     use: "Biodiversity, carbon credits",   ready: false },
 ];
 
 const SERVICES = [
@@ -62,7 +62,7 @@ export default function TAASPage() {
           <div>
             <h1 style={{ fontSize: 20, fontWeight: 900, margin: 0, letterSpacing: -0.5 }}>TaaS Dashboard</h1>
             <p style={{ fontSize: 10, color: "rgba(248,248,250,0.42)", margin: 0 }}>
-              Token as a Service · Deploy · Manage · Earn
+              Token as a Service - Deploy - Manage - Earn
             </p>
           </div>
         </div>
@@ -103,7 +103,7 @@ export default function TAASPage() {
             <LayoutGrid size={14} /> What is Token as a Service?
           </p>
           <p style={{ fontSize: 12, color: "rgba(248,248,250,0.60)", margin: 0, lineHeight: 1.6 }}>
-            Deploy, manage and earn yield on ERC-20 tokens on Avalanche Fuji — no code needed. Choose a template, customise parameters, deploy in one click, and connect directly with KAI vaults and AMM pools.
+            Deploy, manage and earn yield on ERC-20 tokens on Avalanche Fuji - no code needed. Choose a template, customise parameters, deploy in one click, and connect directly with KAI vaults and AMM pools.
           </p>
         </div>
 

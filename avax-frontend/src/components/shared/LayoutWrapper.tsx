@@ -3,7 +3,7 @@
 import { usePathname } from 'next/navigation';
 import BottomNav from '@/components/shared/BottomNav';
 
-const FULLSCREEN_ROUTES = ['/nuvari', '/ai'];
+const FULLSCREEN_ROUTES = ['/nuvari', '/ai', '/chat'];
 
 export default function LayoutWrapper({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();

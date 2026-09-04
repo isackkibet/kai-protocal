@@ -30,10 +30,10 @@ interface CFAData {
 }
 
 const ZONE_COLOR: Record<string, { color: string; icon: string }> = {
-  PROTECTED:    { color: '#22c55e', icon: '🛡️' },
-  ACTIVE:       { color: '#3b82f6', icon: '🌳' },
-  RESTORED:     { color: '#a855f7', icon: '🌱' },
-  UNDER_THREAT: { color: '#10b981', icon: '⚠️' },
+  PROTECTED:    { color: '#22c55e', icon: '' },
+  ACTIVE:       { color: '#3b82f6', icon: '' },
+  RESTORED:     { color: '#a855f7', icon: '' },
+  UNDER_THREAT: { color: '#10b981', icon: '' },
 };
 
 const ROLE_COLOR: Record<string, string> = {
@@ -99,7 +99,7 @@ export default function CFAPage() {
       <div style={{ width: 52, height: 52, borderRadius: '50%', background: 'linear-gradient(135deg,#10b981,#064e3b)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
         <Trees size={26} color="#fff" />
       </div>
-      <p style={{ color: 'rgba(248,248,250,0.45)', fontSize: 13, fontWeight: 600 }}>Loading CFA data…</p>
+      <p style={{ color: 'rgba(248,248,250,0.45)', fontSize: 13, fontWeight: 600 }}>Loading CFA data...</p>
     </div>
   );
 
@@ -208,8 +208,8 @@ export default function CFAPage() {
                       <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
                         <span style={{ fontSize: 18, lineHeight: 1 }}>{zc.icon}</span>
                         <div style={{ flex: 1 }}>
-                          <p style={{ fontSize: 13, fontWeight: 800, color: '#f8f8fa', margin: '0 0 2px' }}>{z.zoneName}</p>
-                          <p style={{ fontSize: 10, color: 'rgba(248,248,250,0.40)', margin: 0 }}>{z.areaHa} ha · {z.treeCount.toLocaleString()} trees</p>
+                  <p style={{ fontSize: 13, fontWeight: 800, color: '#f8f8fa', margin: '0 0 2px' }}>{z.zoneName}</p>
+                  <p style={{ fontSize: 10, color: 'rgba(248,248,250,0.40)', margin: 0 }}>{z.areaHa} ha - {z.treeCount.toLocaleString()} trees</p>
                         </div>
                         <span style={{ fontSize: 9, fontWeight: 800, padding: '3px 8px', borderRadius: 6, background: `${zc.color}18`, color: zc.color, border: `1px solid ${zc.color}35`, letterSpacing: 0.3 }}>{z.status.replace('_',' ')}</span>
                       </div>
@@ -235,10 +235,10 @@ export default function CFAPage() {
                 <div key={p.id} style={{ marginBottom: 8, borderRadius: 14, padding: '12px 14px', background: p.status === 'FLAGGED' ? 'rgba(16,185,129,0.07)' : 'rgba(255,255,255,0.03)', border: `1px solid ${p.status === 'FLAGGED' ? 'rgba(16,185,129,0.28)' : 'rgba(255,255,255,0.07)'}` }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                     {p.status === 'FLAGGED' ? <AlertTriangle size={14} color="#10b981" /> : <CheckCircle size={14} color="#22c55e" />}
-                    <p style={{ fontSize: 13, fontWeight: 700, color: '#f8f8fa', margin: 0, flex: 1 }}>{p.memberName} · {p.zone}</p>
+                    <p style={{ fontSize: 13, fontWeight: 700, color: '#f8f8fa', margin: 0, flex: 1 }}>{p.memberName} - {p.zone}</p>
                     <span style={{ fontSize: 10, color: 'rgba(248,248,250,0.38)' }}>{p.patrolDate}</span>
                   </div>
-                  {p.incidentType && <p style={{ fontSize: 11, color: '#f87171', margin: '5px 0 0 22px', fontWeight: 600 }}>⚠ {p.incidentType}</p>}
+                    {p.incidentType && <p style={{ fontSize: 11, color: '#f87171', margin: '5px 0 0 22px', fontWeight: 600 }}>Warning: {p.incidentType}</p>}
                 </div>
               ))}
             </section>
@@ -305,7 +305,7 @@ export default function CFAPage() {
                       </div>
                       <div>
                         <p style={{ fontSize: 13, fontWeight: 800, color: '#f8f8fa', margin: '0 0 2px' }}>{p.memberName}</p>
-                        <p style={{ fontSize: 10, color: 'rgba(248,248,250,0.42)', margin: 0 }}>{p.zone} · {p.patrolDate}</p>
+                        <p style={{ fontSize: 10, color: 'rgba(248,248,250,0.42)', margin: 0 }}>{p.zone} - {p.patrolDate}</p>
                       </div>
                     </div>
                     <span style={{
@@ -318,7 +318,7 @@ export default function CFAPage() {
 
                   {p.incidentType && (
                     <div style={{ marginBottom: 10, padding: '8px 11px', borderRadius: 9, background: 'rgba(16,185,129,0.08)', border: '1px solid rgba(16,185,129,0.20)' }}>
-                      <p style={{ fontSize: 11, color: '#f87171', fontWeight: 700, margin: 0 }}>⚠ Incident: {p.incidentType}</p>
+                      <p style={{ fontSize: 11, color: '#f87171', fontWeight: 700, margin: 0 }}>Incident: {p.incidentType}</p>
                     </div>
                   )}
 
@@ -416,8 +416,8 @@ export default function CFAPage() {
                     {/* vote bar */}
                     <div style={{ marginBottom: 8 }}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
-                        <span style={{ fontSize: 10, color: '#4ade80', fontWeight: 700 }}>✓ For: {p.votesFor} NVR ({forPct}%)</span>
-                        <span style={{ fontSize: 10, color: '#f87171', fontWeight: 700 }}>✗ Against: {p.votesAgainst} NVR</span>
+                        <span style={{ fontSize: 10, color: '#4ade80', fontWeight: 700 }}>For: {p.votesFor} NVR ({forPct}%)</span>
+                        <span style={{ fontSize: 10, color: '#f87171', fontWeight: 700 }}>Against: {p.votesAgainst} NVR</span>
                       </div>
                       <div style={{ height: 8, background: 'rgba(248,113,113,0.20)', borderRadius: 4 }}>
                         <div style={{ height: '100%', width: `${forPct}%`, borderRadius: 4, background: 'linear-gradient(90deg, #22c55e, #4ade80)', transition: 'width 0.6s ease' }} />

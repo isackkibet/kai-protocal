@@ -52,25 +52,25 @@ interface Product {
 // ─── Map each product to one of the live deployed ERC-20 tokens ──────────────
 const SECURITIES: Product[] = [
   {
-    id: "trust",   icon: "🤝", name: "KAI Trust",      desc: "Time-locked token trust for beneficiaries",
+    id: "trust",   icon: "", name: "KAI Trust",      desc: "Time-locked token trust for beneficiaries",
     apy: "15.2%",  color: "#FFD700", tokenSymbol: "NVR",
     conditionLabel: "Time-locked for 5 years",
     features: ["Time-lock smart contract", "Named beneficiary", "Automated release"],
   },
   {
-    id: "pension", icon: "🏦", name: "KAIVAX Pension",  desc: "Long-term retirement savings",
+    id: "pension",    icon: "", name: "KAIVAX Pension",  desc: "Long-term retirement savings",
     apy: "12.8%",  color: "#A78BFA", tokenSymbol: "YTOKEN",
     conditionLabel: "Vested until age 60",
     features: ["Vesting schedule", "Monthly auto-deposit", "Compound yield"],
   },
   {
-    id: "mmf",     icon: "💵", name: "Money Market Fund", desc: "Low-risk yBOB liquidity basket",
+    id: "mmf",     icon: "", name: "Money Market Fund", desc: "Low-risk yBOB liquidity basket",
     apy: "7.5%",   color: "#22C55E", tokenSymbol: "yBOB",
     conditionLabel: "Instant Liquidity (No Lock)",
     features: ["Instant liquidity", "RWA-backed", "Daily yield"],
   },
   {
-    id: "rwa",     icon: "🏗️", name: "RWA Tokenization", desc: "Tokenize land, property, or commodity",
+    id: "rwa",     icon: "", name: "RWA Tokenization", desc: "Tokenize land, property, or commodity",
     apy: "18.0%",  color: "#F97316", tokenSymbol: "YGOLD",
     conditionLabel: "Secondary Market Unlocked",
     features: ["Legal NFT wrapper", "On-chain verification", "Fractional trading"],
@@ -79,19 +79,19 @@ const SECURITIES: Product[] = [
 
 const INSURANCE: Product[] = [
   {
-    id: "crop",    icon: "🌾", name: "Community Crop Insurance", desc: "Protect against climate/weather crop loss",
+    id: "crop",    icon: "", name: "Community Crop Insurance", desc: "Protect against climate/weather crop loss",
     apy: "8.5%",   color: "#EAB308", tokenSymbol: "YGOLD",
     conditionLabel: "Parametric Trigger: Drought / Flood",
     features: ["Parametric weather triggers", "Instant payouts", "Community pooled risk"],
   },
   {
-    id: "forest",  icon: "🌲", name: "Forest Asset Protection", desc: "Cover for tokenized forest hectares",
+    id: "forest",     icon: "", name: "Forest Asset Protection", desc: "Cover for tokenized forest hectares",
     apy: "10.2%",  color: "#22C55E", tokenSymbol: "GAMI",
     conditionLabel: "Satellite Verified Outbreak/Fire",
     features: ["Wildfire protection", "Illegal logging cover", "Satellite verified"],
   },
   {
-    id: "medical", icon: "🏥", name: "Medical/Emergency Pool", desc: "Community health emergency coverage",
+    id: "medical",    icon: "", name: "Medical/Emergency Pool", desc: "Community health emergency coverage",
     apy: "5.0%",   color: "#EF4444", tokenSymbol: "CENTS",
     conditionLabel: "Requires Verified Medical Receipt",
     features: ["DAO approved claims", "Fast medical dispersal", "Subsidized premiums"],
@@ -101,84 +101,84 @@ const INSURANCE: Product[] = [
 // ─── Community Forest & Indigenous Commodities ────────────────────────────────
 const COMMUNITY: Product[] = [
   {
-    id: "honey", icon: "🍯", name: "Forest Honey Reserve",
+    id: "honey",    icon: "", name: "Forest Honey Reserve",
     desc: "Wild honey harvested from community-managed forests. Each unit represents 1 kg of certified raw honey.",
     apy: "14.0%", color: "#F59E0B", tokenSymbol: "GAMI",
     conditionLabel: "Harvest Verified · Seasonal Release",
     features: ["Community harvester registry", "Seasonal yield unlocks", "Forest stewardship rewards"],
   },
   {
-    id: "beads", icon: "📿", name: "Cultural Beadwork NFT",
+    id: "beads",    icon: "", name: "Cultural Beadwork NFT",
     desc: "Maasai, Ndebele & Turkana beadwork tokenized as fractional cultural NFTs. Artisans earn royalties on every trade.",
     apy: "11.5%", color: "#10b981", tokenSymbol: "NVR",
     conditionLabel: "Artisan Verified · DAO Curated",
     features: ["Artisan royalty on-chain", "Cultural IP protection", "Collector marketplace"],
   },
   {
-    id: "necklace", icon: "💎", name: "Heritage Necklace Vault",
+    id: "necklace",    icon: "", name: "Heritage Necklace Vault",
     desc: "Traditional necklaces and ceremonial jewellery tokenized. Protects artisan income and preserves cultural heritage.",
     apy: "9.8%", color: "#A78BFA", tokenSymbol: "YTOKEN",
     conditionLabel: "Artisan Certified · Secondary Market",
     features: ["Provenance on-chain", "Fractional ownership", "Heritage fund contribution"],
   },
   {
-    id: "milk", icon: "🥛", name: "Pastoral Milk Pool",
+    id: "milk",    icon: "", name: "Pastoral Milk Pool",
     desc: "Camel, cow & goat milk from pastoral communities tokenized for DeFi yield. Supports smallholder dairy farmers.",
     apy: "7.2%", color: "#60A5FA", tokenSymbol: "yBOB",
     conditionLabel: "Daily Collection Verified · Co-op Pooled",
     features: ["Cooperative milk pooling", "Real-time price oracle", "Farmer direct payments"],
   },
   {
-    id: "medicine", icon: "🌿", name: "Traditional Medicine Registry",
+    id: "medicine",    icon: "", name: "Traditional Medicine Registry",
     desc: "Indigenous medicinal plants and herbal formulations registered on-chain. Healers retain IP and royalties.",
     apy: "16.0%", color: "#34D399", tokenSymbol: "GAMI",
     conditionLabel: "Healer Council Approved · Rare Unlock",
     features: ["Healer IP protection", "Ethnobotanical registry", "Rare-plant conservation fund"],
   },
   {
-    id: "recipe", icon: "📜", name: "Community Recipe IP Vault",
+    id: "recipe",    icon: "", name: "Community Recipe IP Vault",
     desc: "Traditional food recipes, fermentation methods, and seed-saving techniques stored immutably on-chain.",
     apy: "8.0%", color: "#F97316", tokenSymbol: "CENTS",
     conditionLabel: "Community Council Ratified",
     features: ["Immutable recipe registry", "Licensing fee distribution", "Seed sovereignty protection"],
   },
   {
-    id: "charcoal", icon: "🪵", name: "Sustainable Charcoal Credits",
+    id: "charcoal",    icon: "", name: "Sustainable Charcoal Credits",
     desc: "Community woodlots producing certified sustainable charcoal. Carbon credits generated on each verified batch.",
     apy: "12.3%", color: "#78716C", tokenSymbol: "YGOLD",
     conditionLabel: "Carbon Audit Verified",
     features: ["Carbon credit stacking", "Woodlot stewardship", "Clean-cooking impact"],
   },
   {
-    id: "weaving", icon: "🧵", name: "Textile & Weaving Co-op",
+    id: "weaving",    icon: "", name: "Textile & Weaving Co-op",
     desc: "Kikoy, kente, kanga and basket weaving pooled into a community textile fund. Weavers earn advance yield on future sales.",
     apy: "10.5%", color: "#EC4899", tokenSymbol: "YTOKEN",
     conditionLabel: "Co-op Verified · Market Linked",
     features: ["Weaver advance payments", "Export market linkage", "Cultural textile archive"],
   },
   {
-    id: "seeds", icon: "🌱", name: "Heritage Seed Bank",
+    id: "seeds",    icon: "", name: "Heritage Seed Bank",
     desc: "Indigenous crop varieties preserved and tokenized. Communities stake tokens to fund seed multiplication.",
     apy: "6.5%", color: "#86EFAC", tokenSymbol: "NVR",
     conditionLabel: "Germination Verified · Season Unlock",
     features: ["Biodiversity preservation", "Seed sovereignty", "Community food security"],
   },
   {
-    id: "water", icon: "💧", name: "Community Water Rights",
+    id: "water",    icon: "", name: "Community Water Rights",
     desc: "Tokenized water source rights for pastoral and farming communities. Collateral for dry-season credit access.",
     apy: "5.8%", color: "#38BDF8", tokenSymbol: "yBOB",
     conditionLabel: "Water Table Sensor Verified",
     features: ["Water rights registry", "Dry-season credit line", "IoT sensor integration"],
   },
   {
-    id: "pottery", icon: "🏺", name: "Artisan Pottery & Ceramics",
+    id: "pottery",    icon: "", name: "Artisan Pottery & Ceramics",
     desc: "Hand-crafted community pottery registered as cultural RWAs. Each piece minted as NFT; proceeds fund pottery co-ops.",
     apy: "9.0%", color: "#FB923C", tokenSymbol: "CENTS",
     conditionLabel: "Artisan Guild Certified",
     features: ["Piece-level NFT minting", "Guild royalty split", "Tourism market access"],
   },
   {
-    id: "bark", icon: "🌳", name: "Bark Cloth & Fibre Arts",
+    id: "bark",    icon: "", name: "Bark Cloth & Fibre Arts",
     desc: "Ugandan bark cloth (UNESCO heritage) and sisal fibre arts tokenized. Protects endangered craft traditions.",
     apy: "13.2%", color: "#92400E", tokenSymbol: "YGOLD",
     conditionLabel: "UNESCO Heritage Registry",
@@ -255,36 +255,36 @@ export default function SecuritiesPage() {
     if (!isConnected || !address) { setShowModal(true); return; }
 
     const amt = parseFloat(stakeAmt);
-    if (!amt || amt <= 0) { setStatusMsg("⚠️ Enter an amount to deposit."); return; }
+    if (!amt || amt <= 0) { setStatusMsg("Enter an amount to deposit."); return; }
 
     const token = getToken(product.tokenSymbol);
     if (!token?.address) {
-      setStatusMsg(`⚠️ ${product.tokenSymbol} is not yet deployed on Fuji.`);
+      setStatusMsg(`${product.tokenSymbol} is not yet deployed on Fuji.`);
       return;
     }
 
     const walletBal = walletBalance(product.tokenSymbol);
     if (amt > walletBal) {
-      setStatusMsg(`⚠️ Insufficient ${product.tokenSymbol} balance (you have ${walletBal.toFixed(4)}).`);
+      setStatusMsg(`Insufficient ${product.tokenSymbol} balance (you have ${walletBal.toFixed(4)}).`);
       return;
     }
 
     setIsLoading(true);
-    setStatusMsg(`Switching to Avalanche Fuji…`);
+    setStatusMsg(`Switching to Avalanche Fuji...`);
     setTxUrl(null);
 
     try {
       await switchChainAsync({ chainId: avalancheFuji.id });
 
       // Step 1 — pay the small AVAX policy fee
-      setStatusMsg(`Paying ${FEE_AVAX} AVAX policy fee…`);
+      setStatusMsg(`Paying ${FEE_AVAX} AVAX policy fee...`);
       const feeTx = await sendTransactionAsync({
         to: TREASURY, value: parseEther(FEE_AVAX),
       });
       setTxUrl(`https://testnet.snowtrace.io/tx/${feeTx}`);
 
       // Step 2 — ERC-20 transfer of the actual tokens
-      setStatusMsg(`Transferring ${amt} ${product.tokenSymbol} on-chain…`);
+      setStatusMsg(`Transferring ${amt} ${product.tokenSymbol} on-chain...`);
       const tokenTx = await writeContractAsync({
         address:      token.address,
         abi:          ERC20_ABI,
@@ -295,7 +295,7 @@ export default function SecuritiesPage() {
 
       setTxUrl(`https://testnet.snowtrace.io/tx/${tokenTx}`);
       setStatusMsg(
-        `✅ Deposited ${amt} ${product.tokenSymbol} — policy active! ` +
+        `Deposited ${amt} ${product.tokenSymbol} - policy active! ` +
         `Fee: ${FEE_AVAX} AVAX · Tx: ${tokenTx.slice(0, 14)}…`
       );
 
@@ -305,13 +305,7 @@ export default function SecuritiesPage() {
 
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : "Transaction failed";
-      setStatusMsg(`❌ ${msg.slice(0, 120)}`);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  // ── Withdraw: ERC-20 transfer from treasury back to user ─────────────────
+      setStatusMsg(`${msg.slice(0, 120)}`);: ERC-20 transfer from treasury back to user ─────────────────
   // NOTE: treasury is a simple EOA so this sends FROM the connected wallet
   // back to itself — the invested balance is reset. A proper vault contract
   // would escrow funds; this keeps the UX real without a separate vault deploy.
@@ -323,10 +317,10 @@ export default function SecuritiesPage() {
     if (invested <= 0) return;
 
     const token = getToken(product.tokenSymbol);
-    if (!token?.address) { setStatusMsg(`⚠️ Token not deployed.`); return; }
+    if (!token?.address) { setStatusMsg(`Token not deployed.`); return; }
 
     setIsLoading(true);
-    setStatusMsg(`Initiating withdrawal — paying ${FEE_AVAX} AVAX release fee…`);
+    setStatusMsg(`Initiating withdrawal - paying ${FEE_AVAX} AVAX release fee...`);
     setTxUrl(null);
 
     try {
@@ -338,13 +332,13 @@ export default function SecuritiesPage() {
       });
       setTxUrl(`https://testnet.snowtrace.io/tx/${feeTx}`);
 
-      setStatusMsg(`✅ Release fee paid · ${invested} ${product.tokenSymbol} marked withdrawn. Tx: ${feeTx.slice(0, 14)}…`);
+      setStatusMsg(`Release fee paid - ${invested} ${product.tokenSymbol} marked withdrawn. Tx: ${feeTx.slice(0, 14)}...`);
       setInvestments(prev => ({ ...prev, [product.id]: 0 }));
       await refreshBalances();
 
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : "Transaction failed";
-      setStatusMsg(`❌ ${msg.slice(0, 120)}`);
+      setStatusMsg(`${msg.slice(0, 120)}`);
     } finally {
       setIsLoading(false);
     }
@@ -377,7 +371,7 @@ export default function SecuritiesPage() {
             <ArrowLeft size={18} color="#e84142" />
           </Link>
           <div>
-            <h1 style={{ fontSize: 22, fontWeight: 900, color: "#fff", margin: 0 }}>🏛️ Securities &amp; Insurance</h1>
+            <h1 style={{ fontSize: 22, fontWeight: 900, color: "#fff", margin: 0 }}>Securities &amp; Insurance</h1>
             <p style={{ fontSize: 11, color: "rgba(255,255,255,0.45)", margin: "3px 0 0" }}>
               Real ERC-20 deposits · Condition-based release · Fuji C-Chain
             </p>
@@ -406,14 +400,14 @@ export default function SecuritiesPage() {
           borderRadius: 14, padding: "14px 16px", color: "#e84142", fontWeight: 700,
           fontSize: 13, cursor: "pointer", textAlign: "center",
         }}>
-          🔗 Connect wallet to deposit tokens on Fuji
+           Connect wallet to deposit tokens on Fuji
         </button>
       )}
 
       {/* Developer toggles */}
       {devMode && (
         <div style={{ background: "rgba(239,68,68,0.08)", border: "1px dashed #EF4444", padding: 12, borderRadius: 12 }}>
-          <p style={{ fontSize: 11, color: "#FCA5A5", fontWeight: 700, margin: "0 0 8px" }}>🔧 CONDITION TOGGLES</p>
+          <p style={{ fontSize: 11, color: "#FCA5A5", fontWeight: 700, margin: "0 0 8px" }}>CONDITION TOGGLES</p>
           <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
             {Object.keys(conditions).map(k => (
               <button key={k} onClick={() => toggleCondition(k)} style={{
@@ -440,7 +434,7 @@ export default function SecuritiesPage() {
                 : "transparent",
               border: "none", cursor: "pointer", transition: "all 0.2s",
             }}>
-            {tab === "Community" ? "🌿 Community" : tab}
+                    {tab === "Community" ? "Community" : tab}
           </button>
         ))}
       </div>
@@ -586,8 +580,8 @@ export default function SecuritiesPage() {
                   {/* Status / tx message */}
                   {statusMsg && activeItem === product.id && (
                     <div style={{
-                      background: statusMsg.startsWith("❌") ? "rgba(239,68,68,0.1)" : "rgba(34,197,94,0.08)",
-                      border:     statusMsg.startsWith("❌") ? "1px solid rgba(239,68,68,0.3)" : "1px solid rgba(34,197,94,0.2)",
+                      background: "rgba(34,197,94,0.08)",
+                      border:     "1px solid rgba(34,197,94,0.2)",
                       padding: "10px 12px", borderRadius: 10, fontSize: 11, color: "#fff", marginBottom: 12,
                     }}>
                       {statusMsg}
@@ -622,7 +616,7 @@ export default function SecuritiesPage() {
                           color: status === "UNLOCKED" && ["#FFD700", "#EAB308", "#22C55E"].includes(product.color)
                             ? "#121212" : status === "UNLOCKED" ? "#fff" : "rgba(255,255,255,0.3)",
                         }}>
-                        {isLoading ? "⏳ Processing…" : status === "UNLOCKED" ? `Withdraw ${product.tokenSymbol}` : "Conditions Not Met"}
+                        {isLoading ? "Processing..." : status === "UNLOCKED" ? `Withdraw ${product.tokenSymbol}` : "Conditions Not Met"}
                       </button>
                       {status !== "UNLOCKED" && devMode && (
                         <p style={{ fontSize: 10, color: "rgba(255,255,255,0.3)", textAlign: "center", margin: "8px 0 0" }}>
@@ -638,7 +632,7 @@ export default function SecuritiesPage() {
                           background: "rgba(249,115,22,0.08)", border: "1px solid rgba(249,115,22,0.25)",
                           borderRadius: 10, padding: "12px 14px", fontSize: 11, color: "rgba(255,255,255,0.6)",
                         }}>
-                          ⏳ {product.tokenSymbol} is not yet deployed on Fuji. Deploy via the Hardhat script first.
+                          {product.tokenSymbol} is not yet deployed on Fuji. Deploy via the Hardhat script first.
                         </div>
                       ) : (
                         <>
@@ -657,7 +651,7 @@ export default function SecuritiesPage() {
                           {/* Fee notice */}
                           <p style={{ fontSize: 10, color: "rgba(255,255,255,0.3)", margin: "0 0 8px" }}>
                             <Shield size={10} style={{ display: "inline", marginRight: 4, verticalAlign: "middle" }} />
-                            {FEE_AVAX} AVAX policy fee + ERC-20 transfer — both on Fuji Snowtrace
+                            {FEE_AVAX} AVAX policy fee + ERC-20 transfer - both on Fuji Snowtrace
                           </p>
 
                           <div style={{ display: "flex", gap: 8 }}>
@@ -685,7 +679,7 @@ export default function SecuritiesPage() {
                                 cursor: (isLoading || !stakeAmt) ? "not-allowed" : "pointer",
                                 opacity: (isLoading || !stakeAmt) ? 0.6 : 1,
                               }}>
-                              {isLoading ? "⏳" : "Deposit"}
+                              {isLoading ? "Processing" : "Deposit"}
                             </button>
                           </div>
                         </>
