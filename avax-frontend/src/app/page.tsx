@@ -22,23 +22,23 @@ import {
 
 // ── Quick actions ─────────────────────────────────────────────────────────────
 const QUICK = [
-  { name: 'AI Agent',   href: '/ai',         icon: Bot,        color: '#a855f7', bg: 'rgba(168,85,247,0.10)'  },
-  { name: 'Playground', href: '/nuvari',     icon: FlaskConical,color:'#e84142', bg: 'rgba(232,65,66,0.10)'   },
-  { name: 'Scan & Pay', href: '/pay',        icon: ScanLine,   color: '#22c55e', bg: 'rgba(34,197,94,0.10)'   },
-  { name: 'Securities', href: '/securities', icon: ShieldCheck,color: '#3b82f6', bg: 'rgba(59,130,246,0.10)'  },
-  { name: 'NFT Mkt',    href: '/connft',     icon: ImageIcon,  color: '#06b6d4', bg: 'rgba(6,182,212,0.10)'   },
-  { name: 'Pools',      href: '/pools',      icon: Droplets,   color: '#10b981', bg: 'rgba(16,185,129,0.10)'  },
-  { name: 'Vaults',     href: '/vaults',     icon: Lock,       color: '#f59e0b', bg: 'rgba(245,158,11,0.10)'  },
-  { name: 'Airdrop',    href: '/mine',       icon: Gift,       color: '#f97316', bg: 'rgba(249,115,22,0.10)'  },
-  { name: 'KAI Web',    href: '/kai',        icon: Globe,      color: '#e84142', bg: 'rgba(232,65,66,0.10)'   },
-  { name: 'TaaS',       href: '/taas',       icon: LayoutGrid, color: '#8b5cf6', bg: 'rgba(139,92,246,0.10)'  },
+  { name: 'AI Agent',   href: '/ai',         icon: Bot,        color: '#10b981', bg: 'rgba(16,185,129,0.10)' },
+  { name: 'Playground', href: '/nuvari',     icon: FlaskConical,color:'#10b981', bg: 'rgba(16,185,129,0.10)' },
+  { name: 'Scan & Pay', href: '/pay',        icon: ScanLine,   color: '#34d399', bg: 'rgba(52,211,153,0.10)' },
+  { name: 'Securities', href: '/securities', icon: ShieldCheck,color: '#22d3ee', bg: 'rgba(34,211,238,0.10)' },
+  { name: 'NFT Mkt',    href: '/connft',     icon: ImageIcon,  color: '#06b6d4', bg: 'rgba(6,182,212,0.10)' },
+  { name: 'Pools',      href: '/pools',      icon: Droplets,   color: '#059669', bg: 'rgba(5,150,105,0.10)' },
+  { name: 'Vaults',     href: '/vaults',     icon: Lock,       color: '#a3e635', bg: 'rgba(163,230,53,0.10)' },
+  { name: 'Airdrop',    href: '/mine',       icon: Gift,       color: '#f59e0b', bg: 'rgba(245,158,11,0.10)' },
+  { name: 'KAI Web',    href: '/kai',        icon: Globe,      color: '#10b981', bg: 'rgba(16,185,129,0.10)' },
+  { name: 'TaaS',       href: '/taas',       icon: LayoutGrid, color: '#a855f7', bg: 'rgba(139,92,246,0.10)' },
 ];
 
 // ── Dashboards ────────────────────────────────────────────────────────────────
 const DASHBOARDS = [
-  { id:'cfa',    href:'/cfa',    icon:Trees, color:'#e84142', label:'CFA Dashboard',     sub:'Community Forest · Treasury · Governance' },
-  { id:'sme',    href:'/sme',    icon:Store, color:'#3b82f6', label:'SME Dashboard',      sub:'Digitise Cash · Loans · Inventory'         },
-  { id:'saving', href:'/saving', icon:Users, color:'#a855f7', label:'Saving Group',       sub:'Pool Funds · Yield · Decentralised'        },
+  { id:'cfa',    href:'/cfa',    icon:Trees, color:'#10b981', label:'CFA Dashboard',     sub:'Community Forest · Treasury · Governance' },
+  { id:'sme',    href:'/sme',    icon:Store, color:'#22d3ee', label:'SME Dashboard',      sub:'Digitise Cash · Loans · Inventory'         },
+  { id:'saving', href:'/saving', icon:Users, color:'#059669', label:'Saving Group',       sub:'Pool Funds · Yield · Decentralised'        },
 ];
 
 function buildCalls(addr: `0x${string}` | undefined) {
@@ -152,11 +152,11 @@ export default function Home() {
           {/* Avatar */}
           <div style={{
             width: 46, height: 46, borderRadius: '50%', flexShrink: 0,
-            background: 'linear-gradient(135deg, #3d1212 0%, #1a0808 100%)',
-            border: '1.5px solid rgba(232,65,66,0.45)',
+            background: 'linear-gradient(135deg, #064e3b 0%, #022c22 100%)',
+            border: '1.5px solid rgba(16,185,129,0.45)',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
-            fontSize: 19, fontWeight: 900, color: '#ff8080',
-            boxShadow: '0 0 18px rgba(232,65,66,0.22)',
+            fontSize: 19, fontWeight: 900, color: '#6ee7b7',
+            boxShadow: '0 0 18px rgba(16,185,129,0.22)',
           }}>A</div>
           <div>
             <p style={{ fontSize: 9, color: 'var(--text-dim)', margin: '0 0 1px', letterSpacing: 1.2, textTransform: 'uppercase', fontWeight: 700 }}>Good day</p>
@@ -172,10 +172,10 @@ export default function Home() {
             display: 'flex', alignItems: 'center', gap: 7,
             padding: '8px 14px', borderRadius: 999, cursor: 'pointer', border: 'none',
             background: isConnected
-              ? 'linear-gradient(135deg, rgba(34,197,94,0.18), rgba(16,185,129,0.12))'
-              : 'linear-gradient(135deg, rgba(232,65,66,0.18), rgba(185,28,28,0.12))',
-            boxShadow: `0 0 0 1px ${isConnected ? 'rgba(34,197,94,0.35)' : 'rgba(232,65,66,0.35)'}`,
-            color: isConnected ? 'var(--green)' : 'var(--red)',
+              ? 'linear-gradient(135deg, rgba(16,185,129,0.18), rgba(5,150,105,0.12))'
+              : 'linear-gradient(135deg, rgba(16,185,129,0.18), rgba(4,120,88,0.12))',
+            boxShadow: `0 0 0 1px ${isConnected ? 'rgba(16,185,129,0.35)' : 'rgba(16,185,129,0.35)'}`,
+            color: isConnected ? 'var(--green)' : 'var(--green)',
             fontSize: 11, fontWeight: 800,
           }}>
           <span style={{ width: 7, height: 7, borderRadius: '50%', background: isConnected ? 'var(--green)' : 'var(--red)', boxShadow: `0 0 8px ${isConnected ? 'var(--green)' : 'var(--red)'}` }} />
@@ -184,22 +184,22 @@ export default function Home() {
       </header>
 
       {/* ── NETWORK STRIP ──────────────────────────────── */}
-      <div style={{ margin: '14px 18px 0', padding: '10px 14px', borderRadius: 12, background: 'rgba(232,65,66,0.055)', border: '1px solid rgba(232,65,66,0.15)', display: 'flex', alignItems: 'center', gap: 10 }}>
-        <div style={{ width: 32, height: 32, borderRadius: 10, background: 'rgba(232,65,66,0.12)', border: '1px solid rgba(232,65,66,0.25)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16, flexShrink: 0 }}>⛰️</div>
+      <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }} style={{ margin: '14px 18px 0', padding: '10px 14px', borderRadius: 12, background: 'rgba(16,185,129,0.055)', border: '1px solid rgba(16,185,129,0.15)', display: 'flex', alignItems: 'center', gap: 10 }}>
+        <div style={{ width: 32, height: 32, borderRadius: 10, background: 'rgba(16,185,129,0.12)', border: '1px solid rgba(16,185,129,0.25)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16, flexShrink: 0 }}>⛰️</div>
         <div style={{ flex: 1 }}>
-          <p style={{ fontSize: 11, fontWeight: 800, color: 'var(--red)', margin: 0 }}>Avalanche C-Chain · Fuji Testnet</p>
+          <p style={{ fontSize: 11, fontWeight: 800, color: 'var(--green)', margin: 0 }}>Avalanche C-Chain · Fuji Testnet</p>
           <p style={{ fontSize: 10, color: 'var(--text-muted)', margin: 0 }}>6 Ecosystem Tokens · DeFi Vaults · DAO</p>
         </div>
         <div style={{ display: 'flex', gap: 3 }}>
-          {[0,1,2].map(i => <div key={i} style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--red)', opacity: 0.4 + i*0.2, animation: `pulse-gold ${1+i*0.25}s ease-in-out infinite` }} />)}
+          {[0,1,2].map(i => <div key={i} style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--green)', opacity: 0.4 + i*0.2, animation: `pulse-gold ${1+i*0.25}s ease-in-out infinite` }} />)}
         </div>
-      </div>
+      </motion.div>
 
       {/* ── PORTFOLIO CARD ─────────────────────────────── */}
       <div className="glass-elevated" style={{ margin: '14px 18px', borderRadius: 22, padding: '20px 18px', position: 'relative', overflow: 'hidden' }}>
-        {/* Red glow blob */}
-        <div style={{ position: 'absolute', top: -40, right: -40, width: 140, height: 140, borderRadius: '50%', background: 'radial-gradient(circle, rgba(232,65,66,0.12) 0%, transparent 70%)', pointerEvents: 'none' }} />
-        <div style={{ position: 'absolute', bottom: -30, left: -30, width: 100, height: 100, borderRadius: '50%', background: 'radial-gradient(circle, rgba(185,28,28,0.08) 0%, transparent 70%)', pointerEvents: 'none' }} />
+        {/* Green glow blob */}
+        <div style={{ position: 'absolute', top: -40, right: -40, width: 140, height: 140, borderRadius: '50%', background: 'radial-gradient(circle, rgba(16,185,129,0.12) 0%, transparent 70%)', pointerEvents: 'none' }} />
+        <div style={{ position: 'absolute', bottom: -30, left: -30, width: 100, height: 100, borderRadius: '50%', background: 'radial-gradient(circle, rgba(5,150,105,0.08) 0%, transparent 70%)', pointerEvents: 'none' }} />
 
         {/* Portfolio value */}
         <div style={{ position: 'relative', marginBottom: 16 }}>
