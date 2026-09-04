@@ -2,7 +2,7 @@
 Agent 6: Policy Recommender
 Analyses a user profile (age, holdings, risk tolerance, goals) and recommends
 the most suitable KAIVAX securities, insurance, and community products.
-Pure Ollama reasoning — no external APIs.
+Pure Groq reasoning — no external APIs.
 """
 
 from __future__ import annotations

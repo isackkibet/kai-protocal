@@ -29,7 +29,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 
-# ── Local embeddings (no Ollama required) ─────────────────────────────────────
+# ── Local embeddings (ChromaDB ONNX — no external service required) ────────────
 
 class LocalEmbeddings(Embeddings):
     """Wrapper around ChromaDB's built-in ONNX embedding model (all-MiniLM-L6-v2)."""

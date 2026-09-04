@@ -3,7 +3,7 @@ Agent 7: Solidity Code Generator
 Generates Solidity smart contracts from plain-language descriptions,
 then self-corrects by running `hardhat compile` and feeding errors back
 to the model — loops until it compiles or max retries reached.
-No external APIs — uses local Ollama + local Hardhat.
+No external APIs — uses Groq cloud + local Hardhat.
 """
 
 from __future__ import annotations
