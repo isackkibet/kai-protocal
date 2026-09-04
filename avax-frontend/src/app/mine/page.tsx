@@ -7,9 +7,9 @@ import { useKaivaxStore } from '@/store/useKaivaxStore';
 import { CheckCircle, Users, UserPlus, ArrowLeft, Coins, CircleCheck, Flame, Gift, Sparkles } from 'lucide-react';
 
 const WHITELIST = [
-  { name: 'AVAX Alpha Miners',  spots: '247 / 500', badge: '🔥 Hot',    status: 'open',   reward: '500 NVR' },
-  { name: 'NVR Launch Pool',    spots: '89 / 200',  badge: '✨ Early',  status: 'open',   reward: '1,000 NVR' },
-  { name: 'Core Wallet Promo', spots: '500 / 500', badge: '⏰ Closed', status: 'closed', reward: '200 NVR' },
+  { name: 'AVAX Alpha Miners',  spots: '247 / 500', badge: 'Hot',    status: 'open',   reward: '500 NVR' },
+  { name: 'NVR Launch Pool',    spots: '89 / 200',  badge: 'Early',  status: 'open',   reward: '1,000 NVR' },
+  { name: 'Core Wallet Promo', spots: '500 / 500', badge: 'Closed', status: 'closed', reward: '200 NVR' },
 ];
 
 const ECOSYSTEM_REWARDS = [
@@ -86,7 +86,7 @@ export default function MinePage() {
           <ArrowLeft size={18} color="#10b981" />
         </Link>
         <div>
-          <h1 style={{ fontSize: 24, fontWeight: 900, color: '#fff', margin: 0 }}>⛏️ Mining & Airdrops</h1>
+          <h1 style={{ fontSize: 24, fontWeight: 900, color: '#fff', margin: 0 }}>Mining & Airdrops</h1>
           <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.5)', margin: '4px 0 0' }}>
             Claim daily rewards · Participate in Avalanche launchpools
           </p>
@@ -128,7 +128,7 @@ export default function MinePage() {
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
           <div>
             <p style={{ fontSize: 14, fontWeight: 800, color: '#a78bfa', margin: '0 0 4px' }}>
-              🚀 Early Access Waitlist
+              Early Access Waitlist
             </p>
             <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.6)', margin: 0 }}>
               Join the waitlist to unlock advanced mining tiers, higher rewards, and exclusive drops!
@@ -164,7 +164,7 @@ export default function MinePage() {
             <h2 style={{ fontSize: 20, fontWeight: 900, margin: '2px 0 6px', color: '#fff' }}>Claim 10 NVR Tokens</h2>
             <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)', margin: 0 }}>Free claim once every 24 hours for C-Chain wallets.</p>
           </div>
-          <div style={{ fontSize: 32 }}>🎁</div>
+          <div style={{ fontSize: 32 }}></div>
         </div>
 
         <div style={{ margin: '16px 0', borderTop: '1px solid rgba(255,255,255,0.06)' }} />
@@ -178,7 +178,7 @@ export default function MinePage() {
                 <p style={{ fontSize: 10, color: 'rgba(74,222,128,0.7)', margin: 0 }}>Come back in {fmtTime(countdown)} to claim again.</p>
               </div>
               <div style={{ marginLeft: 'auto', padding: '6px 12px', borderRadius: 10, background: 'rgba(34,197,94,0.1)', border: '1px solid rgba(34,197,94,0.3)', fontSize: 11, color: '#22C55E', fontWeight: 700 }}>
-                🔢 Streak: 3
+                Streak: 3
               </div>
             </div>
           </div>
@@ -189,7 +189,7 @@ export default function MinePage() {
             className="btn-primary"
             style={{ width: '100%', padding: '14px', borderRadius: 12, fontSize: 14, fontWeight: 800 }}
           >
-            {claimProgress === 1 ? '⏳ Processing...' : '🎁 Claim 10 NVR Now'}
+            {claimProgress === 1 ? 'Processing...' : 'Claim 10 NVR Now'}
           </button>
         )}
       </div>
@@ -202,7 +202,7 @@ export default function MinePage() {
       }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
           <div>
-            <p style={{ fontSize: 13, fontWeight: 800, color: '#10b981', margin: 0 }}>🤖 Auto-Drop Agent</p>
+            <p style={{ fontSize: 13, fontWeight: 800, color: '#10b981', margin: 0 }}>Auto-Drop Agent</p>
             <p style={{ fontSize: 10, color: 'rgba(255,255,255,0.4)', margin: '3px 0 0' }}>
               AI bot mines tokens for you 24/7 on Avalanche Fuji
             </p>
@@ -216,7 +216,7 @@ export default function MinePage() {
           {[
             { l: 'Mining Rate', v: '0.000 /s', c: '#10b981' },
             { l: 'Total Mined',  v: '0.0 NVR',   c: '#10b981' },
-            { l: 'Status',       v: '⚫ Idle',    c: '#22C55E' },
+            { l: 'Status',       v: 'Idle',    c: '#22C55E' },
           ].map(s => (
             <div key={s.l} style={{ background: 'rgba(255,255,255,0.04)', borderRadius: 10, padding: '8px 10px', border: '1px solid rgba(255,255,255,0.06)' }}>
               <p style={{ fontSize: 9, color: 'rgba(255,255,255,0.4)', margin: '0 0 3px', fontWeight: 700 }}>{s.l}</p>
@@ -228,7 +228,7 @@ export default function MinePage() {
 
       {/* Mint Token */}
       <div className="glass" style={{ padding: 20, borderRadius: 20, border: '1px solid rgba(167,139,250,0.3)' }}>
-        <p style={{ fontSize: 14, fontWeight: 800, color: '#a78bfa', margin: '0 0 4px' }}>🏭 Mint New Token</p>
+        <p style={{ fontSize: 14, fontWeight: 800, color: '#a78bfa', margin: '0 0 4px' }}>Mint New Token</p>
         <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.5)', margin: '0 0 14px' }}>
           Deploy your own ERC-20 token on Avalanche
         </p>
@@ -252,12 +252,12 @@ export default function MinePage() {
                 fontWeight: 700, fontSize: 14, padding: '12px', borderRadius: 12,
                 border: 'none', cursor: mintName ? 'pointer' : 'not-allowed', fontFamily: 'inherit',
               }}>
-              🚀 Mint on Avalanche Fuji
+              Mint on Avalanche Fuji
             </button>
           </div>
         ) : (
           <div style={{ textAlign: 'center', padding: '12px 0' }}>
-            <div style={{ fontSize: 36, marginBottom: 8 }}>🎉</div>
+            <div style={{ fontSize: 36, marginBottom: 8 }}></div>
             <p style={{ fontSize: 13, fontWeight: 700, color: '#22C55E', margin: 0 }}>Token Minted!</p>
             <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.5)', margin: '6px 0 0' }}>Contract Address:</p>
             <p style={{ fontFamily: 'monospace', fontSize: 12, fontWeight: 700, color: '#10b981', margin: '4px 0 12px' }}>{minted}</p>
@@ -277,14 +277,14 @@ export default function MinePage() {
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
           {WHITELIST.map((w, i) => (
             <div key={i} className="glass" style={{ padding: '14px 16px', borderRadius: 16, display: 'flex', alignItems: 'center', gap: 12 }}>
-              <div style={{ width: 40, height: 40, borderRadius: 10, background: 'rgba(16,185,129,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18 }}>🎫</div>
+              <div style={{ width: 40, height: 40, borderRadius: 10, background: 'rgba(16,185,129,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18 }}></div>
               <div style={{ flex: 1 }}>
                 <p style={{ fontSize: 13, fontWeight: 700, color: '#fff', margin: 0 }}>{w.name}</p>
                 <div style={{ display: 'flex', gap: 8, marginTop: 3 }}>
                   <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.4)' }}>
                     <Users size={10} style={{ display: 'inline', marginRight: 3 }} />{w.spots}
                   </span>
-                  <span style={{ fontSize: 10, color: '#22C55E' }}>🎁 {w.reward}</span>
+                  <span style={{ fontSize: 10, color: '#22C55E' }}>{w.reward}</span>
                 </div>
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 4 }}>

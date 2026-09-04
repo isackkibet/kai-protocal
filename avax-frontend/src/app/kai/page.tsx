@@ -4,17 +4,17 @@ import Link from 'next/link';
 import { ChevronLeft, ExternalLink, Menu, X } from 'lucide-react';
 
 const PAGES = [
-  { label: '🏠 Home',           file: 'index.html' },
-  { label: '⚠️ Problem',        file: 'problems.html' },
-  { label: '💡 Solution',       file: 'solution.html' },
-  { label: '📦 Products',       file: 'products.html' },
-  { label: '🛡️ Insurance',      file: 'insurance.html' },
-  { label: '🏦 Pension',        file: 'pension.html' },
-  { label: '🔒 Trust',          file: 'trust.html' },
-  { label: '🪙 Tokens',         file: 'tokens.html' },
-  { label: '🌐 Ecosystem',      file: 'ecosystem.html' },
-  { label: '🏛️ DAO',            file: 'DAO.html' },
-  { label: '📊 Business Canvas', file: 'bizcanvas.html' },
+  { label: 'Home',           file: 'index.html' },
+  { label: 'Problem',        file: 'problems.html' },
+  { label: 'Solution',       file: 'solution.html' },
+  { label: 'Products',       file: 'products.html' },
+  { label: 'Insurance',      file: 'insurance.html' },
+  { label: 'Pension',        file: 'pension.html' },
+  { label: 'Trust',          file: 'trust.html' },
+  { label: 'Tokens',         file: 'tokens.html' },
+  { label: 'Ecosystem',      file: 'ecosystem.html' },
+  { label: 'DAO',            file: 'DAO.html' },
+  { label: 'Business Canvas', file: 'bizcanvas.html' },
 ];
 
 export default function KaiWebPage() {
