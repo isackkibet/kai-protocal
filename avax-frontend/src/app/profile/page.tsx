@@ -437,7 +437,7 @@ export default function ProfilePage() {
           >
             {/* Info banner */}
             <div style={{ padding: '11px 14px', borderRadius: 12, background: 'rgba(34,197,94,0.06)', border: '1px solid rgba(34,197,94,0.18)', fontSize: 11, color: 'rgba(248,248,250,0.58)', lineHeight: 1.55 }}>
-              🌳 CFAs are community groups managing forests on Avalanche. Your membership unlocks access to forest product yield vaults (6–16% APY), governance voting, and carbon credit rewards.
+              CFAs are community groups managing forests on Avalanche. Your membership unlocks access to forest product yield vaults (6–16% APY), governance voting, and carbon credit rewards.
             </div>
 
             <Field label="CFA Group Name" required>
@@ -505,7 +505,7 @@ export default function ProfilePage() {
             color="#3b82f6"
           >
             <div style={{ padding: '11px 14px', borderRadius: 12, background: 'rgba(59,130,246,0.06)', border: '1px solid rgba(59,130,246,0.18)', fontSize: 11, color: 'rgba(248,248,250,0.58)', lineHeight: 1.55 }}>
-              🏪 SME profiles unlock working capital loans (up to KES 50K), inventory finance, yBOB merchant accounts, and revenue-based tokenisation on Avalanche.
+              SME profiles unlock working capital loans (up to KES 50K), inventory finance, yBOB merchant accounts, and revenue-based tokenisation on Avalanche.
             </div>
 
             <Field label="Business Name" required>
@@ -579,7 +579,7 @@ export default function ProfilePage() {
             color="#a855f7"
           >
             <div style={{ padding: '11px 14px', borderRadius: 12, background: 'rgba(168,85,247,0.06)', border: '1px solid rgba(168,85,247,0.18)', fontSize: 11, color: 'rgba(248,248,250,0.58)', lineHeight: 1.55 }}>
-              💜 Chama members pool monthly contributions that KAI auto-routes to the highest-yield vault strategy. Current best: <span style={{ color: '#c084fc', fontWeight: 700 }}>22% APY via GAMI vault</span>.
+              Chama members pool monthly contributions that KAI auto-routes to the highest-yield vault strategy. Current best: <span style={{ color: '#c084fc', fontWeight: 700 }}>22% APY via GAMI vault</span>.
             </div>
 
             <Field label="Chama / SACCO Name" required>

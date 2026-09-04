@@ -300,7 +300,7 @@ export default function BridgeDashboard() {
             onClick={() => setShowWalletModal(true)}
             className="btn-gold px-5 py-2.5 rounded-full text-xs"
           >
-            🔗 Connect MetaMask / Core
+            Connect MetaMask / Core
           </button>
         )}
       </div>
