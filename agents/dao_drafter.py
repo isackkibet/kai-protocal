@@ -2,7 +2,7 @@
 Agent 4: DAO Proposal Drafter
 Takes a plain-language idea and structures it into a formal KAIVAX DAO
 governance proposal with rationale, impact analysis, and vote parameters.
-No external APIs — pure Ollama reasoning.
+No external APIs — pure Groq reasoning.
 """
 
 from __future__ import annotations

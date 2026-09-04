@@ -1,7 +1,7 @@
 """
 Agent 1: Transaction Analyst
 Fetches raw transaction data from Avalanche Fuji via JSON-RPC and explains
-what it did in plain English using the local Ollama model.
+what it did in plain English using the Groq cloud model.
 No external APIs — uses the public Fuji RPC endpoint.
 """
 

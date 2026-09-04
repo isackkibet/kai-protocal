@@ -1,7 +1,7 @@
 """
 Agent 3: Smart Contract Auditor
 Reads Solidity source files from the contracts/ directory and produces
-structured security findings using the local Ollama model.
+structured security findings using the Groq cloud model.
 No external APIs — pure static analysis via LLM reasoning.
 """
 
