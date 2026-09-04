@@ -2,7 +2,7 @@
 Agent 2: Portfolio Health Analyst
 Reads wallet token balances, vault share positions, and LP holdings from
 Avalanche Fuji C-Chain via JSON-RPC, then produces a structured health report.
-No external APIs — all on-chain data + local Ollama reasoning.
+No external APIs — all on-chain data + Groq reasoning.
 """
 
 from __future__ import annotations

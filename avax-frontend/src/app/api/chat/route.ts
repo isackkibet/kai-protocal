@@ -135,7 +135,7 @@ export async function POST(req: Request) {
           });
         }
       } catch {
-        // FastAPI offline — fall through to Ollama direct stream
+        // FastAPI offline — fall through to Groq direct stream
       }
 
       // Fallback: stream directly from Groq
