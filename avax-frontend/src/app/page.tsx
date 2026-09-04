@@ -342,22 +342,23 @@ export default function Home() {
       </section>
 
       {/* ── FLOATING AGENT ─────────────────────────────── */}
-      <div style={{ position: 'fixed', bottom: 84, right: 16, zIndex: 40 }}>
+      <motion.div initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 0.6 }} style={{ position: 'fixed', bottom: 84, right: 16, zIndex: 40 }}>
+        <AnimatePresence>
         {agentOpen && (
-          <div className="scale-in" style={{
+          <motion.div initial={{ opacity: 0, y: 16, scale: 0.95 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: 16, scale: 0.95 }} transition={{ duration: 0.2 }} style={{
             position: 'absolute', bottom: 58, right: 0, width: 290,
-            background: 'var(--surface-2)', border: '1px solid rgba(232,65,66,0.25)',
+            background: 'var(--surface-2)', border: '1px solid rgba(16,185,129,0.25)',
             borderRadius: 20, boxShadow: '0 16px 48px rgba(0,0,0,0.60)', overflow: 'hidden',
           }}>
             {/* Header */}
-            <div style={{ padding: '12px 14px', borderBottom: '1px solid rgba(232,65,66,0.12)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'rgba(232,65,66,0.05)' }}>
+            <div style={{ padding: '12px 14px', borderBottom: '1px solid rgba(16,185,129,0.12)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'rgba(16,185,129,0.05)' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <div style={{ width: 28, height: 28, borderRadius: '50%', background: 'linear-gradient(135deg,#e84142,#7c1d1d)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <div style={{ width: 28, height: 28, borderRadius: '50%', background: 'linear-gradient(135deg,#10b981,#064e3b)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                   <Bot size={14} color="#fff" />
                 </div>
                 <div>
                   <p style={{ fontSize: 12, fontWeight: 800, margin: 0, color: 'var(--white)' }}>KAI Intelligence</p>
-                  <p style={{ fontSize: 9, color: 'var(--red)', margin: 0, fontWeight: 700 }}>● RAG Agent</p>
+                  <p style={{ fontSize: 9, color: 'var(--green)', margin: 0, fontWeight: 700 }}>● RAG Agent</p>
                 </div>
               </div>
               <button onClick={() => setAgentOpen(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--white-45)' }}><X size={16} /></button>
@@ -398,14 +399,14 @@ export default function Home() {
                   flex: 1, background: 'var(--white-04)', border: '1px solid var(--white-08)',
                   borderRadius: 10, padding: '8px 10px', fontSize: 12, color: 'var(--white)',
                   outline: 'none', fontFamily: 'inherit', resize: 'none', lineHeight: 1.4,
-                  caretColor: 'var(--red)',
+                  caretColor: 'var(--green)',
                 }}
-                onFocus={e => (e.target.style.borderColor = 'rgba(232,65,66,0.45)')}
+                onFocus={e => (e.target.style.borderColor = 'rgba(16,185,129,0.45)')}
                 onBlur={e  => (e.target.style.borderColor = 'var(--white-08)')}
               />
               <button onClick={askAgent} disabled={agentBusy || !agentQ.trim()} style={{
                 width: 38, height: 38, borderRadius: 10, alignSelf: 'flex-end', flexShrink: 0,
-                background: agentQ.trim() && !agentBusy ? 'linear-gradient(135deg,#e84142,#b91c1c)' : 'var(--white-04)',
+                background: agentQ.trim() && !agentBusy ? 'linear-gradient(135deg,#10b981,#047857)' : 'var(--white-04)',
                 border: 'none', cursor: agentQ.trim() ? 'pointer' : 'not-allowed',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                 transition: 'all 0.2s',
