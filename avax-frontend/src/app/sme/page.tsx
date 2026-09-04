@@ -98,7 +98,7 @@ export default function SMEPage() {
       <div style={{ width: 52, height: 52, borderRadius: '50%', background: 'linear-gradient(135deg,#3b82f6,#1d4ed8)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
         <Store size={26} color="#fff" />
       </div>
-      <p style={{ color: 'rgba(248,248,250,0.45)', fontSize: 13, fontWeight: 600 }}>Loading SME data…</p>
+      <p style={{ color: 'rgba(248,248,250,0.45)', fontSize: 13, fontWeight: 600 }}>Loading SME data...</p>
     </div>
   );
 

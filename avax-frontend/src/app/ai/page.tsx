@@ -11,6 +11,7 @@ import Link from 'next/link';
 import AgentProposalCard, { AgentProposal } from '@/components/AgentProposalCard';
 import { ECOSYSTEM_TOKENS } from '@/lib/tokens';
 import { VAULT_ADDRESSES } from '@/lib/addresses';
+import { formatChat } from '@/lib/formatChat';
 
 interface Msg {
   role: 'ai' | 'user';
@@ -96,10 +97,7 @@ function detectProposal(query: string): AgentProposal | undefined {
 }
 
 function fmt(text: string) {
-  return text
-    .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-    .replace(/`(.*?)`/g, '<code style="background:rgba(16,185,129,0.15);padding:1px 5px;border-radius:4px;font-size:11.5px;font-family:monospace;color:#86efac">$1</code>')
-    .replace(/\n/g, '<br/>');
+  return formatChat(text);
 }
 
 export default function AIPage() {
@@ -286,23 +284,23 @@ export default function AIPage() {
                     </div>
                   )}
 
-                  <div style={{ maxWidth: '78%', display: 'flex', flexDirection: 'column', gap: 5, alignItems: isUser ? 'flex-end' : 'flex-start' }}>
+                  <div style={{ maxWidth: '92%', display: 'flex', flexDirection: 'column', gap: 6, alignItems: isUser ? 'flex-end' : 'flex-start' }}>
                     {/* Agent label */}
                     {!isUser && m.agent && (
-                      <span style={{ fontSize: 9, fontWeight: 800, color: 'rgba(16,185,129,0.70)', letterSpacing: 0.8, textTransform: 'uppercase', marginLeft: 4 }}>
+                      <span style={{ fontSize: 10, fontWeight: 800, color: 'rgba(16,185,129,0.70)', letterSpacing: 0.8, textTransform: 'uppercase', marginLeft: 4 }}>
                         {m.agent}{m.sources ? ` · ${m.sources} sources` : ''}
                       </span>
                     )}
 
                     {/* Bubble */}
                     <div style={{
-                      padding: '11px 15px',
+                      padding: '14px 18px',
                       borderRadius: isUser ? '18px 18px 4px 18px' : '4px 18px 18px 18px',
                       background: isUser
                         ? 'linear-gradient(135deg, #34d399 0%, #10b981 50%, #059669 100%)'
                         : 'linear-gradient(135deg, rgba(22,12,14,0.96) 0%, rgba(18,14,20,0.94) 100%)',
                       border: isUser ? 'none' : '1px solid rgba(16,185,129,0.16)',
-                      fontSize: 13.5, lineHeight: 1.70, color: isUser ? '#ffffff' : '#e8e8f0',
+                      fontSize: 15, lineHeight: 1.75, color: isUser ? '#ffffff' : '#e8e8f0',
                       boxShadow: isUser
                         ? '0 4px 18px rgba(16,185,129,0.35), 0 1px 0 rgba(255,255,255,0.12) inset'
                         : '0 2px 16px rgba(0,0,0,0.40)',

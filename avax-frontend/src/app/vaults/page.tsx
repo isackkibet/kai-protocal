@@ -50,8 +50,8 @@ const VAULTS: VaultEntry[] = (["NVR","yBOB","YTOKEN","YGOLD","GAMI","CENTS"] as 
     symbol:    sym,
     name:      tok?.name     ?? sym,
     color:     tok?.color    ?? "#10b981",
-    emoji:     tok?.emoji    ?? "🪙",
-    apyPct:    info?.apyPct  ?? "—",
+    emoji:     tok?.emoji    ?? "",
+    apyPct:    info?.apyPct  ?? "-",
     vaultAddr: (info?.address as `0x${string}` | null) ?? null,
     tokenAddr: (tok?.address ?? null) as `0x${string}` | null,
     decimals:  tok?.decimals ?? 18,
@@ -307,7 +307,7 @@ export default function VaultsPage() {
                     )}
                   </div>
                   <p style={{ fontSize: 10, color: "rgba(255,255,255,0.4)", margin: "2px 0 0" }}>
-                    kv{vault.symbol} shares · TVL {vault.tokenAddr ? fmtToken(tvlAmt, vault.decimals) : "—"} {vault.symbol}
+                    kv{vault.symbol} shares · TVL {vault.tokenAddr ? fmtToken(tvlAmt, vault.decimals) : "-"} {vault.symbol}
                   </p>
                 </div>
 
@@ -414,7 +414,7 @@ export default function VaultsPage() {
                             cursor: busy || !inputAmt ? "not-allowed" : "pointer",
                             opacity: busy || !inputAmt ? 0.6 : 1,
                           }}>
-                          {busy ? "⏳" : mode === "deposit" ? "Deposit" : "Redeem"}
+                          {busy ? "..." : mode === "deposit" ? "Deposit" : "Redeem"}
                         </button>
                       </div>
 

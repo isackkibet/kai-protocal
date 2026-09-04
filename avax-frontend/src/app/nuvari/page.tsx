@@ -823,25 +823,25 @@ const BP_TEMPLATES: Record<string, {
   icon: string; label: string; color: string;
   fields: { key: string; label: string; placeholder: string; type?: string }[];
 }> = {
-  pension:  { icon:"🏦", label:"KAIVAX Pension",    color:"#A78BFA",
+  pension:  { icon:"", label:"KAIVAX Pension",    color:"#A78BFA",
     fields:[{key:"vestingYears",label:"Vesting period (years)",placeholder:"5",type:"number"},{key:"monthlyDeposit",label:"Monthly deposit (NVR)",placeholder:"100",type:"number"},{key:"beneficiary",label:"Beneficiary address",placeholder:"0x…"}]},
-  trust:    { icon:"🤝", label:"KAI Trust",          color:"#FFD700",
+  trust:    { icon:"", label:"KAI Trust",          color:"#FFD700",
     fields:[{key:"lockYears",label:"Lock duration (years)",placeholder:"5",type:"number"},{key:"amount",label:"Trust amount (NVR)",placeholder:"1000",type:"number"},{key:"beneficiary",label:"Beneficiary address",placeholder:"0x…"}]},
-  crop:     { icon:"🌾", label:"Crop Insurance",     color:"#EAB308",
+  crop:     { icon:"", label:"Crop Insurance",     color:"#EAB308",
     fields:[{key:"cropType",label:"Crop type",placeholder:"Maize"},{key:"hectares",label:"Area (hectares)",placeholder:"10",type:"number"},{key:"season",label:"Season (YYYY)",placeholder:"2026",type:"number"}]},
-  forest:   { icon:"🌲", label:"Forest Protection",  color:"#22C55E",
+  forest:   { icon:"", label:"Forest Protection",  color:"#22C55E",
     fields:[{key:"forestId",label:"Forest ID / parcel",placeholder:"KE-001"},{key:"hectares",label:"Hectares covered",placeholder:"50",type:"number"},{key:"duration",label:"Coverage (months)",placeholder:"12",type:"number"}]},
-  medical:  { icon:"🏥", label:"Medical Pool",       color:"#EF4444",
+  medical:  { icon:"", label:"Medical Pool",       color:"#EF4444",
     fields:[{key:"members",label:"Pool members",placeholder:"100",type:"number"},{key:"coverageUsd",label:"Max coverage (USD)",placeholder:"500",type:"number"},{key:"duration",label:"Policy duration (mo)",placeholder:"12",type:"number"}]},
-  rwa:      { icon:"🏗️", label:"RWA Tokenization",  color:"#F97316",
+  rwa:      { icon:"", label:"RWA Tokenization",  color:"#F97316",
     fields:[{key:"assetType",label:"Asset type",placeholder:"Land"},{key:"valuationUsd",label:"Valuation (USD)",placeholder:"10000",type:"number"},{key:"location",label:"Location / parcel ID",placeholder:"Nairobi, KE-042"}]},
-  honey:    { icon:"🍯", label:"Honey Reserve",      color:"#F59E0B",
+  honey:    { icon:"", label:"Honey Reserve",      color:"#F59E0B",
     fields:[{key:"community",label:"Community name",placeholder:"Turkana Beekeepers"},{key:"kgTarget",label:"Target (kg)",placeholder:"500",type:"number"},{key:"season",label:"Harvest season",placeholder:"2026"}]},
-  milk:     { icon:"🥛", label:"Pastoral Milk Pool", color:"#60A5FA",
+  milk:     { icon:"", label:"Pastoral Milk Pool", color:"#60A5FA",
     fields:[{key:"cooperative",label:"Co-op name",placeholder:"Maasai Dairy Coop"},{key:"litresDaily",label:"Daily litres",placeholder:"200",type:"number"},{key:"duration",label:"Duration (months)",placeholder:"6",type:"number"}]},
-  seeds:    { icon:"🌱", label:"Heritage Seed Bank",  color:"#86EFAC",
+  seeds:    { icon:"", label:"Heritage Seed Bank",  color:"#86EFAC",
     fields:[{key:"variety",label:"Crop variety",placeholder:"Njahi Beans"},{key:"kgStored",label:"Kg to store",placeholder:"50",type:"number"},{key:"location",label:"Storage location",placeholder:"Meru, Kenya"}]},
-  recipe:   { icon:"📜", label:"Recipe IP Vault",    color:"#F97316",
+  recipe:   { icon:"", label:"Recipe IP Vault",    color:"#F97316",
     fields:[{key:"recipeName",label:"Recipe / method name",placeholder:"Fermented Uji"},{key:"community",label:"Community owner",placeholder:"Luo Heritage Group"},{key:"licenseType",label:"License type",placeholder:"Community Commons"}]},
 };
 
@@ -946,8 +946,8 @@ function BuildPolicyPanel({
       {/* Status */}
       {status && (
         <div style={{ padding:"10px 14px", borderRadius:10, fontSize:11,
-          background: status.startsWith("❌") ? "rgba(239,68,68,0.1)" : "rgba(34,197,94,0.08)",
-          border: `1px solid ${status.startsWith("❌") ? "rgba(239,68,68,0.3)" : "rgba(34,197,94,0.2)"}`, color:"#fff" }}>
+          background: "rgba(34,197,94,0.08)",
+          border: "1px solid rgba(34,197,94,0.2)", color:"#fff" }}>
           {status}
           {txUrl && <a href={txUrl} target="_blank" rel="noopener noreferrer" style={{ marginLeft:8, color:"#60a5fa", display:"inline-flex", alignItems:"center", gap:4 }}>
             Snowtrace <ExternalLink size={11} />

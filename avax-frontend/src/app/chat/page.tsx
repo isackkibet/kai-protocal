@@ -5,6 +5,7 @@ import {
   Volume2, VolumeX, ChevronLeft, Loader2, Database
 } from 'lucide-react';
 import Link from 'next/link';
+import { formatChat } from '@/lib/formatChat';
 
 const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_API_URL || 'http://localhost:8000';
 
@@ -91,11 +92,7 @@ export default function AVAXChatPage() {
     }
   };
 
-  const renderText = (text: string) =>
-    text
-      .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-      .replace(/`(.*?)`/g, '<code style="background:rgba(16,185,129,0.15);padding:1px 5px;border-radius:4px;font-size:11px;">$1</code>')
-      .replace(/\n/g, '<br/>');
+  const renderText = (text: string) => formatChat(text);
 
   return (
     <main style={{ display: 'flex', flexDirection: 'column', height: '100dvh', background: '#0a0a0c' }}>
@@ -154,28 +151,28 @@ export default function AVAXChatPage() {
       </div>
 
       {/* MESSAGES */}
-      <div style={{ flex: 1, overflowY: 'auto', padding: '12px 16px', display: 'flex', flexDirection: 'column', gap: 12 }}>
+      <div style={{ flex: 1, overflowY: 'auto', padding: '16px 20px', display: 'flex', flexDirection: 'column', gap: 14 }}>
         {messages.map((m, i) => (
-          <div key={i} style={{ display: 'flex', flexDirection: m.role === 'user' ? 'row-reverse' : 'row', gap: 10, alignItems: 'flex-end' }}>
+          <div key={i} style={{ display: 'flex', flexDirection: m.role === 'user' ? 'row-reverse' : 'row', gap: 12, alignItems: 'flex-end', justifyContent: m.role === 'user' ? 'flex-start' : 'flex-start' }}>
             {m.role === 'ai' && (
-              <div style={{ width: 32, height: 32, borderRadius: '50%', background: 'linear-gradient(135deg,#10b981,#064e3b)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                <Bot size={16} color="#fff" />
+              <div style={{ width: 38, height: 38, borderRadius: '50%', background: 'linear-gradient(135deg,#10b981,#064e3b)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                <Bot size={18} color="#fff" />
               </div>
             )}
             <div style={{
-              maxWidth: '80%',
-              padding: '10px 14px',
+              maxWidth: '92%',
+              padding: '14px 18px',
               borderRadius: m.role === 'user' ? '18px 18px 4px 18px' : '18px 18px 18px 4px',
               background: m.role === 'user'
                 ? 'linear-gradient(135deg,#10b981,#064e3b)'
                 : 'rgba(26,26,32,0.9)',
               border: m.role === 'ai' ? '1px solid rgba(16,185,129,0.15)' : 'none',
-              fontSize: 13,
-              lineHeight: 1.6,
+              fontSize: 15,
+              lineHeight: 1.75,
               color: '#fff',
             }}>
               {m.role === 'ai' && m.agent && (
-                <p style={{ fontSize: 9, color: '#10b981', fontWeight: 700, margin: '0 0 4px', display: 'flex', alignItems: 'center', gap: 4 }}>
+                <p style={{ fontSize: 10, color: '#10b981', fontWeight: 700, margin: '0 0 5px', display: 'flex', alignItems: 'center', gap: 4 }}>
                   {m.isRag && <Database size={9} />} {m.agent}
                 </p>
               )}
@@ -185,11 +182,11 @@ export default function AVAXChatPage() {
         ))}
 
         {loading && (
-          <div style={{ display: 'flex', gap: 10, alignItems: 'flex-end' }}>
-            <div style={{ width: 32, height: 32, borderRadius: '50%', background: 'linear-gradient(135deg,#10b981,#064e3b)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-              <Loader2 size={16} color="#fff" style={{ animation: 'spin 1s linear infinite' }} />
+          <div style={{ display: 'flex', gap: 12, alignItems: 'flex-end' }}>
+            <div style={{ width: 38, height: 38, borderRadius: '50%', background: 'linear-gradient(135deg,#10b981,#064e3b)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+              <Loader2 size={18} color="#fff" style={{ animation: 'spin 1s linear infinite' }} />
             </div>
-            <div style={{ padding: '10px 14px', borderRadius: '18px 18px 18px 4px', background: 'rgba(26,26,32,0.9)', border: '1px solid rgba(16,185,129,0.15)' }}>
+            <div style={{ padding: '14px 18px', borderRadius: '18px 18px 18px 4px', background: 'rgba(26,26,32,0.9)', border: '1px solid rgba(16,185,129,0.15)' }}>
               <div style={{ display: 'flex', gap: 4, alignItems: 'center' }}>
                 {[0,1,2].map(j => (
                   <div key={j} style={{ width: 6, height: 6, borderRadius: '50%', background: '#10b981', animation: `pulse-gold ${0.8+j*0.2}s ease-in-out infinite` }} />
