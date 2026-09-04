@@ -2,7 +2,7 @@
 Agent 8: Document Summarizer & Q&A
 Loads PDF, TXT, or Markdown documents into a dedicated ChromaDB collection,
 then answers questions using RAG (retrieval-augmented generation).
-All local — Ollama embeddings + ChromaDB + Ollama LLM.
+Uses Groq cloud LLM + local ChromaDB embeddings.
 """
 
 from __future__ import annotations
@@ -10,13 +10,13 @@ import os
 import shutil
 from pathlib import Path
 from typing import AsyncIterator
-from langchain_ollama import OllamaEmbeddings
 from langchain_chroma import Chroma
 from langchain_core.documents import Document
-from .base import AgentBase, OLLAMA_URL
+from langchain_core.embeddings import Embeddings
+from chromadb.utils.embedding_functions import DefaultEmbeddingFunction
+from .base import AgentBase
 
-DOCS_DB_PATH   = os.path.join(os.path.dirname(__file__), "..", "chrome_langchain_db_docs")
-EMBED_MODEL    = os.getenv("OLLAMA_EMBED_MODEL", "nomic-embed-text")
+DOCS_DB_PATH    = os.path.join(os.path.dirname(__file__), "..", "chrome_langchain_db_docs")
 DOCS_UPLOAD_DIR = os.path.join(os.path.dirname(__file__), "..", "uploads")
 
 SYSTEM = """You are a document analyst assistant. You answer questions based ONLY on the
@@ -30,12 +30,21 @@ Format your responses with:
 Quote relevant excerpts when helpful."""
 
 
+class _LocalEmbeddings(Embeddings):
+    """Wrapper around ChromaDB's built-in ONNX embedding model."""
+
+    def __init__(self):
+        self._ef = DefaultEmbeddingFunction()
+
+    def embed_documents(self, texts: list[str]) -> list[list[float]]:
+        return self._ef(texts)
+
+    def embed_query(self, text: str) -> list[float]:
+        return self._ef([text])[0]
+
+
 def _get_embeddings():
-    return OllamaEmbeddings(
-        model=EMBED_MODEL,
-        base_url=OLLAMA_URL,
-        client_kwargs={"timeout": 300.0},
-    )
+    return _LocalEmbeddings()
 
 
 def _get_vector_store(collection: str = "kai_docs_uploaded") -> Chroma:
@@ -75,7 +84,7 @@ def _load_document(path: str) -> str:
     ext = Path(path).suffix.lower()
     if ext == ".pdf":
         return _load_pdf(path)
-    return _load_txt(path)  # txt, md, sol, json, csv all work
+    return _load_txt(path)
 
 
 class DocSummarizerAgent(AgentBase):
@@ -83,10 +92,6 @@ class DocSummarizerAgent(AgentBase):
     description = "Loads documents into ChromaDB and answers questions via RAG"
 
     def ingest(self, file_path: str, collection: str = "kai_docs_uploaded") -> dict:
-        """
-        Synchronous ingest — load a document into the vector store.
-        Returns ingestion summary.
-        """
         if not os.path.exists(file_path):
             return {"error": f"File not found: {file_path}"}
 
@@ -114,7 +119,6 @@ class DocSummarizerAgent(AgentBase):
         }
 
     def list_documents(self, collection: str = "kai_docs_uploaded") -> list[str]:
-        """List all unique source documents in the collection."""
         try:
             store  = _get_vector_store(collection)
             result = store.get()
@@ -124,7 +128,6 @@ class DocSummarizerAgent(AgentBase):
             return []
 
     def delete_collection(self, collection: str = "kai_docs_uploaded") -> dict:
-        """Wipe a collection from the vector store."""
         try:
             store = _get_vector_store(collection)
             store.delete_collection()
@@ -186,7 +189,7 @@ class DocSummarizerAgent(AgentBase):
             for d in docs
         )
         sources = list({d.metadata.get("source", "unknown") for d in docs})
-        yield f'data: {json.dumps({"token": f"📚 Found {len(docs)} relevant chunks from: {', '.join(sources)}\\n\\n"})}\n\n'
+        yield f'data: {json.dumps({"token": f"Found {len(docs)} relevant chunks from: {", ".join(sources)}\n\n"})}\n\n'
 
         prompt = f"Context:\n\n{context}\n\nQuestion: {question}\n\nAnswer:"
         async for chunk in self.stream_response(prompt, system=SYSTEM):
