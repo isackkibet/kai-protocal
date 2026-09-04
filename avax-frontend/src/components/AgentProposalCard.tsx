@@ -93,7 +93,7 @@ export default function AgentProposalCard({ proposal, onSuccess }: AgentProposal
       await publicClient?.waitForTransactionReceipt({ hash });
 
       setTxHash(hash);
-      setStatusMsg('✅ Transaction successfully confirmed!');
+      setStatusMsg('Transaction successfully confirmed!');
       if (onSuccess) onSuccess(hash);
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Execution failed';

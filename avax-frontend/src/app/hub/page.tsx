@@ -175,9 +175,9 @@ function PostCard({ post, onLike, onTip }: { post: Post; onLike: (id: string) =>
               {playing ? <Pause size={16} color="#fff" /> : <Play size={16} color="#fff" style={{ marginLeft: 2 }} />}
             </button>
             <div style={{ flex: 1 }}>
-              <p style={{ fontSize: 11, fontWeight: 700, color: '#c084fc', margin: '0 0 2px' }}>🎙️ Audio Journal</p>
+              <p style={{ fontSize: 11, fontWeight: 700, color: '#c084fc', margin: '0 0 2px' }}>Audio Journal</p>
               <p style={{ fontSize: 10, color: 'rgba(248,248,250,0.40)', margin: 0 }}>
-                {post.audioDurationSeconds ? fmt(post.audioDurationSeconds) : '—'} · {post.language === 'SW' ? 'Swahili' : 'English'}
+                {post.audioDurationSeconds ? fmt(post.audioDurationSeconds) : '-'} · {post.language === 'SW' ? 'Swahili' : 'English'}
               </p>
             </div>
             <Mic size={14} color="rgba(168,85,247,0.55)" />
