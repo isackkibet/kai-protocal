@@ -1,4 +1,4 @@
-from langchain_ollama.llms import OllamaLLM
+from langchain_groq import ChatGroq
 from langchain_core.prompts import ChatPromptTemplate
 from vector import retriever
 import os
@@ -6,12 +6,14 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-# Fast local Ollama model
-model = OllamaLLM(
-    model=os.getenv("OLLAMA_LLM_MODEL", "qwen3:1.7b"),
-    base_url=os.getenv("OLLAMA_BASE_URL", "http://localhost:11434"),
-    num_predict=512,
-    think=False,
+GROQ_API_KEY = os.getenv("GROQ_API_KEY", "")
+GROQ_MODEL = os.getenv("GROQ_MODEL", "llama-3.1-8b-instant")
+
+model = ChatGroq(
+    groq_api_key=GROQ_API_KEY,
+    model_name=GROQ_MODEL,
+    temperature=0.3,
+    max_tokens=1024,
 )
 
 template = """
@@ -35,7 +37,7 @@ def main():
     print("\n========================================")
     print("        KAI Nuvari AI Agent")
     print("========================================")
-    print("Fast RAG + Ollama (Qwen3 1.7B)")
+    print("Fast RAG + Groq (Llama 3.1 8B)")
     print("Type 'q' to quit.\n")
 
     while True:
@@ -69,7 +71,7 @@ def main():
         except Exception as e:
             print(f"\n❌ Error: {e}")
             print(
-                "Check that Ollama is running and your RAG retriever "
+                "Check your GROQ_API_KEY in .env and your RAG retriever "
                 "is available.\n"
             )
 
