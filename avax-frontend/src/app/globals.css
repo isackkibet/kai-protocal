@@ -1,29 +1,29 @@
 @import "tailwindcss";
 
 /* ══════════════════════════════════════════════════════════════
-   KAI NUVARI — Design System v3  (Vibrant Edition)
-   Core: AVAX Red × Deep Black × Vivid Accents
+   KAI NUVARI — Design System v4  (Green Edition)
+   Core: Emerald Green × Deep Black × Vivid Accents
    ══════════════════════════════════════════════════════════════ */
 
 :root {
   /* ── Core brand ─────────────────────────── */
-  --red:           #e84142;
-  --red-bright:    #ff4d4e;
-  --red-vivid:     #ff2a2b;
-  --red-dark:      #b91c1c;
-  --red-deep:      #7c1d1d;
-  --red-glow:      rgba(232, 65, 66, 0.55);
-  --red-muted:     rgba(232, 65, 66, 0.12);
-  --red-border:    rgba(232, 65, 66, 0.28);
+  --green:         #10b981;
+  --green-bright:  #34d399;
+  --green-vivid:   #059669;
+  --green-dark:    #047857;
+  --green-deep:    #064e3b;
+  --green-glow:    rgba(16, 185, 129, 0.55);
+  --green-muted:   rgba(16, 185, 129, 0.12);
+  --green-border:  rgba(16, 185, 129, 0.28);
 
   /* ── Vibrant accents ────────────────────── */
   --orange:        #f97316;
   --orange-glow:   rgba(249, 115, 22, 0.45);
   --amber:         #f59e0b;
   --amber-glow:    rgba(245, 158, 11, 0.40);
-  --green:         #22c55e;
-  --green-bright:  #4ade80;
-  --green-glow:    rgba(34, 197, 94, 0.40);
+  --cyan:          #06b6d4;
+  --cyan-bright:   #22d3ee;
+  --cyan-glow:     rgba(6, 182, 212, 0.40);
   --blue:          #3b82f6;
   --blue-bright:   #60a5fa;
   --blue-glow:     rgba(59, 130, 246, 0.45);
@@ -31,9 +31,6 @@
   --purple:        #a855f7;
   --purple-bright: #c084fc;
   --purple-glow:   rgba(168, 85, 247, 0.45);
-  --cyan:          #06b6d4;
-  --cyan-bright:   #22d3ee;
-  --cyan-glow:     rgba(6, 182, 212, 0.40);
   --pink:          #ec4899;
   --pink-glow:     rgba(236, 72, 153, 0.40);
 
@@ -60,8 +57,8 @@
 
   /* ── Cards ──────────────────────────────── */
   --card-bg:       rgba(14, 14, 22, 0.80);
-  --card-border:   rgba(232, 65, 66, 0.18);
-  --card-hover-border: rgba(232, 65, 66, 0.50);
+  --card-border:   rgba(16, 185, 129, 0.18);
+  --card-hover-border: rgba(16, 185, 129, 0.50);
 
   /* ── Text ───────────────────────────────── */
   --text-primary:  #f0f0ff;
@@ -84,12 +81,12 @@ html, body { height: 100%; }
 /* ── Body: vivid aurora atmosphere ──────────────────────── */
 body {
   background:
-    radial-gradient(ellipse 65% 45% at  8% -8%,  rgba(232,65,66,0.22)  0%, transparent 65%),
-    radial-gradient(ellipse 55% 40% at 92% -5%,  rgba(168,85,247,0.14) 0%, transparent 60%),
-    radial-gradient(ellipse 40% 35% at  2% 50%,  rgba(6,182,212,0.07)  0%, transparent 55%),
-    radial-gradient(ellipse 60% 50% at 50% 48%,  rgba(232,65,66,0.05)  0%, transparent 70%),
-    radial-gradient(ellipse 50% 40% at 88% 100%, rgba(249,115,22,0.10) 0%, transparent 60%),
-    radial-gradient(ellipse 40% 30% at 12% 98%,  rgba(139,92,246,0.08) 0%, transparent 55%),
+    radial-gradient(ellipse 65% 45% at  8% -8%,  rgba(16,185,129,0.22)  0%, transparent 65%),
+    radial-gradient(ellipse 55% 40% at 92% -5%,  rgba(6,182,212,0.14)   0%, transparent 60%),
+    radial-gradient(ellipse 40% 35% at  2% 50%,  rgba(168,85,247,0.07)  0%, transparent 55%),
+    radial-gradient(ellipse 60% 50% at 50% 48%,  rgba(16,185,129,0.05)  0%, transparent 70%),
+    radial-gradient(ellipse 50% 40% at 88% 100%, rgba(6,182,212,0.10)   0%, transparent 60%),
+    radial-gradient(ellipse 40% 30% at 12% 98%,  rgba(168,85,247,0.08)  0%, transparent 55%),
     var(--bg);
   background-attachment: fixed;
   color: var(--text-primary);
@@ -107,7 +104,7 @@ body {
 .glass {
   background: linear-gradient(
     135deg,
-    rgba(22, 14, 30, 0.82) 0%,
+    rgba(14, 22, 20, 0.82) 0%,
     rgba(14, 14, 22, 0.78) 100%
   );
   backdrop-filter: blur(22px) saturate(1.8) brightness(1.05);
@@ -115,19 +112,19 @@ body {
   border: 1px solid var(--card-border);
   box-shadow:
     0 1px 0 rgba(255,255,255,0.06) inset,
-    0 0 0 1px rgba(168,85,247,0.04) inset,
+    0 0 0 1px rgba(6,182,212,0.04) inset,
     0 8px 40px rgba(0,0,0,0.65),
-    0 0 80px rgba(232,65,66,0.04);
+    0 0 80px rgba(16,185,129,0.04);
   transition: border-color 0.25s ease, box-shadow 0.25s ease, transform 0.20s ease;
 }
 .glass:hover {
   border-color: var(--card-hover-border);
   box-shadow:
     0 1px 0 rgba(255,255,255,0.08) inset,
-    0 0 0 1px rgba(232,65,66,0.08) inset,
+    0 0 0 1px rgba(16,185,129,0.08) inset,
     0 16px 50px rgba(0,0,0,0.60),
-    0 0 40px rgba(232,65,66,0.16),
-    0 0 80px rgba(168,85,247,0.06);
+    0 0 40px rgba(16,185,129,0.16),
+    0 0 80px rgba(6,182,212,0.06);
   transform: translateY(-1px);
 }
 
@@ -135,34 +132,34 @@ body {
   background: rgba(10, 10, 18, 0.92);
   backdrop-filter: blur(24px) saturate(1.6);
   -webkit-backdrop-filter: blur(24px) saturate(1.6);
-  border: 1px solid rgba(232,65,66,0.16);
+  border: 1px solid rgba(16,185,129,0.16);
   box-shadow:
     0 8px 40px rgba(0,0,0,0.70),
-    0 0 60px rgba(232,65,66,0.05);
+    0 0 60px rgba(16,185,129,0.05);
 }
 
 /* ── Elevated card (special sections) ────────────────────── */
 .glass-elevated {
   background: linear-gradient(
     145deg,
-    rgba(35, 18, 35, 0.88) 0%,
-    rgba(20, 14, 28, 0.92) 50%,
+    rgba(18, 35, 28, 0.88) 0%,
+    rgba(14, 20, 22, 0.92) 50%,
     rgba(14, 14, 22, 0.92) 100%
   );
   backdrop-filter: blur(24px);
-  border: 1px solid rgba(232,65,66,0.24);
+  border: 1px solid rgba(16,185,129,0.24);
   box-shadow:
-    0 1px 0 rgba(255,100,100,0.10) inset,
-    0 0 0 1px rgba(168,85,247,0.05) inset,
+    0 1px 0 rgba(100,255,180,0.10) inset,
+    0 0 0 1px rgba(6,182,212,0.05) inset,
     0 20px 60px rgba(0,0,0,0.65),
-    0 0 100px rgba(232,65,66,0.06);
+    0 0 100px rgba(16,185,129,0.06);
 }
 
 /* ── Prismatic card variant ───────────────────────────────── */
 .glass-prism {
   background: linear-gradient(
     135deg,
-    rgba(25, 14, 40, 0.85) 0%,
+    rgba(14, 25, 20, 0.85) 0%,
     rgba(14, 20, 35, 0.85) 50%,
     rgba(14, 25, 30, 0.85) 100%
   );
@@ -179,10 +176,10 @@ body {
   border-radius: inherit;
   background: linear-gradient(
     135deg,
-    rgba(232,65,66,0.40),
-    rgba(168,85,247,0.25),
-    rgba(6,182,212,0.20),
-    rgba(232,65,66,0.30)
+    rgba(16,185,129,0.40),
+    rgba(6,182,212,0.25),
+    rgba(168,85,247,0.20),
+    rgba(16,185,129,0.30)
   );
   z-index: -1;
   pointer-events: none;
@@ -192,10 +189,10 @@ body {
 .btn-primary {
   background: linear-gradient(
     135deg,
-    #ff4d4e 0%,
-    #e84142 40%,
-    #c0252a 80%,
-    #a01525 100%
+    #34d399 0%,
+    #10b981 40%,
+    #059669 80%,
+    #047857 100%
   );
   color: #fff;
   font-weight: 700;
@@ -205,9 +202,9 @@ body {
   overflow: hidden;
   transition: transform 0.15s, box-shadow 0.22s, opacity 0.15s;
   box-shadow:
-    0 4px 20px rgba(232,65,66,0.45),
+    0 4px 20px rgba(16,185,129,0.45),
     0 1px 0 rgba(255,255,255,0.20) inset,
-    0 0 0 1px rgba(255,100,100,0.15) inset;
+    0 0 0 1px rgba(100,255,180,0.15) inset;
 }
 .btn-primary::before {
   content: '';
@@ -220,10 +217,10 @@ body {
   content: '';
   position: absolute;
   inset: 0;
-  background: radial-gradient(circle at 50% 0%, rgba(255,200,200,0.15) 0%, transparent 70%);
+  background: radial-gradient(circle at 50% 0%, rgba(200,255,230,0.15) 0%, transparent 70%);
   pointer-events: none;
 }
-.btn-primary:hover  { transform: translateY(-2px); box-shadow: 0 10px 30px rgba(232,65,66,0.60), 0 0 0 1px rgba(255,100,100,0.20) inset; }
+.btn-primary:hover  { transform: translateY(-2px); box-shadow: 0 10px 30px rgba(16,185,129,0.60), 0 0 0 1px rgba(100,255,180,0.20) inset; }
 .btn-primary:active { transform: translateY(0); opacity: 0.88; }
 .btn-primary:disabled { opacity: 0.38; cursor: not-allowed; transform: none; box-shadow: none; }
 
