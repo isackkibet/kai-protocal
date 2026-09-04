@@ -298,7 +298,7 @@ export default function PayPage() {
     }
 
     setPaystackBusy(true);
-    setPaystackStatus({ type: "pending", message: "Opening Paystack checkout…" });
+    setPaystackStatus({ type: "pending", message: "Opening Paystack checkout..." });
 
     try {
       const reference = `KAI-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
@@ -641,7 +641,7 @@ export default function PayPage() {
 
           {scanned && (
             <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "8px 12px", background: "rgba(34,197,94,0.08)", border: "1px solid rgba(34,197,94,0.2)", borderRadius: 10, fontSize: 11, color: "#22C55E" }}>
-              <CheckCircle size={13} /> From scanned QR: {scanned.address.slice(0, 10)}…
+              <CheckCircle size={13} /> From scanned QR: {scanned.address.slice(0, 10)}...
             </div>
           )}
 
@@ -812,7 +812,7 @@ export default function PayPage() {
                 color: "#fff",
               }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: paystackStatus.detail ? 6 : 0 }}>
-                    <span style={{ fontSize: 16 }}>
+                  <span style={{ fontSize: 16 }}></span>
                   <span style={{ fontWeight: 700 }}>{paystackStatus.message}</span>
                 </div>
                 {paystackStatus.detail && (

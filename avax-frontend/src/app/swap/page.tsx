@@ -89,7 +89,7 @@ export default function SwapPage() {
           ${amount && parseFloat(amount) > 0
             ? "bg-gold-gradient text-black shadow-gold hover:opacity-90 hover:-translate-y-0.5"
             : "bg-white/10 text-white/40 cursor-not-allowed"}`}>
-          {amount && parseFloat(amount) > 0 ? `Swap ${fromToken.symbol} → ${toToken.symbol}` : "Enter an amount"}
+          {amount && parseFloat(amount) > 0 ? `Swap ${fromToken.symbol} -> ${toToken.symbol}` : "Enter an amount"}
         </button>
       </div>
 
@@ -112,7 +112,7 @@ export default function SwapPage() {
                 <p className="text-sm font-semibold text-white">{t.symbol}</p>
                 <p className="text-[10px] text-white/50">{t.name}</p>
               </div>
-              {toToken.symbol === t.symbol && <span className="ml-auto text-gold text-xs">✓</span>}
+              {toToken.symbol === t.symbol && <span className="ml-auto text-gold text-xs"></span>}
             </button>
           ))}
         </div>
