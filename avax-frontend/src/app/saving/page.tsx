@@ -28,7 +28,7 @@ interface SavingData {
 }
 
 const ROLE_COLOR: Record<string, string> = {
-  CHAIRPERSON: '#e84142',
+  CHAIRPERSON: '#10b981',
   TREASURER:   '#f59e0b',
   SECRETARY:   '#3b82f6',
   MEMBER:      '#a855f7',
@@ -52,11 +52,11 @@ function YieldBar({ data }: { data: { month: string; yieldKes: number }[] }) {
             <div style={{
               width: '100%', borderRadius: '4px 4px 2px 2px', height: `${pct}px`, minHeight: 4,
               background: isLast
-                ? 'linear-gradient(180deg,#e84142,#b91c1c)'
+                ? 'linear-gradient(180deg,#34d399,#10b981)'
                 : 'linear-gradient(180deg,#a855f7,#7c3aed)',
-              boxShadow: isLast ? '0 0 8px rgba(232,65,66,0.40)' : 'none',
+              boxShadow: isLast ? '0 0 8px rgba(16,185,129,0.40)' : 'none',
             }} />
-            <p style={{ fontSize: 8, color: isLast ? '#e84142' : 'rgba(248,248,250,0.35)', margin: 0, fontWeight: isLast ? 800 : 600 }}>{d.month}</p>
+            <p style={{ fontSize: 8, color: isLast ? '#10b981' : 'rgba(248,248,250,0.35)', margin: 0, fontWeight: isLast ? 800 : 600 }}>{d.month}</p>
           </div>
         );
       })}
@@ -129,7 +129,7 @@ export default function SavingGroupPage() {
               <span style={{ fontSize: 9, color: 'rgba(248,248,250,0.38)', fontWeight: 600 }}>Target: KES 50K</span>
             </div>
             <div style={{ height: 8, background: 'rgba(255,255,255,0.07)', borderRadius: 4 }}>
-              <div style={{ height: '100%', width: `${Math.min(100, Math.round((d.stats.yieldEarnedKes / 50000) * 100))}%`, borderRadius: 4, background: 'linear-gradient(90deg,#e84142,#a855f7,#c084fc)', boxShadow: '0 0 8px rgba(168,85,247,0.40)', transition: 'width 0.7s ease' }} />
+              <div style={{ height: '100%', width: `${Math.min(100, Math.round((d.stats.yieldEarnedKes / 50000) * 100))}%`, borderRadius: 4, background: 'linear-gradient(90deg,#10b981,#a855f7,#c084fc)', boxShadow: '0 0 8px rgba(168,85,247,0.40)', transition: 'width 0.7s ease' }} />
             </div>
           </div>
 
@@ -184,7 +184,7 @@ export default function SavingGroupPage() {
             <section>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
                 <p className="label-caps">Monthly Yield Earned</p>
-                <span style={{ fontSize: 9, color: '#e84142', fontWeight: 700 }}>■ Latest month highlighted</span>
+                <span style={{ fontSize: 9, color: '#10b981', fontWeight: 700 }}>■ Latest month highlighted</span>
               </div>
               <div style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: 16, padding: '14px 12px 8px' }}>
                 <YieldBar data={d.monthlyYield} />
@@ -344,7 +344,7 @@ export default function SavingGroupPage() {
                     {y.txHash && (
                       <div style={{ padding: '7px 10px', borderRadius: 9, background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                         <span style={{ fontSize: 9, color: 'rgba(248,248,250,0.38)', fontFamily: 'monospace' }}>tx: {y.txHash}</span>
-                        <a href={`https://testnet.snowtrace.io/tx/${y.txHash}`} target="_blank" rel="noreferrer" style={{ fontSize: 9, color: '#e84142', fontWeight: 700, textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 3 }}>
+                        <a href={`https://testnet.snowtrace.io/tx/${y.txHash}`} target="_blank" rel="noreferrer" style={{ fontSize: 9, color: '#10b981', fontWeight: 700, textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 3 }}>
                           Snowtrace <ExternalLink size={9} />
                         </a>
                       </div>
@@ -385,7 +385,7 @@ export default function SavingGroupPage() {
               ))}
             </div>
 
-            <div className="divider-red" style={{ margin: '20px 0' }} />
+            <div className="divider-green" style={{ margin: '20px 0' }} />
 
             <p className="label-caps" style={{ marginBottom: 12 }}>Group Products</p>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
@@ -393,7 +393,7 @@ export default function SavingGroupPage() {
                 { label: 'Micro Pension',  href: '/securities', icon: Lock,    color: '#8b5cf6', desc: '12.8% APY' },
                 { label: 'Group Pool',     href: '/pools',      icon: Users,   color: '#a855f7', desc: 'Add LP'    },
                 { label: 'Daily Airdrop',  href: '/mine',       icon: Gift,    color: '#f59e0b', desc: 'Free NVR'  },
-                { label: 'DAO Vote',       href: '/nuvari',     icon: Vote,    color: '#e84142', desc: 'NVR power' },
+                { label: 'DAO Vote',       href: '/nuvari',     icon: Vote,    color: '#10b981', desc: 'NVR power' },
               ].map(l => (
                 <Link key={l.label} href={l.href} style={{ textDecoration: 'none' }}>
                   <div className="glass" style={{ borderRadius: 14, padding: '15px 13px', borderColor: `${l.color}22`, background: `linear-gradient(135deg, ${l.color}07 0%, rgba(10,10,12,0.88) 100%)` }}>

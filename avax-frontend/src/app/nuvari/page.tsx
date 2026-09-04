@@ -43,7 +43,7 @@ const POLICY_FEE_AVAX = "0.0001";
 // ═══════════════════════════════════════════════════════════
 const NAV: { id: ServiceSection; label: string; icon: React.ReactNode; color?: string }[] = [
   { id: "quick-start",  label: "Quick Start",         icon: <Zap size={15} />,        color: "#c9a24b" },
-  { id: "build-policy", label: "Build Policy",         icon: <Shield size={15} />,     color: "#e84142" },
+  { id: "build-policy", label: "Build Policy",         icon: <Shield size={15} />,     color: "#10b981" },
   { id: "insurance",    label: "Insurance Service",    icon: <Shield size={15} />,     color: "#3b82f6" },
   { id: "trust",        label: "Trust Service",        icon: <Users size={15} />,      color: "#f59e0b" },
   { id: "pension",      label: "Pension Service",      icon: <Lock size={15} />,       color: "#8b5cf6" },
@@ -284,9 +284,9 @@ export default function KaiPlayground() {
       <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", padding:"10px 14px", borderBottom:"1px solid rgba(255,255,255,0.07)", background:"#0b0f0c", flexShrink:0 }} className="mobile-topbar">
         <div style={{ display:"flex", alignItems:"center", gap:8 }}>
           <span style={{ fontSize:15, fontWeight:900, letterSpacing:"-0.5px" }}>
-            <span style={{ color:"#e84142" }}>KAI</span>VAX
+            <span style={{ color:"#10b981" }}>KAI</span>VAX
           </span>
-          <span style={{ fontSize:8, background:"rgba(232,65,66,0.15)", border:"1px solid rgba(232,65,66,0.3)", color:"#e84142", borderRadius:4, padding:"1px 5px", textTransform:"uppercase", letterSpacing:"0.5px" }}>Policy</span>
+          <span style={{ fontSize:8, background:"rgba(16,185,129,0.15)", border:"1px solid rgba(16,185,129,0.3)", color:"#10b981", borderRadius:4, padding:"1px 5px", textTransform:"uppercase", letterSpacing:"0.5px" }}>Policy</span>
         </div>
         <div style={{ display:"flex", gap:4 }}>
           {([
@@ -298,8 +298,8 @@ export default function KaiPlayground() {
             <button key={p.id} onClick={() => setMobilePanel(p.id)} style={{
               display:"flex", flexDirection:"column", alignItems:"center", gap:2,
               padding:"5px 8px", borderRadius:8, border:"none", cursor:"pointer",
-              background: mobilePanel===p.id ? "rgba(232,65,66,0.15)" : "rgba(255,255,255,0.04)",
-              color: mobilePanel===p.id ? "#e84142" : "rgba(255,255,255,0.38)",
+              background: mobilePanel===p.id ? "rgba(16,185,129,0.15)" : "rgba(255,255,255,0.04)",
+              color: mobilePanel===p.id ? "#10b981" : "rgba(255,255,255,0.38)",
             }}>
               {p.icon}
               <span style={{ fontSize:8, fontWeight:700, letterSpacing:0.3 }}>{p.label}</span>
@@ -317,9 +317,9 @@ export default function KaiPlayground() {
         <div style={{ padding:"16px 16px 12px", borderBottom:"1px solid rgba(255,255,255,0.06)" }} className="desktop-only">
           <div style={{ display:"flex", alignItems:"center", gap:"8px" }}>
             <span style={{ fontSize:"16px", fontWeight:"900", letterSpacing:"-0.5px" }}>
-              <span style={{ color:"#e84142" }}>KAI</span>VAX
+              <span style={{ color:"#10b981" }}>KAI</span>VAX
             </span>
-            <span style={{ fontSize:"9px", background:"rgba(232,65,66,0.15)", border:"1px solid rgba(232,65,66,0.3)", color:"#e84142", borderRadius:"4px", padding:"1px 5px", textTransform:"uppercase", letterSpacing:"0.5px" }}>Playground</span>
+            <span style={{ fontSize:"9px", background:"rgba(16,185,129,0.15)", border:"1px solid rgba(16,185,129,0.3)", color:"#10b981", borderRadius:"4px", padding:"1px 5px", textTransform:"uppercase", letterSpacing:"0.5px" }}>Playground</span>
           </div>
           <div style={{ fontSize:"10px", color:"rgba(255,255,255,0.25)", marginTop:"4px" }}>Policy Execution Engine</div>
         </div>
@@ -917,7 +917,7 @@ function BuildPolicyPanel({
 
       {/* Stats */}
       <div style={{ display:"flex", gap:8 }}>
-        {[{label:"My Policies", val:myPolicies.length, c:"#e84142"},{label:"Total Policies", val:policies.length, c:"#A78BFA"},{label:"Fee", val:`${POLICY_FEE_BP} AVAX`, c:"#22C55E"}].map(s=>(
+        {[{label:"My Policies", val:myPolicies.length, c:"#10b981"},{label:"Total Policies", val:policies.length, c:"#A78BFA"},{label:"Fee", val:`${POLICY_FEE_BP} AVAX`, c:"#22C55E"}].map(s=>(
           <div key={s.label} style={{ flex:1, background:"rgba(255,255,255,0.04)", border:`1px solid ${s.c}25`, borderRadius:10, padding:"10px 12px", textAlign:"center" }}>
             <p style={{ fontSize:16, fontWeight:900, color:s.c, margin:0 }}>{s.val}</p>
             <p style={{ fontSize:9, color:"rgba(255,255,255,0.35)", margin:"2px 0 0", fontWeight:700 }}>{s.label}</p>

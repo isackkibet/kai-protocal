@@ -33,11 +33,11 @@ const ZONE_COLOR: Record<string, { color: string; icon: string }> = {
   PROTECTED:    { color: '#22c55e', icon: '🛡️' },
   ACTIVE:       { color: '#3b82f6', icon: '🌳' },
   RESTORED:     { color: '#a855f7', icon: '🌱' },
-  UNDER_THREAT: { color: '#e84142', icon: '⚠️' },
+  UNDER_THREAT: { color: '#10b981', icon: '⚠️' },
 };
 
 const ROLE_COLOR: Record<string, string> = {
-  ADMIN:     '#e84142',
+  ADMIN:     '#10b981',
   TREASURER: '#f59e0b',
   AUDITOR:   '#a855f7',
   GUARDIAN:  '#22c55e',
@@ -96,7 +96,7 @@ export default function CFAPage() {
 
   if (loading) return (
     <div style={{ minHeight: '100dvh', background: '#08080a', display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: 16 }}>
-      <div style={{ width: 52, height: 52, borderRadius: '50%', background: 'linear-gradient(135deg,#e84142,#7c1d1d)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <div style={{ width: 52, height: 52, borderRadius: '50%', background: 'linear-gradient(135deg,#10b981,#064e3b)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
         <Trees size={26} color="#fff" />
       </div>
       <p style={{ color: 'rgba(248,248,250,0.45)', fontSize: 13, fontWeight: 600 }}>Loading CFA data…</p>
@@ -107,19 +107,19 @@ export default function CFAPage() {
   const totalVotes = (p: typeof d.proposals[0]) => p.votesFor + p.votesAgainst;
 
   return (
-    <main style={{ minHeight: '100dvh', background: 'radial-gradient(ellipse 80% 50% at 10% -5%, rgba(232,65,66,0.12) 0%, transparent 60%), radial-gradient(ellipse 60% 40% at 90% 100%, rgba(34,197,94,0.06) 0%, transparent 55%), #08080a', color: '#f8f8fa', paddingBottom: 96, fontFamily: 'var(--font-sans)' }}>
+    <main style={{ minHeight: '100dvh', background: 'radial-gradient(ellipse 80% 50% at 10% -5%, rgba(16,185,129,0.12) 0%, transparent 60%), radial-gradient(ellipse 60% 40% at 90% 100%, rgba(34,197,94,0.06) 0%, transparent 55%), #08080a', color: '#f8f8fa', paddingBottom: 96, fontFamily: 'var(--font-sans)' }}>
 
       {/* ── HERO HEADER ── */}
-      <div style={{ padding: '22px 18px 0', background: 'linear-gradient(180deg, rgba(232,65,66,0.09) 0%, transparent 100%)', borderBottom: '1px solid rgba(232,65,66,0.14)' }}>
+      <div style={{ padding: '22px 18px 0', background: 'linear-gradient(180deg, rgba(16,185,129,0.09) 0%, transparent 100%)', borderBottom: '1px solid rgba(16,185,129,0.14)' }}>
         {/* back + title */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 18 }}>
-          <Link href="/" style={{ width: 36, height: 36, borderRadius: '50%', background: 'rgba(232,65,66,0.10)', border: '1px solid rgba(232,65,66,0.28)', display: 'flex', alignItems: 'center', justifyContent: 'center', textDecoration: 'none', flexShrink: 0 }}>
-            <ArrowLeft size={17} color="#e84142" />
+          <Link href="/" style={{ width: 36, height: 36, borderRadius: '50%', background: 'rgba(16,185,129,0.10)', border: '1px solid rgba(16,185,129,0.28)', display: 'flex', alignItems: 'center', justifyContent: 'center', textDecoration: 'none', flexShrink: 0 }}>
+            <ArrowLeft size={17} color="#10b981" />
           </Link>
           <div style={{ flex: 1, minWidth: 0 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 2 }}>
-              <div style={{ width: 38, height: 38, borderRadius: 13, background: 'linear-gradient(135deg,rgba(232,65,66,0.30),rgba(185,28,28,0.18))', border: '1.5px solid rgba(232,65,66,0.45)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 0 18px rgba(232,65,66,0.22)', flexShrink: 0 }}>
-                <Trees size={20} color="#e84142" strokeWidth={1.8} />
+              <div style={{ width: 38, height: 38, borderRadius: 13, background: 'linear-gradient(135deg,rgba(16,185,129,0.30),rgba(5,150,105,0.18))', border: '1.5px solid rgba(16,185,129,0.45)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 0 18px rgba(16,185,129,0.22)', flexShrink: 0 }}>
+                <Trees size={20} color="#10b981" strokeWidth={1.8} />
               </div>
               <div>
                 <h1 style={{ fontSize: 18, fontWeight: 900, margin: 0, letterSpacing: -0.5, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{d.forest.name}</h1>
@@ -137,9 +137,9 @@ export default function CFAPage() {
 
         {/* DID + wallet strip */}
         <div style={{ display: 'flex', gap: 8, marginBottom: 16, overflowX: 'auto', scrollbarWidth: 'none' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '5px 10px', borderRadius: 8, background: 'rgba(232,65,66,0.07)', border: '1px solid rgba(232,65,66,0.18)', flexShrink: 0 }}>
-            <ShieldCheck size={10} color="#e84142" />
-            <span style={{ fontSize: 9, fontWeight: 800, color: '#e84142', fontFamily: 'monospace' }}>{d.forest.did}</span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '5px 10px', borderRadius: 8, background: 'rgba(16,185,129,0.07)', border: '1px solid rgba(16,185,129,0.18)', flexShrink: 0 }}>
+            <ShieldCheck size={10} color="#10b981" />
+            <span style={{ fontSize: 9, fontWeight: 800, color: '#10b981', fontFamily: 'monospace' }}>{d.forest.did}</span>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '5px 10px', borderRadius: 8, background: 'rgba(34,197,94,0.07)', border: '1px solid rgba(34,197,94,0.18)', flexShrink: 0 }}>
             <Coins size={10} color="#4ade80" />
@@ -153,7 +153,7 @@ export default function CFAPage() {
 
         {/* 6 KPI cards */}
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 9, marginBottom: 16 }}>
-          <KPICard icon={<Users size={18} color="#e84142" strokeWidth={1.8} />}    value={d.stats.totalMembers.toLocaleString()}              label="Members"      color="#e84142" />
+          <KPICard icon={<Users size={18} color="#10b981" strokeWidth={1.8} />}    value={d.stats.totalMembers.toLocaleString()}              label="Members"      color="#10b981" />
           <KPICard icon={<Trees size={18} color="#22c55e" strokeWidth={1.8} />}    value={(d.stats.treesPlanted/1000).toFixed(1)+'K'}          label="Trees"        color="#22c55e" />
           <KPICard icon={<Leaf size={18} color="#a855f7" strokeWidth={1.8} />}     value={d.stats.carbonCreditsEarned.toLocaleString()}       label="Carbon Cr."   color="#a855f7" />
           <KPICard icon={<Activity size={18} color="#3b82f6" strokeWidth={1.8} />} value={d.stats.patrols30d.toString()}                       label="Patrols/30d"  color="#3b82f6" />
@@ -166,9 +166,9 @@ export default function CFAPage() {
           {(['overview','members','patrol','products','gov'] as const).map(t => (
             <button key={t} onClick={() => setTab(t)} style={{
               flexShrink: 0, padding: '7px 14px', borderRadius: '10px 10px 0 0', cursor: 'pointer', border: 'none',
-              background: tab === t ? 'rgba(232,65,66,0.14)' : 'rgba(255,255,255,0.03)',
-              borderTop: tab === t ? '1.5px solid rgba(232,65,66,0.45)' : '1.5px solid transparent',
-              color: tab === t ? '#e84142' : 'rgba(248,248,250,0.38)',
+              background: tab === t ? 'rgba(16,185,129,0.14)' : 'rgba(255,255,255,0.03)',
+              borderTop: tab === t ? '1.5px solid rgba(16,185,129,0.45)' : '1.5px solid transparent',
+              color: tab === t ? '#10b981' : 'rgba(248,248,250,0.38)',
               fontSize: 11, fontWeight: tab === t ? 800 : 600, letterSpacing: 0.2, textTransform: 'capitalize',
               transition: 'all 0.18s',
             }}>{t === 'gov' ? 'DAO' : t === 'patrol' ? 'Patrols' : t.charAt(0).toUpperCase() + t.slice(1)}</button>
@@ -188,11 +188,11 @@ export default function CFAPage() {
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
                 <p className="label-caps">Monthly Trees Planted</p>
                 <div style={{ display: 'flex', gap: 10 }}>
-                  <span style={{ fontSize: 9, color: '#e84142', fontWeight: 700 }}>■ Trees</span>
+                  <span style={{ fontSize: 9, color: '#10b981', fontWeight: 700 }}>■ Trees</span>
                 </div>
               </div>
               <div style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: 16, padding: '14px 12px 8px' }}>
-                <MiniBar data={d.monthlyTrend} colorA="#e84142" colorB="#22c55e" />
+                <MiniBar data={d.monthlyTrend} colorA="#10b981" colorB="#22c55e" />
               </div>
             </section>
 
@@ -227,14 +227,14 @@ export default function CFAPage() {
             <section>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
                 <p className="label-caps">Latest Patrol</p>
-                <button onClick={() => setTab('patrol')} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#e84142', fontSize: 10, fontWeight: 700, display: 'flex', alignItems: 'center', gap: 3 }}>
+                <button onClick={() => setTab('patrol')} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#10b981', fontSize: 10, fontWeight: 700, display: 'flex', alignItems: 'center', gap: 3 }}>
                   See all <ChevronRight size={10} />
                 </button>
               </div>
               {d.recentPatrols.slice(0, 2).map(p => (
-                <div key={p.id} style={{ marginBottom: 8, borderRadius: 14, padding: '12px 14px', background: p.status === 'FLAGGED' ? 'rgba(232,65,66,0.07)' : 'rgba(255,255,255,0.03)', border: `1px solid ${p.status === 'FLAGGED' ? 'rgba(232,65,66,0.28)' : 'rgba(255,255,255,0.07)'}` }}>
+                <div key={p.id} style={{ marginBottom: 8, borderRadius: 14, padding: '12px 14px', background: p.status === 'FLAGGED' ? 'rgba(16,185,129,0.07)' : 'rgba(255,255,255,0.03)', border: `1px solid ${p.status === 'FLAGGED' ? 'rgba(16,185,129,0.28)' : 'rgba(255,255,255,0.07)'}` }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                    {p.status === 'FLAGGED' ? <AlertTriangle size={14} color="#e84142" /> : <CheckCircle size={14} color="#22c55e" />}
+                    {p.status === 'FLAGGED' ? <AlertTriangle size={14} color="#10b981" /> : <CheckCircle size={14} color="#22c55e" />}
                     <p style={{ fontSize: 13, fontWeight: 700, color: '#f8f8fa', margin: 0, flex: 1 }}>{p.memberName} · {p.zone}</p>
                     <span style={{ fontSize: 10, color: 'rgba(248,248,250,0.38)' }}>{p.patrolDate}</span>
                   </div>
@@ -294,14 +294,14 @@ export default function CFAPage() {
                 <div key={p.id} style={{
                   borderRadius: 18, padding: '15px 16px',
                   background: p.status === 'FLAGGED'
-                    ? 'linear-gradient(135deg, rgba(232,65,66,0.10) 0%, rgba(10,10,12,0.90) 100%)'
+                    ? 'linear-gradient(135deg, rgba(16,185,129,0.10) 0%, rgba(10,10,12,0.90) 100%)'
                     : 'linear-gradient(135deg, rgba(34,197,94,0.07) 0%, rgba(10,10,12,0.90) 100%)',
-                  border: `1px solid ${p.status === 'FLAGGED' ? 'rgba(232,65,66,0.28)' : 'rgba(34,197,94,0.18)'}`,
+                  border: `1px solid ${p.status === 'FLAGGED' ? 'rgba(16,185,129,0.28)' : 'rgba(34,197,94,0.18)'}`,
                 }}>
                   <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 10 }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                      <div style={{ width: 36, height: 36, borderRadius: 11, background: p.status === 'FLAGGED' ? 'rgba(232,65,66,0.15)' : 'rgba(34,197,94,0.12)', border: `1px solid ${p.status === 'FLAGGED' ? 'rgba(232,65,66,0.35)' : 'rgba(34,197,94,0.28)'}`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                        {p.status === 'FLAGGED' ? <AlertTriangle size={17} color="#e84142" /> : <CheckCircle size={17} color="#22c55e" />}
+                      <div style={{ width: 36, height: 36, borderRadius: 11, background: p.status === 'FLAGGED' ? 'rgba(16,185,129,0.15)' : 'rgba(34,197,94,0.12)', border: `1px solid ${p.status === 'FLAGGED' ? 'rgba(16,185,129,0.35)' : 'rgba(34,197,94,0.28)'}`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        {p.status === 'FLAGGED' ? <AlertTriangle size={17} color="#10b981" /> : <CheckCircle size={17} color="#22c55e" />}
                       </div>
                       <div>
                         <p style={{ fontSize: 13, fontWeight: 800, color: '#f8f8fa', margin: '0 0 2px' }}>{p.memberName}</p>
@@ -310,14 +310,14 @@ export default function CFAPage() {
                     </div>
                     <span style={{
                       fontSize: 9, fontWeight: 800, padding: '3px 8px', borderRadius: 6, letterSpacing: 0.4,
-                      background: p.status === 'FLAGGED' ? 'rgba(232,65,66,0.14)' : 'rgba(34,197,94,0.12)',
+                      background: p.status === 'FLAGGED' ? 'rgba(16,185,129,0.14)' : 'rgba(34,197,94,0.12)',
                       color: p.status === 'FLAGGED' ? '#f87171' : '#4ade80',
-                      border: `1px solid ${p.status === 'FLAGGED' ? 'rgba(232,65,66,0.30)' : 'rgba(34,197,94,0.28)'}`,
+                      border: `1px solid ${p.status === 'FLAGGED' ? 'rgba(16,185,129,0.30)' : 'rgba(34,197,94,0.28)'}`,
                     }}>{p.status}</span>
                   </div>
 
                   {p.incidentType && (
-                    <div style={{ marginBottom: 10, padding: '8px 11px', borderRadius: 9, background: 'rgba(232,65,66,0.08)', border: '1px solid rgba(232,65,66,0.20)' }}>
+                    <div style={{ marginBottom: 10, padding: '8px 11px', borderRadius: 9, background: 'rgba(16,185,129,0.08)', border: '1px solid rgba(16,185,129,0.20)' }}>
                       <p style={{ fontSize: 11, color: '#f87171', fontWeight: 700, margin: 0 }}>⚠ Incident: {p.incidentType}</p>
                     </div>
                   )}
@@ -326,7 +326,7 @@ export default function CFAPage() {
                     {[
                       { label: 'Duration', value: `${p.durationMins} min`, color: '#3b82f6' },
                       { label: 'Trees Planted', value: p.treesPlanted.toString(), color: '#22c55e' },
-                      { label: 'Status', value: p.status, color: p.status === 'FLAGGED' ? '#e84142' : '#22c55e' },
+                      { label: 'Status', value: p.status, color: p.status === 'FLAGGED' ? '#10b981' : '#22c55e' },
                     ].map(s => (
                       <div key={s.label} style={{ textAlign: 'center', padding: '8px 6px', borderRadius: 10, background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}>
                         <p style={{ fontSize: 13, fontWeight: 900, color: s.color, margin: '0 0 2px' }}>{s.value}</p>
@@ -345,7 +345,7 @@ export default function CFAPage() {
           <div>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
               <p className="label-caps">Forest Products ({d.products.length})</p>
-              <Link href="/securities" style={{ fontSize: 10, color: '#e84142', fontWeight: 700, textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 3 }}>
+              <Link href="/securities" style={{ fontSize: 10, color: '#10b981', fontWeight: 700, textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 3 }}>
                 Manage <ExternalLink size={10} />
               </Link>
             </div>
@@ -353,7 +353,7 @@ export default function CFAPage() {
               {d.products.map(p => {
                 const pc = p.status === 'Active' ? '#22c55e' : '#f59e0b';
                 return (
-                  <div key={p.id} style={{ borderRadius: 18, padding: '15px 16px', background: 'linear-gradient(135deg, rgba(232,65,66,0.05) 0%, rgba(10,10,12,0.92) 100%)', border: '1px solid rgba(232,65,66,0.16)' }}>
+                  <div key={p.id} style={{ borderRadius: 18, padding: '15px 16px', background: 'linear-gradient(135deg, rgba(16,185,129,0.05) 0%, rgba(10,10,12,0.92) 100%)', border: '1px solid rgba(16,185,129,0.16)' }}>
                     <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 10 }}>
                       <div>
                         <p style={{ fontSize: 14, fontWeight: 900, color: '#f8f8fa', margin: '0 0 4px' }}>{p.name}</p>
@@ -366,7 +366,7 @@ export default function CFAPage() {
                     </div>
                     {/* progress bar — tvl */}
                     <div style={{ height: 6, background: 'rgba(255,255,255,0.05)', borderRadius: 3, marginBottom: 10 }}>
-                      <div style={{ height: '100%', width: `${Math.min(100, Math.round(p.tvlKes / 6000))}%`, borderRadius: 3, background: 'linear-gradient(90deg, #e84142, #f59e0b)' }} />
+                      <div style={{ height: '100%', width: `${Math.min(100, Math.round(p.tvlKes / 6000))}%`, borderRadius: 3, background: 'linear-gradient(90deg, #10b981, #f59e0b)' }} />
                     </div>
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                       <div style={{ display: 'flex', gap: 14 }}>
@@ -397,7 +397,7 @@ export default function CFAPage() {
           <div>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
               <p className="label-caps">DAO Proposals</p>
-              <Link href="/nuvari" style={{ fontSize: 10, color: '#e84142', fontWeight: 700, textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 3 }}>
+              <Link href="/nuvari" style={{ fontSize: 10, color: '#10b981', fontWeight: 700, textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 3 }}>
                 Draft <FileText size={10} />
               </Link>
             </div>
@@ -405,11 +405,11 @@ export default function CFAPage() {
               {d.proposals.map(p => {
                 const total = totalVotes(p);
                 const forPct = total > 0 ? Math.round((p.votesFor / total) * 100) : 0;
-                const sc = p.status === 'ACTIVE' ? '#e84142' : p.status === 'PASSED' ? '#22c55e' : '#f59e0b';
+                const sc = p.status === 'ACTIVE' ? '#10b981' : p.status === 'PASSED' ? '#22c55e' : '#f59e0b';
                 return (
                   <div key={p.id} style={{ borderRadius: 18, padding: '16px 16px', background: 'linear-gradient(135deg, rgba(255,255,255,0.03) 0%, rgba(10,10,12,0.92) 100%)', border: `1px solid ${sc}20` }}>
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
-                      <span style={{ fontSize: 10, fontWeight: 800, color: '#e84142', fontFamily: 'monospace' }}>{p.proposalRef}</span>
+                      <span style={{ fontSize: 10, fontWeight: 800, color: '#10b981', fontFamily: 'monospace' }}>{p.proposalRef}</span>
                       <span style={{ fontSize: 9, fontWeight: 800, padding: '3px 9px', borderRadius: 6, background: `${sc}14`, color: sc, border: `1px solid ${sc}30`, letterSpacing: 0.4 }}>{p.status}</span>
                     </div>
                     <p style={{ fontSize: 14, fontWeight: 800, color: '#f8f8fa', margin: '0 0 10px', lineHeight: 1.4 }}>{p.title}</p>
@@ -437,12 +437,12 @@ export default function CFAPage() {
             </div>
 
             {/* Quick links */}
-            <div className="divider-red" style={{ margin: '20px 0' }} />
+            <div className="divider-green" style={{ margin: '20px 0' }} />
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
               {[
                 { label: 'Securities',     href: '/securities', icon: ShieldCheck, color: '#a855f7' },
                 { label: 'Pools',          href: '/pools',      icon: TrendingUp,  color: '#22c55e' },
-                { label: 'AI Advisor',     href: '/ai',         icon: Globe,       color: '#e84142' },
+                { label: 'AI Advisor',     href: '/ai',         icon: Globe,       color: '#10b981' },
                 { label: 'Policy Builder', href: '/nuvari',     icon: FileText,    color: '#f59e0b' },
               ].map(l => (
                 <Link key={l.label} href={l.href} style={{ textDecoration: 'none' }}>
