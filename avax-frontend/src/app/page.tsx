@@ -258,8 +258,8 @@ export default function Home() {
         ) : (
           <button onClick={() => setShowModal(true)} style={{
             width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 9,
-            background: 'rgba(232,65,66,0.08)', border: '1px dashed rgba(232,65,66,0.30)',
-            borderRadius: 14, padding: '13px 0', cursor: 'pointer', color: 'var(--red)',
+            background: 'rgba(16,185,129,0.08)', border: '1px dashed rgba(16,185,129,0.30)',
+            borderRadius: 14, padding: '13px 0', cursor: 'pointer', color: 'var(--green)',
             fontSize: 13, fontWeight: 700,
           }}>
             <Wallet size={18} /> Connect wallet to view balances
