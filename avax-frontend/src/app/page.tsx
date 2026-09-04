@@ -126,7 +126,7 @@ export default function Home() {
       const r = await fetch('/api/chat', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ message: agentQ, rag: true, stream: false }) });
       const d = await r.json();
       setAgentA(d.text || d.response || 'No answer returned.');
-    } catch { setAgentA('Agent offline — start the server.'); }
+    } catch {     setAgentA('Agent offline. Start the server.'); }
     finally { setAgentBusy(false); }
   };
 
@@ -161,7 +161,7 @@ export default function Home() {
           <div>
             <p style={{ fontSize: 9, color: 'var(--text-dim)', margin: '0 0 1px', letterSpacing: 1.2, textTransform: 'uppercase', fontWeight: 700 }}>Good day</p>
             <h1 style={{ fontSize: 16, fontWeight: 900, margin: '0 0 1px', color: 'var(--white)' }}>AUSTIN NAMUYE</h1>
-            <p style={{ fontSize: 10, color: 'var(--text-muted)', margin: 0 }}>@drekahshi · 🇰🇪 Kenya</p>
+            <p style={{ fontSize: 10, color: 'var(--text-muted)', margin: 0 }}>@drekahshi - Kenya</p>
           </div>
         </div>
 
@@ -185,7 +185,7 @@ export default function Home() {
 
       {/* ── NETWORK STRIP ──────────────────────────────── */}
       <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }} style={{ margin: '14px 18px 0', padding: '10px 14px', borderRadius: 12, background: 'rgba(16,185,129,0.055)', border: '1px solid rgba(16,185,129,0.15)', display: 'flex', alignItems: 'center', gap: 10 }}>
-        <div style={{ width: 32, height: 32, borderRadius: 10, background: 'rgba(16,185,129,0.12)', border: '1px solid rgba(16,185,129,0.25)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16, flexShrink: 0 }}>⛰️</div>
+        <div style={{ width: 32, height: 32, borderRadius: 10, background: 'rgba(16,185,129,0.12)', border: '1px solid rgba(16,185,129,0.25)',             display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16, flexShrink: 0 }}>K</div>
         <div style={{ flex: 1 }}>
           <p style={{ fontSize: 11, fontWeight: 800, color: 'var(--green)', margin: 0 }}>Avalanche C-Chain · Fuji Testnet</p>
           <p style={{ fontSize: 10, color: 'var(--text-muted)', margin: 0 }}>6 Ecosystem Tokens · DeFi Vaults · DAO</p>
@@ -248,7 +248,7 @@ export default function Home() {
                 fontSize: 10, color: 'var(--white-45)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
               }}>{address}</div>
               <button onClick={copyAddress} style={{ padding: '7px 11px', borderRadius: 10, background: copied ? 'rgba(34,197,94,0.12)' : 'var(--white-04)', border: `1px solid ${copied ? 'rgba(34,197,94,0.3)' : 'var(--white-08)'}`, cursor: 'pointer', color: copied ? 'var(--green)' : 'var(--white-45)', fontSize: 11, fontWeight: 700, display: 'flex', alignItems: 'center', gap: 4 }}>
-                {copied ? '✓' : <Copy size={13} />}
+                {copied ? 'Copied' : <Copy size={13} />}
               </button>
               <button onClick={handleRefresh} style={{ padding: '7px 11px', borderRadius: 10, background: 'var(--white-04)', border: '1px solid var(--white-08)', cursor: 'pointer', color: 'var(--white-45)' }}>
                 <RefreshCw size={13} style={{ animation: refreshing ? 'spin 1s linear infinite' : 'none' }} />
@@ -309,7 +309,7 @@ export default function Home() {
       {/* ── QUICK ACTIONS ──────────────────────────────── */}
       <section style={{ padding: '0 18px', marginBottom: 24 }}>
         <p className="label-caps" style={{ marginBottom: 12 }}>Quick Actions</p>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 9 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))', gap: 9 }} className="quick-grid">
           {QUICK.map((a, i) => {
             const Icon = a.icon;
             return (
