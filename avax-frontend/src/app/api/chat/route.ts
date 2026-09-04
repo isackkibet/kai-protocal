@@ -5,8 +5,9 @@ import { VAULT_ADDRESSES, AMM_ADDRESS, EXPLORER_BASE } from '@/lib/addresses';
 export const maxDuration = 300;
 
 const RAG_API_URL  = process.env.RAG_API_URL    || 'http://localhost:8000';
-const OLLAMA_URL   = process.env.OLLAMA_BASE_URL || 'http://localhost:11434';
-const OLLAMA_MODEL = process.env.OLLAMA_MODEL    || 'qwen3:1.7b';
+const GROQ_API_KEY = process.env.GROQ_API_KEY    || '';
+const GROQ_MODEL   = process.env.GROQ_MODEL      || 'llama-3.1-8b-instant';
+const GROQ_URL     = 'https://api.groq.com/openai/v1/chat/completions';
 const GEMINI_KEY   = process.env.GEMINI_API_KEY  || '';
 
 // ── Built-in KAI knowledge base (fallback when all LLMs are offline) ──────────
@@ -137,33 +138,39 @@ export async function POST(req: Request) {
         // FastAPI offline — fall through to Ollama direct stream
       }
 
-      // Fallback: stream directly from Ollama
+      // Fallback: stream directly from Groq
       try {
-        const ollamaRes = await fetch(`${OLLAMA_URL}/api/generate`, {
+        const groqRes = await fetch(GROQ_URL, {
           method:  'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${GROQ_API_KEY}`,
+          },
           body: JSON.stringify({
-            model:   OLLAMA_MODEL,
-            prompt:  `${SYSTEM_PROMPT}\n\nUser: ${message}\nKAI:`,
+            model:   GROQ_MODEL,
+            messages: [
+              { role: 'system', content: SYSTEM_PROMPT },
+              { role: 'user', content: message },
+            ],
             stream:  true,
-            think:   false,
-            options: { num_predict: 1024 },
+            temperature: 0.3,
+            max_tokens: 1024,
           }),
-          signal: AbortSignal.timeout(4_000),
+          signal: AbortSignal.timeout(10_000),
         });
 
-        if (!ollamaRes.ok || !ollamaRes.body) {
-          throw new Error(`Ollama stream error: ${ollamaRes.status}`);
+        if (!groqRes.ok || !groqRes.body) {
+          throw new Error(`Groq stream error: ${groqRes.status}`);
         }
 
 
-      // Transform Ollama NDJSON → SSE format
+      // Transform Groq OpenAI SSE → our SSE format
       const { readable, writable } = new TransformStream();
       const writer = writable.getWriter();
       const encoder = new TextEncoder();
 
       (async () => {
-        const reader = ollamaRes.body!.getReader();
+        const reader = groqRes.body!.getReader();
         const dec = new TextDecoder();
         let buf = '';
         try {
@@ -174,18 +181,20 @@ export async function POST(req: Request) {
             const lines = buf.split('\n');
             buf = lines.pop() ?? '';
             for (const line of lines) {
-              if (!line.trim()) continue;
+              if (!line.startsWith('data: ')) continue;
+              const data = line.slice(6).trim();
+              if (data === '[DONE]') {
+                await writer.write(encoder.encode(
+                  `data: ${JSON.stringify({ done: true, sources: 0 })}\n\n`
+                ));
+                break;
+              }
               try {
-                const chunk = JSON.parse(line);
-                const token = chunk.response ?? '';
+                const chunk = JSON.parse(data);
+                const token = chunk.choices?.[0]?.delta?.content ?? '';
                 if (token) {
                   await writer.write(encoder.encode(
                     `data: ${JSON.stringify({ token })}\n\n`
-                  ));
-                }
-                if (chunk.done) {
-                  await writer.write(encoder.encode(
-                    `data: ${JSON.stringify({ done: true, sources: 0 })}\n\n`
                   ));
                 }
               } catch { /* skip malformed chunks */ }
@@ -205,7 +214,7 @@ export async function POST(req: Request) {
         },
       });
       } catch {
-        // Ollama also offline — stream the built-in knowledge base answer
+        // Groq also offline — stream the built-in knowledge base answer
         return streamText(kaiKnowledgeFallback(message));
       }
     }
@@ -229,22 +238,28 @@ export async function POST(req: Request) {
         });
       }
 
-      const ollamaRes2 = await fetch(`${OLLAMA_URL}/api/generate`, {
+      const groqRes2 = await fetch(GROQ_URL, {
         method:  'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${GROQ_API_KEY}`,
+        },
         body: JSON.stringify({
-          model:   OLLAMA_MODEL,
-          prompt:  `${SYSTEM_PROMPT}\n\nUser: ${message}\nKAI:`,
+          model:   GROQ_MODEL,
+          messages: [
+            { role: 'system', content: SYSTEM_PROMPT },
+            { role: 'user', content: message },
+          ],
           stream:  false,
-          think:   false,
-          options: { num_predict: 1024 },
+          temperature: 0.3,
+          max_tokens: 1024,
         }),
-        signal: AbortSignal.timeout(5_000),
+        signal: AbortSignal.timeout(10_000),
       });
-      if (!ollamaRes2.ok) throw new Error(`Ollama error: ${ollamaRes2.status}`);
-      const ollamaData = await ollamaRes2.json();
+      if (!groqRes2.ok) throw new Error(`Groq error: ${groqRes2.status}`);
+      const groqData = await groqRes2.json();
       return NextResponse.json({
-        text:          ollamaData.response || 'No response.',
+        text:          groqData.choices?.[0]?.message?.content || 'No response.',
         agent:         'KAI AVAX Agent',
         rag_used:      false,
         sources_count: 0,

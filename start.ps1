@@ -1,5 +1,5 @@
 # ============================================================
-#  KAI App Launcher — starts Ollama + AI Agent + Next.js
+#  KAI App Launcher — starts AI Agent + Next.js
 #  Usage:  .\start.ps1
 # ============================================================
 
@@ -12,41 +12,7 @@ Write-Host "       KAI Nuvari App Launcher v1.0           " -ForegroundColor Cya
 Write-Host "===============================================" -ForegroundColor Cyan
 Write-Host ""
 
-# ── 1. Ensure Ollama is running ────────────────────────────
-Write-Host ">> Checking Ollama..." -ForegroundColor Yellow
-try {
-    Invoke-RestMethod "http://localhost:11434/api/tags" -TimeoutSec 3 | Out-Null
-    Write-Host "   OK Ollama already running." -ForegroundColor Green
-} catch {
-    Write-Host "   Starting Ollama in background..." -ForegroundColor Yellow
-    Start-Process -FilePath "ollama" -ArgumentList "serve" -WindowStyle Minimized
-    $waited = 0
-    do {
-        Start-Sleep -Seconds 2; $waited += 2
-        try {
-            Invoke-RestMethod "http://localhost:11434/api/tags" -TimeoutSec 2 | Out-Null
-            break
-        } catch {
-            # retry
-        }
-    } while ($waited -lt 30)
-    Write-Host "   OK Ollama started." -ForegroundColor Green
-}
-
-# ── 2. Ensure required models are pulled ───────────────────
-Write-Host ">> Verifying Ollama models..." -ForegroundColor Yellow
-$models = (Invoke-RestMethod "http://localhost:11434/api/tags").models.name
-foreach ($m in @("qwen3:0.6b", "nomic-embed-text")) {
-    if ($models -contains $m) {
-        Write-Host "   OK $m" -ForegroundColor Green
-    } else {
-        Write-Host "   Pulling $m (first-time only)..." -ForegroundColor Yellow
-        ollama pull $m
-        Write-Host "   OK $m pulled." -ForegroundColor Green
-    }
-}
-
-# ── 3. Set up Python venv if needed ────────────────────────
+# ── 1. Set up Python venv if needed ────────────────────────
 $AgentDir = Join-Path $Root "ai-agent"
 $VenvPy   = Join-Path $AgentDir ".venv\Scripts\python.exe"
 $VenvPip  = Join-Path $AgentDir ".venv\Scripts\pip.exe"
@@ -61,7 +27,27 @@ Write-Host "   Installing / updating dependencies..." -ForegroundColor Yellow
 & $VenvPip install -q -r (Join-Path $AgentDir "requirements.txt") --upgrade
 Write-Host "   OK Dependencies ready." -ForegroundColor Green
 
-# ── 4. Launch AI Agent in new window ─────────────────────
+# ── 2. Check for GROQ_API_KEY ────────────────────────────────
+Write-Host ">> Checking environment..." -ForegroundColor Yellow
+$envFile = Join-Path $Root ".env"
+if (Test-Path $envFile) {
+    $envContent = Get-Content $envFile -Raw
+    if ($envContent -match "GROQ_API_KEY=(.+)") {
+        $key = $Matches[1].Trim()
+        if ($key -and $key -ne "" -and $key -ne "your_groq_api_key_here") {
+            Write-Host "   OK GROQ_API_KEY is set." -ForegroundColor Green
+        } else {
+            Write-Host "   WARNING: GROQ_API_KEY is not set in .env" -ForegroundColor Red
+            Write-Host "   Get a key from https://console.groq.com" -ForegroundColor Yellow
+        }
+    } else {
+        Write-Host "   WARNING: GROQ_API_KEY not found in .env" -ForegroundColor Red
+    }
+} else {
+    Write-Host "   WARNING: .env file not found. Copy .env.example to .env" -ForegroundColor Red
+}
+
+# ── 3. Launch AI Agent in new window ─────────────────────
 Write-Host ">> Starting KAI AI Agent on port 8000..." -ForegroundColor Yellow
 $agentCmd = "Set-Location '$AgentDir'; & '$VenvPy' -m uvicorn server:app --host 127.0.0.1 --port 8000 --reload"
 Start-Process powershell -ArgumentList "-NoExit", "-Command", $agentCmd -WindowStyle Normal
@@ -83,7 +69,7 @@ if ($waited -ge 90) {
     Write-Host "   WARNING: Agent did not respond in 90s — check the AI Agent window." -ForegroundColor Red
 }
 
-# ── 5. Launch Next.js frontend in new window ──────────────
+# ── 4. Launch Next.js frontend in new window ──────────────
 Write-Host ">> Starting Next.js frontend on port 3000..." -ForegroundColor Yellow
 $FrontendDir = Join-Path $Root "avax-frontend"
 $frontCmd = "Set-Location '$FrontendDir'; npm run dev"
@@ -94,7 +80,7 @@ Write-Host "===============================================" -ForegroundColor Gr
 Write-Host "  All services launched!                      " -ForegroundColor Green
 Write-Host "  Frontend : http://localhost:3000            " -ForegroundColor Green
 Write-Host "  AI Agent : http://127.0.0.1:8000/health     " -ForegroundColor Green
-Write-Host "  Ollama   : http://localhost:11434           " -ForegroundColor Green
+Write-Host "  Provider : Groq (cloud API)                 " -ForegroundColor Green
 Write-Host "===============================================" -ForegroundColor Green
 Write-Host ""
 Write-Host "Close individual windows to stop each service." -ForegroundColor Gray

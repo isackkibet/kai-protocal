@@ -2,21 +2,14 @@
 
 Open separate PowerShell terminals for the services below.
 
-## 1. Start Ollama and the local model
+## 1. Set up your API key
 
-```powershell
-ollama serve
+Copy `.env.example` to `.env` and add your Groq API key:
+
 ```
-
-In another terminal, download the models once and start the chat model:
-
-```powershell
-ollama pull qwen3:0.6b
-ollama pull nomic-embed-text
-ollama run qwen3:0.6b
+GROQ_API_KEY=your_groq_api_key_here
+GROQ_MODEL=llama-3.1-8b-instant
 ```
-
-Keep Ollama running at `http://localhost:11434`.
 
 ## 2. Start the FastAPI RAG agent
 
