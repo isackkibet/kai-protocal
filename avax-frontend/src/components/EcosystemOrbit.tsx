@@ -34,19 +34,19 @@ export default function EcosystemOrbit() {
         {/* Nodes */}
         <div style={{ position: "absolute", top: "10%", left: "10%", transform: "translate(-50%, -50%)", zIndex: 10 }}>
           <div className="glass" style={{ padding: "8px 14px", borderRadius: "20px", border: "1px solid #22C55E", background: "rgba(34,197,94,0.1)" }}>
-            <span style={{ color: "#22C55E", fontSize: "11px", fontWeight: "bold" }}>🛡️ Insurance</span>
+            <span style={{ color: "#22C55E", fontSize: "11px", fontWeight: "bold" }}>Insurance</span>
           </div>
         </div>
 
         <div style={{ position: "absolute", top: "10%", left: "90%", transform: "translate(-50%, -50%)", zIndex: 10 }}>
           <div className="glass" style={{ padding: "8px 14px", borderRadius: "20px", border: "1px solid #A78BFA", background: "rgba(167,139,250,0.1)" }}>
-            <span style={{ color: "#A78BFA", fontSize: "11px", fontWeight: "bold" }}>🔒 Pension</span>
+            <span style={{ color: "#A78BFA", fontSize: "11px", fontWeight: "bold" }}>Pension</span>
           </div>
         </div>
 
         <div style={{ position: "absolute", top: "90%", left: "50%", transform: "translate(-50%, -50%)", zIndex: 10 }}>
           <div className="glass" style={{ padding: "8px 14px", borderRadius: "20px", border: "1px solid #3B82F6", background: "rgba(59,130,246,0.1)" }}>
-            <span style={{ color: "#3B82F6", fontSize: "11px", fontWeight: "bold" }}>🤝 Trust</span>
+            <span style={{ color: "#3B82F6", fontSize: "11px", fontWeight: "bold" }}>Trust</span>
           </div>
         </div>
 
