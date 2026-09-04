@@ -8,7 +8,7 @@ export default function EcosystemOrbit() {
         {/* Center: Vault */}
         <div style={{ position: "absolute", top: "50%", left: "50%", transform: "translate(-50%, -50%)", zIndex: 10 }}>
           <div className="glass float" style={{ padding: "12px 20px", borderRadius: "100px", border: "2px solid #FFD700", background: "rgba(255,215,0,0.1)", display: "flex", alignItems: "center", gap: "10px" }}>
-            <span style={{ fontSize: "20px" }}>🏦</span>
+            <span style={{ fontSize: "20px" }}></span>
             <span style={{ fontWeight: "bold", color: "#FFD700" }}>Vault Yield</span>
           </div>
         </div>

@@ -36,7 +36,7 @@ interface Post {
 const SEED_POSTS: Post[] = [
   {
     id: 'p1', slug: 'bamboo-dry-season-care', title: 'Protecting Bamboo Seedlings in the Dry Season',
-    summary: 'Practical tips from Mau Forest guardians on how to keep bamboo alive through Kenya\'s October dry spell — mulching, watering schedules, and shading techniques.',
+    summary: 'Practical tips from Mau Forest guardians on how to keep bamboo alive through Kenya\'s October dry spell - mulching, watering schedules, and shading techniques.',
     contentType: 'FIELD_JOURNAL', category: 'FORESTRY_MRV',
     creator: 'Grace Wangari', badge: 'COMMUNITY_REPORTER', publishedAt: '2026-08-28', viewsCount: 341, likesCount: 47, tipsEarnedKes: 1200, language: 'EN', tags: ['Bamboo','MRV','Dry Season'],
   },
@@ -47,14 +47,14 @@ const SEED_POSTS: Post[] = [
     creator: 'Wanjiru Kamau', badge: 'CHAMA_MENTOR', publishedAt: '2026-08-27', viewsCount: 512, likesCount: 89, tipsEarnedKes: 2400, language: 'SW', tags: ['yBOB','Chama','Yield'],
   },
   {
-    id: 'p3', slug: 'dap-fertiliser-market-aug26', title: 'DAP Fertiliser Price Alert — Eldoret Market',
+    id: 'p3', slug: 'dap-fertiliser-market-aug26',     title: 'DAP Fertiliser Price Alert - Eldoret Market',
     summary: 'DAP prices surged 12% this week. Our market reporter traces the cause to supply chain delays at Mombasa port and suggests farmer co-op bulk purchasing strategies.',
     contentType: 'MARKET_NEWS', category: 'AGRI_MARKET',
     creator: 'Daniel Ruto', badge: 'JOURNALIST', publishedAt: '2026-08-26', viewsCount: 728, likesCount: 130, tipsEarnedKes: 3100, language: 'EN', tags: ['Fertiliser','Prices','Market'],
   },
   {
-    id: 'p4', slug: 'kai-ledger-voice-guide', title: '🎙️ KAI Smart Ledger — Voice Guide for Traders',
-    summary: 'Audio tutorial: Learn how to record your daily sales, credit given, and stock value using KAI\'s MSME Intelligent Ledger — no internet required for voice input.',
+    id: 'p4', slug: 'kai-ledger-voice-guide',     title: 'KAI Smart Ledger - Voice Guide for Traders',
+    summary: 'Audio tutorial: Learn how to record your daily sales, credit given, and stock value using KAI\'s MSME Intelligent Ledger - no internet required for voice input.',
     contentType: 'AUDIO_PODCAST', category: 'MSME_GROWTH',
     creator: 'Beatrice Mutua', badge: 'AGRI_EXPERT', publishedAt: '2026-08-25', viewsCount: 215, likesCount: 38, tipsEarnedKes: 900, audioDurationSeconds: 482, language: 'SW', tags: ['Ledger','Voice','MSME'],
   },
@@ -77,7 +77,7 @@ const SEED_POSTS: Post[] = [
     creator: 'Agnes Chebet', badge: 'COMMUNITY_REPORTER', publishedAt: '2026-08-22', viewsCount: 617, likesCount: 98, tipsEarnedKes: 2800, language: 'EN', tags: ['Carbon','Blockchain','MRV'],
   },
   {
-    id: 'p8', slug: 'chama-investment-pool-podcast', title: '🎙️ Group Investment Basics for SACCO Members',
+    id: 'p8', slug: 'chama-investment-pool-podcast',     title: 'Group Investment Basics for SACCO Members',
     summary: 'Podcast episode covering the basics of DeFi group savings: how M-Pesa contributions are converted to yBOB, routed to vaults, and distributed back monthly.',
     contentType: 'AUDIO_PODCAST', category: 'CHAMA_SAVINGS',
     creator: 'Akinyi Odhiambo', badge: 'CHAMA_MENTOR', publishedAt: '2026-08-21', viewsCount: 189, likesCount: 29, tipsEarnedKes: 700, audioDurationSeconds: 720, language: 'SW', tags: ['SACCO','DeFi','Audio'],
@@ -102,10 +102,10 @@ const TYPE_CONFIG: Record<ContentType, { icon: React.ReactNode; label: string; c
 };
 
 const BADGE_LABEL: Record<string, string> = {
-  COMMUNITY_REPORTER: '📍 Reporter',
-  AGRI_EXPERT:        '🌾 Expert',
-  CHAMA_MENTOR:       '🤝 Mentor',
-  JOURNALIST:         '📰 Journalist',
+  COMMUNITY_REPORTER: 'Reporter',
+  AGRI_EXPERT:        'Expert',
+  CHAMA_MENTOR:       'Mentor',
+  JOURNALIST:         'Journalist',
 };
 
 function fmt(secs: number) {

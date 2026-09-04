@@ -156,7 +156,7 @@ export default function PaymentApprovalModal({ onClose }: Props) {
             <div style={{ textAlign: 'center', padding: '40px 20px' }}>
               <CheckCircle size={32} color="rgba(34,197,94,0.25)" style={{ display: 'block', margin: '0 auto 12px' }} />
               <p style={{ fontSize: 13, color: 'rgba(248,248,250,0.35)', margin: 0 }}>
-                {tab === 'pending' ? 'No pending payments — all clear.' : `No ${tab} payments.`}
+                {tab === 'pending' ? 'No pending payments - all clear.' : `No ${tab} payments.`}
               </p>
             </div>
           ) : (
