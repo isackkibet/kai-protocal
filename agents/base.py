@@ -1,7 +1,7 @@
 """
 agents/base.py
-Shared utilities for all KAI local agents.
-Ollama is optional — all agents degrade gracefully when it is offline.
+Shared utilities for all KAI agents.
+Uses Groq cloud API — no local LLM required.
 """
 
 from __future__ import annotations
@@ -14,25 +14,30 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-OLLAMA_URL   = os.getenv("OLLAMA_BASE_URL",  "http://localhost:11434")
-OLLAMA_MODEL = os.getenv("OLLAMA_LLM_MODEL", "qwen3:0.6b")
-TIMEOUT      = 600.0
+GROQ_API_KEY = os.getenv("GROQ_API_KEY", "")
+GROQ_MODEL   = os.getenv("GROQ_MODEL", "llama-3.1-8b-instant")
+GROQ_URL     = "https://api.groq.com/openai/v1/chat/completions"
+TIMEOUT      = 60.0
 
-# Friendly message returned when Ollama is unreachable
 _OFFLINE_MSG = (
-    "The local AI model (Ollama) is currently offline. "
-    "Start it with: ollama serve\n"
+    "The AI model is currently unavailable. "
+    "Check your GROQ_API_KEY in .env.\n"
     "All other agent features continue to work without it."
 )
 
 
 # ─── Availability probe ───────────────────────────────────────────────────────
 
-async def ollama_available() -> bool:
-    """Return True if Ollama is reachable, False otherwise."""
+async def groq_available() -> bool:
+    """Return True if Groq API key is set and reachable."""
+    if not GROQ_API_KEY:
+        return False
     try:
-        async with httpx.AsyncClient(timeout=3.0) as client:
-            r = await client.get(f"{OLLAMA_URL}/api/tags")
+        async with httpx.AsyncClient(timeout=5.0) as client:
+            r = await client.get(
+                "https://api.groq.com/openai/v1/models",
+                headers={"Authorization": f"Bearer {GROQ_API_KEY}"},
+            )
             return r.status_code == 200
     except Exception:
         return False
@@ -40,14 +45,14 @@ async def ollama_available() -> bool:
 
 # ─── Low-level helpers ────────────────────────────────────────────────────────
 
-async def ollama_complete(
+async def groq_complete(
     prompt: str,
     system: str = "",
-    model: str = OLLAMA_MODEL,
+    model: str = GROQ_MODEL,
 ) -> str:
     """
-    Single blocking-style completion via Ollama.
-    Returns a graceful fallback string when Ollama is offline or errors.
+    Single blocking-style completion via Groq (OpenAI-compatible API).
+    Returns a graceful fallback string when offline or errors.
     """
     messages: list[dict] = []
     if system:
@@ -55,36 +60,41 @@ async def ollama_complete(
     messages.append({"role": "user", "content": prompt})
 
     payload = {
-        "model":    model,
-        "messages": messages,
-        "stream":   False,
-        "options":  {"num_predict": 2048, "temperature": 0.3},
+        "model":       model,
+        "messages":    messages,
+        "temperature": 0.3,
+        "max_tokens":  2048,
+    }
+
+    headers = {
+        "Authorization": f"Bearer {GROQ_API_KEY}",
+        "Content-Type":  "application/json",
     }
 
     try:
         async with httpx.AsyncClient(timeout=TIMEOUT) as client:
-            resp = await client.post(f"{OLLAMA_URL}/api/chat", json=payload)
+            resp = await client.post(GROQ_URL, json=payload, headers=headers)
             resp.raise_for_status()
             data = resp.json()
-            return data["message"]["content"].strip()
+            return data["choices"][0]["message"]["content"].strip()
     except httpx.ConnectError:
         return _OFFLINE_MSG
     except httpx.TimeoutException:
-        return "The AI model timed out. Try a shorter prompt or restart Ollama."
+        return "The AI model timed out. Try a shorter prompt."
     except httpx.HTTPStatusError as e:
-        return f"Ollama returned an error ({e.response.status_code}). Check that the model is loaded."
+        return f"Groq returned an error ({e.response.status_code}). Check your API key."
     except Exception as e:
         return f"AI model unavailable: {e}"
 
 
-async def ollama_stream(
+async def groq_stream(
     prompt: str,
     system: str = "",
-    model: str = OLLAMA_MODEL,
+    model: str = GROQ_MODEL,
 ) -> AsyncIterator[str]:
     """
-    Stream tokens from Ollama as SSE lines.
-    Yields a single error SSE event when Ollama is offline.
+    Stream tokens from Groq as SSE lines.
+    Yields a single error SSE event when offline.
     """
     messages: list[dict] = []
     if system:
@@ -92,36 +102,47 @@ async def ollama_stream(
     messages.append({"role": "user", "content": prompt})
 
     payload = {
-        "model":    model,
-        "messages": messages,
-        "stream":   True,
-        "options":  {"num_predict": 2048, "temperature": 0.3},
+        "model":       model,
+        "messages":    messages,
+        "temperature": 0.3,
+        "max_tokens":  2048,
+        "stream":      True,
+    }
+
+    headers = {
+        "Authorization": f"Bearer {GROQ_API_KEY}",
+        "Content-Type":  "application/json",
     }
 
     try:
         async with httpx.AsyncClient(timeout=TIMEOUT) as client:
             async with client.stream(
-                "POST", f"{OLLAMA_URL}/api/chat", json=payload
+                "POST", GROQ_URL, json=payload, headers=headers
             ) as resp:
                 async for line in resp.aiter_lines():
-                    if not line:
+                    if not line or not line.startswith("data: "):
                         continue
-                    try:
-                        chunk = json.loads(line)
-                    except json.JSONDecodeError:
-                        continue
-                    token = chunk.get("message", {}).get("content", "")
-                    if token:
-                        yield f"data: {json.dumps({'token': token})}\n\n"
-                    if chunk.get("done"):
+                    data_str = line[6:]
+                    if data_str.strip() == "[DONE]":
                         yield f"data: {json.dumps({'done': True})}\n\n"
                         return
+                    try:
+                        chunk = json.loads(data_str)
+                    except json.JSONDecodeError:
+                        continue
+                    token = (
+                        chunk.get("choices", [{}])[0]
+                        .get("delta", {})
+                        .get("content", "")
+                    )
+                    if token:
+                        yield f"data: {json.dumps({'token': token})}\n\n"
 
     except httpx.ConnectError:
         yield f"data: {json.dumps({'token': _OFFLINE_MSG})}\n\n"
-        yield f"data: {json.dumps({'done': True, 'error': 'ollama_offline'})}\n\n"
+        yield f"data: {json.dumps({'done': True, 'error': 'groq_offline'})}\n\n"
     except httpx.TimeoutException:
-        msg = "AI model timed out. Restart Ollama and try again."
+        msg = "AI model timed out. Try again."
         yield f"data: {json.dumps({'token': msg})}\n\n"
         yield f"data: {json.dumps({'done': True, 'error': 'timeout'})}\n\n"
     except Exception as e:
@@ -135,8 +156,7 @@ async def ollama_stream(
 class AgentBase:
     """
     Base class for all KAI agents.
-
-    Ollama is used when available; all agents return structured results
+    Uses Groq cloud API when available; all agents return structured results
     even when the model is offline. Subclasses implement:
         async def run(self, **kwargs) -> dict
         async def stream(self, **kwargs) -> AsyncIterator[str]
@@ -145,27 +165,20 @@ class AgentBase:
     name:        str = "base"
     description: str = ""
 
-    def __init__(self, model: str = OLLAMA_MODEL):
+    def __init__(self, model: str = GROQ_MODEL):
         self.model = model
 
-    # ── Convenience wrappers ──────────────────────────────────────────────────
-
     async def complete(self, prompt: str, system: str = "") -> str:
-        """Complete a prompt. Returns offline message if Ollama is down."""
-        return await ollama_complete(prompt, system=system, model=self.model)
+        return await groq_complete(prompt, system=system, model=self.model)
 
     async def stream_response(
         self, prompt: str, system: str = ""
     ) -> AsyncIterator[str]:
-        """Stream a completion. Yields offline SSE event if Ollama is down."""
-        async for chunk in ollama_stream(prompt, system=system, model=self.model):
+        async for chunk in groq_stream(prompt, system=system, model=self.model):
             yield chunk
 
     async def is_model_available(self) -> bool:
-        """Quick check — use this to decide whether to include AI output."""
-        return await ollama_available()
-
-    # ── Abstract interface ────────────────────────────────────────────────────
+        return await groq_available()
 
     async def run(self, **kwargs) -> dict:
         raise NotImplementedError

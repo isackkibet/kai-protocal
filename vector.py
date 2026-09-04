@@ -18,33 +18,30 @@ The knowledge base covers:
 Rebuild: set REBUILD_INDEX=true in .env or delete chrome_langchain_db/
 """
 
-from langchain_ollama import OllamaEmbeddings
 from langchain_chroma import Chroma
 from langchain_core.documents import Document
+from langchain_core.embeddings import Embeddings
+from chromadb.utils.embedding_functions import DefaultEmbeddingFunction
 import os, time, shutil, re
 from html.parser import HTMLParser
 from dotenv import load_dotenv
-import httpx
 
 load_dotenv()
 
-# ── Wait for Ollama ────────────────────────────────────────────────────────────
 
-def wait_for_ollama(base_url: str, retries: int = 20, delay: float = 3.0):
-    for attempt in range(1, retries + 1):
-        try:
-            r = httpx.get(f"{base_url}/api/tags", timeout=5.0)
-            if r.status_code == 200:
-                print(f"✓ Ollama is ready at {base_url}")
-                return
-        except Exception:
-            pass
-        print(f"  Waiting for Ollama... ({attempt}/{retries})")
-        time.sleep(delay)
-    raise RuntimeError(f"Ollama did not respond at {base_url} after {retries} attempts.")
+# ── Local embeddings (no Ollama required) ─────────────────────────────────────
 
-OLLAMA_BASE_URL = os.getenv("OLLAMA_BASE_URL", "http://localhost:11434")
-wait_for_ollama(OLLAMA_BASE_URL)
+class LocalEmbeddings(Embeddings):
+    """Wrapper around ChromaDB's built-in ONNX embedding model (all-MiniLM-L6-v2)."""
+
+    def __init__(self):
+        self._ef = DefaultEmbeddingFunction()
+
+    def embed_documents(self, texts: list[str]) -> list[list[float]]:
+        return self._ef(texts)
+
+    def embed_query(self, text: str) -> list[float]:
+        return self._ef([text])[0]
 
 
 # ── HTML parser ────────────────────────────────────────────────────────────────
@@ -180,7 +177,6 @@ def load_text_docs(docs_dir: str) -> list[dict]:
             with open(filepath, "r", encoding="utf-8", errors="ignore") as f:
                 text = f.read()
             if text.strip():
-                # Extract a title from first non-empty line
                 first_line = next((l.strip().lstrip("#").strip()
                                    for l in text.splitlines() if l.strip()), filename)
                 results.append({
@@ -240,11 +236,7 @@ rebuild_index = (
     or not os.path.exists(DB_LOCATION)
 )
 
-embeddings = OllamaEmbeddings(
-    model=os.getenv("OLLAMA_EMBED_MODEL", "nomic-embed-text"),
-    base_url=OLLAMA_BASE_URL,
-    client_kwargs={"timeout": 300.0},
-)
+embeddings = LocalEmbeddings()
 
 # ── Build or load index ────────────────────────────────────────────────────────
 
@@ -258,13 +250,12 @@ if rebuild_index:
     print(f"    kainuvvax/ — KAI Nuvari product docs (HTML)")
     print(f"    docs/      — Study notes & supplementary (TXT/PDF)\n")
 
-    # Load from all sources
     all_raw: list[dict] = []
     all_raw.extend(load_html_docs(KAINUVVAX_DIR))
     all_raw.extend(load_text_docs(DOCS_DIR))
     all_raw.extend(load_pdf_docs(DOCS_DIR))
 
-    total_chars = sum(d["chars"] if "chars" in d else len(d["text"]) for d in all_raw)
+    total_chars = sum(len(d["text"]) for d in all_raw)
     print(f"\n  Total: {len(all_raw)} documents, {total_chars:,} chars")
 
     if not all_raw:
@@ -275,7 +266,6 @@ if rebuild_index:
             embedding_function=embeddings,
         )
     else:
-        # Chunk everything
         split_docs: list[Document] = []
         for doc in all_raw:
             chunks = chunk_text(doc["text"])
@@ -300,7 +290,6 @@ if rebuild_index:
             embedding_function=embeddings,
         )
 
-        # Batch embed in groups of 40
         BATCH = 40
         ids_all = [f"kai_{i}" for i in range(len(split_docs))]
         for start in range(0, len(split_docs), BATCH):
@@ -313,7 +302,6 @@ if rebuild_index:
 
         print(f"\n✅ KAI knowledge base ready: {len(split_docs)} chunks from {len(all_raw)} documents\n")
 
-        # After rebuild, set REBUILD_INDEX back to false automatically
         env_path = os.path.join(BASE_DIR, ".env")
         if os.path.exists(env_path):
             env_text = open(env_path, "r").read()
