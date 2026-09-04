@@ -147,7 +147,7 @@ export default function Home() {
       </div>
 
       {/* ── HEADER ─────────────────────────────────────── */}
-      <header style={{ padding: '18px 18px 0', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+      <motion.header initial={{ opacity: 0, y: -12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }} style={{ padding: '18px 18px 0', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 11 }}>
           {/* Avatar */}
           <div style={{
@@ -181,7 +181,7 @@ export default function Home() {
           <span style={{ width: 7, height: 7, borderRadius: '50%', background: isConnected ? 'var(--green)' : 'var(--red)', boxShadow: `0 0 8px ${isConnected ? 'var(--green)' : 'var(--red)'}` }} />
           {isConnected ? `${address?.slice(0,6)}…${address?.slice(-4)}` : 'Connect Wallet'}
         </button>
-      </header>
+      </motion.header>
 
       {/* ── NETWORK STRIP ──────────────────────────────── */}
       <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }} style={{ margin: '14px 18px 0', padding: '10px 14px', borderRadius: 12, background: 'rgba(16,185,129,0.055)', border: '1px solid rgba(16,185,129,0.15)', display: 'flex', alignItems: 'center', gap: 10 }}>
