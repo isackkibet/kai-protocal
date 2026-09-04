@@ -248,22 +248,22 @@ export default function PayPage() {
       if (parsed.amount) setSendAmount(parsed.amount);
       setTab("send");
     } else {
-      setStatusMsg(`⚠️ Could not parse QR: ${raw.slice(0, 40)}`);
+      setStatusMsg(`Could not parse QR: ${raw.slice(0, 40)}`);
     }
   }, []);
 
   // ── ERC-20 transfer ────────────────────────────────────────────────────────
   const handleSendToken = async (to: string, token: typeof TOKENS[0], amount: string) => {
     if (!isConnected || !address) { setShowModal(true); return; }
-    if (!to.match(/^0x[0-9a-fA-F]{40}$/)) { setStatusMsg("⚠️ Invalid recipient address."); return; }
-    if (!token.address) { setStatusMsg(`⚠️ ${token.symbol} not deployed on Fuji.`); return; }
+    if (!to.match(/^0x[0-9a-fA-F]{40}$/)) { setStatusMsg("Invalid recipient address."); return; }
+    if (!token.address) { setStatusMsg(`${token.symbol} not deployed on Fuji.`); return; }
     const amt = parseFloat(amount);
-    if (!amt || amt <= 0) { setStatusMsg("⚠️ Enter an amount."); return; }
+    if (!amt || amt <= 0) { setStatusMsg("Enter an amount."); return; }
 
     setBusy(true); setStatusMsg(""); setTxUrl(null);
     try {
       await switchChainAsync({ chainId: avalancheFuji.id });
-      setStatusMsg(`Approving ${token.symbol}…`);
+      setStatusMsg(`Approving ${token.symbol}...`);
       const appTx = await writeContractAsync({
         address: token.address, abi: ERC20_ABI,
         functionName: "approve", args: [to as `0x${string}`, maxUint256],
@@ -271,16 +271,16 @@ export default function PayPage() {
       });
       await publicClient?.waitForTransactionReceipt({ hash: appTx });
 
-      setStatusMsg(`Sending ${amount} ${token.symbol} to ${to.slice(0,8)}…`);
+      setStatusMsg(`Sending ${amount} ${token.symbol} to ${to.slice(0,8)}...`);
       const tx = await writeContractAsync({
         address: token.address, abi: ERC20_ABI,
         functionName: "transfer", args: [to as `0x${string}`, parseUnits(amount, token.decimals)],
         chainId: avalancheFuji.id,
       });
       setTxUrl(`https://testnet.snowtrace.io/tx/${tx}`);
-      setStatusMsg(`✅ Sent ${amount} ${token.symbol} to ${to.slice(0,8)}…${to.slice(-6)}`);
+      setStatusMsg(`Sent ${amount} ${token.symbol} to ${to.slice(0,8)}...${to.slice(-6)}`);
     } catch (e: unknown) {
-      setStatusMsg(`❌ ${e instanceof Error ? e.message.slice(0, 120) : "Transaction failed"}`);
+      setStatusMsg(`${e instanceof Error ? e.message.slice(0, 120) : "Transaction failed"}`);
     } finally {
       setBusy(false);
     }
@@ -321,7 +321,7 @@ export default function PayPage() {
 
       setPaystackStatus({
         type: "pending",
-        message: "💳 Complete payment in the Paystack tab",
+        message: "Complete payment in the Paystack tab",
         detail: [
           `KES ${data.amountKes?.toLocaleString()} (${sendAmount} ${sendToken.symbol})`,
           `Reference: ${data.reference}`,
@@ -340,7 +340,7 @@ export default function PayPage() {
             clearInterval(pollRef.current!);
             setPaystackStatus({
               type: "success",
-              message: "✅ Payment confirmed!",
+              message: "Payment confirmed!",
               detail: [
                 `Paid KES ${poll.amountKes?.toLocaleString()}`,
                 `Email: ${poll.email}`,
@@ -349,12 +349,12 @@ export default function PayPage() {
             });
           } else if (poll.status === "failed" || poll.status === "abandoned") {
             clearInterval(pollRef.current!);
-            setPaystackStatus({ type: "error", message: `❌ Payment ${poll.status}` });
+            setPaystackStatus({ type: "error", message: `Payment ${poll.status}` });
           } else if (attempts >= 18) {
             clearInterval(pollRef.current!);
             setPaystackStatus({
               type: "pending",
-              message: "⏱️ Check your email for Paystack confirmation",
+              message: "Check your email for Paystack confirmation",
               detail: [`Ref: ${data.reference}`],
             });
           }
@@ -362,7 +362,7 @@ export default function PayPage() {
       }, 5000);
 
     } catch (e: unknown) {
-      setPaystackStatus({ type: "error", message: `❌ ${e instanceof Error ? e.message : "Paystack failed"}` });
+      setPaystackStatus({ type: "error", message: `${e instanceof Error ? e.message : "Paystack failed"}` });
     } finally {
       setPaystackBusy(false);
     }
@@ -381,7 +381,7 @@ export default function PayPage() {
           <ArrowLeft size={18} color="#10b981" />
         </Link>
         <div>
-          <h1 style={{ fontSize: 22, fontWeight: 900, color: "#fff", margin: 0 }}>💳 Pay & Receive</h1>
+          <  h1 style={{ fontSize: 22, fontWeight: 900, color: "#fff", margin: 0 }}>Pay & Receive</h1>
           <p style={{ fontSize: 11, color: "rgba(255,255,255,0.4)", margin: "3px 0 0" }}>
             Scan to pay · Generate QR · Send tokens · Paystack
           </p>
@@ -395,7 +395,7 @@ export default function PayPage() {
             width: "100%", background: "rgba(16,185,129,0.08)", border: "1px dashed rgba(16,185,129,0.4)",
             borderRadius: 14, padding: "12px 16px", color: "#10b981", fontWeight: 700, fontSize: 13, cursor: "pointer",
           }}>
-            🔗 Connect wallet to use Pay & Receive
+            Connect wallet to use Pay & Receive
           </button>
         </div>
       )}
@@ -421,9 +421,9 @@ export default function PayPage() {
       {/* Tabs */}
       <div style={{ display: "flex", gap: 0, margin: "0 16px 16px", background: "rgba(0,0,0,0.3)", padding: 4, borderRadius: 14 }}>
         {([
-          ["receive", "📥 Receive", QrCode],
-          ["scan",    "📷 Scan",    Scan],
-          ["send",    "💸 Send",    Send],
+          ["receive", "Receive", QrCode],
+          ["scan",    "Scan",    Scan],
+          ["send",    "Send",    Send],
         ] as const).map(([id, label]) => (
           <button key={id} onClick={() => { setTab(id); setStatusMsg(""); setTxUrl(null); setScanning(false); }}
             style={{
@@ -566,7 +566,7 @@ export default function PayPage() {
 
           {!scanning && !scanned && (
             <div className="glass" style={{ borderRadius: 20, padding: 24, border: "1px solid rgba(255,255,255,0.08)", textAlign: "center" }}>
-              <div style={{ fontSize: 48, marginBottom: 12 }}>📷</div>
+              <div style={{ fontSize: 48, marginBottom: 12 }}><QrCode size={48} /></div>
               <p style={{ fontSize: 15, fontWeight: 800, color: "#fff", margin: "0 0 6px" }}>Scan a Payment QR</p>
               <p style={{ fontSize: 12, color: "rgba(255,255,255,0.4)", margin: "0 0 20px", lineHeight: 1.5 }}>
                 Supports Ethereum addresses, EIP-681 payment URIs,<br/>and KAIVAX wallet QR codes.
@@ -719,7 +719,7 @@ export default function PayPage() {
               display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
             }}>
             <Send size={16} />
-            {busy ? "⏳ Signing…" : `Send ${sendAmount || "0"} ${sendToken.symbol}`}
+            {busy ? "Signing..." : `Send ${sendAmount || "0"} ${sendToken.symbol}`}
           </button>
 
           {/* Divider */}
@@ -738,7 +738,7 @@ export default function PayPage() {
                   width: 32, height: 32, borderRadius: "50%",
                   background: "linear-gradient(135deg,#007DD3,#00B87A)",
                   display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16,
-                }}>🔵</div>
+                }}></div>
                 <div>
                   <p style={{ fontSize: 13, fontWeight: 800, color: "#00B87A", margin: 0 }}>Paystack</p>
                   <p style={{ fontSize: 10, color: "rgba(255,255,255,0.4)", margin: 0 }}>Card · Mobile Money · KES</p>
@@ -773,7 +773,7 @@ export default function PayPage() {
             />
 
             <p style={{ fontSize: 10, color: "rgba(255,255,255,0.3)", margin: "0 0 12px", lineHeight: 1.5 }}>
-              A new tab will open with the Paystack checkout. Complete payment there, then come back — confirmation will appear here automatically.
+              A new tab will open with the Paystack checkout. Complete payment there,             then come back - confirmation will appear here automatically.
             </p>
 
             {/* Pay button */}
@@ -791,7 +791,7 @@ export default function PayPage() {
               }}>
               <CreditCard size={16} />
               {paystackBusy
-                ? "⏳ Processing…"
+                ? "Processing..."
                 : `Pay KES ${Math.ceil(parseFloat(sendAmount || "0") * 130).toLocaleString()} via Paystack`}
             </button>
 
@@ -812,9 +812,7 @@ export default function PayPage() {
                 color: "#fff",
               }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: paystackStatus.detail ? 6 : 0 }}>
-                  <span style={{ fontSize: 16 }}>
-                    {paystackStatus.type === "success" ? "✅" : paystackStatus.type === "error" ? "❌" : "⏳"}
-                  </span>
+                    <span style={{ fontSize: 16 }}>
                   <span style={{ fontWeight: 700 }}>{paystackStatus.message}</span>
                 </div>
                 {paystackStatus.detail && (

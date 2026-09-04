@@ -14,7 +14,7 @@ function getWalletMeta(connector: Connector) {
   if (key.includes('metamask')) return {
     icon: <MetaMaskIcon />,
     label: 'MetaMask',
-    description: 'Browser extension — most popular EVM wallet',
+    description: 'Browser extension - most popular EVM wallet',
     color: '#F6851B',
     border: 'rgba(246,133,27,0.3)',
     bg: 'rgba(246,133,27,0.06)',
@@ -22,7 +22,7 @@ function getWalletMeta(connector: Connector) {
   if (key.includes('core')) return {
     icon: <CoreIcon />,
     label: 'Core Wallet',
-    description: 'Built by Ava Labs — native Avalanche wallet',
+    description: 'Built by Ava Labs - native Avalanche wallet',
     color: '#3B99FC',
     border: 'rgba(59,153,252,0.3)',
     bg: 'rgba(59,153,252,0.06)',
@@ -211,7 +211,7 @@ export default function WalletConnectModal({ onClose }: WalletConnectModalProps)
                 padding: '10px 14px', borderRadius: 10, fontSize: 12, color: '#f87171',
                 background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)',
               }}>
-                <p style={{ fontWeight: 700, margin: '0 0 4px' }}>⚠️ Connection Error</p>
+                <p style={{ fontWeight: 700, margin: '0 0 4px' }}>Connection Error</p>
                 <p style={{ margin: '0 0 6px' }}>{error.message}</p>
                 <button onClick={reset} style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: '#22c55e', fontSize: 11, fontWeight: 700 }}>
                   Reset & Retry →

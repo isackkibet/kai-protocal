@@ -20,9 +20,9 @@ export default function PolicyRedirect() {
       display: "flex", alignItems: "center", justifyContent: "center",
       height: "100dvh", background: "#0a0a0c", flexDirection: "column", gap: 12,
     }}>
-      <div style={{ fontSize: 32 }}>🛡️</div>
+      <div style={{ fontSize: 32 }}></div>
       <p style={{ color: "rgba(255,255,255,0.5)", fontSize: 13, margin: 0 }}>
-        Redirecting to KAIVAX Playground…
+        Redirecting to KAIVAX Playground-
       </p>
     </main>
   );
