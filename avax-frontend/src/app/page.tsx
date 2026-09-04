@@ -274,31 +274,33 @@ export default function Home() {
           <span className="badge badge-live">3 Active</span>
         </div>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 9 }}>
-          {DASHBOARDS.map(d => {
+          {DASHBOARDS.map((d, i) => {
             const Icon = d.icon;
             return (
-              <Link key={d.id} href={d.href} style={{ textDecoration: 'none' }}>
-                <div className="glass" style={{
-                  borderRadius: 16, padding: '13px 15px',
-                  display: 'flex', alignItems: 'center', gap: 13,
-                  borderColor: `${d.color}20`,
-                  background: `linear-gradient(90deg, ${d.color}07 0%, rgba(14,14,18,0.80) 100%)`,
-                }}>
-                  <div style={{
-                    width: 42, height: 42, borderRadius: 13, flexShrink: 0,
-                    background: `${d.color}12`,
-                    border: `1px solid ${d.color}28`,
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+              <motion.div key={d.id} initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 + i * 0.08 }}>
+                <Link href={d.href} style={{ textDecoration: 'none' }}>
+                  <div className="glass" style={{
+                    borderRadius: 16, padding: '13px 15px',
+                    display: 'flex', alignItems: 'center', gap: 13,
+                    borderColor: `${d.color}20`,
+                    background: `linear-gradient(90deg, ${d.color}07 0%, rgba(14,14,18,0.80) 100%)`,
                   }}>
-                    <Icon size={21} color={d.color} strokeWidth={1.8} />
+                    <div style={{
+                      width: 42, height: 42, borderRadius: 13, flexShrink: 0,
+                      background: `${d.color}12`,
+                      border: `1px solid ${d.color}28`,
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    }}>
+                      <Icon size={21} color={d.color} strokeWidth={1.8} />
+                    </div>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <p style={{ fontSize: 13, fontWeight: 800, color: 'var(--white)', margin: '0 0 2px' }}>{d.label}</p>
+                      <p style={{ fontSize: 10, color: 'var(--text-muted)', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{d.sub}</p>
+                    </div>
+                    <ChevronRight size={16} color="var(--white-20)" />
                   </div>
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <p style={{ fontSize: 13, fontWeight: 800, color: 'var(--white)', margin: '0 0 2px' }}>{d.label}</p>
-                    <p style={{ fontSize: 10, color: 'var(--text-muted)', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{d.sub}</p>
-                  </div>
-                  <ChevronRight size={16} color="var(--white-20)" />
-                </div>
-              </Link>
+                </Link>
+              </motion.div>
             );
           })}
         </div>
@@ -308,30 +310,32 @@ export default function Home() {
       <section style={{ padding: '0 18px', marginBottom: 24 }}>
         <p className="label-caps" style={{ marginBottom: 12 }}>Quick Actions</p>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 9 }}>
-          {QUICK.map(a => {
+          {QUICK.map((a, i) => {
             const Icon = a.icon;
             return (
-              <Link key={a.name} href={a.href} style={{ textDecoration: 'none' }}>
-                <div style={{
-                  display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 9,
-                  padding: '17px 12px', borderRadius: 18, cursor: 'pointer',
-                  background: 'rgba(255,255,255,0.03)',
-                  border: `1px solid ${a.color}18`,
-                  transition: 'all 0.2s',
-                  boxShadow: `0 2px 16px rgba(0,0,0,0.30)`,
-                }}>
+              <motion.div key={a.name} initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 + i * 0.05 }} whileHover={{ y: -3, scale: 1.02 }} whileTap={{ scale: 0.97 }}>
+                <Link href={a.href} style={{ textDecoration: 'none' }}>
                   <div style={{
-                    width: 46, height: 46, borderRadius: 14, flexShrink: 0,
-                    background: `linear-gradient(145deg, ${a.bg} 0%, rgba(14,14,18,0.80) 100%)`,
-                    border: `1px solid ${a.color}28`,
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    boxShadow: `0 4px 14px ${a.color}18`,
+                    display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 9,
+                    padding: '17px 12px', borderRadius: 18, cursor: 'pointer',
+                    background: 'rgba(255,255,255,0.03)',
+                    border: `1px solid ${a.color}18`,
+                    transition: 'all 0.25s',
+                    boxShadow: `0 2px 16px rgba(0,0,0,0.30)`,
                   }}>
-                    <Icon size={22} color={a.color} strokeWidth={1.8} />
+                    <div style={{
+                      width: 46, height: 46, borderRadius: 14, flexShrink: 0,
+                      background: `linear-gradient(145deg, ${a.bg} 0%, rgba(14,14,18,0.80) 100%)`,
+                      border: `1px solid ${a.color}28`,
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      boxShadow: `0 4px 14px ${a.color}18`,
+                    }}>
+                      <Icon size={22} color={a.color} strokeWidth={1.8} />
+                    </div>
+                    <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--white-70)', textAlign: 'center', lineHeight: 1.2 }}>{a.name}</span>
                   </div>
-                  <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--white-70)', textAlign: 'center', lineHeight: 1.2 }}>{a.name}</span>
-                </div>
-              </Link>
+                </Link>
+              </motion.div>
             );
           })}
         </div>
