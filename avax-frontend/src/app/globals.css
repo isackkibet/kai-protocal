@@ -550,8 +550,8 @@ body {
 @keyframes slideUp      { from { opacity:0; transform:translateY(20px); } to { opacity:1; transform:translateY(0); } }
 @keyframes scaleIn      { from { opacity:0; transform:scale(.92); } to { opacity:1; transform:scale(1); } }
 @keyframes glow-pulse {
-  0%,100%{ box-shadow:0 0 20px rgba(232,65,66,.18); }
-  50%     { box-shadow:0 0 40px rgba(232,65,66,.45), 0 0 80px rgba(168,85,247,.12); }
+  0%,100%{ box-shadow:0 0 20px rgba(16,185,129,.18); }
+  50%     { box-shadow:0 0 40px rgba(16,185,129,.45), 0 0 80px rgba(6,182,212,.12); }
 }
 @keyframes aurora-pulse {
   0%  { opacity:0.60; transform:scale(1.0) rotate(0deg); }
@@ -560,12 +560,12 @@ body {
   100%{ opacity:0.60; transform:scale(1.0) rotate(0deg); }
 }
 @keyframes badge-live-pulse {
-  0%,100%{ box-shadow: 0 0 8px rgba(34,197,94,0.20); }
-  50%    { box-shadow: 0 0 16px rgba(34,197,94,0.50); }
+  0%,100%{ box-shadow: 0 0 8px rgba(16,185,129,0.20); }
+  50%    { box-shadow: 0 0 16px rgba(16,185,129,0.50); }
 }
 @keyframes border-glow {
-  0%,100%{ border-color: rgba(232,65,66,0.20); }
-  50%    { border-color: rgba(232,65,66,0.55); }
+  0%,100%{ border-color: rgba(16,185,129,0.20); }
+  50%    { border-color: rgba(16,185,129,0.55); }
 }
 
 .float        { animation: float 4s ease-in-out infinite; }
