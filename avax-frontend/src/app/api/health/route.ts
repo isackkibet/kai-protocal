@@ -1,15 +1,16 @@
 import { NextResponse } from 'next/server';
 
-const OLLAMA_URL = process.env.OLLAMA_BASE_URL || 'http://localhost:11434';
-const OLLAMA_MODEL = process.env.OLLAMA_MODEL || 'qwen3:1.7b';
+const GROQ_API_KEY = process.env.GROQ_API_KEY || '';
+const GROQ_MODEL = process.env.GROQ_MODEL || 'llama-3.1-8b-instant';
+const GROQ_URL = 'https://api.groq.com/openai/v1/models';
 const RAG_API_URL = process.env.RAG_API_URL || 'http://localhost:8000';
 
 export async function GET() {
   const status = {
     ragServer: 'offline',
-    ollamaServer: 'offline',
+    groqServer: 'offline',
     modelLoaded: false,
-    modelName: OLLAMA_MODEL,
+    modelName: GROQ_MODEL,
     details: ''
   };
 
@@ -38,32 +39,33 @@ export async function GET() {
     status.details += `FastAPI offline: ${e.message || e}. `;
   }
 
-  // 2. Check Ollama Server Health
-  try {
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 2000);
+  // 2. Check Groq API Health
+  if (GROQ_API_KEY) {
+    try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 2000);
 
-    const ollamaRes = await fetch(`${OLLAMA_URL}/api/tags`, { 
-      signal: controller.signal,
-      cache: 'no-store'
-    });
+      const groqRes = await fetch(GROQ_URL, { 
+        signal: controller.signal,
+        cache: 'no-store',
+        headers: {
+          'Authorization': `Bearer ${GROQ_API_KEY}`,
+        },
+      });
 
-    clearTimeout(timeoutId);
+      clearTimeout(timeoutId);
 
-    if (ollamaRes.ok) {
-      status.ollamaServer = 'online';
-      const data = await ollamaRes.json();
-      const models = data.models || [];
-      const hasModel = models.some((m: any) => 
-        m.name.includes(OLLAMA_MODEL) || 
-        OLLAMA_MODEL.includes(m.name)
-      );
-      status.modelLoaded = hasModel;
-    } else {
-      status.details += `Ollama tags returned status ${ollamaRes.status}. `;
+      if (groqRes.ok) {
+        status.groqServer = 'online';
+        status.modelLoaded = true;
+      } else {
+        status.details += `Groq API returned status ${groqRes.status}. `;
+      }
+    } catch (e: any) {
+      status.details += `Groq offline: ${e.message || e}. `;
     }
-  } catch (e: any) {
-    status.details += `Ollama offline: ${e.message || e}. `;
+  } else {
+    status.details += 'GROQ_API_KEY not set. ';
   }
 
   return NextResponse.json(status);

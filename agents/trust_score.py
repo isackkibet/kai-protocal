@@ -11,7 +11,7 @@ Score range 300-850, unlocking tiered platform privileges.
 """
 
 from __future__ import annotations
-from agents.base import AgentBase, ollama_complete
+from agents.base import AgentBase, groq_complete
 
 SYSTEM = """You are the KAI Trust Score Advisor. Given a user's three activity scores,
 calculate their unified trust score, explain what tier they are in, and give 3 specific

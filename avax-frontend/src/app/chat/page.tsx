@@ -8,7 +8,7 @@ import Link from 'next/link';
 
 const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_API_URL || 'http://localhost:8000';
 
-const WELCOME = `⚡ Hey! I'm **KAI AVAX Agent** — your Avalanche DeFi companion powered by a local **Qwen3:1.7b** model with RAG context from Nuvari docs.
+const WELCOME = `⚡ Hey! I'm **KAI AVAX Agent** — your Avalanche DeFi companion powered by **Groq (Llama 3.1 8B)** with RAG context from Nuvari docs.
 
 Ask me about:
 • Ecosystem tokens (NVR, yBOB, YTOKEN, YGOLD, GAMI, CENTS)
@@ -84,7 +84,7 @@ export default function AVAXChatPage() {
       if (voiceOn) speak(aiText);
 
     } catch {
-      const errMsg = '⚠️ **Connection Error.** Make sure Ollama is running (`ollama run qwen3:1.7b`) or the Django backend is up.';
+      const errMsg = '⚠️ **Connection Error.** Make sure your GROQ_API_KEY is set in .env or the backend is up.';
       setMessages(p => [...p, { role: 'ai', text: errMsg, agent: 'System' }]);
     } finally {
       setLoading(false);
