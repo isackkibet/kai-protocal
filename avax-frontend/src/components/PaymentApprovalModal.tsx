@@ -20,7 +20,7 @@ interface PendingPayment {
 }
 
 const ROUTE_ICONS: Record<string, React.ReactNode> = {
-  '/agents/tx':          <Zap size={14} color="#e84142" />,
+  '/agents/tx':          <Zap size={14} color="#10b981" />,
   '/agents/audit':       <ShieldCheck size={14} color="#22c55e" />,
   '/agents/codegen':     <CreditCard size={14} color="#3b82f6" />,
   '/agents/portfolio':   <CreditCard size={14} color="#f59e0b" />,
@@ -29,7 +29,7 @@ const ROUTE_ICONS: Record<string, React.ReactNode> = {
 
 function routeIcon(route: string) {
   const key = Object.keys(ROUTE_ICONS).find(k => route.startsWith(k));
-  return key ? ROUTE_ICONS[key] : <CreditCard size={14} color="#e84142" />;
+  return key ? ROUTE_ICONS[key] : <CreditCard size={14} color="#10b981" />;
 }
 
 function elapsed(iso: string) {
@@ -105,7 +105,7 @@ export default function PaymentApprovalModal({ onClose }: Props) {
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
               <div style={{ width: 40, height: 40, borderRadius: 13, background: 'rgba(232,65,66,0.14)', border: '1px solid rgba(232,65,66,0.32)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <Bell size={19} color="#e84142" />
+                <Bell size={19} color="#10b981" />
               </div>
               <div>
                 <p style={{ fontSize: 15, fontWeight: 900, color: '#f8f8fa', margin: 0 }}>x402 Payment Approvals</p>
@@ -227,7 +227,7 @@ export default function PaymentApprovalModal({ onClose }: Props) {
           <button onClick={load} style={{ flex: 1, padding: '11px 0', borderRadius: 13, border: '1px solid rgba(255,255,255,0.09)', background: 'rgba(255,255,255,0.04)', color: 'rgba(248,248,250,0.55)', fontSize: 12, fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
             <RefreshCw size={13} /> Refresh
           </button>
-          <button onClick={onClose} style={{ flex: 1, padding: '11px 0', borderRadius: 13, border: 'none', background: 'linear-gradient(135deg,#e84142,#b91c1c)', color: '#fff', fontSize: 12, fontWeight: 800, cursor: 'pointer' }}>
+          <button onClick={onClose} style={{ flex: 1, padding: '11px 0', borderRadius: 13, border: 'none', background: 'linear-gradient(135deg,#10b981,#047857)', color: '#fff', fontSize: 12, fontWeight: 800, cursor: 'pointer' }}>
             Close
           </button>
         </div>

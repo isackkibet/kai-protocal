@@ -46,7 +46,7 @@ function ScoreRing({ score }: { score: number }) {
   const r     = 32;
   const circ  = 2 * Math.PI * r;
   const dash  = pct * circ;
-  const color = score >= 70 ? '#22c55e' : score >= 45 ? '#f59e0b' : '#e84142';
+  const color = score >= 70 ? '#22c55e' : score >= 45 ? '#f59e0b' : '#10b981';
   return (
     <div style={{ position: 'relative', width: 80, height: 80, flexShrink: 0 }}>
       <svg width="80" height="80" style={{ transform: 'rotate(-90deg)' }}>
@@ -71,7 +71,7 @@ function FlowBars({ data }: { data: { month: string; income: number; expense: nu
         <div key={d.month} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3 }}>
           <div style={{ width: '100%', display: 'flex', gap: 2, alignItems: 'flex-end', height: 60 }}>
             <div style={{ flex: 1, borderRadius: '3px 3px 1px 1px', background: 'linear-gradient(180deg,#22c55e,#22c55e88)', height: `${Math.round((d.income / max) * 58)}px`, minHeight: 3 }} />
-            <div style={{ flex: 1, borderRadius: '3px 3px 1px 1px', background: 'linear-gradient(180deg,#e84142,#e8414288)', height: `${Math.round((d.expense / max) * 58)}px`, minHeight: 3 }} />
+            <div style={{ flex: 1, borderRadius: '3px 3px 1px 1px', background: 'linear-gradient(180deg,#10b981,#10b98188)', height: `${Math.round((d.expense / max) * 58)}px`, minHeight: 3 }} />
           </div>
           <p style={{ fontSize: 8, color: 'rgba(248,248,250,0.35)', margin: 0, fontWeight: 700 }}>{d.month}</p>
         </div>
@@ -179,7 +179,7 @@ export default function SMEPage() {
                 <p className="label-caps">Monthly Cash Flow</p>
                 <div style={{ display: 'flex', gap: 10 }}>
                   <span style={{ fontSize: 9, color: '#22c55e', fontWeight: 700 }}>■ Income</span>
-                  <span style={{ fontSize: 9, color: '#e84142', fontWeight: 700 }}>■ Expense</span>
+                  <span style={{ fontSize: 9, color: '#10b981', fontWeight: 700 }}>■ Expense</span>
                 </div>
               </div>
               <div style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: 16, padding: '14px 12px 8px' }}>
@@ -280,7 +280,7 @@ export default function SMEPage() {
                     <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 2, background: `linear-gradient(90deg, transparent, ${ts.color}60, transparent)` }} />
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 }}>
                       <div>
-                        <p style={{ fontSize: 10, fontWeight: 800, color: '#e84142', fontFamily: 'monospace', margin: '0 0 4px' }}>{t.tokenRef}</p>
+                        <p style={{ fontSize: 10, fontWeight: 800, color: '#10b981', fontFamily: 'monospace', margin: '0 0 4px' }}>{t.tokenRef}</p>
                         <p style={{ fontSize: 14, fontWeight: 900, color: '#f8f8fa', margin: 0 }}>{t.debtorName}</p>
                       </div>
                       <span style={{ fontSize: 9, fontWeight: 800, padding: '3px 9px', borderRadius: 7, background: ts.bg, color: ts.color, border: `1px solid ${ts.border}`, letterSpacing: 0.3 }}>
@@ -301,7 +301,7 @@ export default function SMEPage() {
                     </div>
                     <div style={{ marginTop: 10, padding: '7px 10px', borderRadius: 9, background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)', display: 'flex', justifyContent: 'space-between' }}>
                       <span style={{ fontSize: 10, color: 'rgba(248,248,250,0.40)' }}>Maturity: <span style={{ color: '#f8f8fa', fontWeight: 700 }}>{t.maturityDate.slice(0,10)}</span></span>
-                      <Link href="/connft" style={{ fontSize: 10, color: '#e84142', fontWeight: 700, textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 3 }}>View NFT <ExternalLink size={9} /></Link>
+                      <Link href="/connft" style={{ fontSize: 10, color: '#10b981', fontWeight: 700, textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 3 }}>View NFT <ExternalLink size={9} /></Link>
                     </div>
                   </div>
                 );
@@ -334,7 +334,7 @@ export default function SMEPage() {
                 );
               })}
             </div>
-            <div className="divider-red" style={{ margin: '20px 0' }} />
+            <div className="divider-green" style={{ margin: '20px 0' }} />
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
               {[
                 { label: 'Scan & Pay', href: '/pay',    icon: CreditCard,  color: '#22c55e' },

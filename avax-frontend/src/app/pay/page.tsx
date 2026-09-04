@@ -375,10 +375,10 @@ export default function PayPage() {
       <div style={{ padding: "32px 16px 16px", display: "flex", alignItems: "center", gap: 12 }}>
         <Link href="/" style={{
           width: 36, height: 36, borderRadius: "50%",
-          background: "rgba(232,65,66,0.1)", border: "1px solid rgba(232,65,66,0.3)",
+          background: "rgba(16,185,129,0.1)", border: "1px solid rgba(16,185,129,0.3)",
           display: "flex", alignItems: "center", justifyContent: "center", textDecoration: "none", flexShrink: 0,
         }}>
-          <ArrowLeft size={18} color="#e84142" />
+          <ArrowLeft size={18} color="#10b981" />
         </Link>
         <div>
           <h1 style={{ fontSize: 22, fontWeight: 900, color: "#fff", margin: 0 }}>💳 Pay & Receive</h1>
@@ -392,8 +392,8 @@ export default function PayPage() {
       {!isConnected && (
         <div style={{ margin: "0 16px 12px" }}>
           <button onClick={() => setShowModal(true)} style={{
-            width: "100%", background: "rgba(232,65,66,0.08)", border: "1px dashed rgba(232,65,66,0.4)",
-            borderRadius: 14, padding: "12px 16px", color: "#e84142", fontWeight: 700, fontSize: 13, cursor: "pointer",
+            width: "100%", background: "rgba(16,185,129,0.08)", border: "1px dashed rgba(16,185,129,0.4)",
+            borderRadius: 14, padding: "12px 16px", color: "#10b981", fontWeight: 700, fontSize: 13, cursor: "pointer",
           }}>
             🔗 Connect wallet to use Pay & Receive
           </button>
@@ -428,7 +428,7 @@ export default function PayPage() {
           <button key={id} onClick={() => { setTab(id); setStatusMsg(""); setTxUrl(null); setScanning(false); }}
             style={{
               flex: 1, padding: "9px 0", borderRadius: 10, fontSize: 13, fontWeight: 700, border: "none",
-              background: tab === id ? "#e84142" : "transparent",
+              background: tab === id ? "#10b981" : "transparent",
               color: tab === id ? "#fff" : "rgba(255,255,255,0.45)",
               cursor: "pointer", transition: "all 0.2s",
             }}>
@@ -572,7 +572,7 @@ export default function PayPage() {
                 Supports Ethereum addresses, EIP-681 payment URIs,<br/>and KAIVAX wallet QR codes.
               </p>
               <button onClick={() => setScanning(true)} style={{
-                background: "linear-gradient(135deg,#e84142,#7c1d1d)", color: "#fff",
+                background: "linear-gradient(135deg,#10b981,#064e3b)", color: "#fff",
                 fontWeight: 800, fontSize: 14, padding: "12px 32px", borderRadius: 12, border: "none", cursor: "pointer",
                 display: "inline-flex", alignItems: "center", gap: 8,
               }}>
@@ -582,7 +582,7 @@ export default function PayPage() {
           )}
 
           {scanning && (
-            <div className="glass" style={{ borderRadius: 20, overflow: "hidden", border: "1px solid rgba(232,65,66,0.3)" }}>
+            <div className="glass" style={{ borderRadius: 20, overflow: "hidden", border: "1px solid rgba(16,185,129,0.3)" }}>
               <QRScanner onScan={handleScan} onClose={() => setScanning(false)} />
             </div>
           )}

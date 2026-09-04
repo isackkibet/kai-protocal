@@ -110,7 +110,7 @@ const COMMUNITY: Product[] = [
   {
     id: "beads", icon: "📿", name: "Cultural Beadwork NFT",
     desc: "Maasai, Ndebele & Turkana beadwork tokenized as fractional cultural NFTs. Artisans earn royalties on every trade.",
-    apy: "11.5%", color: "#E84142", tokenSymbol: "NVR",
+    apy: "11.5%", color: "#10b981", tokenSymbol: "NVR",
     conditionLabel: "Artisan Verified · DAO Curated",
     features: ["Artisan royalty on-chain", "Cultural IP protection", "Collector marketplace"],
   },

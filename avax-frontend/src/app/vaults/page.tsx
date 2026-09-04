@@ -49,7 +49,7 @@ const VAULTS: VaultEntry[] = (["NVR","yBOB","YTOKEN","YGOLD","GAMI","CENTS"] as 
   return {
     symbol:    sym,
     name:      tok?.name     ?? sym,
-    color:     tok?.color    ?? "#e84142",
+    color:     tok?.color    ?? "#10b981",
     emoji:     tok?.emoji    ?? "🪙",
     apyPct:    info?.apyPct  ?? "—",
     vaultAddr: (info?.address as `0x${string}` | null) ?? null,
@@ -207,10 +207,10 @@ export default function VaultsPage() {
       <div style={{ paddingTop: 32, display: "flex", alignItems: "center", gap: 12 }}>
         <Link href="/" style={{
           width: 36, height: 36, borderRadius: "50%",
-          background: "rgba(232,65,66,0.1)", border: "1px solid rgba(232,65,66,0.3)",
+          background: "rgba(16,185,129,0.1)", border: "1px solid rgba(16,185,129,0.3)",
           display: "flex", alignItems: "center", justifyContent: "center", textDecoration: "none",
         }}>
-          <ArrowLeft size={18} color="#e84142" />
+          <ArrowLeft size={18} color="#10b981" />
         </Link>
         <div style={{ flex: 1 }}>
           <h1 style={{ fontSize: 22, fontWeight: 900, color: "#fff", margin: 0 }}>🏦 KAI Vaults</h1>
@@ -219,10 +219,10 @@ export default function VaultsPage() {
           </p>
         </div>
         <button onClick={handleRefresh} style={{
-          background: "rgba(232,65,66,0.1)", border: "1px solid rgba(232,65,66,0.25)",
+          background: "rgba(16,185,129,0.1)", border: "1px solid rgba(16,185,129,0.25)",
           borderRadius: 8, padding: 8, cursor: "pointer",
         }}>
-          <RefreshCw size={16} color="#e84142" />
+          <RefreshCw size={16} color="#10b981" />
         </button>
       </div>
 
@@ -242,8 +242,8 @@ export default function VaultsPage() {
       {/* Wallet connect prompt */}
       {!isConnected && (
         <button onClick={() => setShowModal(true)} style={{
-          background: "rgba(232,65,66,0.08)", border: "1px dashed rgba(232,65,66,0.4)",
-          borderRadius: 14, padding: "14px 16px", color: "#e84142",
+          background: "rgba(16,185,129,0.08)", border: "1px dashed rgba(16,185,129,0.4)",
+          borderRadius: 14, padding: "14px 16px", color: "#10b981",
           fontWeight: 700, fontSize: 13, cursor: "pointer",
         }}>
           🔗 Connect wallet to deposit / withdraw

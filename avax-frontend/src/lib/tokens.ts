@@ -101,7 +101,7 @@ export const AVAX_CONFIG = {
   symbol: 'AVAX',
   name: 'Avalanche',
   decimals: 18,
-  color: '#e84142',
+  color: '#10b981',
   role: 'Native C-Chain gas token',
 };
 

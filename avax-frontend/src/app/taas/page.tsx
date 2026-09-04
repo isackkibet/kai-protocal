@@ -16,7 +16,7 @@ const TEMPLATES = [
 ];
 
 const SERVICES = [
-  { icon: Code2,      label: "Contract Generator", desc: "AI writes & compiles Solidity",    href: "/ai",     color: "#e84142" },
+  { icon: Code2,      label: "Contract Generator", desc: "AI writes & compiles Solidity",    href: "/ai",     color: "#10b981" },
   { icon: ShieldCheck,label: "Contract Auditor",   desc: "Security review by AI agent",     href: "/ai",     color: "#22c55e" },
   { icon: BarChart3,  label: "Tokenomics Model",   desc: "Supply, APY, distribution",       href: "/nuvari", color: "#3b82f6" },
   { icon: Zap,        label: "Deploy to Fuji",     desc: "One-click testnet deploy",        href: "/nuvari", color: "#f59e0b" },
@@ -161,7 +161,7 @@ export default function TAASPage() {
           </div>
         </section>
 
-        <div className="divider-red" style={{ marginBottom: 24 }} />
+        <div className="divider-green" style={{ marginBottom: 24 }} />
 
         {/* Developer Services */}
         <p className="label-caps" style={{ marginBottom: 12 }}>Developer Services</p>
