@@ -52,7 +52,7 @@ const CFA_ROLES    = ['Guardian', 'Treasurer', 'Secretary', 'Admin', 'Auditor', 
 const CHAMA_ROLES  = ['Chairperson', 'Treasurer', 'Secretary', 'Member'];
 const BIZ_TYPES    = ['Agri Supplies', 'Retail Shop', 'Hardware', 'Pharmacy', 'Textile / Crafts', 'Produce Distributor', 'Tech / Services', 'Food & Beverage', 'Other'];
 const COUNTIES     = ['Nairobi', 'Mombasa', 'Kisumu', 'Nakuru', 'Eldoret', 'Thika', 'Meru', 'Nyeri', 'Kericho', 'Kakamega', 'Machakos', 'Garissa', 'Other'];
-const RISK_LEVELS  = [{ v: 'conservative', label: 'Conservative', apy: '7–12%', color: '#22c55e' }, { v: 'medium', label: 'Balanced', apy: '12–18%', color: '#3b82f6' }, { v: 'high', label: 'High Yield', apy: '18–24%', color: '#e84142' }];
+const RISK_LEVELS  = [{ v: 'conservative', label: 'Conservative', apy: '7–12%', color: '#22c55e' }, { v: 'medium', label: 'Balanced', apy: '12–18%', color: '#3b82f6' }, { v: 'high', label: 'High Yield', apy: '18–24%', color: '#10b981' }];
 const VAULTS       = ['kvyBOB (7.5% APY)', 'kvNVR (15.2% APY)', 'kvYTOKEN (14.8% APY)', 'kvGAMI (22.0% APY)', 'kvYGOLD (12.4% APY)'];
 
 // ── Helpers ───────────────────────────────────────────────────────
@@ -60,7 +60,7 @@ function Field({ label, children, required }: { label: string; children: React.R
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
       <label style={{ fontSize: 9, fontWeight: 800, letterSpacing: 1, textTransform: 'uppercase', color: 'rgba(248,248,250,0.40)' }}>
-        {label}{required && <span style={{ color: '#e84142', marginLeft: 2 }}>*</span>}
+        {label}{required && <span style={{ color: '#10b981', marginLeft: 2 }}>*</span>}
       </label>
       {children}
     </div>
@@ -80,7 +80,7 @@ function Input({ value, onChange, placeholder, type = 'text' }: { value: string;
         outline: 'none', fontFamily: 'inherit', width: '100%', boxSizing: 'border-box',
         transition: 'border-color 0.18s',
       }}
-      onFocus={e  => (e.target.style.borderColor = 'rgba(232,65,66,0.48)')}
+      onFocus={e  => (e.target.style.borderColor = 'rgba(16,185,129,0.48)')}
       onBlur={e   => (e.target.style.borderColor = 'rgba(255,255,255,0.08)')}
     />
   );
@@ -99,7 +99,7 @@ function Select({ value, onChange, options, placeholder }: { value: string; onCh
         backgroundImage: 'url("data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'12\' height=\'12\' viewBox=\'0 0 24 24\' fill=\'none\' stroke=\'%23888\' stroke-width=\'2\'%3E%3Cpath d=\'M6 9l6 6 6-6\'/%3E%3C/svg%3E")',
         backgroundRepeat: 'no-repeat', backgroundPosition: 'right 12px center',
       }}
-      onFocus={e  => (e.target.style.borderColor = 'rgba(232,65,66,0.48)')}
+      onFocus={e  => (e.target.style.borderColor = 'rgba(16,185,129,0.48)')}
       onBlur={e   => (e.target.style.borderColor = 'rgba(255,255,255,0.08)')}
     >
       {placeholder && <option value="" disabled>{placeholder}</option>}
@@ -224,27 +224,27 @@ export default function ProfilePage() {
   return (
     <main style={{
       minHeight: '100dvh',
-      background: 'radial-gradient(ellipse 80% 50% at 50% -5%, rgba(232,65,66,0.10) 0%, transparent 60%), #08080a',
+      background: 'radial-gradient(ellipse 80% 50% at 50% -5%, rgba(16,185,129,0.10) 0%, transparent 60%), #08080a',
       color: '#f8f8fa', paddingBottom: 96, fontFamily: 'var(--font-sans)',
     }}>
 
       {/* ── HERO HEADER ── */}
       <div style={{
         padding: '24px 18px 0',
-        borderBottom: '1px solid rgba(232,65,66,0.13)',
-        background: 'linear-gradient(180deg, rgba(232,65,66,0.08) 0%, transparent 100%)',
+        borderBottom: '1px solid rgba(16,185,129,0.13)',
+        background: 'linear-gradient(180deg, rgba(16,185,129,0.08) 0%, transparent 100%)',
       }}>
         {/* Avatar + name */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 18 }}>
           <div style={{
             width: 64, height: 64, borderRadius: '50%', flexShrink: 0,
-            background: 'linear-gradient(135deg, rgba(232,65,66,0.30) 0%, rgba(124,29,29,0.20) 100%)',
-            border: '2px solid rgba(232,65,66,0.45)',
+            background: 'linear-gradient(135deg, rgba(16,185,129,0.30) 0%, rgba(124,29,29,0.20) 100%)',
+            border: '2px solid rgba(16,185,129,0.45)',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
-            boxShadow: '0 0 24px rgba(232,65,66,0.22)',
-            fontSize: 26, fontWeight: 900, color: '#e84142',
+            boxShadow: '0 0 24px rgba(16,185,129,0.22)',
+            fontSize: 26, fontWeight: 900, color: '#10b981',
           }}>
-            {profile.displayName ? profile.displayName.charAt(0).toUpperCase() : <UserCircle2 size={30} color="#e84142" strokeWidth={1.5} />}
+            {profile.displayName ? profile.displayName.charAt(0).toUpperCase() : <UserCircle2 size={30} color="#10b981" strokeWidth={1.5} />}
           </div>
 
           <div style={{ flex: 1, minWidth: 0 }}>
@@ -266,9 +266,9 @@ export default function ProfilePage() {
           <button onClick={save} disabled={saving || !isConnected} style={{
             display: 'flex', alignItems: 'center', gap: 6,
             padding: '9px 16px', borderRadius: 12, border: 'none', cursor: isConnected ? 'pointer' : 'not-allowed',
-            background: saved ? 'rgba(34,197,94,0.18)' : 'linear-gradient(135deg,#e84142,#b91c1c)',
+            background: saved ? 'rgba(34,197,94,0.18)' : 'linear-gradient(135deg,#10b981,#059669)',
             color: saved ? '#4ade80' : '#fff', fontSize: 12, fontWeight: 800,
-            boxShadow: saved ? '0 0 12px rgba(34,197,94,0.22)' : '0 4px 16px rgba(232,65,66,0.30)',
+            boxShadow: saved ? '0 0 12px rgba(34,197,94,0.22)' : '0 4px 16px rgba(16,185,129,0.30)',
             transition: 'all 0.2s', opacity: saving ? 0.7 : 1,
           }}>
             {saving ? <RefreshCw size={13} style={{ animation: 'spin 1s linear infinite' }} /> : saved ? <CheckCircle size={13} /> : <Save size={13} />}
@@ -281,14 +281,14 @@ export default function ProfilePage() {
           <Link href="/" style={{ textDecoration: 'none' }}>
             <div style={{
               marginBottom: 16, padding: '12px 16px', borderRadius: 14,
-              background: 'rgba(232,65,66,0.07)', border: '1px dashed rgba(232,65,66,0.28)',
+              background: 'rgba(16,185,129,0.07)', border: '1px dashed rgba(16,185,129,0.28)',
               display: 'flex', alignItems: 'center', gap: 10,
             }}>
-              <Wallet size={18} color="#e84142" />
+              <Wallet size={18} color="#10b981" />
               <p style={{ fontSize: 12, color: 'rgba(248,248,250,0.65)', margin: 0 }}>
                 Connect your wallet on the Home page to save your profile on-chain
               </p>
-              <ChevronRight size={14} color="#e84142" style={{ marginLeft: 'auto', flexShrink: 0 }} />
+              <ChevronRight size={14} color="#10b981" style={{ marginLeft: 'auto', flexShrink: 0 }} />
             </div>
           </Link>
         )}
@@ -297,7 +297,7 @@ export default function ProfilePage() {
         <div style={{ marginBottom: 16 }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
             <p className="label-caps">Profile Completion</p>
-            <span style={{ fontSize: 11, fontWeight: 800, color: completion >= 80 ? '#4ade80' : completion >= 40 ? '#f59e0b' : '#e84142' }}>
+            <span style={{ fontSize: 11, fontWeight: 800, color: completion >= 80 ? '#4ade80' : completion >= 40 ? '#f59e0b' : '#10b981' }}>
               {completion}%
             </span>
           </div>
@@ -305,8 +305,8 @@ export default function ProfilePage() {
             <div style={{
               height: '100%', borderRadius: 3, transition: 'width 0.6s ease',
               width: `${completion}%`,
-              background: completion >= 80 ? 'linear-gradient(90deg,#22c55e,#4ade80)' : completion >= 40 ? 'linear-gradient(90deg,#f59e0b,#fbbf24)' : 'linear-gradient(90deg,#e84142,#f87171)',
-              boxShadow: `0 0 8px ${completion >= 80 ? 'rgba(34,197,94,0.35)' : 'rgba(232,65,66,0.35)'}`,
+              background: completion >= 80 ? 'linear-gradient(90deg,#22c55e,#4ade80)' : completion >= 40 ? 'linear-gradient(90deg,#f59e0b,#fbbf24)' : 'linear-gradient(90deg,#10b981,#f87171)',
+              boxShadow: `0 0 8px ${completion >= 80 ? 'rgba(34,197,94,0.35)' : 'rgba(16,185,129,0.35)'}`,
             }} />
           </div>
         </div>
@@ -314,9 +314,9 @@ export default function ProfilePage() {
         {/* Membership summary pills */}
         <div style={{ display: 'flex', gap: 7, flexWrap: 'wrap', marginBottom: 16 }}>
           {profile.cfaGroup && (
-            <div style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '4px 10px', borderRadius: 8, background: 'rgba(232,65,66,0.10)', border: '1px solid rgba(232,65,66,0.25)' }}>
-              <Trees size={11} color="#e84142" />
-              <span style={{ fontSize: 10, color: '#e84142', fontWeight: 700 }}>{profile.cfaGroup}</span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '4px 10px', borderRadius: 8, background: 'rgba(16,185,129,0.10)', border: '1px solid rgba(16,185,129,0.25)' }}>
+              <Trees size={11} color="#10b981" />
+              <span style={{ fontSize: 10, color: '#10b981', fontWeight: 700 }}>{profile.cfaGroup}</span>
             </div>
           )}
           {profile.businessName && (
@@ -339,7 +339,7 @@ export default function ProfilePage() {
         {/* Section tabs */}
         <div style={{ display: 'flex', gap: 4, overflowX: 'auto', scrollbarWidth: 'none', paddingBottom: 1 }}>
           {([
-            { id: 'personal', label: 'Personal',  color: '#e84142' },
+            { id: 'personal', label: 'Personal',  color: '#10b981' },
             { id: 'cfa',      label: 'CFA Group', color: '#22c55e' },
             { id: 'sme',      label: 'SME',       color: '#3b82f6' },
             { id: 'chama',    label: 'Chama',     color: '#a855f7' },
@@ -373,10 +373,10 @@ export default function ProfilePage() {
         {/* ── PERSONAL ── */}
         {tab === 'personal' && (
           <SectionCard
-            icon={<UserCircle2 size={20} color="#e84142" strokeWidth={1.8} />}
+            icon={<UserCircle2 size={20} color="#10b981" strokeWidth={1.8} />}
             title="Personal Information"
             subtitle="Your identity on KAI Nuvari"
-            color="#e84142"
+            color="#10b981"
           >
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
               <div style={{ gridColumn: '1 / -1' }}>
@@ -402,11 +402,11 @@ export default function ProfilePage() {
               <div style={{ padding: '12px 14px', borderRadius: 12, background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)' }}>
                 <p className="label-caps" style={{ marginBottom: 6 }}>Linked Wallet</p>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <Wallet size={14} color="#e84142" />
+                  <Wallet size={14} color="#10b981" />
                   <span style={{ fontSize: 11, fontFamily: 'monospace', color: 'rgba(248,248,250,0.60)', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                     {address}
                   </span>
-                  <a href={`https://testnet.snowtrace.io/address/${address}`} target="_blank" rel="noreferrer" style={{ color: '#e84142', display: 'flex' }}>
+                  <a href={`https://testnet.snowtrace.io/address/${address}`} target="_blank" rel="noreferrer" style={{ color: '#10b981', display: 'flex' }}>
                     <ExternalLink size={12} />
                   </a>
                 </div>
@@ -626,7 +626,7 @@ export default function ProfilePage() {
                 {[
                   { name: 'Conservative KES', apy: '12%', risk: 'Very Low', color: '#22c55e' },
                   { name: 'Balanced yBOB',    apy: '18%', risk: 'Low',      color: '#3b82f6' },
-                  { name: 'High Yield AVAX',  apy: '24%', risk: 'Medium',   color: '#e84142' },
+                  { name: 'High Yield AVAX',  apy: '24%', risk: 'Medium',   color: '#10b981' },
                 ].map(v => (
                   <div key={v.name} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 14px', borderRadius: 12, background: `${v.color}06`, border: `1px solid ${v.color}18` }}>
                     <div>
@@ -687,7 +687,7 @@ export default function ProfilePage() {
               </div>
               <button onClick={() => set('notifications')(!profile.notifications)} style={{
                 width: 48, height: 26, borderRadius: 13, border: 'none', cursor: 'pointer', padding: 0,
-                background: profile.notifications ? 'linear-gradient(135deg,#e84142,#b91c1c)' : 'rgba(255,255,255,0.10)',
+                background: profile.notifications ? 'linear-gradient(135deg,#10b981,#059669)' : 'rgba(255,255,255,0.10)',
                 transition: 'background 0.2s', position: 'relative',
               }}>
                 <span style={{
@@ -710,7 +710,7 @@ export default function ProfilePage() {
                   { label: 'Saving Group',     href: '/saving',   icon: <Users size={16} color="#a855f7" />,   color: '#a855f7' },
                   { label: 'TaaS Engine',      href: '/taas',     icon: <Zap size={16} color="#8b5cf6" />,     color: '#8b5cf6' },
                   { label: 'Pools',            href: '/pools',    icon: <TrendingUp size={16} color="#22c55e" />, color: '#22c55e' },
-                  { label: 'Policy Engine',    href: '/nuvari',   icon: <ShieldCheck size={16} color="#e84142" />, color: '#e84142' },
+                  { label: 'Policy Engine',    href: '/nuvari',   icon: <ShieldCheck size={16} color="#10b981" />, color: '#10b981' },
                 ].map(l => (
                   <Link key={l.label} href={l.href} style={{ textDecoration: 'none' }}>
                     <div className="glass" style={{ borderRadius: 12, padding: '12px 12px', display: 'flex', alignItems: 'center', gap: 9, borderColor: `${l.color}20`, background: `linear-gradient(90deg,${l.color}07 0%,rgba(10,10,12,0.85) 100%)` }}>
@@ -737,10 +737,10 @@ export default function ProfilePage() {
           cursor: isConnected ? 'pointer' : 'not-allowed',
           background: saved
             ? 'rgba(34,197,94,0.16)'
-            : 'linear-gradient(135deg,#ff5a5b 0%,#e84142 50%,#b91c1c 100%)',
+            : 'linear-gradient(135deg,#34d399 0%,#10b981 50%,#059669 100%)',
           color: saved ? '#4ade80' : '#fff', fontSize: 14, fontWeight: 800,
           display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
-          boxShadow: saved ? 'none' : '0 4px 20px rgba(232,65,66,0.28)',
+          boxShadow: saved ? 'none' : '0 4px 20px rgba(16,185,129,0.28)',
           transition: 'all 0.2s', opacity: saving || !isConnected ? 0.55 : 1,
         }}>
           {saving ? <><RefreshCw size={16} style={{ animation: 'spin 1s linear infinite' }} /> Saving profile…</>
@@ -754,8 +754,8 @@ export default function ProfilePage() {
         <div style={{
           position: 'fixed', bottom: 100, left: '50%', transform: 'translateX(-50%)',
           padding: '10px 20px', borderRadius: 99, zIndex: 100, whiteSpace: 'nowrap',
-          background: toast.includes('✓') ? 'rgba(34,197,94,0.20)' : 'rgba(232,65,66,0.20)',
-          border: `1px solid ${toast.includes('✓') ? 'rgba(34,197,94,0.40)' : 'rgba(232,65,66,0.40)'}`,
+          background: toast.includes('✓') ? 'rgba(34,197,94,0.20)' : 'rgba(16,185,129,0.20)',
+          border: `1px solid ${toast.includes('✓') ? 'rgba(34,197,94,0.40)' : 'rgba(16,185,129,0.40)'}`,
           color: toast.includes('✓') ? '#4ade80' : '#f87171',
           fontSize: 12, fontWeight: 700, backdropFilter: 'blur(12px)',
           boxShadow: '0 8px 24px rgba(0,0,0,0.40)',

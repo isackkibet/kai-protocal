@@ -71,7 +71,7 @@ export function useEcosystemBalances() {
       symbol: 'AVAX',
       name: 'Avalanche',
       value: avaxAmt,
-      color: '#e84142',
+      color: '#10b981',
       role: 'Native C-Chain gas',
       deployed: true,
       address: null as `0x${string}` | null,

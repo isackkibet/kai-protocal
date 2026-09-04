@@ -86,7 +86,7 @@ const SEED_POSTS: Post[] = [
 
 // ── Config ─────────────────────────────────────────────────────────────────
 const CATEGORIES: { id: Category; label: string; icon: React.ReactNode; color: string }[] = [
-  { id: 'ALL',          label: 'All',        icon: <Globe size={13} />,      color: '#e84142' },
+  { id: 'ALL',          label: 'All',        icon: <Globe size={13} />,      color: '#10b981' },
   { id: 'FORESTRY_MRV', label: 'Forest',     icon: <Trees size={13} />,      color: '#22c55e' },
   { id: 'MSME_GROWTH',  label: 'Business',   icon: <Store size={13} />,      color: '#3b82f6' },
   { id: 'CHAMA_SAVINGS',label: 'Chama',      icon: <Users size={13} />,      color: '#a855f7' },
@@ -94,7 +94,7 @@ const CATEGORIES: { id: Category; label: string; icon: React.ReactNode; color: s
 ];
 
 const TYPE_CONFIG: Record<ContentType, { icon: React.ReactNode; label: string; color: string }> = {
-  ARTICLE:           { icon: <Newspaper size={11} />,  label: 'Article',    color: '#e84142' },
+  ARTICLE:           { icon: <Newspaper size={11} />,  label: 'Article',    color: '#10b981' },
   FIELD_JOURNAL:     { icon: <Leaf size={11} />,        label: 'Journal',   color: '#22c55e' },
   AUDIO_PODCAST:     { icon: <Mic size={11} />,         label: 'Podcast',   color: '#a855f7' },
   MARKET_NEWS:       { icon: <TrendingUp size={11} />,  label: 'Market',    color: '#f59e0b' },
@@ -136,8 +136,8 @@ function PostCard({ post, onLike, onTip }: { post: Post; onLike: (id: string) =>
   return (
     <article style={{
       borderRadius: 20, overflow: 'hidden',
-      background: `linear-gradient(145deg, ${cat?.color ?? '#e84142'}07 0%, rgba(10,10,12,0.92) 100%)`,
-      border: `1px solid ${cat?.color ?? '#e84142'}18`,
+      background: `linear-gradient(145deg, ${cat?.color ?? '#10b981'}07 0%, rgba(10,10,12,0.92) 100%)`,
+      border: `1px solid ${cat?.color ?? '#10b981'}18`,
       marginBottom: 12, position: 'relative',
     }}>
       {/* Top accent line */}
@@ -324,15 +324,15 @@ export default function HubPage() {
   return (
     <main style={{
       minHeight: '100dvh', paddingBottom: 96,
-      background: 'radial-gradient(ellipse 80% 50% at 50% -5%, rgba(232,65,66,0.09) 0%, transparent 60%), #08080a',
+      background: 'radial-gradient(ellipse 80% 50% at 50% -5%, rgba(16,185,129,0.09) 0%, transparent 60%), #08080a',
       color: '#f8f8fa', fontFamily: 'var(--font-sans)',
     }}>
 
       {/* ── HEADER ── */}
-      <div style={{ padding: '22px 18px 0', borderBottom: '1px solid rgba(232,65,66,0.13)', background: 'linear-gradient(180deg,rgba(232,65,66,0.07) 0%,transparent 100%)' }}>
+      <div style={{ padding: '22px 18px 0', borderBottom: '1px solid rgba(16,185,129,0.13)', background: 'linear-gradient(180deg,rgba(16,185,129,0.07) 0%,transparent 100%)' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16 }}>
-          <div style={{ width: 44, height: 44, borderRadius: 15, background: 'linear-gradient(135deg,rgba(232,65,66,0.25),rgba(185,28,28,0.14))', border: '1.5px solid rgba(232,65,66,0.40)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 0 18px rgba(232,65,66,0.18)', flexShrink: 0 }}>
-            <Newspaper size={22} color="#e84142" strokeWidth={1.8} />
+          <div style={{ width: 44, height: 44, borderRadius: 15, background: 'linear-gradient(135deg,rgba(16,185,129,0.25),rgba(5,150,105,0.14))', border: '1.5px solid rgba(16,185,129,0.40)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 0 18px rgba(16,185,129,0.18)', flexShrink: 0 }}>
+            <Newspaper size={22} color="#10b981" strokeWidth={1.8} />
           </div>
           <div style={{ flex: 1 }}>
             <h1 style={{ fontSize: 20, fontWeight: 900, margin: '0 0 2px', letterSpacing: -0.5 }}>Community Info Hub</h1>
@@ -371,7 +371,7 @@ export default function HubPage() {
       {/* ── STATS STRIP ── */}
       <div style={{ display: 'flex', gap: 0, background: 'rgba(255,255,255,0.02)', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
         {[
-          { label: 'Articles',  value: posts.filter(p => p.contentType === 'ARTICLE').length,         color: '#e84142' },
+          { label: 'Articles',  value: posts.filter(p => p.contentType === 'ARTICLE').length,         color: '#10b981' },
           { label: 'Journals',  value: posts.filter(p => p.contentType === 'FIELD_JOURNAL').length,   color: '#22c55e' },
           { label: 'Podcasts',  value: posts.filter(p => p.contentType === 'AUDIO_PODCAST').length,   color: '#a855f7' },
           { label: 'Markets',   value: posts.filter(p => p.contentType === 'MARKET_NEWS').length,     color: '#f59e0b' },
@@ -389,15 +389,15 @@ export default function HubPage() {
           <p className="label-caps" style={{ marginBottom: 10 }}>Featured</p>
           <div style={{
             borderRadius: 22, padding: '18px 17px', position: 'relative', overflow: 'hidden',
-            background: 'linear-gradient(135deg,rgba(232,65,66,0.16) 0%,rgba(10,10,12,0.95) 100%)',
-            border: '1.5px solid rgba(232,65,66,0.30)',
-            boxShadow: '0 8px 32px rgba(232,65,66,0.10)',
+            background: 'linear-gradient(135deg,rgba(16,185,129,0.16) 0%,rgba(10,10,12,0.95) 100%)',
+            border: '1.5px solid rgba(16,185,129,0.30)',
+            boxShadow: '0 8px 32px rgba(16,185,129,0.10)',
           }}>
-            <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 2, background: 'linear-gradient(90deg,transparent,#e84142,transparent)' }} />
-            <div style={{ position: 'absolute', top: -30, right: -30, width: 120, height: 120, borderRadius: '50%', background: 'radial-gradient(circle,rgba(232,65,66,0.12) 0%,transparent 70%)', pointerEvents: 'none' }} />
+            <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 2, background: 'linear-gradient(90deg,transparent,#10b981,transparent)' }} />
+            <div style={{ position: 'absolute', top: -30, right: -30, width: 120, height: 120, borderRadius: '50%', background: 'radial-gradient(circle,rgba(16,185,129,0.12) 0%,transparent 70%)', pointerEvents: 'none' }} />
             <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 8 }}>
               {TYPE_CONFIG[filtered[0].contentType].icon}
-              <span style={{ fontSize: 9, fontWeight: 800, color: '#e84142', textTransform: 'uppercase', letterSpacing: 0.5 }}>
+              <span style={{ fontSize: 9, fontWeight: 800, color: '#10b981', textTransform: 'uppercase', letterSpacing: 0.5 }}>
                 {TYPE_CONFIG[filtered[0].contentType].label}
               </span>
               <span className="badge badge-live" style={{ marginLeft: 'auto' }}>New</span>
@@ -423,7 +423,7 @@ export default function HubPage() {
       <div style={{ padding: '16px 18px 0' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
           <p className="label-caps">{filtered.length} {category === 'ALL' ? 'Posts' : CATEGORIES.find(c => c.id === category)?.label}</p>
-          <Link href="/hub/create" style={{ fontSize: 10, color: '#e84142', fontWeight: 700, textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 3 }}>
+          <Link href="/hub/create" style={{ fontSize: 10, color: '#10b981', fontWeight: 700, textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 3 }}>
             + Publish <ChevronRight size={10} />
           </Link>
         </div>

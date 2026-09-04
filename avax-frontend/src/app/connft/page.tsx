@@ -271,22 +271,22 @@ export default function CoNNFTMarketplace() {
 
       {/* Header */}
       <div style={{ padding: '20px 16px 0', display: 'flex', alignItems: 'center', gap: 16 }}>
-        <Link href="/" style={{ width: 40, height: 40, borderRadius: '50%', background: 'rgba(232,65,66,0.1)', border: '1px solid rgba(232,65,66,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center', textDecoration: 'none' }}>
-          <ArrowLeft color="#e84142" size={20} />
+        <Link href="/" style={{ width: 40, height: 40, borderRadius: '50%', background: 'rgba(16,185,129,0.1)', border: '1px solid rgba(16,185,129,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center', textDecoration: 'none' }}>
+          <ArrowLeft color="#10b981" size={20} />
         </Link>
         <div style={{ flex: 1 }}>
-          <h1 style={{ fontSize: 22, fontWeight: 900, margin: 0, color: '#e84142' }}>NFT Mkt Exchange</h1>
+          <h1 style={{ fontSize: 22, fontWeight: 900, margin: 0, color: '#10b981' }}>NFT Mkt Exchange</h1>
           <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.5)', margin: 0 }}>
             Conservation NFTs · Pay with yBOB · Avalanche Fuji
           </p>
         </div>
         <button onClick={() => refetchBal()} style={{ background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 8, padding: 8, cursor: 'pointer' }}>
-          <RefreshCw size={15} color="#e84142" />
+          <RefreshCw size={15} color="#10b981" />
         </button>
         {cart.length > 0 && (
           <div style={{ position: 'relative' }}>
-            <ShoppingCart size={22} color="#e84142" />
-            <span style={{ position: 'absolute', top: -6, right: -6, background: '#e84142', color: '#fff', fontSize: 9, fontWeight: 900, width: 16, height: 16, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{cart.length}</span>
+            <ShoppingCart size={22} color="#10b981" />
+            <span style={{ position: 'absolute', top: -6, right: -6, background: '#10b981', color: '#fff', fontSize: 9, fontWeight: 900, width: 16, height: 16, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{cart.length}</span>
           </div>
         )}
       </div>
@@ -318,13 +318,13 @@ export default function CoNNFTMarketplace() {
           <p style={{ fontSize: 9, color: 'rgba(255,255,255,0.4)', margin: '0 0 1px', fontWeight: 700 }}>COLLECTION CONTRACT</p>
           <p style={{ fontSize: 12, color: '#fff', fontWeight: 700, fontFamily: 'monospace', margin: 0 }}>{conservationData.contractAddress}</p>
         </div>
-        <a href={conservationData.explorerUrl} target="_blank" rel="noreferrer" style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 11, color: '#e84142', fontWeight: 800, textDecoration: 'none' }}>
+        <a href={conservationData.explorerUrl} target="_blank" rel="noreferrer" style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 11, color: '#10b981', fontWeight: 800, textDecoration: 'none' }}>
           Snowtrace <ExternalLink size={12} />
         </a>
       </div>
 
       {/* Stats */}
-      <div style={{ margin: '10px 16px 0', padding: '12px 16px', borderRadius: 14, background: 'rgba(232,65,66,0.06)', border: '1px solid rgba(232,65,66,0.15)', display: 'flex', gap: 20 }}>
+      <div style={{ margin: '10px 16px 0', padding: '12px 16px', borderRadius: 14, background: 'rgba(16,185,129,0.06)', border: '1px solid rgba(16,185,129,0.15)', display: 'flex', gap: 20 }}>
         {[
           { label: 'Total Minted', value: `${conservationData.totalMinted}` },
           { label: 'Listed',       value: `${NFTS.length}` },
@@ -332,7 +332,7 @@ export default function CoNNFTMarketplace() {
         ].map(s => (
           <div key={s.label} style={{ flex: 1 }}>
             <p style={{ fontSize: 10, color: 'rgba(255,255,255,0.4)', margin: '0 0 2px', fontWeight: 700 }}>{s.label}</p>
-            <p style={{ fontSize: 16, fontWeight: 900, color: '#e84142', margin: 0 }}>{s.value}</p>
+            <p style={{ fontSize: 16, fontWeight: 900, color: '#10b981', margin: 0 }}>{s.value}</p>
           </div>
         ))}
       </div>
@@ -363,7 +363,7 @@ export default function CoNNFTMarketplace() {
             <span style={{ fontSize: 12, fontWeight: 700, color: '#22C55E', fontFamily: 'monospace' }}>{address?.slice(0, 8)}…{address?.slice(-6)}</span>
           </div>
         ) : (
-          <button onClick={() => setShowModal(true)} className="glass" style={{ width: '100%', padding: '12px', borderRadius: 12, textAlign: 'center', border: '1px dashed rgba(232,65,66,0.35)', background: 'rgba(232,65,66,0.05)', color: '#e84142', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>
+          <button onClick={() => setShowModal(true)} className="glass" style={{ width: '100%', padding: '12px', borderRadius: 12, textAlign: 'center', border: '1px dashed rgba(16,185,129,0.35)', background: 'rgba(16,185,129,0.05)', color: '#10b981', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>
             ⚠️ Connect Wallet to buy NFTs with yBOB
           </button>
         )}
@@ -396,8 +396,8 @@ export default function CoNNFTMarketplace() {
         {FILTERS.map(f => (
           <button key={f} onClick={() => setActiveFilter(f)}
             style={{ flexShrink: 0, padding: '7px 14px', borderRadius: 999, border: '1px solid', cursor: 'pointer', fontWeight: 700, fontSize: 11, transition: 'all 0.2s',
-              background: activeFilter === f ? 'linear-gradient(135deg,#e84142,#7c1d1d)' : 'rgba(255,255,255,0.04)',
-              borderColor: activeFilter === f ? '#e84142' : 'rgba(255,255,255,0.1)',
+              background: activeFilter === f ? 'linear-gradient(135deg,#10b981,#064e3b)' : 'rgba(255,255,255,0.04)',
+              borderColor: activeFilter === f ? '#10b981' : 'rgba(255,255,255,0.1)',
               color: activeFilter === f ? '#fff' : 'rgba(255,255,255,0.5)',
             }}>
             {f}
@@ -413,7 +413,7 @@ export default function CoNNFTMarketplace() {
             border: purchased.includes(nft.id)
               ? '1px solid rgba(34,197,94,0.5)'
               : cart.includes(nft.id)
-                ? '1px solid rgba(232,65,66,0.4)'
+                ? '1px solid rgba(16,185,129,0.4)'
                 : '1px solid rgba(255,255,255,0.08)',
             transition: 'border-color 0.2s',
           }}>

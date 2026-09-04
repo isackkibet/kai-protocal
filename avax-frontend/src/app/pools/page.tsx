@@ -41,7 +41,7 @@ function tokenDec(sym: string): number {
   return ECOSYSTEM_TOKENS.find(t => t.symbol === sym)?.decimals ?? 18;
 }
 function tokenColor(sym: string): string {
-  return ECOSYSTEM_TOKENS.find(t => t.symbol === sym)?.color ?? "#e84142";
+  return ECOSYSTEM_TOKENS.find(t => t.symbol === sym)?.color ?? "#10b981";
 }
 function tokenEmoji(sym: string): string {
   return ECOSYSTEM_TOKENS.find(t => t.symbol === sym)?.emoji ?? "🪙";
@@ -330,15 +330,15 @@ export default function PoolsPage() {
 
       {/* Header */}
       <div className="flex items-center gap-3">
-        <Link href="/" style={{ width: 36, height: 36, borderRadius: "50%", background: "rgba(232,65,66,0.1)", border: "1px solid rgba(232,65,66,0.3)", display: "flex", alignItems: "center", justifyContent: "center", textDecoration: "none", flexShrink: 0 }}>
-          <ArrowLeft size={18} color="#e84142" />
+        <Link href="/" style={{ width: 36, height: 36, borderRadius: "50%", background: "rgba(16,185,129,0.1)", border: "1px solid rgba(16,185,129,0.3)", display: "flex", alignItems: "center", justifyContent: "center", textDecoration: "none", flexShrink: 0 }}>
+          <ArrowLeft size={18} color="#10b981" />
         </Link>
         <div className="flex-1">
           <h1 className="text-2xl font-black text-white m-0">🫧 KAI Pools & AMM</h1>
           <p className="text-xs text-white/45 mt-0.5">x*y=k AMM · Real ERC-20 swaps · Fuji C-Chain</p>
         </div>
         <button onClick={handleRefresh} className="p-2 rounded-lg border border-white/10 bg-white/5 cursor-pointer">
-          <RefreshCw size={15} color="#e84142" />
+          <RefreshCw size={15} color="#10b981" />
         </button>
       </div>
 
@@ -365,7 +365,7 @@ export default function PoolsPage() {
       <div className="flex gap-2 bg-black/20 p-1 rounded-xl">
         {([["swap", "⇄ Swap", ArrowDownUp], ["liquidity", "💧 Liquidity", Droplets], ["info", "📊 Info", BarChart3]] as const).map(([id, label, Icon]) => (
           <button key={id} onClick={() => { setActiveTab(id); setStatusMsg(""); setTxUrl(null); }}
-            className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-bold transition-all ${activeTab === id ? "bg-[#e84142] text-white" : "text-white/50 hover:text-white"}`}>
+            className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-bold transition-all ${activeTab === id ? "bg-[#10b981] text-white" : "text-white/50 hover:text-white"}`}>
             <Icon size={13} />{label}
           </button>
         ))}
@@ -373,7 +373,7 @@ export default function PoolsPage() {
 
       {/* ── SWAP TAB ── */}
       {activeTab === "swap" && (
-        <div className="glass rounded-2xl p-5" style={{ border: "1px solid rgba(232,65,66,0.2)" }}>
+        <div className="glass rounded-2xl p-5" style={{ border: "1px solid rgba(16,185,129,0.2)" }}>
           <p className="text-xs font-bold text-white/40 uppercase tracking-wider mb-4">Swap Tokens via KaiAMM</p>
 
           {/* Token In */}
@@ -386,7 +386,7 @@ export default function PoolsPage() {
               <input type="number" value={swapAmt} onChange={e => setSwapAmt(e.target.value)} placeholder="0.00"
                 style={{ background: "transparent", border: "none", outline: "none", fontSize: 28, fontWeight: 900, color: "#fff", flex: 1, fontFamily: "inherit" }} />
               <select value={swapIn} onChange={e => handleSwapInChange(e.target.value)}
-                style={{ background: "rgba(232,65,66,0.15)", border: "1px solid rgba(232,65,66,0.4)", borderRadius: 10, padding: "6px 10px", color: "#fff", fontSize: 13, fontWeight: 700, cursor: "pointer" }}>
+                style={{ background: "rgba(16,185,129,0.15)", border: "1px solid rgba(16,185,129,0.4)", borderRadius: 10, padding: "6px 10px", color: "#fff", fontSize: 13, fontWeight: 700, cursor: "pointer" }}>
                 {SWAP_TOKENS.filter(s => validOutputTokens(s).length > 0).map(s => <option key={s} value={s}>{tokenEmoji(s)} {s}</option>)}
               </select>
             </div>
@@ -395,7 +395,7 @@ export default function PoolsPage() {
           {/* Flip */}
           <div className="flex justify-center my-1">
             <button onClick={() => { handleSwapInChange(swapOut); setSwapOut(swapIn); }}
-              style={{ width: 34, height: 34, borderRadius: "50%", background: "linear-gradient(135deg,#e84142,#7c1d1d)", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
+              style={{ width: 34, height: 34, borderRadius: "50%", background: "linear-gradient(135deg,#10b981,#064e3b)", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
               <ArrowDownUp size={15} color="#fff" />
             </button>
           </div>
@@ -445,7 +445,7 @@ export default function PoolsPage() {
             width: "100%", padding: "13px", borderRadius: 12, border: "none", fontWeight: 800, fontSize: 14,
             background: busy || !swapAmt || !AMM_ADDR || !quoteFormatted || !routingPool
               ? "rgba(255,255,255,0.08)"
-              : "linear-gradient(135deg,#e84142,#7c1d1d)",
+              : "linear-gradient(135deg,#10b981,#064e3b)",
             color: "#fff",
             cursor: busy || !swapAmt || !AMM_ADDR || !quoteFormatted || !routingPool ? "not-allowed" : "pointer",
             opacity: busy || !swapAmt ? 0.6 : 1,
