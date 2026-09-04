@@ -140,7 +140,7 @@ export default function CoNNFTMarketplace() {
   const handleBuy = async (nft: typeof NFTS[0]) => {
     if (!isConnected || !address) { setShowModal(true); return; }
     if (!YBOB_ADDR) {
-      setStatusMsg('❌ yBOB token not deployed. Run deploy.ts first.');
+      setStatusMsg('yBOB token not deployed. Run deploy.ts first.');
       return;
     }
 
@@ -148,19 +148,19 @@ export default function CoNNFTMarketplace() {
 
     // Check balance
     if (yBobBal !== null && yBobBal < nft.price) {
-      setStatusMsg(`❌ Insufficient yBOB balance. You have ${yBobBal.toFixed(2)} yBOB, need ${nft.price} yBOB.`);
+      setStatusMsg(`Insufficient yBOB balance. You have ${yBobBal.toFixed(2)} yBOB, need ${nft.price} yBOB.`);
       return;
     }
 
     setIsLoading(nft.id);
-    setStatusMsg(`Preparing purchase of ${nft.name} for ${nft.price} yBOB…`);
+    setStatusMsg(`Preparing purchase of ${nft.name} for ${nft.price} yBOB...`);
     setTxUrl(null);
 
     try {
       await switchChainAsync({ chainId: avalancheFuji.id });
 
       // Step 1: Approve treasury to spend yBOB
-      setStatusMsg(`Approving ${nft.price} yBOB…`);
+      setStatusMsg(`Approving ${nft.price} yBOB...`);
       const approveTx = await writeContractAsync({
         address: YBOB_ADDR,
         abi: ERC20_ABI,
@@ -168,11 +168,11 @@ export default function CoNNFTMarketplace() {
         args: [TREASURY, maxUint256],
         chainId: avalancheFuji.id,
       });
-      setStatusMsg('Waiting for approval…');
+      setStatusMsg('Waiting for approval...');
       await publicClient?.waitForTransactionReceipt({ hash: approveTx });
 
       // Step 2: Transfer yBOB to treasury
-      setStatusMsg(`Transferring ${nft.price} yBOB for ${nft.name}…`);
+      setStatusMsg(`Transferring ${nft.price} yBOB for ${nft.name}...`);
       const transferTx = await writeContractAsync({
         address: YBOB_ADDR,
         abi: ERC20_ABI,
@@ -182,12 +182,12 @@ export default function CoNNFTMarketplace() {
       });
 
       setTxUrl(`https://testnet.snowtrace.io/tx/${transferTx}`);
-      setStatusMsg(`✅ Purchased ${nft.name} for ${nft.price} yBOB!`);
+      setStatusMsg(`Purchased ${nft.name} for ${nft.price} yBOB!`);
       setPurchased(prev => [...prev, nft.id]);
       await refetchBal();
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message.slice(0, 120) : 'Transaction failed';
-      setStatusMsg(`❌ ${msg}`);
+      setStatusMsg(`${msg}`);
     } finally {
       setIsLoading(null);
     }
@@ -197,7 +197,7 @@ export default function CoNNFTMarketplace() {
   const handleMpesaBuy = async (nft: typeof NFTS[0]) => {
     const clean = mpesaPhone.replace(/\D/g, '');
     if (!/^254[17]\d{8}$/.test(clean)) {
-      setStatusMsg('❌ Enter a valid M-Pesa number: 2547XXXXXXXX or 2541XXXXXXXX');
+      setStatusMsg('Enter a valid M-Pesa number: 2547XXXXXXXX or 2541XXXXXXXX');
       return;
     }
     setMpesaLoading(true);
@@ -213,9 +213,9 @@ export default function CoNNFTMarketplace() {
       if (!res.ok) throw new Error(data.error || 'STK push failed');
       setMpesaCheckout(data.checkoutRequestId);
       setMpesaNft(nft);
-      setStatusMsg(`📲 ${data.message ?? `Check your phone — enter M-Pesa PIN for KES ${data.amountKes}`}`);
+      setStatusMsg(`${data.message ?? `Check your phone - enter M-Pesa PIN for KES ${data.amountKes}`}`);
     } catch (e: unknown) {
-      setStatusMsg(`❌ ${e instanceof Error ? e.message : 'M-Pesa error'}`);
+      setStatusMsg(`${e instanceof Error ? e.message : 'M-Pesa error'}`);
     } finally {
       setMpesaLoading(false);
     }
@@ -233,12 +233,12 @@ export default function CoNNFTMarketplace() {
         if (data.status === 'success') {
           clearInterval(id);
           setPurchased(prev => [...prev, mpesaNft.id]);
-          setStatusMsg(`✅ M-Pesa payment confirmed! Receipt: ${data.mpesaReceiptNumber ?? '—'}`);
+          setStatusMsg(`M-Pesa payment confirmed! Receipt: ${data.mpesaReceiptNumber ?? 'N/A'}`);
           setMpesaCheckout(null);
           setMpesaNft(null);
         } else if (data.status === 'failed') {
           clearInterval(id);
-          setStatusMsg(`❌ M-Pesa payment failed: ${data.resultDesc}`);
+          setStatusMsg(`M-Pesa payment failed: ${data.resultDesc}`);
           setMpesaCheckout(null);
         } else if (attempts >= 12) {
           // 12 × 5s = 60s timeout — query Safaricom directly as fallback
@@ -247,9 +247,9 @@ export default function CoNNFTMarketplace() {
           const qData = await qRes.json();
           if (qData.success) {
             setPurchased(prev => [...prev, mpesaNft.id]);
-            setStatusMsg('✅ M-Pesa payment confirmed (via direct query)');
+            setStatusMsg('M-Pesa payment confirmed (via direct query)');
           } else {
-            setStatusMsg(`⚠️ Payment status: ${qData.resultDesc ?? 'unknown — check M-Pesa SMS'}`);
+            setStatusMsg(`Payment status: ${qData.resultDesc ?? 'unknown - check M-Pesa SMS'}`);
           }
           setMpesaCheckout(null);
           setMpesaNft(null);
@@ -294,13 +294,13 @@ export default function CoNNFTMarketplace() {
       {/* yBOB not deployed warning */}
       {!YBOB_ADDR && (
         <div style={{ margin: '12px 16px 0', background: 'rgba(249,115,22,0.08)', border: '1px solid rgba(249,115,22,0.3)', borderRadius: 12, padding: '10px 14px', fontSize: 11, color: 'rgba(255,255,255,0.7)' }}>
-          ⚠️ <strong style={{ color: '#F97316' }}>yBOB not deployed.</strong> Run <code style={{ color: '#fbbf24' }}>deploy.ts --network fuji</code> first.
+          <strong style={{ color: '#F97316' }}>yBOB not deployed.</strong> Run <code style={{ color: '#fbbf24' }}>deploy.ts --network fuji</code> first.
         </div>
       )}
 
       {/* Payment method badge */}
       <div style={{ margin: '12px 16px 0', display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px', borderRadius: 12, background: 'rgba(96,165,250,0.08)', border: '1px solid rgba(96,165,250,0.25)' }}>
-        <span style={{ fontSize: 18 }}>🪙</span>
+        <span style={{ fontSize: 18 }}>
         <div style={{ flex: 1 }}>
           <p style={{ fontSize: 11, fontWeight: 700, color: '#60a5fa', margin: 0 }}>Payment: yBOB Stable Token</p>
           <p style={{ fontSize: 10, color: 'rgba(255,255,255,0.4)', margin: 0 }}>
@@ -341,8 +341,8 @@ export default function CoNNFTMarketplace() {
       {statusMsg && (
         <div style={{
           margin: '12px 16px 0',
-          background: statusMsg.startsWith('❌') ? 'rgba(239,68,68,0.1)' : 'rgba(34,197,94,0.1)',
-          border: `1px solid ${statusMsg.startsWith('❌') ? 'rgba(239,68,68,0.3)' : 'rgba(34,197,94,0.3)'}`,
+          background: 'rgba(34,197,94,0.1)',
+          border: '1px solid rgba(34,197,94,0.3)',
           padding: '10px 14px', borderRadius: 12, fontSize: 12, color: '#fff', textAlign: 'center',
           position: 'sticky', top: 16, zIndex: 10,
         }}>
@@ -364,7 +364,7 @@ export default function CoNNFTMarketplace() {
           </div>
         ) : (
           <button onClick={() => setShowModal(true)} className="glass" style={{ width: '100%', padding: '12px', borderRadius: 12, textAlign: 'center', border: '1px dashed rgba(16,185,129,0.35)', background: 'rgba(16,185,129,0.05)', color: '#10b981', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>
-            ⚠️ Connect Wallet to buy NFTs with yBOB
+            Connect Wallet to buy NFTs with yBOB
           </button>
         )}
       </div>
@@ -427,10 +427,10 @@ export default function CoNNFTMarketplace() {
                 <ExternalLink size={10} color="#fff" style={{ opacity: 0.7 }} />
               </a>
               {purchased.includes(nft.id) && (
-                <div style={{ position: 'absolute', inset: 0, background: 'rgba(34,197,94,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 28 }}>✓</div>
+                    <div style={{ position: 'absolute', inset: 0, background: 'rgba(34,197,94,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 28 }}></div>
               )}
               {isLoading === nft.id && (
-                <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22 }}>⏳</div>
+                    <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22 }}></div>
               )}
             </div>
 
@@ -456,7 +456,7 @@ export default function CoNNFTMarketplace() {
                       disabled={isLoading !== null || mpesaLoading}
                       title="Buy with yBOB token"
                       style={{ background: 'rgba(96,165,250,0.15)', border: '1px solid rgba(96,165,250,0.35)', color: '#60a5fa', padding: '5px 8px', borderRadius: 8, fontSize: 10, fontWeight: 800, cursor: isLoading !== null ? 'not-allowed' : 'pointer' }}>
-                      {isLoading === nft.id ? '…' : '🪙'}
+                      {isLoading === nft.id ? '...' : ''}
                     </button>
                     {/* M-Pesa buy */}
                     <button
@@ -464,7 +464,7 @@ export default function CoNNFTMarketplace() {
                       disabled={mpesaLoading || isLoading !== null || !mpesaPhone.replace(/\D/g,'').match(/^254[17]\d{8}$/)}
                       title={mpesaPhone ? 'Buy with M-Pesa' : 'Enter M-Pesa number above first'}
                       style={{ background: 'rgba(34,197,94,0.15)', border: '1px solid rgba(34,197,94,0.35)', color: '#22C55E', padding: '5px 8px', borderRadius: 8, fontSize: 10, fontWeight: 800, cursor: (!mpesaPhone || mpesaLoading) ? 'not-allowed' : 'pointer', opacity: !mpesaPhone.replace(/\D/g,'').match(/^254[17]\d{8}$/) ? 0.4 : 1 }}>
-                      {mpesaLoading && mpesaNft?.id === nft.id ? '…' : 'M🇰🇪'}
+                      {mpesaLoading && mpesaNft?.id === nft.id ? '...' : 'M-Pesa'}
                     </button>
                   </div>
                 )}

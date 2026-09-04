@@ -105,7 +105,7 @@ function fmt(text: string) {
 export default function AIPage() {
   const [msgs, setMsgs] = useState<Msg[]>([{
     role: 'ai',
-    text: 'Hello! I\'m **KAI** — your DeFi assistant for the Nuvari ecosystem on Avalanche.\n\nAsk me anything about tokens, vaults, pools, governance, or community products. Open **Tools** to run pre-built queries instantly.',
+    text: 'Hello! I\'m **KAI** - your DeFi assistant for the Nuvari ecosystem on Avalanche.\n\nAsk me anything about tokens, vaults, pools, governance, or community products. Open **Tools** to run pre-built queries instantly.',
     agent: 'KAI Agent', sources: 0,
   }]);
   const [input,       setInput]      = useState('');
@@ -166,7 +166,7 @@ export default function AIPage() {
     } catch {
       setMsgs(prev => {
         const c = prev.slice(0,-1);
-        return [...c, { role: 'ai', text: '⚠️ Cannot reach agent server. Make sure `python server.py` is running at port 8000.', agent: 'System' }];
+        return [...c, { role: 'ai', text: 'Cannot reach agent server. Make sure `python server.py` is running at port 8000.', agent: 'System' }];
       });
     } finally { setLoading(false); }
   };
@@ -220,7 +220,7 @@ export default function AIPage() {
             display: 'flex', alignItems: 'center', gap: 4,
           }}>
             <span style={{ fontSize: 7 }}>●</span>
-            {online === true ? 'Online · Avalanche Fuji' : online === false ? 'Offline — start server' : 'Checking…'}
+            {online === true ? 'Online · Avalanche Fuji' : online === false ? 'Offline - start server' : 'Checking…'}
           </p>
         </div>
 

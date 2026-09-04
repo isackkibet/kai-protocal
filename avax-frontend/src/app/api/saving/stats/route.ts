@@ -44,14 +44,14 @@ export async function GET() {
       { id: 'y3', amountInvested: 180_000, yieldEarnedKes: 8_420,  strategyUsed: 'CONSERVATIVE_KES_STABLE', txHash: '0xabc…003', generatedAt: '2026-06-01' },
     ],
     vaultStrategies: [
-      { key: 'CONSERVATIVE_KES_STABLE', label: 'Conservative KES',  apy: 12, risk: 'Very Low', color: '#22c55e', token: 'yBOB',   desc: 'Stable KES vault — low volatility'             },
-      { key: 'BALANCED_YBOB_VAULT',     label: 'Balanced yBOB',     apy: 18, risk: 'Low',      color: '#3b82f6', token: 'yBOB',   desc: '18% APY yBOB yield pool — active strategy'    },
+      { key: 'CONSERVATIVE_KES_STABLE', label: 'Conservative KES',  apy: 12, risk: 'Very Low', color: '#22c55e', token: 'yBOB',   desc: 'Stable KES vault - low volatility'             },
+      { key: 'BALANCED_YBOB_VAULT',     label: 'Balanced yBOB',     apy: 18, risk: 'Low',      color: '#3b82f6', token: 'yBOB',   desc: '18% APY yBOB yield pool - active strategy'    },
       { key: 'HIGH_YIELD_AVAX_POOL',    label: 'High Yield AVAX',   apy: 24, risk: 'Medium',   color: '#e84142', token: 'GAMI',   desc: '24% APY Avalanche liquidity pool'              },
     ],
     pools: [
-      { name: 'NVR / yBOB',     icon: '⚡', apy: '~3.0%',  tvl: '1,000 NVR',   members: 24, color: '#e84142' },
-      { name: 'YTOKEN / YGOLD', icon: '⚗️', apy: '~6.0%',  tvl: '500 YTOKEN',  members: 15, color: '#a855f7' },
-      { name: 'GAMI / CENTS',   icon: '🎮', apy: '~9.0%',  tvl: '5,000 GAMI',  members: 38, color: '#22c55e' },
+      { name: 'NVR / yBOB',     icon: '', apy: '~3.0%',  tvl: '1,000 NVR',   members: 24, color: '#e84142' },
+      { name: 'YTOKEN / YGOLD', icon: '', apy: '~6.0%',  tvl: '500 YTOKEN',  members: 15, color: '#a855f7' },
+      { name: 'GAMI / CENTS',   icon: '', apy: '~9.0%',  tvl: '5,000 GAMI',  members: 38, color: '#22c55e' },
     ],
     monthlyYield: [
       { month: 'Mar', yieldKes: 8_200  },

@@ -44,7 +44,7 @@ function tokenColor(sym: string): string {
   return ECOSYSTEM_TOKENS.find(t => t.symbol === sym)?.color ?? "#10b981";
 }
 function tokenEmoji(sym: string): string {
-  return ECOSYSTEM_TOKENS.find(t => t.symbol === sym)?.emoji ?? "🪙";
+  return ECOSYSTEM_TOKENS.find(t => t.symbol === sym)?.emoji ?? "";
 }
 
 // ─── Pool definitions from defiAddresses.json ─────────────────────────────────
@@ -211,12 +211,12 @@ export default function PoolsPage() {
   // ── Swap handler ──────────────────────────────────────────────────────────
   const handleSwap = async () => {
     if (!isConnected || !address) { setShowModal(true); return; }
-    if (!AMM_ADDR) { setStatusMsg("⚠️ AMM not deployed — run deploy-defi.ts first."); return; }
+    if (!AMM_ADDR) { setStatusMsg("AMM not deployed - run deploy-defi.ts first."); return; }
     const inAddr  = tokenAddr(swapIn);
     const outAddr = tokenAddr(swapOut);
-    if (!inAddr || !outAddr) { setStatusMsg("⚠️ Token address not found."); return; }
+    if (!inAddr || !outAddr) { setStatusMsg("Token address not found."); return; }
     const amt = parseFloat(swapAmt);
-    if (!amt || amt <= 0) { setStatusMsg("⚠️ Enter swap amount."); return; }
+    if (!amt || amt <= 0) { setStatusMsg("Enter swap amount."); return; }
 
     const amtWei    = parseUnits(swapAmt, tokenDec(swapIn));
     const minOutWei = parseUnits(minOut || "0", tokenDec(swapOut));
@@ -226,7 +226,7 @@ export default function PoolsPage() {
       await switchChainAsync({ chainId: avalancheFuji.id });
 
       // Approve tokenIn to AMM
-      setStatusMsg(`Approving ${swapIn} for AMM router…`);
+      setStatusMsg(`Approving ${swapIn} for AMM router...`);
       const appTx = await writeContractAsync({
         address: inAddr, abi: ERC20_ABI,
         functionName: "approve", args: [AMM_ADDR, maxUint256],
@@ -235,7 +235,7 @@ export default function PoolsPage() {
       await publicClient?.waitForTransactionReceipt({ hash: appTx });
 
       // Swap
-      setStatusMsg(`Swapping ${swapAmt} ${swapIn} → ${swapOut}…`);
+      setStatusMsg(`Swapping ${swapAmt} ${swapIn} → ${swapOut}...`);
       const swapTx = await writeContractAsync({
         address: AMM_ADDR, abi: AMM_ABI,
         functionName: "swap",
@@ -243,11 +243,11 @@ export default function PoolsPage() {
         chainId: avalancheFuji.id,
       });
       setTxUrl(`${EXPLORER}/tx/${swapTx}`);
-      setStatusMsg(`✅ Swapped ${swapAmt} ${swapIn} → ${swapOut}! Tx: ${swapTx.slice(0,14)}…`);
+      setStatusMsg(`Swapped ${swapAmt} ${swapIn} → ${swapOut}! Tx: ${swapTx.slice(0,14)}...`);
       setSwapAmt(""); setMinOut("0");
       await handleRefresh();
     } catch (e: unknown) {
-      setStatusMsg(`❌ ${e instanceof Error ? e.message.slice(0, 120) : "Swap failed"}`);
+      setStatusMsg(`${e instanceof Error ? e.message.slice(0, 120) : "Swap failed"}`);
     } finally {
       setBusy(false);
     }
@@ -256,36 +256,36 @@ export default function PoolsPage() {
   // ── Add liquidity ─────────────────────────────────────────────────────────
   const handleAddLiquidity = async () => {
     if (!isConnected || !address) { setShowModal(true); return; }
-    if (!AMM_ADDR) { setStatusMsg("⚠️ AMM not deployed."); return; }
+    if (!AMM_ADDR) { setStatusMsg("AMM not deployed."); return; }
     const pool = POOLS.find(p => p.pair === liqPool);
-    if (!pool?.tokenA || !pool?.tokenB) { setStatusMsg("⚠️ Pool not deployed."); return; }
+    if (!pool?.tokenA || !pool?.tokenB) { setStatusMsg("Pool not deployed."); return; }
     const symA = SWAP_TOKENS.find(s => tokenAddr(s) === pool.tokenA) ?? "";
     const symB = SWAP_TOKENS.find(s => tokenAddr(s) === pool.tokenB) ?? "";
     const amtA = parseUnits(liqAmtA || "0", tokenDec(symA));
     const amtB = parseUnits(liqAmtB || "0", tokenDec(symB));
-    if (amtA === 0n || amtB === 0n) { setStatusMsg("⚠️ Enter both amounts."); return; }
+    if (amtA === 0n || amtB === 0n) { setStatusMsg("Enter both amounts."); return; }
 
     setBusy(true); setStatusMsg(""); setTxUrl(null);
     try {
       await switchChainAsync({ chainId: avalancheFuji.id });
-      setStatusMsg(`Approving ${symA}…`);
+      setStatusMsg(`Approving ${symA}...`);
       const a1 = await writeContractAsync({ address: pool.tokenA as Addr, abi: ERC20_ABI, functionName: "approve", args: [AMM_ADDR, maxUint256], chainId: avalancheFuji.id });
       await publicClient?.waitForTransactionReceipt({ hash: a1 });
-      setStatusMsg(`Approving ${symB}…`);
+      setStatusMsg(`Approving ${symB}...`);
       const a2 = await writeContractAsync({ address: pool.tokenB as Addr, abi: ERC20_ABI, functionName: "approve", args: [AMM_ADDR, maxUint256], chainId: avalancheFuji.id });
       await publicClient?.waitForTransactionReceipt({ hash: a2 });
-      setStatusMsg(`Adding liquidity to ${liqPool} pool…`);
+      setStatusMsg(`Adding liquidity to ${liqPool} pool...`);
       const liqTx = await writeContractAsync({
         address: AMM_ADDR, abi: AMM_ABI, functionName: "addLiquidity",
         args: [pool.tokenA as Addr, pool.tokenB as Addr, amtA, amtB, 0n],
         chainId: avalancheFuji.id,
       });
       setTxUrl(`${EXPLORER}/tx/${liqTx}`);
-      setStatusMsg(`✅ Liquidity added to ${liqPool}! You received LP tokens.`);
+      setStatusMsg(`Liquidity added to ${liqPool}! You received LP tokens.`);
       setLiqAmtA(""); setLiqAmtB("");
       await handleRefresh();
     } catch (e: unknown) {
-      setStatusMsg(`❌ ${e instanceof Error ? e.message.slice(0, 120) : "Failed"}`);
+      setStatusMsg(`${e instanceof Error ? e.message.slice(0, 120) : "Failed"}`);
     } finally {
       setBusy(false);
     }
@@ -294,30 +294,30 @@ export default function PoolsPage() {
   // ── Remove liquidity ──────────────────────────────────────────────────────
   const handleRemoveLiquidity = async () => {
     if (!isConnected || !address) { setShowModal(true); return; }
-    if (!AMM_ADDR) { setStatusMsg("⚠️ AMM not deployed."); return; }
+    if (!AMM_ADDR) { setStatusMsg("AMM not deployed."); return; }
     const pool = POOLS.find(p => p.pair === liqPool);
-    if (!pool?.address) { setStatusMsg("⚠️ Pool not deployed."); return; }
+    if (!pool?.address) { setStatusMsg("Pool not deployed."); return; }
     const lpWei = parseUnits(lpAmt || "0", 18);
-    if (lpWei === 0n) { setStatusMsg("⚠️ Enter LP amount."); return; }
+    if (lpWei === 0n) { setStatusMsg("Enter LP amount."); return; }
 
     setBusy(true); setStatusMsg(""); setTxUrl(null);
     try {
       await switchChainAsync({ chainId: avalancheFuji.id });
-      setStatusMsg("Approving LP tokens…");
+      setStatusMsg("Approving LP tokens...");
       const a1 = await writeContractAsync({ address: pool.address as Addr, abi: POOL_ABI, functionName: "approve", args: [AMM_ADDR, maxUint256], chainId: avalancheFuji.id });
       await publicClient?.waitForTransactionReceipt({ hash: a1 });
-      setStatusMsg(`Removing ${lpAmt} LP from ${liqPool}…`);
+      setStatusMsg(`Removing ${lpAmt} LP from ${liqPool}...`);
       const remTx = await writeContractAsync({
         address: AMM_ADDR, abi: AMM_ABI, functionName: "removeLiquidity",
         args: [pool.tokenA as Addr, pool.tokenB as Addr, lpWei, 0n, 0n],
         chainId: avalancheFuji.id,
       });
       setTxUrl(`${EXPLORER}/tx/${remTx}`);
-      setStatusMsg(`✅ Removed liquidity from ${liqPool}!`);
+      setStatusMsg(`Removed liquidity from ${liqPool}!`);
       setLpAmt("");
       await handleRefresh();
     } catch (e: unknown) {
-      setStatusMsg(`❌ ${e instanceof Error ? e.message.slice(0, 120) : "Failed"}`);
+      setStatusMsg(`${e instanceof Error ? e.message.slice(0, 120) : "Failed"}`);
     } finally {
       setBusy(false);
     }
@@ -334,7 +334,7 @@ export default function PoolsPage() {
           <ArrowLeft size={18} color="#10b981" />
         </Link>
         <div className="flex-1">
-          <h1 className="text-2xl font-black text-white m-0">🫧 KAI Pools & AMM</h1>
+          <h1 className="text-2xl font-black text-white m-0">KAI Pools & AMM</h1>
           <p className="text-xs text-white/45 mt-0.5">x*y=k AMM · Real ERC-20 swaps · Fuji C-Chain</p>
         </div>
         <button onClick={handleRefresh} className="p-2 rounded-lg border border-white/10 bg-white/5 cursor-pointer">
@@ -345,14 +345,14 @@ export default function PoolsPage() {
       {/* Not deployed warning */}
       {isNotDeployed && (
         <div style={{ background: "rgba(249,115,22,0.08)", border: "1px solid rgba(249,115,22,0.3)", borderRadius: 14, padding: "14px 16px", fontSize: 12, color: "rgba(255,255,255,0.7)" }}>
-          <strong style={{ color: "#F97316" }}>⚠️ Pools not deployed yet.</strong>&nbsp;
+          <strong style={{ color: "#F97316" }}>Pools not deployed yet.</strong>&nbsp;
           <code style={{ fontSize: 11, color: "#fbbf24" }}>npx hardhat run scripts/deploy-defi.ts --network fuji</code>
         </div>
       )}
 
       {/* Status */}
       {statusMsg && (
-        <div style={{ background: statusMsg.startsWith("❌") ? "rgba(239,68,68,0.1)" : "rgba(34,197,94,0.08)", border: `1px solid ${statusMsg.startsWith("❌") ? "rgba(239,68,68,0.3)" : "rgba(34,197,94,0.2)"}`, padding: "12px 14px", borderRadius: 12, fontSize: 12, color: "#fff" }}>
+        <div style={{           background: "rgba(34,197,94,0.08)", border: "1px solid rgba(34,197,94,0.2)", padding: "12px 14px", borderRadius: 12, fontSize: 12, color: "#fff" }}>
           {statusMsg}
           {txUrl && <a href={txUrl} target="_blank" rel="noopener noreferrer" style={{ marginLeft: 8, color: "#60a5fa", display: "inline-flex", alignItems: "center", gap: 4 }}>Snowtrace <ExternalLink size={11} /></a>}
         </div>
@@ -363,7 +363,7 @@ export default function PoolsPage() {
 
       {/* Tab bar */}
       <div className="flex gap-2 bg-black/20 p-1 rounded-xl">
-        {([["swap", "⇄ Swap", ArrowDownUp], ["liquidity", "💧 Liquidity", Droplets], ["info", "📊 Info", BarChart3]] as const).map(([id, label, Icon]) => (
+        {([["swap", "Swap", ArrowDownUp], ["liquidity", "Liquidity", Droplets], ["info", "Info", BarChart3]] as const).map(([id, label, Icon]) => (
           <button key={id} onClick={() => { setActiveTab(id); setStatusMsg(""); setTxUrl(null); }}
             className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-bold transition-all ${activeTab === id ? "bg-[#10b981] text-white" : "text-white/50 hover:text-white"}`}>
             <Icon size={13} />{label}
@@ -405,7 +405,7 @@ export default function PoolsPage() {
             <div className="flex justify-between mb-2">
               <span className="text-xs font-bold text-white/40 uppercase tracking-wide">You Receive</span>
               <span style={{ fontSize: 10, color: quoteFetching ? "#f59e0b" : quoteFormatted ? "#22C55E" : "rgba(255,255,255,0.3)", fontWeight: 700 }}>
-                {quoteFetching ? "⟳ fetching…" : routingPool ? `via ${routingPool.pair} pool` : swapAmt ? "⚠️ no pool for this pair" : "enter amount"}
+                {quoteFetching ? "fetching..." : routingPool ? `via ${routingPool.pair} pool` : swapAmt ? "no pool for this pair" : "enter amount"}
               </span>
             </div>
             <div className="flex items-center gap-3">
@@ -416,7 +416,7 @@ export default function PoolsPage() {
                 ) : quoteFormatted ? (
                   quoteFormatted
                 ) : (
-                  <span style={{ fontSize: 16 }}>—</span>
+                  <span style={{ fontSize: 16 }}>-</span>
                 )}
               </div>
               <select value={swapOut} onChange={e => { setSwapOut(e.target.value); setSwapAmt(""); }}
@@ -437,7 +437,7 @@ export default function PoolsPage() {
           {/* No pool warning */}
           {swapAmt && parseFloat(swapAmt) > 0 && !routingPool && (
             <div style={{ padding: "8px 12px", borderRadius: 8, background: "rgba(249,115,22,0.08)", border: "1px solid rgba(249,115,22,0.25)", fontSize: 11, color: "#F97316", marginBottom: 8 }}>
-              ⚠️ No liquidity pool exists for {swapIn} → {swapOut}. Try NVR↔yBOB, YTOKEN↔YGOLD, or GAMI↔CENTS.
+              No liquidity pool exists for {swapIn} → {swapOut}. Try NVR↔yBOB, YTOKEN↔YGOLD, or GAMI↔CENTS.
             </div>
           )}
 
@@ -479,7 +479,7 @@ export default function PoolsPage() {
             {(["add","remove"] as const).map(m => (
               <button key={m} onClick={() => setLiqMode(m)}
                 className={`flex-1 py-2 rounded-lg text-xs font-bold transition-all ${liqMode === m ? "bg-[#34d399] text-[#1B4332]" : "text-white/50"}`}>
-                {m === "add" ? "➕ Add Liquidity" : "➖ Remove Liquidity"}
+                {m === "add" ? "Add Liquidity" : "Remove Liquidity"}
               </button>
             ))}
           </div>
@@ -506,7 +506,7 @@ export default function PoolsPage() {
                 background: busy || !liqAmtA || !liqAmtB ? "rgba(255,255,255,0.08)" : "linear-gradient(135deg,#34d399,#059669)",
                 color: "#1B4332", cursor: busy ? "not-allowed" : "pointer", opacity: busy ? 0.6 : 1,
               }}>
-                {busy ? "⏳ Signing…" : "Add Liquidity"}
+                {busy ? "Signing..." : "Add Liquidity"}
               </button>
             </>
           ) : (
@@ -532,7 +532,7 @@ export default function PoolsPage() {
                       background: busy || !lpAmt ? "rgba(255,255,255,0.08)" : "linear-gradient(135deg,#F97316,#ea580c)",
                       color: "#fff", cursor: busy ? "not-allowed" : "pointer", opacity: busy ? 0.6 : 1,
                     }}>
-                      {busy ? "⏳ Signing…" : "Remove Liquidity"}
+                      {busy ? "Signing..." : "Remove Liquidity"}
                     </button>
                   </div>
                 );

@@ -8,7 +8,7 @@ import Link from 'next/link';
 
 const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_API_URL || 'http://localhost:8000';
 
-const WELCOME = `⚡ Hey! I'm **KAI AVAX Agent** — your Avalanche DeFi companion powered by **Groq (Llama 3.1 8B)** with RAG context from Nuvari docs.
+const WELCOME = `Hey! I'm **KAI AVAX Agent** - your Avalanche DeFi companion powered by **Groq (Llama 3.1 8B)** with RAG context from Nuvari docs.
 
 Ask me about:
 • Ecosystem tokens (NVR, yBOB, YTOKEN, YGOLD, GAMI, CENTS)
@@ -84,7 +84,7 @@ export default function AVAXChatPage() {
       if (voiceOn) speak(aiText);
 
     } catch {
-      const errMsg = '⚠️ **Connection Error.** Make sure your GROQ_API_KEY is set in .env or the backend is up.';
+      const errMsg = '**Connection Error.** Make sure your GROQ_API_KEY is set in .env or the backend is up.';
       setMessages(p => [...p, { role: 'ai', text: errMsg, agent: 'System' }]);
     } finally {
       setLoading(false);
@@ -121,7 +121,7 @@ export default function AVAXChatPage() {
           {/* RAG toggle */}
           <button
             onClick={() => setRagEnabled(r => !r)}
-            title={ragEnabled ? 'RAG On — using KAI docs context' : 'RAG Off — plain Ollama'}
+            title={ragEnabled ? 'RAG On - using KAI docs context' : 'RAG Off - plain Ollama'}
             style={{ width: 32, height: 32, borderRadius: 8, background: ragEnabled ? 'rgba(16,185,129,0.18)' : 'rgba(255,255,255,0.06)', border: ragEnabled ? '1px solid rgba(16,185,129,0.45)' : '1px solid rgba(255,255,255,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
           >
             <Database size={14} color={ragEnabled ? '#10b981' : 'rgba(255,255,255,0.4)'} />
@@ -140,7 +140,7 @@ export default function AVAXChatPage() {
       {ragEnabled && (
         <div style={{ margin: '8px 16px 0', padding: '6px 12px', borderRadius: 8, background: 'rgba(16,185,129,0.06)', border: '1px solid rgba(16,185,129,0.18)', fontSize: 10, color: 'rgba(255,255,255,0.55)', display: 'flex', gap: 6, alignItems: 'center' }}>
           <Database size={11} color="#10b981" />
-          <span>RAG active — KAI Chain docs indexed (<code style={{ color: '#10b981' }}>bizmodel.md</code> + wallet guides)</span>
+          <span>RAG active - KAI Chain docs indexed (<code style={{ color: '#10b981' }}>bizmodel.md</code> + wallet guides)</span>
         </div>
       )}
 

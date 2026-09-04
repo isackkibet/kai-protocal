@@ -127,9 +127,9 @@ export default function VaultsPage() {
   // ── Deposit flow: approve → deposit ───────────────────────────────────────
   const handleDeposit = async (vault: VaultEntry) => {
     if (!isConnected || !address) { setShowModal(true); return; }
-    if (!vault.vaultAddr || !vault.tokenAddr) { setStatusMsg("⚠️ Vault not deployed yet. Run deploy-defi.ts first."); return; }
+    if (!vault.vaultAddr || !vault.tokenAddr) { setStatusMsg("Vault not deployed yet. Run deploy-defi.ts first."); return; }
     const amt = parseFloat(inputAmt);
-    if (!amt || amt <= 0) { setStatusMsg("⚠️ Enter an amount."); return; }
+    if (!amt || amt <= 0) { setStatusMsg("Enter an amount."); return; }
 
     const amtWei = parseUnits(inputAmt, vault.decimals);
     setBusy(true); setStatusMsg(""); setTxUrl(null);
@@ -138,28 +138,28 @@ export default function VaultsPage() {
       await switchChainAsync({ chainId: avalancheFuji.id });
 
       // Step 1: approve vault to spend tokens
-      setStatusMsg(`Approving ${vault.symbol} spend…`);
+      setStatusMsg(`Approving ${vault.symbol} spend...`);
       const approveTx = await writeContractAsync({
         address: vault.tokenAddr, abi: ERC20_ABI,
         functionName: "approve", args: [vault.vaultAddr, maxUint256],
         chainId: avalancheFuji.id,
       });
-      setStatusMsg("Waiting for approval confirmation…");
+      setStatusMsg("Waiting for approval confirmation...");
       await publicClient?.waitForTransactionReceipt({ hash: approveTx });
 
       // Step 2: deposit
-      setStatusMsg(`Depositing ${inputAmt} ${vault.symbol} into vault…`);
+      setStatusMsg(`Depositing ${inputAmt} ${vault.symbol} into vault...`);
       const depositTx = await writeContractAsync({
         address: vault.vaultAddr, abi: VAULT_ABI,
         functionName: "deposit", args: [amtWei],
         chainId: avalancheFuji.id,
       });
       setTxUrl(`https://testnet.snowtrace.io/tx/${depositTx}`);
-      setStatusMsg(`✅ Deposited ${inputAmt} ${vault.symbol}! You received kv${vault.symbol} shares.`);
+      setStatusMsg(`Deposited ${inputAmt} ${vault.symbol}! You received kv${vault.symbol} shares.`);
       setInputAmt("");
       await handleRefresh();
     } catch (e: unknown) {
-      setStatusMsg(`❌ ${e instanceof Error ? e.message.slice(0, 120) : "Transaction failed"}`);
+      setStatusMsg(`${e instanceof Error ? e.message.slice(0, 120) : "Transaction failed"}`);
     } finally {
       setBusy(false);
     }
@@ -168,31 +168,31 @@ export default function VaultsPage() {
   // ── Withdraw flow: approve shares → withdraw ───────────────────────────────
   const handleWithdraw = async (vault: VaultEntry) => {
     if (!isConnected || !address) { setShowModal(true); return; }
-    if (!vault.vaultAddr) { setStatusMsg("⚠️ Vault not deployed."); return; }
+    if (!vault.vaultAddr) { setStatusMsg("Vault not deployed."); return; }
     const shares = parseFloat(inputAmt);
-    if (!shares || shares <= 0) { setStatusMsg("⚠️ Enter share amount to redeem."); return; }
+    if (!shares || shares <= 0) { setStatusMsg("Enter share amount to redeem."); return; }
 
     const sharesWei = parseUnits(inputAmt, vault.decimals);
     const bal = shareBal(vault.symbol);
-    if (sharesWei > bal) { setStatusMsg(`⚠️ You only have ${fmtToken(bal, vault.decimals)} kv${vault.symbol} shares.`); return; }
+    if (sharesWei > bal) { setStatusMsg(`You only have ${fmtToken(bal, vault.decimals)} kv${vault.symbol} shares.`); return; }
 
     setBusy(true); setStatusMsg(""); setTxUrl(null);
 
     try {
       await switchChainAsync({ chainId: avalancheFuji.id });
 
-      setStatusMsg(`Withdrawing ${inputAmt} shares from ${vault.symbol} vault…`);
+      setStatusMsg(`Withdrawing ${inputAmt} shares from ${vault.symbol} vault...`);
       const withdrawTx = await writeContractAsync({
         address: vault.vaultAddr, abi: VAULT_ABI,
         functionName: "withdraw", args: [sharesWei],
         chainId: avalancheFuji.id,
       });
       setTxUrl(`https://testnet.snowtrace.io/tx/${withdrawTx}`);
-      setStatusMsg(`✅ Redeemed ${inputAmt} kv${vault.symbol} shares — ${vault.symbol} tokens returned.`);
+      setStatusMsg(`Redeemed ${inputAmt} kv${vault.symbol} shares - ${vault.symbol} tokens returned.`);
       setInputAmt("");
       await handleRefresh();
     } catch (e: unknown) {
-      setStatusMsg(`❌ ${e instanceof Error ? e.message.slice(0, 120) : "Transaction failed"}`);
+      setStatusMsg(`${e instanceof Error ? e.message.slice(0, 120) : "Transaction failed"}`);
     } finally {
       setBusy(false);
     }
@@ -213,7 +213,7 @@ export default function VaultsPage() {
           <ArrowLeft size={18} color="#10b981" />
         </Link>
         <div style={{ flex: 1 }}>
-          <h1 style={{ fontSize: 22, fontWeight: 900, color: "#fff", margin: 0 }}>🏦 KAI Vaults</h1>
+          <h1 style={{ fontSize: 22, fontWeight: 900, color: "#fff", margin: 0 }}>KAI Vaults</h1>
           <p style={{ fontSize: 11, color: "rgba(255,255,255,0.45)", margin: "3px 0 0" }}>
             Real ERC-20 yield vaults · Fuji C-Chain · kvTOKEN shares
           </p>
@@ -232,7 +232,7 @@ export default function VaultsPage() {
           background: "rgba(249,115,22,0.08)", border: "1px solid rgba(249,115,22,0.3)",
           borderRadius: 14, padding: "14px 16px", fontSize: 12, color: "rgba(255,255,255,0.7)",
         }}>
-          <strong style={{ color: "#F97316" }}>⚠️ Vaults not deployed yet.</strong> Run this to deploy on Fuji:
+          <strong style={{ color: "#F97316" }}>Vaults not deployed yet.</strong> Run this to deploy on Fuji:
           <br /><code style={{ fontSize: 11, color: "#fbbf24", marginTop: 4, display: "block" }}>
             npx hardhat run scripts/deploy-defi.ts --network fuji
           </code>
@@ -246,15 +246,15 @@ export default function VaultsPage() {
           borderRadius: 14, padding: "14px 16px", color: "#10b981",
           fontWeight: 700, fontSize: 13, cursor: "pointer",
         }}>
-          🔗 Connect wallet to deposit / withdraw
+          Connect wallet to deposit / withdraw
         </button>
       )}
 
       {/* Status message */}
       {statusMsg && (
         <div style={{
-          background: statusMsg.startsWith("❌") ? "rgba(239,68,68,0.1)" : "rgba(34,197,94,0.08)",
-          border: `1px solid ${statusMsg.startsWith("❌") ? "rgba(239,68,68,0.3)" : "rgba(34,197,94,0.2)"}`,
+          background: "rgba(34,197,94,0.08)",
+          border: "1px solid rgba(34,197,94,0.2)",
           padding: "12px 14px", borderRadius: 12, fontSize: 12, color: "#fff",
         }}>
           {statusMsg}
@@ -374,7 +374,7 @@ export default function VaultsPage() {
 
                   {!vault.vaultAddr ? (
                     <p style={{ fontSize: 11, color: "rgba(255,255,255,0.35)", textAlign: "center", padding: "12px 0" }}>
-                      Deploy vaults first — run deploy-defi.ts
+                      Deploy vaults first - run deploy-defi.ts
                     </p>
                   ) : (
                     <>
