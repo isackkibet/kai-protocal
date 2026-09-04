@@ -22,8 +22,8 @@ export default function BottomNav() {
           <Link key={name} href={href} style={{
             display: 'flex', flexDirection: 'column', alignItems: 'center',
             justifyContent: 'center', gap: 4, textDecoration: 'none',
-            position: 'relative', padding: '4px 8px', borderRadius: 14,
-            minWidth: 48, transition: 'all 0.2s ease',
+            position: 'relative', padding: '6px 14px', borderRadius: 14,
+            minWidth: 56, transition: 'all 0.2s ease',
             background: active ? 'rgba(16,185,129,0.10)' : 'transparent',
           }}>
             {active && <motion.span layoutId="nav-indicator" style={{
@@ -41,7 +41,7 @@ export default function BottomNav() {
                 style={{ transition: 'all 0.2s', transform: active ? 'scale(1.08) translateY(-1px)' : 'scale(1)' }} />
             </motion.span>
             <span style={{
-              fontSize: 8.5, fontWeight: active ? 800 : 500, letterSpacing: 0.3,
+              fontSize: 9, fontWeight: active ? 800 : 500, letterSpacing: 0.3,
               color: active ? '#10b981' : 'rgba(255,255,255,0.30)', transition: 'all 0.2s',
             }}>{name}</span>
           </Link>

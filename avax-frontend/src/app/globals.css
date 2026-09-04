@@ -588,7 +588,46 @@ body {
 .delay-5 { animation-delay: 0.30s; }
 .delay-6 { animation-delay: 0.36s; }
 
-/* ══ RESPONSIVE HELPERS ══════════════════════════════════════ */
+/* ══ RESPONSIVE LAYOUT ══════════════════════════════════════ */
+.app-shell { width: 100%; min-height: 100dvh; }
+
+.layout-center {
+  width: 100%;
+  margin: 0 auto;
+  min-height: 100dvh;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  overflow-x: hidden;
+}
+
+/* Phone: single column, full width */
+@media (max-width: 639px) {
+  .layout-center { max-width: 100%; padding-bottom: 0; }
+}
+
+/* Tablet: two-column capable, slight padding */
+@media (min-width: 640px) and (max-width: 1023px) {
+  .layout-center { max-width: 720px; }
+  .quick-grid     { grid-template-columns: repeat(3, 1fr) !important; }
+  .dashboard-list { max-width: 100%; }
+}
+
+/* Desktop: wider layout, multi-column grids */
+@media (min-width: 1024px) {
+  .layout-center { max-width: 960px; }
+  .quick-grid     { grid-template-columns: repeat(5, 1fr) !important; }
+  .dashboard-list { max-width: 100%; }
+  .bottom-nav     { max-width: 960px; left: 50%; transform: translateX(-50%); border-radius: 16px 16px 0 0; }
+}
+
+@media (min-width: 1280px) {
+  .layout-center { max-width: 1120px; }
+  .quick-grid     { grid-template-columns: repeat(5, 1fr) !important; }
+  .bottom-nav     { max-width: 1120px; }
+}
+
+/* ── Responsive grid helpers ───────────────────────────────── */
 .airdrop-summary-grid, .airdrop-token-grid, .airdrop-task-grid { width: 100%; }
 
 @media (max-width: 760px) {

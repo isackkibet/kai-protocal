@@ -8,7 +8,7 @@ const geistSans = Geist({ variable: '--font-geist-sans', subsets: ['latin'] });
 const geistMono = Geist_Mono({ variable: '--font-geist-mono', subsets: ['latin'] });
 
 export const metadata: Metadata = {
-  title: 'KAI Nuvari — Avalanche C-Chain DeFi Ecosystem',
+  title: 'KAI Nuvari - Avalanche C-Chain DeFi Ecosystem',
   description: 'Forest-finance DeFi on Avalanche. Yield vaults, AMM pools, community commodities, DAO governance, and M-Pesa payments.',
 };
 
