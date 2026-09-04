@@ -1,5 +1,5 @@
 """
-KAI AI Agent Server v5.0
+KAI AI Agent Server v6.0
 FastAPI application exposing:
   - Original RAG chat endpoints  (/chat, /stream, /health)
   - 8 specialised agent endpoints (/agents/*)
@@ -13,7 +13,7 @@ FastAPI application exposing:
   - Unified profiler              (/agents/onboard/profile)
   - Content curator               (/agents/onboard/content)
   - Payment approver              (/agents/onboard/payment-risk)
-All powered by local Ollama — no external API keys required.
+Powered by Groq cloud API.
 """
 
 from fastapi import FastAPI, HTTPException, UploadFile, File, Form, Depends, Request
@@ -21,8 +21,9 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse, JSONResponse
 from pydantic import BaseModel, Field
 from typing import Optional
-from langchain_ollama.llms import OllamaLLM
+from langchain_groq import ChatGroq
 from langchain_core.prompts import ChatPromptTemplate
+from langchain_core.messages import HumanMessage, SystemMessage
 from vector import retriever
 import os, json, httpx, asyncio, shutil, hashlib
 from pathlib import Path
@@ -93,7 +94,7 @@ curator_agent       = ContentCuratorAgent()
 payment_risk_agent  = PaymentApproverAgent()
 
 # ── App ────────────────────────────────────────────────────────────────────────
-app = FastAPI(title="KAI Multi-Agent Server", version="3.0.0")
+app = FastAPI(title="KAI Multi-Agent Server", version="6.0.0")
 
 ORIGINS = [
     "http://localhost:3000", "http://127.0.0.1:3000",
@@ -106,13 +107,15 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# ── Original RAG config ───────────────────────────────────────────────────────
-OLLAMA_URL   = os.getenv("OLLAMA_BASE_URL",  "http://localhost:11434")
-OLLAMA_MODEL = os.getenv("OLLAMA_LLM_MODEL", "qwen3:0.6b")
+# ── Groq config ───────────────────────────────────────────────────────────────
+GROQ_API_KEY = os.getenv("GROQ_API_KEY", "")
+GROQ_MODEL   = os.getenv("GROQ_MODEL", "llama-3.1-8b-instant")
 
-model = OllamaLLM(
-    model=OLLAMA_MODEL, base_url=OLLAMA_URL,
-    client_kwargs={"timeout": 600.0}, num_predict=1024, think=False,
+model = ChatGroq(
+    model=GROQ_MODEL,
+    groq_api_key=GROQ_API_KEY,
+    temperature=0.3,
+    max_tokens=2048,
 )
 
 RAG_TEMPLATE = """You are KAI, the AI assistant for KAI Nuvari — a DeFi ecosystem built on Avalanche C-Chain (Fuji testnet).
@@ -173,7 +176,8 @@ class ChatResponse(BaseModel):
 def health():
     return {
         "status": "ok",
-        "model": OLLAMA_MODEL,
+        "model": GROQ_MODEL,
+        "provider": "groq",
         "agents": [
             "tx_analyst", "portfolio_health", "contract_auditor",
             "dao_drafter", "commodity_pricing", "policy_recommender",
@@ -206,36 +210,37 @@ async def stream_chat(body: ChatRequest):
         docs    = retriever.invoke(body.message)
         context = "\n\n".join(f"[Doc {i+1}]: {d.page_content}" for i, d in enumerate(docs))
         sources = len(docs)
-        full_prompt = (
-            f"You are KAI, the AI assistant for KAI Nuvari — a DeFi ecosystem on Avalanche C-Chain.\n\n"
-            f"KAI Nuvari provides: 6 ecosystem tokens (NVR, yBOB, YTOKEN, YGOLD, GAMI, CENTS), "
-            f"AMM pools, yield vaults, securities & insurance products, community commodity tokenization, "
-            f"M-Pesa integration, and conservation NFTs.\n\n"
-            f"Retrieved context from KAI Nuvari documentation:\n{context}\n\n"
-            f"User question: {body.message}\n\n"
-            f"Answer clearly using specifics from the context. If unsure, say so."
-        )
+        messages = [
+            SystemMessage(content=(
+                "You are KAI, the AI assistant for KAI Nuvari — a DeFi ecosystem on Avalanche C-Chain.\n\n"
+                "KAI Nuvari provides: 6 ecosystem tokens (NVR, yBOB, YTOKEN, YGOLD, GAMI, CENTS), "
+                "AMM pools, yield vaults, securities & insurance products, community commodity tokenization, "
+                "M-Pesa integration, and conservation NFTs."
+            )),
+            HumanMessage(content=(
+                f"Retrieved context from KAI Nuvari documentation:\n{context}\n\n"
+                f"User question: {body.message}\n\n"
+                f"Answer clearly using specifics from the context. If unsure, say so."
+            )),
+        ]
     else:
         sources = 0
-        full_prompt = f"You are KAI, an AI advisor.\n\nUser: {body.message}\nKAI:"
+        messages = [
+            SystemMessage(content="You are KAI, an AI advisor."),
+            HumanMessage(content=body.message),
+        ]
 
     async def event_generator():
-        payload = {"model": OLLAMA_MODEL, "prompt": full_prompt,
-                   "stream": True, "think": False, "options": {"num_predict": 1024}}
-        async with httpx.AsyncClient(timeout=600.0) as client:
-            async with client.stream("POST", f"{OLLAMA_URL}/api/generate", json=payload) as resp:
-                async for line in resp.aiter_lines():
-                    if not line: continue
-                    try:
-                        chunk = json.loads(line)
-                    except json.JSONDecodeError:
-                        continue
-                    token = chunk.get("response", "")
-                    if token:
-                        yield f"data: {json.dumps({'token': token})}\n\n"
-                    if chunk.get("done"):
-                        yield f"data: {json.dumps({'done': True, 'sources': sources})}\n\n"
-                        return
+        try:
+            stream = model.stream(messages)
+            for chunk in stream:
+                token = chunk.content
+                if token:
+                    yield f"data: {json.dumps({'token': token})}\n\n"
+            yield f"data: {json.dumps({'done': True, 'sources': sources})}\n\n"
+        except Exception as e:
+            yield f"data: {json.dumps({'token': f'Error: {e}'})}\n\n"
+            yield f"data: {json.dumps({'done': True, 'sources': sources})}\n\n"
 
     return StreamingResponse(event_generator(), media_type="text/event-stream",
                              headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"})
@@ -621,21 +626,18 @@ def identity_resolve(agent_name: str):
     Resolve the W3C DID document for a named KAI agent.
     Also accepts a full did:kai:... string or 0x address.
     """
-    # Try by DID string
     if agent_name.startswith("did:kai:"):
         doc = resolve_did(agent_name)
         if doc:
             return doc
         raise HTTPException(404, f"DID not found: {agent_name}")
 
-    # Try by 0x address
     if agent_name.startswith("0x"):
         passport = resolve_address(agent_name)
         if passport:
             return passport.to_w3c_document()
         raise HTTPException(404, f"Agent address not found: {agent_name}")
 
-    # Try by short name (e.g. "tx_analyst")
     from agents.identity import _PASSPORT_STORE
     for passport in _PASSPORT_STORE.values():
         name_slug = passport.name.lower().replace(" ", "_").replace("kai_", "")
@@ -693,11 +695,6 @@ class EscrowDepositRequest(BaseModel):
 
 @app.post("/agents/escrow/deposit")
 async def escrow_deposit(body: EscrowDepositRequest):
-    """
-    Build an unsigned escrow deposit transaction.
-    Returns the tx data for the frontend wallet to sign and broadcast.
-    """
-    # Resolve agent address from name
     from agents.identity import _PASSPORT_STORE
     agent_addr = ""
     for p in _PASSPORT_STORE.values():
@@ -722,21 +719,18 @@ async def escrow_deposit(body: EscrowDepositRequest):
 
 @app.post("/agents/escrow/release/{escrow_id}")
 def escrow_release(escrow_id: str):
-    """Build unsigned release transaction for an escrow."""
     tx = agent_rails.escrow.build_release_tx(escrow_id)
     return {"release_tx": tx}
 
 
 @app.post("/agents/escrow/refund/{escrow_id}")
 def escrow_refund(escrow_id: str):
-    """Build unsigned refund transaction for an escrow."""
     tx = agent_rails.escrow.build_refund_tx(escrow_id)
     return {"refund_tx": tx}
 
 
 @app.get("/agents/escrow/list")
 def escrow_list():
-    """List all escrow records tracked this session."""
     return {
         "escrows": [vars(e) for e in agent_rails.escrow.list_local()],
         "count":   len(agent_rails.escrow.list_local()),
@@ -753,10 +747,6 @@ class A2APaymentRequest(BaseModel):
 
 @app.post("/agents/rails/a2a")
 async def rails_a2a(body: A2APaymentRequest):
-    """
-    Route a micropayment from one KAI agent to another.
-    Returns the escrow tx data for the orchestrating agent to broadcast.
-    """
     result = await agent_rails.agent_to_agent_payment(
         from_agent=body.from_agent,
         to_agent=body.to_agent,
@@ -770,7 +760,6 @@ async def rails_a2a(body: A2APaymentRequest):
 
 @app.get("/agents/rails/spend/{agent_name}")
 def rails_spend(agent_name: str):
-    """Returns today's spend total for a named agent."""
     spent = agent_rails.enforcer.daily_spent(agent_name)
     return {"agent": agent_name, "daily_spent_wei": spent, "daily_spent_eth": spent / 1e18}
 
@@ -779,7 +768,6 @@ def rails_spend(agent_name: str):
 
 @app.get("/agents/rails/audit")
 def rails_audit(limit: int = 50):
-    """Returns the payment channel audit log for all agent interactions."""
     return {"channels": agent_rails.audit_log(limit), "total": len(agent_rails._channels)}
 
 
@@ -794,14 +782,6 @@ class PreflightRequest(BaseModel):
 
 @app.post("/agents/rails/preflight")
 async def rails_preflight(body: PreflightRequest):
-    """
-    Run pre-flight checks for an agent call:
-        1. Registry active check
-        2. Spend policy enforcement
-        3. Open a payment channel
-    Returns the channel receipt + escrow deposit tx.
-    """
-    # Resolve agent address if not provided
     if not body.agent_address:
         from agents.identity import _PASSPORT_STORE
         for p in _PASSPORT_STORE.values():
@@ -1095,9 +1075,9 @@ async def kai_routes():
     return {"routes": INTENT_ROUTES, "description": "Intent → page mapping for KAI Nuvari"}
 
 
-# ═══════════════════════════════════════════════════════════════════════════════
+# ═════════════════════════════════════════════════════════════════════════════
 # ONBOARDING SUITE  — /agents/onboard/*
-# ═══════════════════════════════════════════════════════════════════════════════
+# ═════════════════════════════════════════════════════════════════════════════
 
 # ── Pydantic models ─────────────────────────────────────────────────────────
 
@@ -1151,18 +1131,19 @@ async def onboard_trust(body: TrustScoreRequest):
 
 @app.post("/agents/onboard/trust/stream")
 async def onboard_trust_stream(body: TrustScoreRequest):
-    async def gen():
-        async for chunk in trust_score_agent.stream(
+    return StreamingResponse(
+        trust_score_agent.stream(
             forest_score=body.forest_score,
             msme_score=body.msme_score,
             chama_score=body.chama_score,
             user_name=body.user_name,
-        ):
-            yield chunk
-    return StreamingResponse(gen(), media_type="text/event-stream")
+        ),
+        media_type="text/event-stream",
+        headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
+    )
 
 
-# ── 2. Hat Switcher / Intent Classifier ────────────────────────────────────
+# ── 2. Hat Switcher ────────────────────────────────────────────────────────
 
 @app.post("/agents/onboard/hat")
 async def onboard_hat(body: HatRequest):
@@ -1171,43 +1152,27 @@ async def onboard_hat(body: HatRequest):
 
 @app.post("/agents/onboard/hat/stream")
 async def onboard_hat_stream(body: HatRequest):
-    async def gen():
-        async for chunk in hat_agent.stream(message=body.message, user_name=body.user_name):
-            yield chunk
-    return StreamingResponse(gen(), media_type="text/event-stream")
+    return StreamingResponse(
+        hat_agent.stream(message=body.message, user_name=body.user_name),
+        media_type="text/event-stream",
+        headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
+    )
 
 
-# ── 3. Unified Profiler / Onboarding ──────────────────────────────────────
+# ── 3. Unified Profiler ────────────────────────────────────────────────────
 
 @app.post("/agents/onboard/profile")
 async def onboard_profile(body: ProfileRequest):
-    result = await profiler_agent.run(
-        message=body.message,
-        wallet_address=body.wallet_address,
-        phone_number=body.phone_number,
-        name=body.name,
-        language=body.language,
-        cfa_group=body.cfa_group,
-        business_name=body.business_name,
-        chama_name=body.chama_name,
-        forest_score=body.forest_score,
-        msme_score=body.msme_score,
-        chama_score=body.chama_score,
-    )
+    result = await profiler_agent.run(**body.model_dump())
     return result
 
 @app.post("/agents/onboard/profile/stream")
 async def onboard_profile_stream(body: ProfileRequest):
-    async def gen():
-        async for chunk in profiler_agent.stream(
-            message=body.message,
-            name=body.name,
-            cfa_group=body.cfa_group,
-            business_name=body.business_name,
-            chama_name=body.chama_name,
-        ):
-            yield chunk
-    return StreamingResponse(gen(), media_type="text/event-stream")
+    return StreamingResponse(
+        profiler_agent.stream(**body.model_dump()),
+        media_type="text/event-stream",
+        headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
+    )
 
 
 # ── 4. Content Curator ─────────────────────────────────────────────────────
@@ -1215,61 +1180,38 @@ async def onboard_profile_stream(body: ProfileRequest):
 @app.post("/agents/onboard/content")
 async def onboard_content(body: ContentRequest):
     result = await curator_agent.run(
-        hat=body.hat,
-        interests=body.interests,
-        context=body.context,
+        hat=body.hat, interests=body.interests, context=body.context,
     )
     return result
 
 @app.post("/agents/onboard/content/stream")
 async def onboard_content_stream(body: ContentRequest):
-    async def gen():
-        async for chunk in curator_agent.stream(
-            hat=body.hat,
-            interests=body.interests,
-            context=body.context,
-        ):
-            yield chunk
-    return StreamingResponse(gen(), media_type="text/event-stream")
+    return StreamingResponse(
+        curator_agent.stream(
+            hat=body.hat, interests=body.interests, context=body.context,
+        ),
+        media_type="text/event-stream",
+        headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
+    )
 
 
-# ── 5. Payment Risk Assessor ───────────────────────────────────────────────
+# ── 5. Payment Approver ────────────────────────────────────────────────────
 
 @app.post("/agents/onboard/payment-risk")
 async def onboard_payment_risk(body: PaymentRiskRequest):
     result = await payment_risk_agent.run(
-        route=body.route,
-        payer=body.payer,
-        amount=body.amount,
-        nonce=body.nonce,
-        service=body.service,
+        route=body.route, payer=body.payer,
+        amount=body.amount, nonce=body.nonce, service=body.service,
     )
     return result
 
 @app.post("/agents/onboard/payment-risk/stream")
 async def onboard_payment_risk_stream(body: PaymentRiskRequest):
-    async def gen():
-        async for chunk in payment_risk_agent.stream(
-            route=body.route,
-            payer=body.payer,
-            amount=body.amount,
-            nonce=body.nonce,
-            service=body.service,
-        ):
-            yield chunk
-    return StreamingResponse(gen(), media_type="text/event-stream")
-
-
-# ── Convenience: quick hat classification (GET) ────────────────────────────
-
-@app.get("/agents/onboard/classify")
-async def quick_classify(message: str = ""):
-    """Fast GET endpoint for hat classification — useful for UI intent routing."""
-    from agents.hat_switcher import classify_hat as _clf, HAT_ROUTES, HAT_DESCRIPTIONS
-    hat, conf = _clf(message)
-    return {
-        "hat":             hat,
-        "confidence":      conf,
-        "description":     HAT_DESCRIPTIONS[hat],
-        "dashboard_route": HAT_ROUTES[hat],
-    }
+    return StreamingResponse(
+        payment_risk_agent.stream(
+            route=body.route, payer=body.payer,
+            amount=body.amount, nonce=body.nonce, service=body.service,
+        ),
+        media_type="text/event-stream",
+        headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
+    )
