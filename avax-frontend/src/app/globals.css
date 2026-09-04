@@ -310,11 +310,11 @@ body {
 .shimmer-text {
   background: linear-gradient(90deg,
     #ffffff   0%,
-    #ff9999  15%,
-    #e84142  30%,
-    #c084fc  48%,
-    #e84142  65%,
-    #ff9999  80%,
+    #86efac  15%,
+    #10b981  30%,
+    #22d3ee  48%,
+    #10b981  65%,
+    #86efac  80%,
     #ffffff  100%
   );
   background-size: 300% auto;
@@ -340,21 +340,21 @@ body {
 }
 
 .text-gradient-red {
-  background: linear-gradient(135deg, var(--red-vivid) 0%, var(--red) 50%, var(--red-dark) 100%);
+  background: linear-gradient(135deg, var(--green-vivid) 0%, var(--green) 50%, var(--green-dark) 100%);
   background-clip: text;
   -webkit-background-clip: text;
   color: transparent;
 }
 
 .text-gradient-fire {
-  background: linear-gradient(135deg, #ff6b2b 0%, #e84142 50%, #c0252a 100%);
+  background: linear-gradient(135deg, #34d399 0%, #10b981 50%, #059669 100%);
   background-clip: text;
   -webkit-background-clip: text;
   color: transparent;
 }
 
 .text-gradient-aurora {
-  background: linear-gradient(135deg, #e84142 0%, #a855f7 50%, #06b6d4 100%);
+  background: linear-gradient(135deg, #10b981 0%, #06b6d4 50%, #a855f7 100%);
   background-clip: text;
   -webkit-background-clip: text;
   color: transparent;
