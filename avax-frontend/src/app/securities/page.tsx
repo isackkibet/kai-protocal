@@ -305,7 +305,11 @@ export default function SecuritiesPage() {
 
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : "Transaction failed";
-      setStatusMsg(`${msg.slice(0, 120)}`);: ERC-20 transfer from treasury back to user ─────────────────
+      setStatusMsg(`${msg.slice(0, 120)}`);
+    }
+  };
+
+  // ERC-20 transfer from treasury back to user
   // NOTE: treasury is a simple EOA so this sends FROM the connected wallet
   // back to itself — the invested balance is reset. A proper vault contract
   // would escrow funds; this keeps the UX real without a separate vault deploy.
