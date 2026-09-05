@@ -117,7 +117,7 @@ function PostCard({ post, idx, onLike, onTip }: { post: Post; idx: number; onLik
       <div style={{ height: 2, background: `linear-gradient(90deg, transparent, ${tc.color}80, transparent)` }} />
 
       <div style={{ padding: '14px 16px' }}>
-        {/* Type + category pills */}
+        {/* Header: type/category pills + date */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 10, flexWrap: 'wrap' }}>
           <span style={{
             display: 'flex', alignItems: 'center', gap: 4,
@@ -191,8 +191,8 @@ function PostCard({ post, idx, onLike, onTip }: { post: Post; idx: number; onLik
           </motion.div>
         )}
 
-        {/* Creator */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 9, marginBottom: 11 }}>
+        {/* Creator + tags grouped in one row */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 9, marginBottom: 12 }}>
           <div style={{
             width: 32, height: 32, borderRadius: '50%', flexShrink: 0,
             background: `${tc.color}18`,
@@ -202,22 +202,30 @@ function PostCard({ post, idx, onLike, onTip }: { post: Post; idx: number; onLik
           }}>
             {post.creator.charAt(0)}
           </div>
-          <div>
-            <p style={{ fontSize: 12, fontWeight: 800, color: '#f8f8fa', margin: 0 }}>{post.creator}</p>
-            <p style={{ fontSize: 9, color: 'rgba(248,248,250,0.35)', margin: 0 }}>{BADGE_LABEL[post.badge] ?? post.badge}</p>
+          <div style={{ overflow: 'hidden' }}>
+            <p style={{ fontSize: 12, fontWeight: 800, color: '#f8f8fa', margin: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+              {post.creator}
+            </p>
+            <p style={{ fontSize: 9, color: 'rgba(248,248,250,0.35)', margin: 0 }}>
+              {BADGE_LABEL[post.badge] ?? post.badge}
+            </p>
           </div>
-        </div>
 
-        {/* Tags */}
-        <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap', marginBottom: 12 }}>
-          {post.tags.map(t => (
-            <span key={t} style={{
-              fontSize: 9, padding: '2px 8px', borderRadius: 6,
-              background: 'rgba(255,255,255,0.04)',
-              boxShadow: '0 0 0 0.5px rgba(255,255,255,0.08) inset',
-              color: 'rgba(248,248,250,0.42)',
-            }}>#{t}</span>
-          ))}
+          {/* Tags — moved inline next to creator for a cleaner grid */}
+          <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap', justifyContent: 'flex-end', marginLeft: 'auto' }}>
+            {post.tags.slice(0, 2).map(t => (
+              <span key={t} style={{
+                fontSize: 9, padding: '2px 8px', borderRadius: 6,
+                background: 'rgba(255,255,255,0.04)',
+                boxShadow: '0 0 0 0.5px rgba(255,255,255,0.08) inset',
+                color: 'rgba(248,248,250,0.42)',
+                whiteSpace: 'nowrap',
+              }}>#{t}</span>
+            ))}
+            {post.tags.length > 2 && (
+              <span style={{ fontSize: 9, color: 'rgba(248,248,250,0.30)' }}>+{post.tags.length - 2}</span>
+            )}
+          </div>
         </div>
 
         {/* Engagement bar */}
