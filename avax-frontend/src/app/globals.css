@@ -643,3 +643,8 @@ body {
   .airdrop-task-grid { grid-template-columns: 1fr !important; }
   .airdrop-summary-grid > :first-child { grid-column: auto; }
 }
+
+/* ══════════════════════════════════════════════════════════════
+   KAI HOME PAGE — single column, max-width centred
+   Everything stacks top-to-bottom in one clean column.
+   ══════════════════════════════════════════════════════════════ */
