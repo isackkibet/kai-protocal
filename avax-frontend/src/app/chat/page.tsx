@@ -67,14 +67,14 @@ export default function AVAXChatPage() {
       let res = await fetch('/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message: msg, rag: ragEnabled }),
+        body: JSON.stringify({ message: msg, rag: ragEnabled, stream: false }),
       });
 
       if (!res.ok) {
         res = await fetch(`${BACKEND_URL}/chat`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ message: msg, rag: ragEnabled }),
+          body: JSON.stringify({ message: msg, rag: ragEnabled, stream: false }),
         });
       }
 

@@ -306,6 +306,8 @@ export default function SecuritiesPage() {
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : "Transaction failed";
       setStatusMsg(`${msg.slice(0, 120)}`);
+    } finally {
+      setIsLoading(false);
     }
   };
 

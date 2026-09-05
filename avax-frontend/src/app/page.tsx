@@ -152,6 +152,7 @@ export default function Home() {
       <div aria-hidden style={{ position:'fixed', inset:0, pointerEvents:'none', zIndex:0 }}>
         <div style={{ position:'absolute', top:'6%', right:'-10%', width:420, height:420, borderRadius:'50%', background:'radial-gradient(circle,rgba(16,185,129,0.09) 0%,transparent 68%)', animation:'orb-drift-a 12s ease-in-out infinite' }} />
         <div style={{ position:'absolute', bottom:'28%', left:'-8%', width:320, height:320, borderRadius:'50%', background:'radial-gradient(circle,rgba(6,182,212,0.06) 0%,transparent 68%)', animation:'orb-drift-b 15s ease-in-out infinite' }} />
+        <div style={{ position:'absolute', top:'42%', left:'22%', width:280, height:280, borderRadius:'50%', background:'radial-gradient(circle,rgba(168,85,247,0.06) 0%,transparent 68%)', animation:'orb-drift-b 19s ease-in-out infinite reverse' }} />
       </div>
 
       {/* 1 ── TICKER */}
@@ -203,9 +204,9 @@ export default function Home() {
       </motion.div>
 
       {/* 4 ── NETWORK STRIP */}
-      <motion.div initial={{ opacity:0, y:8 }} animate={{ opacity:1, y:0 }} transition={{ delay:0.14 }}
+      <motion.div initial={{ opacity:0, y:8 }} animate={{ opacity:1, y:0 }} whileHover={{ y:-2 }} transition={{ delay:0.14 }}
         style={{ ...W, marginTop:12, position:'relative', zIndex:5 }}>
-        <div style={{
+        <div className="glass hover-shine" style={{
           padding:'12px 20px', borderRadius:14,
           background:'rgba(16,185,129,0.08)', backdropFilter:'blur(16px)',
           boxShadow:'0 0 0 1px rgba(16,185,129,0.22) inset, 0 3px 20px rgba(0,0,0,0.32)',
@@ -231,7 +232,7 @@ export default function Home() {
       {/* 5 ── PROFILE HERO */}
       <motion.div initial={{ opacity:0, y:10 }} animate={{ opacity:1, y:0 }} transition={{ delay:0.18 }}
         style={{ ...W, marginTop:12, position:'relative', zIndex:5 }}>
-        <div style={{ borderRadius:20, overflow:'hidden', boxShadow:'0 0 0 0.5px rgba(16,185,129,0.18) inset, 0 12px 48px rgba(0,0,0,0.48)' }}>
+        <div className="glass-elevated" style={{ borderRadius:20, overflow:'hidden', boxShadow:'0 0 0 0.5px rgba(16,185,129,0.18) inset, 0 12px 48px rgba(0,0,0,0.48)' }}>
 
           {/* cover */}
           <div style={{
@@ -322,7 +323,7 @@ export default function Home() {
       {/* 6 ── PORTFOLIO */}
       <motion.div initial={{ opacity:0, scale:0.98 }} animate={{ opacity:1, scale:1 }} transition={{ delay:0.22, duration:0.35 }}
         style={{ ...W, marginTop:12, position:'relative', zIndex:5 }}>
-        <div style={{
+        <div className="glass-elevated hover-shine" style={{
           borderRadius:20, padding:'22px 26px 18px',
           background:'linear-gradient(145deg,rgba(10,20,16,0.78),rgba(6,6,14,0.72))',
           backdropFilter:'blur(28px) saturate(1.8)',
@@ -396,8 +397,8 @@ export default function Home() {
           { icon:'🪙', label:'Tokens', value:'6 Active',     color:'#fbbf24' },
           { icon:'🤖', label:'AI',     value:'Qwen3 RAG',   color:'#c084fc' },
         ].map((s,i) => (
-          <motion.div key={s.label}
-            initial={{ opacity:0, y:8 }} animate={{ opacity:1, y:0 }} transition={{ delay:0.28+i*0.05 }}
+          <motion.div key={s.label} className="glass hover-shine"
+            initial={{ opacity:0, y:8 }} animate={{ opacity:1, y:0 }} whileHover={{ y:-4, scale:1.03 }} transition={{ delay:0.28+i*0.05 }}
             style={{
               padding:'14px 12px', borderRadius:14, textAlign:'center',
               background:'rgba(8,8,16,0.58)', backdropFilter:'blur(16px)',
@@ -413,7 +414,7 @@ export default function Home() {
       {/* 8 ── KAI AGENT */}
       <motion.div initial={{ opacity:0, y:10 }} animate={{ opacity:1, y:0 }} transition={{ delay:0.30 }}
         style={{ ...W, marginTop:12, position:'relative', zIndex:5 }}>
-        <div style={{
+        <div className="glass-prism" style={{
           borderRadius:20,
           background:'rgba(6,6,14,0.72)', backdropFilter:'blur(26px) saturate(1.8)',
           boxShadow:'0 0 0 0.5px rgba(16,185,129,0.20) inset, 0 12px 40px rgba(0,0,0,0.48)',
