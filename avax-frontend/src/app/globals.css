@@ -184,6 +184,14 @@ body {
     0 20px 60px rgba(0,0,0,0.50),
     0 0 80px rgba(16,185,129,0.05);
   border-radius: 22px;
+  transition: box-shadow 0.25s ease, transform 0.20s ease;
+}
+.glass-elevated:hover {
+  box-shadow:
+    0 1px 0 rgba(100,255,180,0.14) inset,
+    0 24px 70px rgba(0,0,0,0.55),
+    0 0 100px rgba(16,185,129,0.10);
+  transform: translateY(-2px);
 }
 
 /* Prismatic rainbow-edge card */
@@ -193,7 +201,9 @@ body {
   -webkit-backdrop-filter: blur(22px) saturate(1.8);
   border-radius: 20px;
   position: relative;
+  transition: transform 0.20s ease;
 }
+.glass-prism:hover { transform: translateY(-2px); }
 .glass-prism::before {
   content: '';
   position: absolute;
