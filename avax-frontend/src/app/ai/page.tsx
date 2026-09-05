@@ -174,7 +174,7 @@ export default function AIPage() {
   return (
     <div style={{
       height: '100dvh', display: 'flex', flexDirection: 'column',
-      background: '#060608',
+      background: 'transparent',
       color: '#f0f0ff', overflow: 'hidden',
       fontFamily: 'var(--font-sans)',
       position: 'relative',
