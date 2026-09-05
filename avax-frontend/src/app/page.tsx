@@ -25,14 +25,8 @@ const Rs: React.CSSProperties = { textShadow: '0 1px 4px rgba(0,0,0,0.88)' };
 /* Colour is reserved for the brand name, the portfolio value, and active/live status —
    everything else reads as plain, professional white/gray text. */
 const HL = {
-  green:  { color: '#34d399', fontWeight: 700 } as React.CSSProperties,
-  cyan:   { color: '#22d3ee', fontWeight: 700 } as React.CSSProperties,
-  amber:  { color: '#fbbf24', fontWeight: 700 } as React.CSSProperties,
-  purple: { color: '#c084fc', fontWeight: 700 } as React.CSSProperties,
+  green: { color: '#34d399', fontWeight: 700 } as React.CSSProperties,
 };
-/* Neutral emphasis — bold/legible without adding another colour to the page */
-const N:  React.CSSProperties = { color: 'rgba(255,255,255,0.92)', fontWeight: 700 };
-const Nd: React.CSSProperties = { color: 'rgba(255,255,255,0.55)', fontWeight: 500 };
 
 const QUICK = [
   { name: 'AI Agent',   href: '/ai',        icon: Bot,         color: '#10b981', bg: 'rgba(16,185,129,0.14)' },
