@@ -22,13 +22,17 @@ import {
 const R:  React.CSSProperties = { textShadow: '0 1px 6px rgba(0,0,0,0.90)' };
 const Rs: React.CSSProperties = { textShadow: '0 1px 4px rgba(0,0,0,0.88)' };
 
-/* Only the most important words get colour + glow — everything else stays plain white */
+/* Colour is reserved for the brand name, the portfolio value, and active/live status —
+   everything else reads as plain, professional white/gray text. */
 const HL = {
-  green:  { color: '#34d399', fontWeight: 700, textShadow: '0 0 12px rgba(52,211,153,0.55)' } as React.CSSProperties,
-  cyan:   { color: '#22d3ee', fontWeight: 700, textShadow: '0 0 12px rgba(34,211,238,0.50)' } as React.CSSProperties,
-  amber:  { color: '#fbbf24', fontWeight: 700, textShadow: '0 0 12px rgba(251,191,36,0.50)' } as React.CSSProperties,
-  purple: { color: '#c084fc', fontWeight: 700, textShadow: '0 0 12px rgba(192,132,252,0.45)' } as React.CSSProperties,
+  green:  { color: '#34d399', fontWeight: 700 } as React.CSSProperties,
+  cyan:   { color: '#22d3ee', fontWeight: 700 } as React.CSSProperties,
+  amber:  { color: '#fbbf24', fontWeight: 700 } as React.CSSProperties,
+  purple: { color: '#c084fc', fontWeight: 700 } as React.CSSProperties,
 };
+/* Neutral emphasis — bold/legible without adding another colour to the page */
+const N:  React.CSSProperties = { color: 'rgba(255,255,255,0.92)', fontWeight: 700 };
+const Nd: React.CSSProperties = { color: 'rgba(255,255,255,0.55)', fontWeight: 500 };
 
 const QUICK = [
   { name: 'AI Agent',   href: '/ai',        icon: Bot,         color: '#10b981', bg: 'rgba(16,185,129,0.14)' },
@@ -182,7 +186,7 @@ export default function Home() {
           <span style={HL.green}>KAI</span> <span style={{ color:'#fff' }}>NUVARI</span>
         </h1>
         <p style={{ fontSize:11, fontWeight:700, letterSpacing:2.8, textTransform:'uppercase', color:'rgba(255,255,255,0.52)', margin:0, ...Rs }}>
-          AVAX C-CHAIN · <span style={HL.cyan}>DEFI ECOSYSTEM</span>
+          AVAX C-CHAIN · DEFI ECOSYSTEM
         </p>
       </motion.div>
 
@@ -214,13 +218,12 @@ export default function Home() {
         }}>
           <span style={{ fontSize:22, flexShrink:0 }}>⛰️</span>
           <div style={{ flex:1 }}>
-            <p style={{ fontSize:14, fontWeight:800, margin:'0 0 2px', ...R }}>
-              <span style={HL.green}>Avalanche C-Chain</span>
-              <span style={{ color:'rgba(255,255,255,0.65)', fontWeight:500 }}> · MetaMask &amp; Core Wallet</span>
+            <p style={{ fontSize:14, fontWeight:800, margin:'0 0 2px', color:'rgba(255,255,255,0.92)', ...R }}>
+              Avalanche C-Chain
+              <span style={{ color:'rgba(255,255,255,0.55)', fontWeight:500 }}> · MetaMask &amp; Core Wallet</span>
             </p>
-            <p style={{ fontSize:12, color:'rgba(255,255,255,0.58)', margin:0, ...Rs }}>
-              <span style={HL.amber}>6 Ecosystem Tokens</span>
-              <span style={{ color:'rgba(255,255,255,0.45)' }}> · DeFi Vaults · DAO Governance</span>
+            <p style={{ fontSize:12, color:'rgba(255,255,255,0.50)', margin:0, ...Rs }}>
+              6 Ecosystem Tokens · DeFi Vaults · DAO Governance
             </p>
           </div>
           <div style={{ display:'flex', gap:4, flexShrink:0 }}>
@@ -291,8 +294,8 @@ export default function Home() {
                 <span style={{ width:20, height:20, borderRadius:'50%', background:'linear-gradient(135deg,#10b981,#047857)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:11, flexShrink:0, boxShadow:'0 0 10px rgba(16,185,129,0.55)' }}>✓</span>
               </div>
               <p style={{ fontSize:12, color:'rgba(255,255,255,0.48)', margin:'0 0 5px', ...Rs }}>@drekahshi</p>
-              <p style={{ fontSize:13, color:'rgba(255,255,255,0.68)', margin:0, lineHeight:1.55, ...Rs }}>
-                <span style={HL.green}>DeFi Pioneer</span> · <span style={HL.cyan}>KAI Nuvari</span> member · <span style={HL.amber}>Forest Guardian</span>
+              <p style={{ fontSize:13, color:'rgba(255,255,255,0.60)', margin:0, lineHeight:1.55, ...Rs }}>
+                DeFi Pioneer · KAI Nuvari member · Forest Guardian
               </p>
             </div>
 
@@ -305,13 +308,13 @@ export default function Home() {
             }}>
               {[
                 { label:'Portfolio', value:'$0.00',  color:'#34d399', icon:'💼' },
-                { label:'Network',   value:'Fuji',   color:'#22d3ee', icon:'⛰️' },
-                { label:'Tokens',    value:'6',      color:'#fbbf24', icon:'🪙' },
-                { label:'Status',    value:'Active', color:'#a855f7', icon:'⚡' },
+                { label:'Network',   value:'Fuji',   color:null,      icon:'⛰️' },
+                { label:'Tokens',    value:'6',      color:null,      icon:'🪙' },
+                { label:'Status',    value:'Active', color:'#34d399', icon:'⚡' },
               ].map(s => (
                 <div key={s.label} style={{ textAlign:'center' }}>
                   <span style={{ fontSize:18, display:'block', marginBottom:4 }}>{s.icon}</span>
-                  <p style={{ fontSize:15, fontWeight:800, color:s.color, margin:'0 0 2px', textShadow:`0 0 10px ${s.color}70`, ...Rs }}>{s.value}</p>
+                  <p style={{ fontSize:15, fontWeight:800, color:s.color ?? 'rgba(255,255,255,0.90)', margin:'0 0 2px', ...(s.color ? { textShadow:`0 0 10px ${s.color}50` } : {}), ...Rs }}>{s.value}</p>
                   <p style={{ fontSize:10, color:'rgba(255,255,255,0.38)', fontWeight:700, letterSpacing:0.6, textTransform:'uppercase', margin:0 }}>{s.label}</p>
                 </div>
               ))}
@@ -406,7 +409,7 @@ export default function Home() {
             }}>
             <span style={{ fontSize:22, display:'block', marginBottom:6 }}>{s.icon}</span>
             <p style={{ fontSize:10, fontWeight:700, letterSpacing:1.0, textTransform:'uppercase', color:'rgba(255,255,255,0.40)', margin:'0 0 3px' }}>{s.label}</p>
-            <p style={{ fontSize:14, fontWeight:800, color:s.color, margin:0, textShadow:`0 0 10px ${s.color}70` }}>{s.value}</p>
+            <p style={{ fontSize:14, fontWeight:800, color:'rgba(255,255,255,0.90)', margin:0 }}>{s.value}</p>
           </motion.div>
         ))}
       </motion.div>
