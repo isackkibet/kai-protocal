@@ -36,12 +36,12 @@ export default function BottomNav() {
               whileTap={{ scale: 0.9 }}
               style={{ display: 'inline-flex' }}
             >
-              <Icon size={20} strokeWidth={active ? 2.4 : 1.7}
+              <Icon size={22} strokeWidth={active ? 2.4 : 1.7}
                 color={active ? '#10b981' : 'rgba(255,255,255,0.32)'}
                 style={{ transition: 'all 0.2s', transform: active ? 'scale(1.08) translateY(-1px)' : 'scale(1)' }} />
             </motion.span>
             <span style={{
-              fontSize: 9, fontWeight: active ? 800 : 500, letterSpacing: 0.3,
+              fontSize: 11, fontWeight: active ? 800 : 500, letterSpacing: 0.3,
               color: active ? '#10b981' : 'rgba(255,255,255,0.30)', transition: 'all 0.2s',
             }}>{name}</span>
           </Link>
