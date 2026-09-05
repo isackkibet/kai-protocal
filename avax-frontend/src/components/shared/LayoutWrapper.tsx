@@ -18,13 +18,12 @@ export default function LayoutWrapper({ children }: { children: React.ReactNode 
   }
 
   return (
-    <div className="app-shell">
-      <div className="layout-center">
-        <main style={{ flex: 1, paddingBottom: 80 }}>
-          {children}
-        </main>
-        <BottomNav />
+    <>
+      {/* Full-bleed shell — no max-width cap so desktop fills the screen */}
+      <div style={{ width: '100%', minHeight: '100dvh', position: 'relative' }}>
+        {children}
       </div>
-    </div>
+      <BottomNav />
+    </>
   );
 }
