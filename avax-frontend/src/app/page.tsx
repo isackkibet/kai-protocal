@@ -516,7 +516,7 @@ export default function Home() {
                       <Icon size={22} color={d.color} strokeWidth={1.65}/>
                     </div>
                     <div style={{ flex:1, minWidth:0 }}>
-                      <p style={{ fontSize:15, fontWeight:800, margin:'0 0 2px', color:d.color, textShadow:`0 0 12px ${d.color}80`, ...R }}>{d.hl}</p>
+                      <p style={{ fontSize:15, fontWeight:800, margin:'0 0 2px', color:'rgba(255,255,255,0.94)', ...R }}>{d.hl}</p>
                       <p style={{ fontSize:12, fontWeight:600, color:'rgba(255,255,255,0.80)', margin:'0 0 1px', ...Rs }}>{d.label}</p>
                       <p style={{ fontSize:11, color:'rgba(255,255,255,0.45)', margin:0 }}>{d.sub}</p>
                     </div>
