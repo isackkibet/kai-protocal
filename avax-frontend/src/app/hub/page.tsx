@@ -48,18 +48,18 @@ const SERIF = { fontFamily: "'Fraunces', serif" } as const;
 // ── Seed data ──────────────────────────────────────────────────────────────
 const SEED_POSTS: Post[] = [
   { id:'p1', slug:'bamboo-dry-season-care', title:'Protecting Bamboo Seedlings in the Dry Season',
-    summary:'Practical tips from Mau Forest guardians on how to keep bamboo alive through Kenya\'s October dry spell — mulching, watering schedules, and shading techniques.',
+    summary:'Practical tips from Mau Forest guardians on how to keep bamboo alive through Kenya\'s October dry spell. Mulching, watering schedules, and shading techniques.',
     contentType:'FIELD_JOURNAL', category:'FORESTRY_MRV', creator:'Grace Wangari', badge:'COMMUNITY_REPORTER', publishedAt:'2026-08-28', viewsCount:341, likesCount:47, tipsEarnedKes:1200, language:'EN', tags:['Bamboo','MRV','Dry Season'] },
   { id:'p2', slug:'ybob-chama-yield', title:'How Our Chama Earned 18% APY With yBOB Vault',
     summary:'Mwanzo Mpya Women Chama shares their experience depositing group savings into KAI\'s yBOB yield vault and receiving KES payouts every month.',
     contentType:'ARTICLE', category:'CHAMA_SAVINGS', creator:'Wanjiru Kamau', badge:'CHAMA_MENTOR', publishedAt:'2026-08-27', viewsCount:512, likesCount:89, tipsEarnedKes:2400, language:'SW', tags:['yBOB','Chama','Yield'] },
-  { id:'p3', slug:'dap-fertiliser-market-aug26', title:'DAP Fertiliser Price Alert — Eldoret Market',
+  { id:'p3', slug:'dap-fertiliser-market-aug26', title:'DAP Fertiliser Price Alert: Eldoret Market',
     summary:'DAP prices surged 12% this week. Our market reporter traces the cause to supply chain delays at Mombasa port and suggests farmer co-op bulk purchasing strategies.',
     contentType:'MARKET_NEWS', category:'AGRI_MARKET', creator:'Daniel Ruto', badge:'JOURNALIST', publishedAt:'2026-08-26', viewsCount:728, likesCount:130, tipsEarnedKes:3100, language:'EN', tags:['Fertiliser','Prices','Market'] },
-  { id:'p4', slug:'kai-ledger-voice-guide', title:'KAI Smart Ledger — Voice Guide for Traders',
-    summary:'Audio tutorial: Learn how to record your daily sales, credit given, and stock value using KAI\'s MSME Intelligent Ledger — no internet required for voice input.',
+  { id:'p4', slug:'kai-ledger-voice-guide', title:'KAI Smart Ledger: Voice Guide for Traders',
+    summary:'Audio tutorial: Learn how to record your daily sales, credit given, and stock value using KAI\'s MSME Intelligent Ledger. No internet required for voice input.',
     contentType:'AUDIO_PODCAST', category:'MSME_GROWTH', creator:'Beatrice Mutua', badge:'AGRI_EXPERT', publishedAt:'2026-08-25', viewsCount:215, likesCount:38, tipsEarnedKes:900, audioDurationSeconds:482, language:'SW', tags:['Ledger','Voice','MSME'] },
-  { id:'p5', slug:'rwa-invoice-token-guide', title:'Tokenise Your Unpaid Invoice — Step by Step',
+  { id:'p5', slug:'rwa-invoice-token-guide', title:'Tokenise Your Unpaid Invoice: Step by Step',
     summary:'A comprehensive guide for small business owners on how to turn accounts receivable into on-chain RWA tokens on Avalanche Fuji and receive instant KES working capital.',
     contentType:'EDUCATIONAL_GUIDE', category:'MSME_GROWTH', creator:'Joseph Kimani', badge:'AGRI_EXPERT', publishedAt:'2026-08-24', viewsCount:403, likesCount:62, tipsEarnedKes:1800, language:'EN', tags:['RWA','Invoice','Finance'] },
   { id:'p6', slug:'honey-reserve-season-2026', title:'Honey Harvest Season: Turkana Beekeepers Join KAI',
@@ -161,12 +161,12 @@ function PostCard({ post, idx, onLike, onTip }: { post: Post; idx: number; onLik
       </div>
 
       {/* Title */}
-      <h3 style={{ ...SERIF, fontSize: 20, fontWeight: 600, color: C.paper, margin: '0 0 10px', lineHeight: 1.3 }}>
+      <h3 style={{ ...SERIF, fontSize: 23, fontWeight: 600, color: C.paper, margin: '0 0 10px', lineHeight: 1.3 }}>
         {post.title}
       </h3>
 
       {/* Summary */}
-      <p style={{ fontSize: 14, color: 'rgba(246,242,231,0.72)', lineHeight: 1.65, margin: '0 0 16px' }}>
+      <p style={{ fontSize: 15, color: 'rgba(246,242,231,0.72)', lineHeight: 1.65, margin: '0 0 16px' }}>
         {post.summary}
       </p>
 
@@ -195,7 +195,7 @@ function PostCard({ post, idx, onLike, onTip }: { post: Post; idx: number; onLik
           <div style={{ flex: 1 }}>
             <p style={{ ...MONO, fontSize: 11, fontWeight: 600, color: C.goldLight, margin: '0 0 2px' }}>Audio Journal</p>
             <p style={{ fontSize: 11, color: 'rgba(246,242,231,0.55)', margin: 0 }}>
-              {post.audioDurationSeconds ? fmt(post.audioDurationSeconds) : '—'} · {post.language === 'SW' ? 'Swahili' : 'English'}
+              {post.audioDurationSeconds ? fmt(post.audioDurationSeconds) : '-'} | {post.language === 'SW' ? 'Swahili' : 'English'}
             </p>
           </div>
           <Mic size={13} color="rgba(200,155,60,0.6)" />
@@ -363,7 +363,7 @@ function TipModal({ post, onClose }: { post: Post; onClose: () => void }) {
             fontSize: 14, fontWeight: 700, fontFamily: 'inherit',
           }}
         >
-          {sent ? '✓ Tip Sent!' : `Send KES ${amount} via M-Pesa / yBOB`}
+          {sent ? 'Tip Sent!' : `Send KES ${amount} via M-Pesa / yBOB`}
         </motion.button>
 
         <button
@@ -442,11 +442,11 @@ export default function HubPage() {
               fontSize: 16,
             }}>K</div>
             <div>
-              <h1 style={{ ...SERIF, fontSize: 22, fontWeight: 600, color: C.paper, margin: 0, lineHeight: 1.1 }}>
+              <h1 style={{ ...SERIF, fontSize: 26, fontWeight: 600, color: C.paper, margin: 0, lineHeight: 1.1 }}>
                 Community Info Hub
               </h1>
               <p style={{ ...MONO, fontSize: 10, letterSpacing: 1, color: C.goldLight, margin: '2px 0 0' }}>
-                JOURNAL · NEWS · GUIDES · PODCASTS
+                JOURNAL | NEWS | GUIDES | PODCASTS
               </p>
             </div>
           </div>
@@ -541,17 +541,17 @@ export default function HubPage() {
                 pointerEvents: 'none',
               }} />
               <div style={{ ...MONO, fontSize: 10, letterSpacing: 1.2, textTransform: 'uppercase', color: C.goldLight, marginBottom: 12 }}>
-                ★ Featured · {TYPE_CFG[featuredPost.contentType].label}
+                Featured | {TYPE_CFG[featuredPost.contentType].label}
               </div>
-              <h2 style={{ ...SERIF, fontSize: 26, fontWeight: 600, color: C.paper, margin: '0 0 12px', lineHeight: 1.25, maxWidth: '80%' }}>
+              <h2 style={{ ...SERIF, fontSize: 30, fontWeight: 600, color: C.paper, margin: '0 0 12px', lineHeight: 1.25, maxWidth: '80%' }}>
                 {featuredPost.title}
               </h2>
-              <p style={{ fontSize: 14, color: 'rgba(246,242,231,0.72)', lineHeight: 1.7, margin: '0 0 20px', maxWidth: '86%' }}>
+              <p style={{ fontSize: 15, color: 'rgba(246,242,231,0.72)', lineHeight: 1.7, margin: '0 0 20px', maxWidth: '86%' }}>
                 {featuredPost.summary.slice(0, 150)}…
               </p>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                 <p style={{ ...MONO, fontSize: 11, color: C.goldLight, margin: 0 }}>
-                  By {featuredPost.creator} · {featuredPost.publishedAt}
+                  By {featuredPost.creator} | {featuredPost.publishedAt}
                 </p>
                 <motion.button
                   whileHover={{ scale: 1.04 }}
@@ -624,12 +624,12 @@ export default function HubPage() {
             <div>
               <p style={{ ...SERIF, fontSize: 16, fontWeight: 600, color: C.paper, margin: 0 }}>KAI Onboarding Agent</p>
               <p style={{ ...MONO, fontSize: 10, letterSpacing: 0.8, color: C.goldLight, margin: '2px 0 0' }}>
-                FOREST GUARDIAN · MSME MERCHANT · CHAMA SAVER
+                FOREST GUARDIAN | MSME MERCHANT | CHAMA SAVER
               </p>
             </div>
           </div>
 
-          <p style={{ fontSize: 14, color: 'rgba(246,242,231,0.72)', lineHeight: 1.6, margin: '0 0 18px', maxWidth: '92%' }}>
+          <p style={{ fontSize: 15, color: 'rgba(246,242,231,0.72)', lineHeight: 1.6, margin: '0 0 18px', maxWidth: '92%' }}>
             Not sure where to start? Ask KAI to analyse your profile and recommend the best vault strategy, CFA group, or Chama to join.
           </p>
 
