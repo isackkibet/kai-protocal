@@ -121,6 +121,144 @@ export async function verifyTransaction(
   };
 }
 
+// ── Transfer recipients ───────────────────────────────────────────────────────
+
+export interface TransferRecipientOptions {
+  type:          "mobile_money" | "kepss"; // Kenya: M-Pesa wallet | bank account
+  name:          string;                   // recipient name (per account registration)
+  accountNumber: string;                   // phone number for mobile_money, account no. for kepss
+  bankCode:      string;                   // "MPESA" for mobile money; bank code for kepss
+  currency?:     string;
+}
+
+export interface TransferRecipientResult {
+  recipientCode: string;
+  active:        boolean;
+  currency:      string;
+}
+
+/**
+ * Create a Paystack transfer recipient (KES). The returned recipient_code
+ * must be stored and reused for all later transfers to this creator.
+ */
+export async function createRecipient(
+  opts: TransferRecipientOptions,
+): Promise<TransferRecipientResult> {
+  const body = {
+    type:           opts.type,
+    name:           opts.name,
+    account_number: opts.accountNumber,
+    bank_code:      opts.bankCode,
+    currency:       opts.currency ?? "KES",
+  };
+  const res  = await fetch(`${BASE_URL}/transferrecipient`, {
+    method:  "POST",
+    headers: headers(),
+    body:    JSON.stringify(body),
+  });
+  const json = await res.json();
+
+  if (!json.status) {
+    throw new Error(json.message ?? "Paystack createRecipient failed");
+  }
+
+  return {
+    recipientCode: json.data.recipient_code,
+    active:        json.data.active,
+    currency:      json.data.currency,
+  };
+}
+
+/** Fetch bank codes for KES (optionally only mobile-money providers). */
+export async function listBanks(currency = "KES", type?: string) {
+  const qs    = `?currency=${currency}${type ? `&type=${type}` : ""}`;
+  const res   = await fetch(`${BASE_URL}/bank${qs}`, { headers: headers() });
+  const json  = await res.json();
+  if (!json.status) throw new Error(json.message ?? "Paystack listBanks failed");
+  return json.data as Array<{ name: string; code: string; type?: string; active?: boolean }>;
+}
+
+// ── Transfers ─────────────────────────────────────────────────────────────────
+
+export interface TransferResult {
+  transferCode: string;
+  status:       string;   // "success" | "pending" | "failed" …
+  reference:    string;
+  transferredAt: string;
+}
+
+export interface InitiateTransferOptions {
+  recipientCode: string;
+  amountKobo:    number;  // KES × 100
+  reference:     string;  // unique transfer reference
+  reason?:       string;
+}
+
+/**
+ * Send money to a recipient from the merchant's Paystack balance.
+ * NOTE: the balance must be funded in the Paystack dashboard first.
+ */
+export async function initiateTransfer(
+  opts: InitiateTransferOptions,
+): Promise<TransferResult> {
+  const res  = await fetch(`${BASE_URL}/transfer`, {
+    method:  "POST",
+    headers: headers(),
+    body:    JSON.stringify({
+      source:    "balance",
+      amount:    opts.amountKobo,
+      recipient: opts.recipientCode,
+      reference: opts.reference,
+      reason:    opts.reason,
+      currency:  "KES",
+    }),
+  });
+  const json = await res.json();
+
+  if (!json.status) {
+    throw new Error(json.message ?? "Paystack transfer failed");
+  }
+
+  return {
+    transferCode:  json.data.transfer_code,
+    status:        json.data.status,
+    reference:     json.data.reference,
+    transferredAt: json.data.transferred_at ?? "",
+  };
+}
+
+export interface VerifyTransferResult {
+  status:        string;
+  transferCode:  string;
+  reference:     string;
+  amount:        number;
+  currency:      string;
+  failedReason?: string;
+}
+
+/** Check the current status of a transfer by its reference. */
+export async function verifyTransfer(
+  reference: string,
+): Promise<VerifyTransferResult> {
+  const res  = await fetch(`${BASE_URL}/transfer/verify/${encodeURIComponent(reference)}`, {
+    headers: headers(),
+  });
+  const json = await res.json();
+
+  if (!json.status) {
+    throw new Error(json.message ?? "Paystack verifyTransfer failed");
+  }
+
+  return {
+    status:        json.data.status,
+    transferCode:  json.data.transfer_code,
+    reference:     json.data.reference,
+    amount:        json.data.amount,
+    currency:      json.data.currency,
+    failedReason:  json.data.failed_reason,
+  };
+}
+
 // ── Webhook signature check ───────────────────────────────────────────────────
 
 import crypto from "crypto";
