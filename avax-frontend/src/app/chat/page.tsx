@@ -20,7 +20,7 @@ Ask me about:
 • Nuvari business model & revenue`;
 
 const QUICK_PROMPTS = [
-  { label: '🪙 NVR token', q: 'What is the NVR token?' },
+  { label: ' NVR token', q: 'What is the NVR token?' },
   { label: '💵 yBOB', q: 'Explain yBOB Stablecoin' },
   { label: '📈 Yield', q: 'How do YToken and YGold work?' },
   { label: '⚡ x402', q: 'Explain the x402 settlement layer' },
