@@ -46,28 +46,28 @@ const SERIF = { fontFamily: "'Fraunces', serif" } as const;
 // ── Seed data ──────────────────────────────────────────────────────────────
 const SEED_POSTS: Post[] = [
   { id:'p1', slug:'bamboo-dry-season-care', title:'Protecting Bamboo Seedlings in the Dry Season',
-    summary:'Practical tips from Mau Forest guardians on how to keep bamboo alive through Kenya\'s October dry spell. Mulching, watering schedules, and shading techniques.',
+    summary:'Guardians share tips to keep bamboo alive in Kenya\'s dry spell: mulching, watering, and shading.',
     contentType:'FIELD_JOURNAL', category:'FORESTRY_MRV', creator:'Grace Wangari', badge:'COMMUNITY_REPORTER', publishedAt:'2026-08-28', viewsCount:341, likesCount:47, tipsEarnedKes:1200, language:'EN', tags:['Bamboo','MRV','Dry Season'] },
   { id:'p2', slug:'ybob-chama-yield', title:'How Our Chama Earned 18% APY With yBOB Vault',
-    summary:'Mwanzo Mpya Women Chama shares their experience depositing group savings into KAI\'s yBOB yield vault and receiving KES payouts every month.',
+    summary:'One chama moved savings into the yBOB vault and now gets monthly KES payouts.',
     contentType:'ARTICLE', category:'CHAMA_SAVINGS', creator:'Wanjiru Kamau', badge:'CHAMA_MENTOR', publishedAt:'2026-08-27', viewsCount:512, likesCount:89, tipsEarnedKes:2400, language:'SW', tags:['yBOB','Chama','Yield'] },
   { id:'p3', slug:'dap-fertiliser-market-aug26', title:'DAP Fertiliser Price Alert: Eldoret Market',
-    summary:'DAP prices surged 12% this week. Our market reporter traces the cause to supply chain delays at Mombasa port and suggests farmer co-op bulk purchasing strategies.',
+    summary:'DAP surged 12% this week on port delays. Farmers: buy in bulk through a co-op.',
     contentType:'MARKET_NEWS', category:'AGRI_MARKET', creator:'Daniel Ruto', badge:'JOURNALIST', publishedAt:'2026-08-26', viewsCount:728, likesCount:130, tipsEarnedKes:3100, language:'EN', tags:['Fertiliser','Prices','Market'] },
   { id:'p4', slug:'kai-ledger-voice-guide', title:'KAI Smart Ledger: Voice Guide for Traders',
-    summary:'Audio tutorial: Learn how to record your daily sales, credit given, and stock value using KAI\'s MSME Intelligent Ledger. No internet required for voice input.',
+    summary:'Record daily sales, credit, and stock by voice. No internet needed.',
     contentType:'AUDIO_PODCAST', category:'MSME_GROWTH', creator:'Beatrice Mutua', badge:'AGRI_EXPERT', publishedAt:'2026-08-25', viewsCount:215, likesCount:38, tipsEarnedKes:900, audioDurationSeconds:482, language:'SW', tags:['Ledger','Voice','MSME'] },
   { id:'p5', slug:'rwa-invoice-token-guide', title:'Tokenise Your Unpaid Invoice: Step by Step',
-    summary:'A comprehensive guide for small business owners on how to turn accounts receivable into on-chain RWA tokens on Avalanche Fuji and receive instant KES working capital.',
+    summary:'Turn an unpaid invoice into a token and get instant KES working capital.',
     contentType:'EDUCATIONAL_GUIDE', category:'MSME_GROWTH', creator:'Joseph Kimani', badge:'AGRI_EXPERT', publishedAt:'2026-08-24', viewsCount:403, likesCount:62, tipsEarnedKes:1800, language:'EN', tags:['RWA','Invoice','Finance'] },
   { id:'p6', slug:'honey-reserve-season-2026', title:'Honey Harvest Season: Turkana Beekeepers Join KAI',
-    summary:'The Turkana Beekeepers Cooperative has registered 500kg of certified honey on KAI\'s forest product registry, unlocking the GAMI vault (14% APY) for members.',
+    summary:'500kg of certified honey is now on the KAI registry, unlocking 14% APY for beekeepers.',
     contentType:'FIELD_JOURNAL', category:'FORESTRY_MRV', creator:'Fatuma Hassan', badge:'COMMUNITY_REPORTER', publishedAt:'2026-08-23', viewsCount:290, likesCount:54, tipsEarnedKes:1500, language:'EN', tags:['Honey','GAMI','Forest'] },
   { id:'p7', slug:'carbon-credits-mau-2026', title:'Mau Forest CFA Earns 8,420 Carbon Credits on Avalanche',
-    summary:'How the Mau Forest Guardians Group A anchored their patrol logs on-chain, triggering automatic carbon credit minting through KAI\'s dMRV smart contract.',
+    summary:'Patrol logs anchored on-chain auto-minted 8,420 carbon credits.',
     contentType:'ARTICLE', category:'FORESTRY_MRV', creator:'Agnes Chebet', badge:'COMMUNITY_REPORTER', publishedAt:'2026-08-22', viewsCount:617, likesCount:98, tipsEarnedKes:2800, language:'EN', tags:['Carbon','Blockchain','MRV'] },
   { id:'p8', slug:'chama-investment-pool-podcast', title:'Group Investment Basics for SACCO Members',
-    summary:'Podcast episode covering the basics of DeFi group savings: how M-Pesa contributions are converted to yBOB, routed to vaults, and distributed back monthly.',
+    summary:'How M-Pesa savings become yBOB, grow in vaults, and pay out monthly.',
     contentType:'AUDIO_PODCAST', category:'CHAMA_SAVINGS', creator:'Akinyi Odhiambo', badge:'CHAMA_MENTOR', publishedAt:'2026-08-21', viewsCount:189, likesCount:29, tipsEarnedKes:700, audioDurationSeconds:720, language:'SW', tags:['SACCO','DeFi','Audio'] },
 ];
 
@@ -86,11 +86,6 @@ const TYPE_CFG: Record<ContentType, { icon: React.ReactNode; label: string }> = 
   AUDIO_PODCAST:     { icon:<Mic size={11} />,         label:'Podcast' },
   MARKET_NEWS:       { icon:<TrendingUp size={11} />,  label:'Market' },
   EDUCATIONAL_GUIDE: { icon:<BookOpen size={11} />,    label:'Guide' },
-};
-
-const BADGE_LABEL: Record<string, string> = {
-  COMMUNITY_REPORTER:'Reporter', AGRI_EXPERT:'Expert',
-  CHAMA_MENTOR:'Mentor',         JOURNALIST:'Journalist',
 };
 
 function fmt(secs: number) {
@@ -162,9 +157,8 @@ function PostRow({ post, idx, onLike, onTip }: { post: Post; idx: number; onLike
         <span style={{ fontSize: 12, color: C.inkLight }}>
           {post.publishedAt}
         </span>
-        <span style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, color: C.inkLight }}>
+        <span style={{ marginLeft: 'auto', fontSize: 12, color: C.inkLight }}>
           By <b style={{ color: C.paper, fontWeight: 700 }}>{post.creator}</b>
-          <span style={{ ...MONO, fontSize: 9, color: C.inkLight }}>({BADGE_LABEL[post.badge] ?? post.badge})</span>
         </span>
       </div>
 
@@ -252,9 +246,60 @@ function PostRow({ post, idx, onLike, onTip }: { post: Post; idx: number; onLike
 }
 
 // ── Tip modal ──────────────────────────────────────────────────────────────
-function TipModal({ post, onClose }: { post: Post; onClose: () => void }) {
+function TipModal({ post, onClose, onPaid }: { post: Post; onClose: () => void; onPaid: (postId: string, amountKes: number) => void }) {
   const [amount, setAmount] = useState('100');
-  const [sent, setSent]     = useState(false);
+  const [email, setEmail]   = useState('');
+  const [status, setStatus] = useState<'idle' | 'paying' | 'awaiting' | 'success' | 'error'>('idle');
+  const [msg, setMsg]       = useState('');
+
+  const handlePay = async () => {
+    const amt = Math.round(Number(amount));
+    if (!amt || amt < 1) { setStatus('error'); setMsg('Enter a valid tip amount.'); return; }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { setStatus('error'); setMsg('Enter a valid email address for the receipt.'); return; }
+
+    setStatus('paying');
+    setMsg('Opening secure payment...');
+    try {
+      const res = await fetch('/api/hub/tip', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, amountKes: amt, creator: post.creator, postTitle: post.title, slug: post.slug }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Payment could not be started');
+
+      window.open(data.authorizationUrl, '_blank');
+      setStatus('awaiting');
+      setMsg(`Complete payment for KES ${data.amountKes} in the Paystack tab (M-Pesa or card).`);
+
+      let attempts = 0;
+      const id = setInterval(async () => {
+        attempts++;
+        try {
+          const r    = await fetch(`/api/paystack/verify?reference=${data.reference}`);
+          const poll = await r.json();
+          if (poll.status === 'success') {
+            clearInterval(id);
+            setStatus('success');
+            setMsg(`Tip confirmed! KES ${poll.amountKes?.toLocaleString() ?? data.amountKes} sent to ${post.creator}.`);
+            onPaid(post.id, amt);
+            setTimeout(onClose, 2200);
+          } else if (poll.status === 'failed' || poll.status === 'abandoned') {
+            clearInterval(id);
+            setStatus('error');
+            setMsg(`Payment ${poll.status}. You can try again.`);
+          } else if (attempts >= 18) {
+            clearInterval(id);
+            setStatus('awaiting');
+            setMsg('Waiting for confirmation. Check your email for the Paystack receipt.');
+          }
+        } catch { /* ignore polling errors */ }
+      }, 5000);
+    } catch (e: unknown) {
+      setStatus('error');
+      setMsg(e instanceof Error ? e.message.slice(0, 160) : 'Payment could not be started.');
+    }
+  };
 
   return (
     <motion.div
@@ -265,7 +310,7 @@ function TipModal({ post, onClose }: { post: Post; onClose: () => void }) {
         position: 'fixed', inset: 0, zIndex: 80,
         display: 'flex', alignItems: 'center', justifyContent: 'center',
         background: 'rgba(4,10,7,0.78)',
-        padding: 20,
+        padding: 20, overflowY: 'auto',
       }}
       onClick={e => e.target === e.currentTarget && onClose()}
     >
@@ -320,33 +365,62 @@ function TipModal({ post, onClose }: { post: Post; onClose: () => void }) {
           onChange={e => setAmount(e.target.value)}
           type="number"
           placeholder="Custom amount"
+          disabled={status === 'paying' || status === 'awaiting' || status === 'success'}
           style={{
             width: '100%', background: 'rgba(255,255,255,0.04)',
             border: `1px solid ${C.hairline}`,
             borderRadius: 8, padding: '12px 14px',
             fontSize: 15, color: C.paper, outline: 'none',
-            fontFamily: 'inherit', boxSizing: 'border-box', marginBottom: 14,
+            fontFamily: 'inherit', boxSizing: 'border-box', marginBottom: 10,
           }}
         />
 
+        <input
+          value={email}
+          onChange={e => setEmail(e.target.value)}
+          type="email"
+          placeholder="Your email (for the receipt)"
+          disabled={status === 'paying' || status === 'awaiting' || status === 'success'}
+          style={{
+            width: '100%', background: 'rgba(255,255,255,0.04)',
+            border: `1px solid ${C.hairline}`,
+            borderRadius: 8, padding: '12px 14px',
+            fontSize: 15, color: C.paper, outline: 'none',
+            fontFamily: 'inherit', boxSizing: 'border-box', marginBottom: 10,
+          }}
+        />
+
+        {msg && (
+          <p style={{
+            fontSize: 12, lineHeight: 1.5, margin: '0 0 10px',
+            color: status === 'success' ? C.goldLight : status === 'error' ? C.clay : C.inkLight,
+          }}>
+            {msg}
+          </p>
+        )}
+
         <motion.button
-          whileHover={!sent ? { scale: 1.02 } : {}}
-          whileTap={!sent ? { scale: 0.97 } : {}}
-          onClick={() => { setSent(true); setTimeout(onClose, 1800); }}
-          disabled={sent}
+          whileHover={status === 'idle' || status === 'error' ? { scale: 1.02 } : {}}
+          whileTap={status === 'idle' || status === 'error' ? { scale: 0.97 } : {}}
+          onClick={handlePay}
+          disabled={status === 'paying' || status === 'awaiting' || status === 'success'}
           style={{
             width: '100%', padding: '14px 0', borderRadius: 9, border: 'none',
-            cursor: sent ? 'default' : 'pointer',
-            background: sent ? C.pineLight : C.gold,
-            color: sent ? C.paper : C.ink,
+            cursor: (status === 'paying' || status === 'awaiting' || status === 'success') ? 'default' : 'pointer',
+            background: status === 'success' ? C.pineLight : C.gold,
+            color: status === 'success' ? C.paper : C.ink,
             fontSize: 15, fontWeight: 700, fontFamily: 'inherit',
           }}
         >
-          {sent ? 'Tip Sent!' : `Send KES ${amount} via M-Pesa / yBOB`}
+          {status === 'success'   ? 'Tip Sent!'
+           : status === 'paying'  ? 'Starting payment...'
+           : status === 'awaiting'? 'Waiting for payment...'
+           : `Pay KES ${amount} with M-Pesa / Card`}
         </motion.button>
 
         <button
           onClick={onClose}
+          disabled={status === 'paying' || status === 'awaiting'}
           style={{
             width: '100%', marginTop: 10, padding: '12px 0', borderRadius: 9, border: 'none',
             background: 'rgba(255,255,255,0.05)',
@@ -389,6 +463,9 @@ export default function HubPage() {
 
   const handleLike = (id: string) =>
     setPosts(ps => ps.map(p => p.id === id ? { ...p, likesCount: p.likesCount + 1 } : p));
+
+  const handlePaid = (id: string, amountKes: number) =>
+    setPosts(ps => ps.map(p => p.id === id ? { ...p, tipsEarnedKes: p.tipsEarnedKes + amountKes } : p));
 
   const featuredPost = filtered[0];
   const feedPosts    = filtered.slice(1);
@@ -558,13 +635,13 @@ export default function HubPage() {
             >
               <div style={{ padding: '0 32px' }}>
                 <p style={{ ...MONO, fontSize: 10, letterSpacing: 1.6, textTransform: 'uppercase', color: C.goldLight, margin: '0 0 14px' }}>
-                  Featured | Top Story · {TYPE_CFG[featuredPost.contentType].label}
+                  Featured Top Story | {TYPE_CFG[featuredPost.contentType].label}
                 </p>
                 <h2 style={{ ...SERIF, fontSize: 36, fontWeight: 600, color: C.paper, margin: '0 0 14px', lineHeight: 1.2, maxWidth: 760 }}>
                   {featuredPost.title}
                 </h2>
                 <p style={{ fontSize: 16, color: 'rgba(246,242,231,0.75)', lineHeight: 1.7, margin: '0 0 22px', maxWidth: 780 }}>
-                  {featuredPost.summary.slice(0, 170)}…
+                  {featuredPost.summary.slice(0, 110)}…
                 </p>
 
                 <div style={{ display: 'flex', alignItems: 'center', gap: 26, flexWrap: 'wrap', marginBottom: 4 }}>
@@ -654,13 +731,13 @@ export default function HubPage() {
             <div>
               <p style={{ ...SERIF, fontSize: 22, fontWeight: 600, color: C.paper, margin: 0 }}>KAI Onboarding Agent</p>
               <p style={{ ...MONO, fontSize: 10, letterSpacing: 1.2, color: C.goldLight, margin: '3px 0 0' }}>
-                FOREST GUARDIAN | MSME MERCHANT | CHAMA SAVER
+                FOREST | MSME | CHAMA
               </p>
             </div>
           </div>
 
           <p style={{ fontSize: 16, color: 'rgba(246,242,231,0.75)', lineHeight: 1.7, margin: '0 0 20px', maxWidth: 780 }}>
-            Not sure where to start? Ask KAI to analyse your profile and recommend the best vault strategy, CFA group, or Chama to join.
+            Not sure where to start? Ask KAI to recommend the best vault, group, or Chama for you.
           </p>
 
           <Link href="/ai" style={{ textDecoration: 'none' }}>
@@ -680,7 +757,7 @@ export default function HubPage() {
 
       {/* ── TIP MODAL ── */}
       <AnimatePresence>
-        {tipPost && <TipModal post={tipPost} onClose={() => setTipPost(null)} />}
+        {tipPost && <TipModal post={tipPost} onClose={() => setTipPost(null)} onPaid={handlePaid} />}
       </AnimatePresence>
     </main>
   );
