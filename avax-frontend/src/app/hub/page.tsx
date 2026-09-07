@@ -4,10 +4,10 @@ import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  Newspaper, Mic, Trees, Store, Users, BarChart3, BookOpen,
-  Play, Pause, Heart, DollarSign, MessageCircle, Share2,
+  Newspaper, Mic, BookOpen,
+  Play, Pause, Heart, DollarSign,
   Search, RefreshCw, ChevronRight, Zap,
-  Leaf, TrendingUp, Globe, Clock, Eye,
+  Leaf, TrendingUp, Eye,
 } from 'lucide-react';
 
 // ── Types ──────────────────────────────────────────────────────────────────
@@ -22,6 +22,28 @@ interface Post {
   audioDurationSeconds?: number; audioUrl?: string;
   language: string; tags: string[];
 }
+
+// ── Design tokens (kaiweb style) ───────────────────────────────────────────
+const C = {
+  bg:        '#0A1912',
+  card:      '#12241B',
+  cardHover: '#182E23',
+  pine:      '#0F3D2E',
+  pineDeep:  '#0A2A20',
+  pineLight: '#2D5A3D',
+  gold:      '#C89B3C',
+  goldLight: '#E4C878',
+  clay:      '#9C4B2D',
+  paper:     '#F6F2E7',
+  paperDim:  '#EFE9D9',
+  ink:       '#1B1A14',
+  inkSoft:   '#4B4A3F',
+  inkLight:  '#A3A295',
+  border:    'rgba(200,155,60,0.2)',
+};
+
+const MONO = { fontFamily: "'IBM Plex Mono', monospace" } as const;
+const SERIF = { fontFamily: "'Fraunces', serif" } as const;
 
 // ── Seed data ──────────────────────────────────────────────────────────────
 const SEED_POSTS: Post[] = [
@@ -52,20 +74,20 @@ const SEED_POSTS: Post[] = [
 ];
 
 // ── Config ─────────────────────────────────────────────────────────────────
-const CATEGORIES: { id: Category; label: string; icon: React.ReactNode; color: string }[] = [
-  { id:'ALL',           label:'All',      icon:<Globe size={12} />,     color:'#10b981' },
-  { id:'FORESTRY_MRV',  label:'Forest',   icon:<Trees size={12} />,     color:'#22c55e' },
-  { id:'MSME_GROWTH',   label:'Business', icon:<Store size={12} />,     color:'#3b82f6' },
-  { id:'CHAMA_SAVINGS', label:'Chama',    icon:<Users size={12} />,     color:'#a855f7' },
-  { id:'AGRI_MARKET',   label:'Market',   icon:<BarChart3 size={12} />, color:'#f59e0b' },
+const CATEGORIES: { id: Category; label: string }[] = [
+  { id:'ALL',           label:'All' },
+  { id:'FORESTRY_MRV',  label:'Forest' },
+  { id:'MSME_GROWTH',   label:'Business' },
+  { id:'CHAMA_SAVINGS', label:'Chama' },
+  { id:'AGRI_MARKET',   label:'Market' },
 ];
 
 const TYPE_CFG: Record<ContentType, { icon: React.ReactNode; label: string; color: string }> = {
-  ARTICLE:           { icon:<Newspaper size={11} />,  label:'Article',  color:'#10b981' },
-  FIELD_JOURNAL:     { icon:<Leaf size={11} />,        label:'Journal',  color:'#22c55e' },
-  AUDIO_PODCAST:     { icon:<Mic size={11} />,         label:'Podcast',  color:'#a855f7' },
-  MARKET_NEWS:       { icon:<TrendingUp size={11} />,  label:'Market',   color:'#f59e0b' },
-  EDUCATIONAL_GUIDE: { icon:<BookOpen size={11} />,    label:'Guide',    color:'#3b82f6' },
+  ARTICLE:           { icon:<Newspaper size={11} />,  label:'Article',  color:C.goldLight },
+  FIELD_JOURNAL:     { icon:<Leaf size={11} />,        label:'Journal',  color:C.goldLight },
+  AUDIO_PODCAST:     { icon:<Mic size={11} />,         label:'Podcast',  color:C.goldLight },
+  MARKET_NEWS:       { icon:<TrendingUp size={11} />,  label:'Market',   color:C.goldLight },
+  EDUCATIONAL_GUIDE: { icon:<BookOpen size={11} />,    label:'Guide',    color:C.goldLight },
 };
 
 const BADGE_LABEL: Record<string, string> = {
@@ -90,7 +112,7 @@ function useAudio(url?: string) {
   return { playing, toggle };
 }
 
-// ── Post card ──────────────────────────────────────────────────────────────
+// ── Post card (kaiweb editorial style) ─────────────────────────────────────
 function PostCard({ post, idx, onLike, onTip }: { post: Post; idx: number; onLike:(id:string)=>void; onTip:(p:Post)=>void }) {
   const tc  = TYPE_CFG[post.contentType];
   const cat = CATEGORIES.find(c => c.id === post.category);
@@ -100,184 +122,151 @@ function PostCard({ post, idx, onLike, onTip }: { post: Post; idx: number; onLik
 
   return (
     <motion.article
-      initial={{ opacity: 0, y: 18 }}
+      initial={{ opacity: 0, y: 14 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: 0.06 + idx * 0.05, duration: 0.35 }}
-      whileHover={{ y: -2 }}
+      transition={{ delay: 0.04 + idx * 0.05, duration: 0.3 }}
+      whileHover={{ y: -3 }}
       style={{
-        borderRadius: 22, overflow: 'hidden',
-        background: `linear-gradient(150deg, ${cat?.color ?? '#10b981'}08 0%, rgba(6,6,12,0.55) 100%)`,
-        backdropFilter: 'blur(22px)',
-        boxShadow: `0 0 0 0.5px ${tc.color}16 inset, 0 8px 30px rgba(0,0,0,0.32)`,
-        marginBottom: 12, position: 'relative',
-        transition: 'box-shadow 0.25s',
+        background: C.card,
+        border: `1px solid ${C.border}`,
+        borderRadius: 12,
+        padding: '22px 24px',
+        transition: 'background 0.2s, border-color 0.2s, box-shadow 0.2s',
+        cursor: 'pointer',
+      }}
+      onMouseEnter={e => {
+        e.currentTarget.style.background = C.cardHover;
+        e.currentTarget.style.borderColor = 'rgba(200,155,60,0.38)';
+        e.currentTarget.style.boxShadow = '0 12px 30px rgba(0,0,0,0.35)';
+      }}
+      onMouseLeave={e => {
+        e.currentTarget.style.background = C.card;
+        e.currentTarget.style.borderColor = C.border;
+        e.currentTarget.style.boxShadow = 'none';
       }}
     >
-      {/* Top color stripe — replaces the box border visually */}
-      <div style={{ height: 2, background: `linear-gradient(90deg, transparent, ${tc.color}80, transparent)` }} />
-
-      <div style={{ padding: '14px 16px' }}>
-        {/* Header: type/category pills + date */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 10, flexWrap: 'wrap' }}>
-          <span style={{
-            display: 'flex', alignItems: 'center', gap: 4,
-            fontSize: 9, fontWeight: 800, padding: '3px 9px', borderRadius: 7,
-            background: `${tc.color}14`, color: tc.color,
-            boxShadow: `0 0 0 0.5px ${tc.color}30 inset`,
-            textTransform: 'uppercase', letterSpacing: 0.5,
-          }}>
-            {tc.icon} {tc.label}
+      {/* Meta row */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 14 }}>
+        <span style={{ ...MONO, fontSize: 9, letterSpacing: 1.2, textTransform: 'uppercase', color: tc.color }}>
+          {tc.label}
+        </span>
+        <span style={{ fontSize: 11, color: 'rgba(246,242,231,0.55)' }}>
+          {post.publishedAt}
+        </span>
+        {cat && cat.id !== 'ALL' && (
+          <span style={{ ...MONO, marginLeft: 'auto', fontSize: 9, letterSpacing: 0.8, textTransform: 'uppercase', color: C.inkLight }}>
+            {cat.label}
           </span>
-          {cat && cat.id !== 'ALL' && (
-            <span style={{
-              display: 'flex', alignItems: 'center', gap: 4,
-              fontSize: 9, fontWeight: 700, padding: '3px 9px', borderRadius: 7,
-              background: `${cat.color}10`, color: cat.color,
-              boxShadow: `0 0 0 0.5px ${cat.color}20 inset`,
-              letterSpacing: 0.3,
-            }}>
-              {cat.icon} {cat.label}
-            </span>
-          )}
-          <span style={{ fontSize: 9, color: 'rgba(248,248,250,0.28)', marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 3 }}>
-            <Clock size={9} /> {post.publishedAt}
-          </span>
-        </div>
-
-        {/* Title */}
-        <h3 style={{ fontSize: 15, fontWeight: 900, color: '#f8f8fa', margin: '0 0 7px', lineHeight: 1.35 }}>
-          {post.title}
-        </h3>
-
-        {/* Summary */}
-        <p style={{ fontSize: 12, color: 'rgba(248,248,250,0.55)', lineHeight: 1.65, margin: '0 0 12px' }}>
-          {post.summary}
-        </p>
-
-        {/* Podcast player */}
-        {isPodcast && (
-          <motion.div
-            whileHover={{ scale: 1.01 }}
-            style={{
-              display: 'flex', alignItems: 'center', gap: 11,
-              padding: '10px 13px', borderRadius: 14, marginBottom: 12,
-              background: 'rgba(168,85,247,0.07)',
-              boxShadow: '0 0 0 0.5px rgba(168,85,247,0.22) inset',
-            }}
-          >
-            <motion.button
-              whileHover={{ scale: 1.08 }}
-              whileTap={{ scale: 0.92 }}
-              onClick={toggle}
-              style={{
-                width: 40, height: 40, borderRadius: '50%', border: 'none', cursor: 'pointer',
-                background: playing
-                  ? 'rgba(168,85,247,0.30)'
-                  : 'linear-gradient(135deg,#a855f7,#7c3aed)',
-                display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
-                boxShadow: playing ? '0 0 16px rgba(168,85,247,0.50)' : '0 4px 14px rgba(168,85,247,0.35)',
-                transition: 'all 0.2s',
-              }}
-            >
-              {playing ? <Pause size={15} color="#fff" /> : <Play size={15} color="#fff" style={{ marginLeft: 2 }} />}
-            </motion.button>
-            <div style={{ flex: 1 }}>
-              <p style={{ fontSize: 11, fontWeight: 700, color: '#c084fc', margin: '0 0 2px' }}>Audio Journal</p>
-              <p style={{ fontSize: 10, color: 'rgba(248,248,250,0.38)', margin: 0 }}>
-                {post.audioDurationSeconds ? fmt(post.audioDurationSeconds) : '—'} · {post.language === 'SW' ? 'Swahili' : 'English'}
-              </p>
-            </div>
-            <Mic size={13} color="rgba(168,85,247,0.50)" />
-          </motion.div>
         )}
+      </div>
 
-        {/* Creator + tags grouped in one row */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 9, marginBottom: 12 }}>
-          <div style={{
-            width: 32, height: 32, borderRadius: '50%', flexShrink: 0,
-            background: `${tc.color}18`,
-            boxShadow: `0 0 0 1.5px ${tc.color}30 inset`,
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            fontSize: 13, fontWeight: 900, color: tc.color,
-          }}>
-            {post.creator.charAt(0)}
-          </div>
-          <div style={{ overflow: 'hidden' }}>
-            <p style={{ fontSize: 12, fontWeight: 800, color: '#f8f8fa', margin: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-              {post.creator}
-            </p>
-            <p style={{ fontSize: 9, color: 'rgba(248,248,250,0.35)', margin: 0 }}>
-              {BADGE_LABEL[post.badge] ?? post.badge}
-            </p>
-          </div>
+      {/* Title */}
+      <h3 style={{ ...SERIF, fontSize: 20, fontWeight: 600, color: C.paper, margin: '0 0 10px', lineHeight: 1.3 }}>
+        {post.title}
+      </h3>
 
-          {/* Tags — moved inline next to creator for a cleaner grid */}
-          <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap', justifyContent: 'flex-end', marginLeft: 'auto' }}>
-            {post.tags.slice(0, 2).map(t => (
-              <span key={t} style={{
-                fontSize: 9, padding: '2px 8px', borderRadius: 6,
-                background: 'rgba(255,255,255,0.04)',
-                boxShadow: '0 0 0 0.5px rgba(255,255,255,0.08) inset',
-                color: 'rgba(248,248,250,0.42)',
-                whiteSpace: 'nowrap',
-              }}>#{t}</span>
-            ))}
-            {post.tags.length > 2 && (
-              <span style={{ fontSize: 9, color: 'rgba(248,248,250,0.30)' }}>+{post.tags.length - 2}</span>
-            )}
-          </div>
-        </div>
+      {/* Summary */}
+      <p style={{ fontSize: 14, color: 'rgba(246,242,231,0.72)', lineHeight: 1.65, margin: '0 0 16px' }}>
+        {post.summary}
+      </p>
 
-        {/* Engagement bar */}
-        <div style={{ height: 1, background: 'rgba(255,255,255,0.05)', marginBottom: 11 }} />
-        <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
-          <span style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 10, color: 'rgba(248,248,250,0.32)' }}>
-            <Eye size={11} /> {post.viewsCount.toLocaleString()}
-          </span>
-
+      {/* Podcast player */}
+      {isPodcast && (
+        <motion.div
+          whileHover={{ scale: 1.01 }}
+          style={{
+            display: 'flex', alignItems: 'center', gap: 12,
+            padding: '11px 14px', borderRadius: 10, marginBottom: 16,
+            background: C.pineDeep, border: `1px solid ${C.border}`,
+          }}
+        >
           <motion.button
-            whileHover={{ scale: 1.15 }}
-            whileTap={{ scale: 0.88 }}
-            onClick={() => { setLiked(v => !v); onLike(post.id); }}
+            whileHover={{ scale: 1.08 }}
+            whileTap={{ scale: 0.92 }}
+            onClick={toggle}
             style={{
-              display: 'flex', alignItems: 'center', gap: 4,
-              fontSize: 10, fontWeight: 700, cursor: 'pointer',
-              background: 'none', border: 'none', padding: 0,
-              color: liked ? '#f87171' : 'rgba(248,248,250,0.42)',
-              transition: 'color 0.15s',
+              width: 40, height: 40, borderRadius: '50%', border: 'none', cursor: 'pointer',
+              background: playing ? C.pineLight : C.gold,
+              display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
             }}
           >
-            <Heart size={13} style={{ fill: liked ? '#f87171' : 'none', transition: 'fill 0.15s' }} />
-            {post.likesCount + (liked ? 1 : 0)}
+            {playing ? <Pause size={15} color="#0A1912" /> : <Play size={15} color="#0A1912" style={{ marginLeft: 2 }} />}
           </motion.button>
+          <div style={{ flex: 1 }}>
+            <p style={{ ...MONO, fontSize: 11, fontWeight: 600, color: C.goldLight, margin: '0 0 2px' }}>Audio Journal</p>
+            <p style={{ fontSize: 11, color: 'rgba(246,242,231,0.55)', margin: 0 }}>
+              {post.audioDurationSeconds ? fmt(post.audioDurationSeconds) : '—'} · {post.language === 'SW' ? 'Swahili' : 'English'}
+            </p>
+          </div>
+          <Mic size={13} color="rgba(200,155,60,0.6)" />
+        </motion.div>
+      )}
 
-          <span style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 10, color: '#4ade80' }}>
-            <DollarSign size={11} /> KES {post.tipsEarnedKes.toLocaleString()}
-          </span>
-
-          <motion.button
-            whileHover={{ scale: 1.04 }}
-            whileTap={{ scale: 0.95 }}
-            onClick={() => onTip(post)}
-            style={{
-              marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 5,
-              padding: '6px 12px', borderRadius: 9, border: 'none', cursor: 'pointer',
-              background: 'rgba(34,197,94,0.10)',
-              boxShadow: '0 0 0 0.5px rgba(34,197,94,0.28) inset',
-              color: '#4ade80', fontSize: 10, fontWeight: 800, transition: 'all 0.15s',
-            }}
-          >
-            <DollarSign size={11} /> Tip
-          </motion.button>
-
-          <motion.button
-            whileHover={{ scale: 1.15 }}
-            whileTap={{ scale: 0.88 }}
-            style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'rgba(248,248,250,0.25)', padding: 0 }}
-          >
-            <Share2 size={13} />
-          </motion.button>
+      {/* Creator + tags */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
+        <div style={{
+          width: 32, height: 32, borderRadius: '50%', flexShrink: 0,
+          background: C.pineLight,
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          fontSize: 13, fontWeight: 700, color: C.paper,
+        }}>
+          {post.creator.charAt(0)}
         </div>
+        <div style={{ overflow: 'hidden' }}>
+          <p style={{ fontSize: 12, fontWeight: 700, color: C.paper, margin: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+            {post.creator}
+          </p>
+          <p style={{ fontSize: 10, color: C.inkLight, margin: 0 }}>
+            {BADGE_LABEL[post.badge] ?? post.badge}
+          </p>
+        </div>
+        <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap', justifyContent: 'flex-end', marginLeft: 'auto' }}>
+          {post.tags.slice(0, 2).map(t => (
+            <span key={t} style={{ ...MONO, fontSize: 9, padding: '2px 8px', borderRadius: 4, background: 'rgba(255,255,255,0.05)', color: C.inkLight, whiteSpace: 'nowrap' }}>
+              #{t}
+            </span>
+          ))}
+        </div>
+      </div>
+
+      <div style={{ height: 1, background: C.border, marginBottom: 14 }} />
+
+      {/* Engagement bar */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+        <span style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 11, color: C.inkLight }}>
+          <Eye size={13} /> {post.viewsCount.toLocaleString()}
+        </span>
+        <motion.button
+          whileHover={{ scale: 1.15 }}
+          whileTap={{ scale: 0.88 }}
+          onClick={() => { setLiked(v => !v); onLike(post.id); }}
+          style={{
+            display: 'flex', alignItems: 'center', gap: 5,
+            fontSize: 11, fontWeight: 600, cursor: 'pointer',
+            background: 'none', border: 'none', padding: 0,
+            color: liked ? C.clay : C.inkLight,
+            fontFamily: 'inherit',
+            transition: 'color 0.15s',
+          }}
+        >
+          <Heart size={13} style={{ fill: liked ? C.clay : 'none', transition: 'fill 0.15s' }} />
+          {post.likesCount + (liked ? 1 : 0)}
+        </motion.button>
+        <span style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 11, color: C.goldLight }}>
+          <DollarSign size={12} /> KES {post.tipsEarnedKes.toLocaleString()}
+        </span>
+        <motion.button
+          whileHover={{ scale: 1.03 }}
+          whileTap={{ scale: 0.96 }}
+          onClick={() => onTip(post)}
+          style={{
+            marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 6,
+            padding: '7px 14px', borderRadius: 8, border: 'none', cursor: 'pointer',
+            background: C.gold, color: C.ink, fontSize: 11, fontWeight: 700, fontFamily: 'inherit',
+          }}
+        >
+          <DollarSign size={12} /> Tip
+        </motion.button>
       </div>
     </motion.article>
   );
@@ -287,7 +276,6 @@ function PostCard({ post, idx, onLike, onTip }: { post: Post; idx: number; onLik
 function TipModal({ post, onClose }: { post: Post; onClose: () => void }) {
   const [amount, setAmount] = useState('100');
   const [sent, setSent]     = useState(false);
-  const tc = TYPE_CFG[post.contentType];
 
   return (
     <motion.div
@@ -296,43 +284,41 @@ function TipModal({ post, onClose }: { post: Post; onClose: () => void }) {
       exit={{ opacity: 0 }}
       style={{
         position: 'fixed', inset: 0, zIndex: 80,
-        display: 'flex', alignItems: 'flex-end',
-        background: 'rgba(0,0,0,0.60)',
-        backdropFilter: 'blur(8px)',
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        background: 'rgba(4,10,7,0.75)',
+        padding: 20,
       }}
       onClick={e => e.target === e.currentTarget && onClose()}
     >
       <motion.div
-        initial={{ y: 60, opacity: 0 }}
+        initial={{ y: 24, opacity: 0 }}
         animate={{ y: 0,  opacity: 1 }}
-        exit={{ y: 60,    opacity: 0 }}
+        exit={{ y: 24,    opacity: 0 }}
         transition={{ type: 'spring', stiffness: 380, damping: 32 }}
         style={{
-          width: '100%', maxWidth: 520, margin: '0 auto',
-          background: 'rgba(10,10,18,0.92)',
-          backdropFilter: 'blur(32px)',
-          borderRadius: '24px 24px 0 0',
-          padding: '24px 20px',
-          boxShadow: '0 0 0 0.5px rgba(255,255,255,0.08) inset, 0 -16px 50px rgba(0,0,0,0.60)',
+          width: '100%', maxWidth: 460,
+          background: C.card,
+          border: `1px solid ${C.border}`,
+          borderRadius: 14,
+          padding: '28px 26px',
         }}
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: 13, marginBottom: 20 }}>
           <div style={{
             width: 46, height: 46, borderRadius: '50%',
-            background: `${tc.color}18`,
-            boxShadow: `0 0 0 1.5px ${tc.color}35 inset, 0 0 16px ${tc.color}25`,
+            background: C.pineLight,
             display: 'flex', alignItems: 'center', justifyContent: 'center',
-            fontSize: 19, fontWeight: 900, color: tc.color,
+            fontSize: 19, fontWeight: 700, color: C.paper,
           }}>
             {post.creator.charAt(0)}
           </div>
           <div>
-            <p style={{ fontSize: 14, fontWeight: 900, color: '#f8f8fa', margin: 0 }}>Tip {post.creator}</p>
-            <p style={{ fontSize: 10, color: 'rgba(248,248,250,0.38)', margin: 0 }}>{post.title.slice(0, 42)}…</p>
+            <p style={{ ...SERIF, fontSize: 15, fontWeight: 600, color: C.paper, margin: 0 }}>Tip {post.creator}</p>
+            <p style={{ fontSize: 11, color: C.inkLight, margin: 0 }}>{post.title.slice(0, 42)}…</p>
           </div>
         </div>
 
-        <p className="label-caps" style={{ marginBottom: 10 }}>Amount (KES)</p>
+        <p style={{ ...MONO, fontSize: 10, letterSpacing: 1, textTransform: 'uppercase', color: C.inkLight, marginBottom: 10 }}>Amount (KES)</p>
         <div style={{ display: 'flex', gap: 8, marginBottom: 14 }}>
           {['50','100','250','500'].map(a => (
             <motion.button
@@ -341,14 +327,11 @@ function TipModal({ post, onClose }: { post: Post; onClose: () => void }) {
               whileTap={{ scale: 0.95 }}
               onClick={() => setAmount(a)}
               style={{
-                flex: 1, padding: '10px 0', borderRadius: 12, border: 'none', cursor: 'pointer',
-                background: amount === a ? 'rgba(34,197,94,0.12)' : 'rgba(255,255,255,0.04)',
-                backdropFilter: 'blur(8px)',
-                boxShadow: amount === a
-                  ? '0 0 0 1px rgba(34,197,94,0.45) inset, 0 0 14px rgba(34,197,94,0.18)'
-                  : '0 0 0 0.5px rgba(255,255,255,0.09) inset',
-                color: amount === a ? '#4ade80' : 'rgba(248,248,250,0.50)',
-                fontSize: 13, fontWeight: 800, transition: 'all 0.15s',
+                flex: 1, padding: '10px 0', borderRadius: 8, border: 'none', cursor: 'pointer',
+                background: amount === a ? C.gold : 'rgba(255,255,255,0.05)',
+                color: amount === a ? C.ink : C.paperDim,
+                fontSize: 13, fontWeight: 700, fontFamily: 'inherit',
+                transition: 'background 0.15s, color 0.15s',
               }}
             >KES {a}</motion.button>
           ))}
@@ -360,15 +343,11 @@ function TipModal({ post, onClose }: { post: Post; onClose: () => void }) {
           type="number"
           placeholder="Custom amount"
           style={{
-            width: '100%', background: 'rgba(255,255,255,0.04)', border: 'none',
-            boxShadow: '0 0 0 1px rgba(255,255,255,0.09) inset',
-            borderRadius: 12, padding: '11px 14px',
-            fontSize: 14, color: '#f8f8fa', outline: 'none',
+            width: '100%', background: C.pineDeep, border: `1px solid ${C.border}`,
+            borderRadius: 8, padding: '11px 14px',
+            fontSize: 14, color: C.paper, outline: 'none',
             fontFamily: 'inherit', boxSizing: 'border-box', marginBottom: 14,
-            caretColor: '#10b981', transition: 'box-shadow 0.2s',
           }}
-          onFocus={e => (e.target.style.boxShadow = '0 0 0 1.5px rgba(34,197,94,0.50) inset')}
-          onBlur={e  => (e.target.style.boxShadow = '0 0 0 1px rgba(255,255,255,0.09) inset')}
         />
 
         <motion.button
@@ -377,12 +356,11 @@ function TipModal({ post, onClose }: { post: Post; onClose: () => void }) {
           onClick={() => { setSent(true); setTimeout(onClose, 1800); }}
           disabled={sent}
           style={{
-            width: '100%', padding: '14px 0', borderRadius: 15, border: 'none',
+            width: '100%', padding: '13px 0', borderRadius: 9, border: 'none',
             cursor: sent ? 'default' : 'pointer',
-            background: sent ? 'rgba(34,197,94,0.18)' : 'linear-gradient(135deg,#22c55e,#16a34a)',
-            color: sent ? '#4ade80' : '#fff',
-            fontSize: 14, fontWeight: 800, transition: 'all 0.2s',
-            boxShadow: sent ? 'none' : '0 6px 22px rgba(34,197,94,0.38)',
+            background: sent ? C.pineLight : C.gold,
+            color: sent ? C.paper : C.ink,
+            fontSize: 14, fontWeight: 700, fontFamily: 'inherit',
           }}
         >
           {sent ? '✓ Tip Sent!' : `Send KES ${amount} via M-Pesa / yBOB`}
@@ -391,10 +369,9 @@ function TipModal({ post, onClose }: { post: Post; onClose: () => void }) {
         <button
           onClick={onClose}
           style={{
-            width: '100%', marginTop: 10, padding: '12px 0', borderRadius: 13, border: 'none',
-            background: 'rgba(255,255,255,0.04)',
-            boxShadow: '0 0 0 0.5px rgba(255,255,255,0.08) inset',
-            color: 'rgba(248,248,250,0.38)', fontSize: 13, fontWeight: 700, cursor: 'pointer',
+            width: '100%', marginTop: 10, padding: '11px 0', borderRadius: 9, border: 'none',
+            background: 'rgba(255,255,255,0.05)',
+            color: C.paperDim, fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit',
           }}
         >Cancel</button>
       </motion.div>
@@ -409,7 +386,6 @@ export default function HubPage() {
   const [posts,    setPosts]    = useState<Post[]>(SEED_POSTS);
   const [loading,  setLoading]  = useState(false);
   const [tipPost,  setTipPost]  = useState<Post | null>(null);
-  const [focused,  setFocused]  = useState(false);
 
   const load = async () => {
     setLoading(true);
@@ -438,253 +414,184 @@ export default function HubPage() {
   const featuredPost = filtered[0];
   const feedPosts    = filtered.slice(1);
 
+  // div wrapper style to neutralize app-wide glass body bg on this page
   return (
     <main style={{
-      minHeight: '100dvh', paddingBottom: 96,
-      color: '#f8f8fa', fontFamily: 'var(--font-sans)',
-      position: 'relative',
-    }}>
+      minHeight: '100dvh', background: C.bg,
+      color: C.paper, fontFamily: "'IBM Plex Sans', sans-serif",
+      paddingBottom: 80,
+    }}
+    >
+      {/* kaiweb fonts */}
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300..700;1,9..144,300..700&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&display=swap');
+      `}</style>
 
-      {/* ── Ambient orbs ── */}
-      <div aria-hidden style={{ position: 'fixed', inset: 0, pointerEvents: 'none', zIndex: 0 }}>
-        <div style={{
-          position: 'absolute', top: '6%', right: '-10%',
-          width: 360, height: 360, borderRadius: '50%',
-          background: 'radial-gradient(circle, rgba(16,185,129,0.08) 0%, transparent 70%)',
-          animation: 'orb-drift-a 14s ease-in-out infinite',
-        }} />
-        <div style={{
-          position: 'absolute', bottom: '20%', left: '-8%',
-          width: 280, height: 280, borderRadius: '50%',
-          background: 'radial-gradient(circle, rgba(168,85,247,0.06) 0%, transparent 70%)',
-          animation: 'orb-drift-b 18s ease-in-out infinite',
-        }} />
-      </div>
+      <div style={{ maxWidth: 1100, margin: '0 auto', padding: '0 24px' }}>
 
-      {/* ── STICKY HEADER ── */}
-      <div style={{
-        position: 'sticky', top: 0, zIndex: 20,
-        background: 'rgba(4,4,8,0.80)',
-        backdropFilter: 'blur(28px) saturate(1.8)',
-        boxShadow: '0 1px 0 rgba(16,185,129,0.10)',
-      }}>
-        {/* Title row */}
-        <div style={{ padding: '18px 18px 0', display: 'flex', alignItems: 'center', gap: 12 }}>
-          <div style={{
-            width: 42, height: 42, borderRadius: 14, flexShrink: 0,
-            background: 'rgba(16,185,129,0.14)',
-            backdropFilter: 'blur(10px)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            boxShadow: '0 0 18px rgba(16,185,129,0.20)',
-          }}>
-            <Newspaper size={20} color="#10b981" strokeWidth={1.8} />
-          </div>
-          <div style={{ flex: 1 }}>
-            <h1 style={{ fontSize: 19, fontWeight: 900, margin: '0 0 1px', letterSpacing: '-0.4px' }}>
-              Community Info Hub
-            </h1>
-            <p style={{ fontSize: 10, color: 'rgba(248,248,250,0.38)', margin: 0 }}>
-              Field journals · Market news · Audio guides · Chama tips
-            </p>
-          </div>
-          <motion.button
-            whileHover={{ rotate: 180 }}
-            transition={{ duration: 0.4 }}
-            onClick={load}
-            style={{
-              width: 34, height: 34, borderRadius: 10, border: 'none', cursor: 'pointer',
-              background: 'rgba(255,255,255,0.05)',
-              backdropFilter: 'blur(8px)',
-              boxShadow: '0 0 0 0.5px rgba(255,255,255,0.08) inset',
+        {/* ── Header / masthead ── */}
+        <header style={{
+          display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+          padding: '28px 0', borderBottom: `1px solid ${C.border}`,
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            <div style={{
+              width: 34, height: 34, borderRadius: '50%',
+              background: C.gold, color: C.ink, fontWeight: 700,
               display: 'flex', alignItems: 'center', justifyContent: 'center',
-            }}
-          >
-            <RefreshCw size={13} color="rgba(248,248,250,0.38)"
-              style={{ animation: loading ? 'spin 1s linear infinite' : 'none' }} />
-          </motion.button>
-        </div>
+              fontSize: 16,
+            }}>K</div>
+            <div>
+              <h1 style={{ ...SERIF, fontSize: 22, fontWeight: 600, color: C.paper, margin: 0, lineHeight: 1.1 }}>
+                Community Info Hub
+              </h1>
+              <p style={{ ...MONO, fontSize: 10, letterSpacing: 1, color: C.goldLight, margin: '2px 0 0' }}>
+                JOURNAL · NEWS · GUIDES · PODCASTS
+              </p>
+            </div>
+          </div>
 
-        {/* Search bar */}
-        <motion.div
-          animate={{
-            boxShadow: focused
-              ? '0 0 0 1.5px rgba(16,185,129,0.45) inset, 0 4px 16px rgba(16,185,129,0.12)'
-              : '0 0 0 0.5px rgba(255,255,255,0.08) inset',
-          }}
-          transition={{ duration: 0.2 }}
-          style={{
-            display: 'flex', alignItems: 'center', gap: 9,
-            background: 'rgba(255,255,255,0.05)',
-            backdropFilter: 'blur(12px)',
-            borderRadius: 13, padding: '9px 13px',
-            margin: '12px 18px 0',
-          }}
-        >
-          <Search size={13} color="rgba(248,248,250,0.30)" />
-          <input
-            value={search}
-            onChange={e => setSearch(e.target.value)}
-            onFocus={() => setFocused(true)}
-            onBlur={() => setFocused(false)}
-            placeholder="Search articles, guides, market news…"
-            style={{
-              background: 'none', border: 'none', outline: 'none',
-              flex: 1, fontSize: 13, color: '#f8f8fa',
-              fontFamily: 'inherit', caretColor: '#10b981',
-            }}
-          />
-        </motion.div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <div style={{
+              display: 'flex', alignItems: 'center', gap: 8,
+              background: C.card, border: `1px solid ${C.border}`,
+              borderRadius: 8, padding: '8px 12px',
+            }}>
+              <Search size={14} color={C.inkLight} />
+              <input
+                value={search}
+                onChange={e => setSearch(e.target.value)}
+                placeholder="Search the hub…"
+                style={{
+                  background: 'none', border: 'none', outline: 'none',
+                  flex: 1, fontSize: 13, color: C.paper, fontFamily: 'inherit',
+                  minWidth: 180,
+                }}
+              />
+            </div>
+            <motion.button
+              whileHover={{ rotate: 180 }}
+              transition={{ duration: 0.4 }}
+              onClick={load}
+              style={{
+                width: 36, height: 36, borderRadius: 8, border: `1px solid ${C.border}`,
+                cursor: 'pointer', background: C.card, color: C.goldLight,
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+              }}
+            >
+              <RefreshCw size={14} style={{ animation: loading ? 'spin 1s linear infinite' : 'none' }} />
+            </motion.button>
+          </div>
+        </header>
 
-        {/* Category pills */}
-        <div style={{
-          display: 'flex', gap: 5, overflowX: 'auto',
-          scrollbarWidth: 'none', padding: '10px 18px 0',
+        {/* ── Category nav ── */}
+        <nav style={{
+          display: 'flex', gap: 8, flexWrap: 'wrap', padding: '22px 0 10px',
         }}>
           {CATEGORIES.map(c => (
             <motion.button
               key={c.id}
               whileHover={{ y: -1 }}
-              whileTap={{ scale: 0.95 }}
+              whileTap={{ scale: 0.97 }}
               onClick={() => setCategory(c.id)}
               style={{
-                flexShrink: 0, display: 'flex', alignItems: 'center', gap: 5,
-                padding: '6px 14px',
-                borderRadius: category === c.id ? '10px 10px 0 0' : 10,
-                border: 'none', cursor: 'pointer',
-                background: category === c.id ? `${c.color}14` : 'rgba(255,255,255,0.04)',
-                backdropFilter: 'blur(8px)',
-                boxShadow: category === c.id
-                  ? `0 -1px 0 ${c.color}60 inset`
-                  : '0 0 0 0.5px rgba(255,255,255,0.06) inset',
-                color: category === c.id ? c.color : 'rgba(248,248,250,0.38)',
-                fontSize: 11, fontWeight: category === c.id ? 800 : 600,
-                transition: 'all 0.18s',
+                display: 'flex', alignItems: 'center', gap: 6,
+                padding: '8px 18px', borderRadius: 6,
+                border: category === c.id ? `1px solid ${C.gold}` : `1px solid ${C.border}`,
+                cursor: 'pointer',
+                background: category === c.id ? C.gold : C.card,
+                color: category === c.id ? C.ink : C.paperDim,
+                fontFamily: "'IBM Plex Mono', monospace",
+                fontSize: 11, letterSpacing: 0.8, textTransform: 'uppercase',
+                fontWeight: 600, transition: 'all 0.18s',
               }}
             >
-              {c.icon} {c.label}
+              {c.label}
             </motion.button>
           ))}
-        </div>
+          <Link href="/hub/create" style={{
+            ...MONO, marginLeft: 'auto', fontSize: 11, letterSpacing: 0.8, textTransform: 'uppercase',
+            color: C.goldLight, fontWeight: 600, textDecoration: 'none',
+            display: 'flex', alignItems: 'center', gap: 4,
+            padding: '8px 6px',
+          }}>
+            + Publish <ChevronRight size={12} />
+          </Link>
+        </nav>
 
-        {/* Stats strip */}
-        <div style={{
-          display: 'flex', gap: 0,
-          background: 'rgba(255,255,255,0.02)',
-          boxShadow: '0 -1px 0 rgba(255,255,255,0.04) inset',
-          marginTop: 8,
-        }}>
-          {[
-            { label:'Articles', value: posts.filter(p=>p.contentType==='ARTICLE').length,         color:'#10b981' },
-            { label:'Journals', value: posts.filter(p=>p.contentType==='FIELD_JOURNAL').length,   color:'#22c55e' },
-            { label:'Podcasts', value: posts.filter(p=>p.contentType==='AUDIO_PODCAST').length,   color:'#a855f7' },
-            { label:'Markets',  value: posts.filter(p=>p.contentType==='MARKET_NEWS').length,     color:'#f59e0b' },
-          ].map((s, i, arr) => (
-            <div key={s.label} style={{
-              flex: 1, textAlign: 'center', padding: '9px 0',
-              boxShadow: i < arr.length - 1 ? '1px 0 0 rgba(255,255,255,0.04)' : 'none',
-            }}>
-              <p style={{ fontSize: 15, fontWeight: 900, color: s.color, margin: '0 0 1px', letterSpacing: -0.5 }}>
-                {s.value}
-              </p>
-              <p style={{ fontSize: 8, color: 'rgba(248,248,250,0.30)', fontWeight: 700, letterSpacing: 0.7, textTransform: 'uppercase', margin: 0 }}>
-                {s.label}
-              </p>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* ── FEATURED BANNER ── */}
-      <AnimatePresence mode="wait">
-        {featuredPost && (
-          <motion.div
-            key={featuredPost.id}
-            initial={{ opacity: 0, y: 14 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.35 }}
-            style={{ margin: '18px 18px 0', position: 'relative', zIndex: 2 }}
-          >
-            <p className="label-caps" style={{ marginBottom: 10 }}>Featured</p>
-            <motion.div
-              whileHover={{ y: -3 }}
+        {/* ── FEATURED ── */}
+        <AnimatePresence mode="wait">
+          {featuredPost && (
+            <motion.section
+              key={featuredPost.id}
+              initial={{ opacity: 0, y: 14 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.3 }}
               style={{
-                borderRadius: 24, padding: '20px 18px', position: 'relative', overflow: 'hidden',
-                background: `linear-gradient(135deg, ${TYPE_CFG[featuredPost.contentType].color}14 0%, rgba(6,6,12,0.65) 100%)`,
-                backdropFilter: 'blur(28px)',
-                boxShadow: `0 0 0 0.5px ${TYPE_CFG[featuredPost.contentType].color}22 inset, 0 16px 50px rgba(0,0,0,0.40), 0 0 60px ${TYPE_CFG[featuredPost.contentType].color}08`,
-                cursor: 'pointer',
+                margin: '14px 0 28px',
+                background: `linear-gradient(135deg, ${C.pine} 0%, ${C.pineDeep} 100%)`,
+                border: `1px solid ${C.border}`,
+                borderRadius: 14, padding: '30px 32px',
+                position: 'relative', overflow: 'hidden',
               }}
             >
-              {/* Top glow line */}
-              <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 2, background: `linear-gradient(90deg,transparent,${TYPE_CFG[featuredPost.contentType].color},transparent)` }} />
-              {/* Glow blob */}
-              <div style={{ position: 'absolute', top: -40, right: -40, width: 140, height: 140, borderRadius: '50%', background: `radial-gradient(circle, ${TYPE_CFG[featuredPost.contentType].color}14 0%, transparent 70%)`, pointerEvents: 'none' }} />
-
-              <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 10 }}>
-                {TYPE_CFG[featuredPost.contentType].icon}
-                <span style={{ fontSize: 9, fontWeight: 800, color: TYPE_CFG[featuredPost.contentType].color, textTransform: 'uppercase', letterSpacing: 0.6 }}>
-                  {TYPE_CFG[featuredPost.contentType].label}
-                </span>
-                <span className="badge badge-live" style={{ marginLeft: 'auto' }}>New</span>
+              <div style={{
+                position: 'absolute', top: -60, right: -60, width: 220, height: 220,
+                borderRadius: '50%', background: 'radial-gradient(circle, rgba(200,155,60,0.20) 0%, transparent 70%)',
+                pointerEvents: 'none',
+              }} />
+              <div style={{ ...MONO, fontSize: 10, letterSpacing: 1.2, textTransform: 'uppercase', color: C.goldLight, marginBottom: 12 }}>
+                ★ Featured · {TYPE_CFG[featuredPost.contentType].label}
               </div>
-
-              <h2 style={{ fontSize: 18, fontWeight: 900, color: '#f8f8fa', margin: '0 0 9px', lineHeight: 1.3 }}>
+              <h2 style={{ ...SERIF, fontSize: 26, fontWeight: 600, color: C.paper, margin: '0 0 12px', lineHeight: 1.25, maxWidth: '80%' }}>
                 {featuredPost.title}
               </h2>
-              <p style={{ fontSize: 12, color: 'rgba(248,248,250,0.55)', lineHeight: 1.65, margin: '0 0 14px' }}>
-                {featuredPost.summary.slice(0, 130)}…
+              <p style={{ fontSize: 14, color: 'rgba(246,242,231,0.72)', lineHeight: 1.7, margin: '0 0 20px', maxWidth: '86%' }}>
+                {featuredPost.summary.slice(0, 150)}…
               </p>
-
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                <p style={{ fontSize: 11, color: 'rgba(248,248,250,0.40)', margin: 0 }}>
-                  {featuredPost.creator} · {featuredPost.publishedAt}
+                <p style={{ ...MONO, fontSize: 11, color: C.goldLight, margin: 0 }}>
+                  By {featuredPost.creator} · {featuredPost.publishedAt}
                 </p>
                 <motion.button
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
+                  whileHover={{ scale: 1.04 }}
+                  whileTap={{ scale: 0.96 }}
                   onClick={() => setTipPost(featuredPost)}
                   style={{
-                    display: 'flex', alignItems: 'center', gap: 5,
-                    padding: '7px 14px', borderRadius: 10, border: 'none', cursor: 'pointer',
-                    background: 'rgba(34,197,94,0.12)',
-                    boxShadow: '0 0 0 0.5px rgba(34,197,94,0.30) inset',
-                    color: '#4ade80', fontSize: 10, fontWeight: 800,
+                    display: 'flex', alignItems: 'center', gap: 6,
+                    padding: '8px 16px', borderRadius: 8, border: 'none', cursor: 'pointer',
+                    background: C.gold, color: C.ink, fontSize: 12, fontWeight: 700, fontFamily: 'inherit',
                   }}
                 >
-                  <DollarSign size={11} /> Tip Creator
+                  <DollarSign size={13} /> Tip Creator
                 </motion.button>
               </div>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+            </motion.section>
+          )}
+        </AnimatePresence>
 
-      {/* ── FEED ── */}
-      <div style={{ padding: '18px 18px 0', position: 'relative', zIndex: 2 }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
-          <p className="label-caps">
+        {/* ── Section label ── */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
+          <p style={{ ...MONO, fontSize: 11, letterSpacing: 1.2, textTransform: 'uppercase', color: C.goldLight }}>
             {filtered.length} {category === 'ALL' ? 'Posts' : CATEGORIES.find(c => c.id === category)?.label}
           </p>
-          <Link href="/hub/create" style={{
-            fontSize: 10, color: '#10b981', fontWeight: 700,
-            textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 3,
-          }}>
-            + Publish <ChevronRight size={10} />
-          </Link>
         </div>
 
+        {/* ── FEED GRID ── */}
         {filtered.length === 0 ? (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            style={{ textAlign: 'center', padding: '48px 20px', color: 'rgba(248,248,250,0.28)', fontSize: 13 }}
+            style={{ textAlign: 'center', padding: '60px 20px', color: C.inkLight, fontSize: 14 }}
           >
             No posts found. Try a different category or search term.
           </motion.div>
         ) : (
-          feedPosts.map((p, i) => (
-            <PostCard key={p.id} post={p} idx={i} onLike={handleLike} onTip={setTipPost} />
-          ))
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: 20 }}>
+            {feedPosts.map((p, i) => (
+              <PostCard key={p.id} post={p} idx={i} onLike={handleLike} onTip={setTipPost} />
+            ))}
+          </div>
         )}
 
         {/* ── KAI ONBOARDING CTA ── */}
@@ -693,40 +600,36 @@ export default function HubPage() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.4 }}
           style={{
-            marginTop: 8, borderRadius: 22, padding: '18px 17px',
-            background: 'linear-gradient(135deg, rgba(168,85,247,0.12) 0%, rgba(6,6,12,0.55) 100%)',
-            backdropFilter: 'blur(22px)',
-            boxShadow: '0 0 0 0.5px rgba(168,85,247,0.20) inset, 0 8px 30px rgba(0,0,0,0.32)',
+            marginTop: 40, borderRadius: 14, padding: '26px 30px',
+            background: `linear-gradient(135deg, ${C.pine} 0%, ${C.pineDeep} 100%)`,
+            border: `1px solid ${C.border}`,
             position: 'relative', overflow: 'hidden',
           }}
         >
           <div style={{
-            position: 'absolute', top: -30, right: -30, width: 100, height: 100,
+            position: 'absolute', top: -40, right: -40, width: 160, height: 160,
             borderRadius: '50%',
-            background: 'radial-gradient(circle, rgba(168,85,247,0.14) 0%, transparent 70%)',
+            background: 'radial-gradient(circle, rgba(200,155,60,0.22) 0%, transparent 70%)',
             pointerEvents: 'none',
           }} />
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: 11, marginBottom: 10 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 12 }}>
             <div style={{
-              width: 40, height: 40, borderRadius: 13,
-              background: 'rgba(168,85,247,0.16)',
-              boxShadow: '0 0 18px rgba(168,85,247,0.22)',
+              width: 40, height: 40, borderRadius: 10,
+              background: C.gold, color: C.ink,
               display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
             }}>
-              <Zap size={19} color="#a855f7" />
+              <Zap size={19} />
             </div>
             <div>
-              <p style={{ fontSize: 13, fontWeight: 900, color: '#f8f8fa', margin: 0 }}>
-                KAI Onboarding Agent
-              </p>
-              <p style={{ fontSize: 10, color: 'rgba(248,248,250,0.38)', margin: 0 }}>
-                Forest Guardian · MSME Merchant · Chama Saver
+              <p style={{ ...SERIF, fontSize: 16, fontWeight: 600, color: C.paper, margin: 0 }}>KAI Onboarding Agent</p>
+              <p style={{ ...MONO, fontSize: 10, letterSpacing: 0.8, color: C.goldLight, margin: '2px 0 0' }}>
+                FOREST GUARDIAN · MSME MERCHANT · CHAMA SAVER
               </p>
             </div>
           </div>
 
-          <p style={{ fontSize: 12, color: 'rgba(248,248,250,0.55)', lineHeight: 1.60, margin: '0 0 14px' }}>
+          <p style={{ fontSize: 14, color: 'rgba(246,242,231,0.72)', lineHeight: 1.6, margin: '0 0 18px', maxWidth: '92%' }}>
             Not sure where to start? Ask KAI to analyse your profile and recommend the best vault strategy, CFA group, or Chama to join.
           </p>
 
@@ -735,10 +638,8 @@ export default function HubPage() {
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.97 }}
               style={{
-                width: '100%', padding: '13px 0', borderRadius: 14, border: 'none', cursor: 'pointer',
-                background: 'linear-gradient(135deg, #a855f7, #7c3aed)',
-                color: '#fff', fontSize: 13, fontWeight: 800,
-                boxShadow: '0 6px 22px rgba(139,92,246,0.40)',
+                padding: '13px 28px', borderRadius: 9, border: 'none', cursor: 'pointer',
+                background: C.gold, color: C.ink, fontSize: 13, fontWeight: 700, fontFamily: 'inherit',
               }}
             >
               Ask KAI to Onboard Me →
