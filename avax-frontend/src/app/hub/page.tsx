@@ -246,11 +246,17 @@ function PostRow({ post, idx, onLike, onTip }: { post: Post; idx: number; onLike
 }
 
 // ── Tip modal ──────────────────────────────────────────────────────────────
-function TipModal({ post, onClose, onPaid }: { post: Post; onClose: () => void; onPaid: (postId: string, amountKes: number) => void }) {
+function TipModal({ post, onClose, onPaid, onNeedPayout }: {
+  post: Post;
+  onClose: () => void;
+  onPaid: (postId: string, amountKes: number) => void;
+  onNeedPayout: (creator: string) => void;
+}) {
   const [amount, setAmount] = useState('100');
   const [email, setEmail]   = useState('');
   const [status, setStatus] = useState<'idle' | 'paying' | 'awaiting' | 'success' | 'error'>('idle');
   const [msg, setMsg]       = useState('');
+  const [needPayout, setNeedPayout] = useState(false);
 
   const handlePay = async () => {
     const amt = Math.round(Number(amount));
@@ -280,8 +286,23 @@ function TipModal({ post, onClose, onPaid }: { post: Post; onClose: () => void; 
           const poll = await r.json();
           if (poll.status === 'success') {
             clearInterval(id);
+            const pdRes = await fetch('/api/hub/tip/payout', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ reference: data.reference }),
+            }).catch(() => null);
+            const pd = pdRes ? await pdRes.json() : null;
+            if (pd?.status === 'no_account') {
+              setNeedPayout(true);
+              setStatus('success');
+              setMsg(`Tip confirmed! ${post.creator} has no payout account yet, so this tip is held. Register theirs to release the funds.`);
+              onPaid(post.id, amt);
+              return;
+            }
             setStatus('success');
-            setMsg(`Tip confirmed! KES ${poll.amountKes?.toLocaleString() ?? data.amountKes} sent to ${post.creator}.`);
+            setMsg(pd?.status === 'paid'
+              ? `Tip confirmed! KES ${poll.amountKes?.toLocaleString() ?? data.amountKes} auto-sent to ${post.creator}.`
+              : `Tip confirmed! KES ${poll.amountKes?.toLocaleString() ?? data.amountKes} reserved for ${post.creator}.`);
             onPaid(post.id, amt);
             setTimeout(onClose, 2200);
           } else if (poll.status === 'failed' || poll.status === 'abandoned') {
@@ -399,6 +420,21 @@ function TipModal({ post, onClose, onPaid }: { post: Post; onClose: () => void; 
           </p>
         )}
 
+        {needPayout && (
+          <motion.button
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.97 }}
+            onClick={() => { onNeedPayout(post.creator); onClose(); }}
+            style={{
+              width: '100%', padding: '13px 0', borderRadius: 9, border: 'none', cursor: 'pointer',
+              background: C.paper, color: C.ink, fontSize: 14, fontWeight: 700, fontFamily: 'inherit',
+              marginBottom: 10,
+            }}
+          >
+            Register {post.creator.split(' ')[0]}'s payout account
+          </motion.button>
+        )}
+
         <motion.button
           whileHover={status === 'idle' || status === 'error' ? { scale: 1.02 } : {}}
           whileTap={status === 'idle' || status === 'error' ? { scale: 0.97 } : {}}
@@ -432,6 +468,192 @@ function TipModal({ post, onClose, onPaid }: { post: Post; onClose: () => void; 
   );
 }
 
+// ── Payout account modal ────────────────────────────────────────────────────
+function PayoutModal({ initialCreator, onClose }: { initialCreator: string; onClose: () => void }) {
+  const [name, setName]       = useState(initialCreator);
+  const [type, setType]       = useState<'mobile_money' | 'kepss'>('mobile_money');
+  const [bankAccounts, setBankAccounts] = useState<{ name: string; code: string }[]>([]);
+  const [bankCode, setBankCode]         = useState('MPESA');
+  const [accountNumber, setAccountNumber] = useState('');
+  const [status, setStatus] = useState<'idle' | 'saving' | 'success' | 'error'>('idle');
+  const [msg, setMsg]       = useState('');
+
+  useEffect(() => {
+    if (type === 'mobile_money') { setBankCode('MPESA'); return; }
+    setBankCode('');
+    fetch('/api/hub/payout/banks')
+      .then(r => r.json())
+      .then(d => setBankAccounts((d.bankAccounts ?? []).map((b: { name: string; code: string }) => ({ name: b.name, code: b.code }))))
+      .catch(() => setBankAccounts([]));
+  }, [type]);
+
+  const handleSave = async () => {
+    const account = accountNumber.trim();
+    if (!name.trim())        { setStatus('error'); setMsg('Enter the creator name.'); return; }
+    if (!account)            { setStatus('error'); setMsg('Enter the account number or phone.'); return; }
+    if (type === 'mobile_money' && !/^(\+?254|0)?\d{9}$/.test(account.replace(/\s/g, ''))) {
+      setStatus('error'); setMsg('Enter a valid Kenyan phone number, e.g. 0712345678 or 254712345678.'); return;
+    }
+    if (type === 'kepss' && !bankCode) { setStatus('error'); setMsg('Select the creator\'s bank.'); return; }
+
+    setStatus('saving');
+    setMsg('Registering payout account with Paystack...');
+    try {
+      const res = await fetch('/api/hub/payout/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: name.trim(), payoutType: type, accountNumber: account, bankCode, accountName: name.trim() }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Registration failed');
+      setStatus('success');
+      setMsg(`Payout account registered. Future tips to ${name.trim()} are auto-sent to ${account}.`);
+    } catch (e: unknown) {
+      setStatus('error');
+      setMsg(e instanceof Error ? e.message.slice(0, 160) : 'Registration failed.');
+    }
+  };
+
+  return (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      style={{
+        position: 'fixed', inset: 0, zIndex: 90,
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        background: 'rgba(4,10,7,0.82)',
+        padding: 20, overflowY: 'auto',
+      }}
+      onClick={e => e.target === e.currentTarget && onClose()}
+    >
+      <motion.div
+        initial={{ y: 24, opacity: 0 }}
+        animate={{ y: 0,  opacity: 1 }}
+        exit={{ y: 24,    opacity: 0 }}
+        transition={{ type: 'spring', stiffness: 380, damping: 32 }}
+        style={{
+          width: '100%', maxWidth: 460,
+          background: C.pineDeep,
+          borderRadius: 14,
+          padding: '30px 28px',
+        }}
+      >
+        <p style={{ ...SERIF, fontSize: 20, fontWeight: 600, color: C.paper, margin: '0 0 4px' }}>
+          Creator payout account
+        </p>
+        <p style={{ fontSize: 12, color: C.inkLight, lineHeight: 1.5, margin: '0 0 20px' }}>
+          Where tips are auto-sent via Paystack Transfer (KES, M-Pesa or bank).
+        </p>
+
+        <p style={{ ...MONO, fontSize: 10, letterSpacing: 1, textTransform: 'uppercase', color: C.goldLight, marginBottom: 8 }}>Creator name</p>
+        <input
+          value={name}
+          onChange={e => setName(e.target.value)}
+          placeholder="e.g. Grace Wangari"
+          disabled={status === 'success'}
+          style={{
+            width: '100%', background: 'rgba(255,255,255,0.04)',
+            border: `1px solid ${C.hairline}`, borderRadius: 8, padding: '12px 14px',
+            fontSize: 15, color: C.paper, outline: 'none', fontFamily: 'inherit',
+            boxSizing: 'border-box', marginBottom: 12,
+          }}
+        />
+
+        <p style={{ ...MONO, fontSize: 10, letterSpacing: 1, textTransform: 'uppercase', color: C.goldLight, marginBottom: 8 }}>Payout type</p>
+        <div style={{ display: 'flex', gap: 8, marginBottom: 14 }}>
+          {(['mobile_money', 'kepss'] as const).map(t => (
+            <motion.button
+              key={t}
+              whileHover={{ scale: 1.03 }}
+              whileTap={{ scale: 0.95 }}
+              onClick={() => setType(t)}
+              style={{
+                flex: 1, padding: '12px 0', borderRadius: 8, border: 'none', cursor: 'pointer',
+                background: type === t ? C.gold : 'rgba(255,255,255,0.05)',
+                color: type === t ? C.ink : C.paperDim,
+                fontSize: 13, fontWeight: 700, fontFamily: 'inherit',
+                transition: 'background 0.15s, color 0.15s',
+              }}
+            >
+              {t === 'mobile_money' ? 'M-Pesa' : 'Bank account'}
+            </motion.button>
+          ))}
+        </div>
+
+        {type === 'kepss' && (
+          <>
+            <p style={{ ...MONO, fontSize: 10, letterSpacing: 1, textTransform: 'uppercase', color: C.goldLight, marginBottom: 8 }}>Bank</p>
+            <select
+              value={bankCode}
+              onChange={e => setBankCode(e.target.value)}
+              disabled={status === 'success'}
+              style={{
+                width: '100%', background: 'rgba(255,255,255,0.04)',
+                border: `1px solid ${C.hairline}`, borderRadius: 8, padding: '12px 14px',
+                fontSize: 15, color: C.paper, outline: 'none', fontFamily: 'inherit',
+                boxSizing: 'border-box', marginBottom: 12,
+              }}
+            >
+              <option value="" style={{ color: C.ink }}>Select bank…</option>
+              {bankAccounts.map(b => (
+                <option key={b.code} value={b.code} style={{ color: C.ink }}>{b.name}</option>
+              ))}
+            </select>
+          </>
+        )}
+
+        <input
+          value={accountNumber}
+          onChange={e => setAccountNumber(e.target.value)}
+          placeholder={type === 'mobile_money' ? 'M-Pesa phone number, e.g. 0712345678' : 'Bank account number'}
+          disabled={status === 'success'}
+          style={{
+            width: '100%', background: 'rgba(255,255,255,0.04)',
+            border: `1px solid ${C.hairline}`, borderRadius: 8, padding: '12px 14px',
+            fontSize: 15, color: C.paper, outline: 'none', fontFamily: 'inherit',
+            boxSizing: 'border-box', marginBottom: 12,
+          }}
+        />
+
+        {msg && (
+          <p style={{
+            fontSize: 12, lineHeight: 1.5, margin: '0 0 12px',
+            color: status === 'success' ? C.goldLight : status === 'error' ? C.clay : C.inkLight,
+          }}>
+            {msg}
+          </p>
+        )}
+
+        <motion.button
+          whileHover={status !== 'saving' && status !== 'success' ? { scale: 1.02 } : {}}
+          whileTap={status !== 'saving' && status !== 'success' ? { scale: 0.97 } : {}}
+          onClick={handleSave}
+          disabled={status === 'saving' || status === 'success'}
+          style={{
+            width: '100%', padding: '14px 0', borderRadius: 9, border: 'none',
+            cursor: (status === 'saving' || status === 'success') ? 'default' : 'pointer',
+            background: status === 'success' ? C.pineLight : C.gold,
+            color: status === 'success' ? C.paper : C.ink,
+            fontSize: 15, fontWeight: 700, fontFamily: 'inherit',
+          }}
+        >
+          {status === 'success' ? 'Registered!' : status === 'saving' ? 'Registering...' : 'Register payout account'}
+        </motion.button>
+
+        <button
+          onClick={onClose}
+          style={{
+            width: '100%', marginTop: 10, padding: '12px 0', borderRadius: 9, border: 'none',
+            background: 'rgba(255,255,255,0.05)',
+            color: C.paperDim, fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit',
+          }}
+        >Close</button>
+      </motion.div>
+    </motion.div>
+  );
+}
+
 // ── Main page ──────────────────────────────────────────────────────────────
 export default function HubPage() {
   const [category, setCategory] = useState<Category>('ALL');
@@ -439,6 +661,7 @@ export default function HubPage() {
   const [posts,    setPosts]    = useState<Post[]>(SEED_POSTS);
   const [loading,  setLoading]  = useState(false);
   const [tipPost,  setTipPost]  = useState<Post | null>(null);
+  const [payoutFor, setPayoutFor] = useState<string | null>(null);
 
   const load = async () => {
     setLoading(true);
@@ -569,12 +792,23 @@ export default function HubPage() {
             </motion.button>
           ))}
           <Link href="/hub/create" style={{
-            ...MONO, marginLeft: 'auto', fontSize: 12, letterSpacing: 1, textTransform: 'uppercase',
+            ...MONO, fontSize: 12, letterSpacing: 1, textTransform: 'uppercase',
             color: C.goldLight, fontWeight: 600, textDecoration: 'none',
             display: 'flex', alignItems: 'center', gap: 4, whiteSpace: 'nowrap',
           }}>
             + Publish <ChevronRight size={13} />
           </Link>
+          <motion.button
+            whileTap={{ scale: 0.96 }}
+            onClick={() => setPayoutFor('')}
+            style={{
+              ...MONO, background: 'none', border: 'none', cursor: 'pointer',
+              padding: '4px 0', fontSize: 12, letterSpacing: 1, textTransform: 'uppercase',
+              color: C.goldLight, fontWeight: 600, whiteSpace: 'nowrap',
+            }}
+          >
+            Payout
+          </motion.button>
         </nav>
 
         {/* ── Hub highlights: the main numbers ── */}
@@ -757,7 +991,17 @@ export default function HubPage() {
 
       {/* ── TIP MODAL ── */}
       <AnimatePresence>
-        {tipPost && <TipModal post={tipPost} onClose={() => setTipPost(null)} onPaid={handlePaid} />}
+        {tipPost && <TipModal
+          post={tipPost}
+          onClose={() => setTipPost(null)}
+          onPaid={handlePaid}
+          onNeedPayout={(creator) => setPayoutFor(creator)}
+        />}
+      </AnimatePresence>
+
+      {/* ── PAYOUT MODAL ── */}
+      <AnimatePresence>
+        {payoutFor !== null && <PayoutModal initialCreator={payoutFor} onClose={() => setPayoutFor(null)} />}
       </AnimatePresence>
     </main>
   );

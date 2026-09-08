@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Nuvari Token Architecture — Whitepaper</title>
+<title>KAI Token Architecture — Whitepaper</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300;9..144,400;9..144,500;9..144,600&family=IBM+Plex+Sans:wght@300;400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
@@ -376,14 +376,66 @@
   }
 
   ::selection{background:var(--gold); color:var(--forest-dark);}
+
+/* ---------- site nav / footer (scoped to this page's own palette) ---------- */
+.site-nav{
+  position:sticky; top:0; z-index:20;
+  background:rgba(18,42,32,0.92);
+  backdrop-filter:blur(10px);
+  border-bottom:1px solid var(--line);
+}
+.site-nav .wrap{
+  display:flex; align-items:center; justify-content:space-between;
+  padding:18px 32px; flex-wrap:wrap; gap:14px;
+}
+.site-nav .brand{
+  font-family:'Fraunces', serif; font-size:18px; color:var(--cream);
+  display:flex; align-items:center; gap:10px; text-decoration:none;
+}
+.site-nav .brand .mark{
+  width:28px; height:28px; border-radius:50%; background:var(--gold);
+  color:var(--forest-dark); font-weight:700; display:flex; align-items:center; justify-content:center;
+}
+.site-nav .links{display:flex; flex-wrap:wrap; gap:22px;}
+.site-nav .links a{
+  font-family:'IBM Plex Mono', monospace; font-size:12px; letter-spacing:0.06em;
+  text-transform:uppercase; color:var(--cream-dim); text-decoration:none;
+}
+.site-nav .links a:hover, .site-nav .links a.active{color:var(--gold-bright);}
+.site-foot{border-top:1px solid var(--line); padding:40px 0 60px; margin-top:40px;}
+.site-foot .wrap{display:flex; justify-content:space-between; flex-wrap:wrap; gap:20px;}
+.site-foot .links{display:flex; flex-wrap:wrap; gap:18px;}
+.site-foot .links a{
+  font-family:'IBM Plex Mono', monospace; font-size:12px; color:var(--cream-dim); text-decoration:none;
+}
+.site-foot .links a:hover{color:var(--gold-bright);}
 </style>
 </head>
 <body>
 
+<!-- ===================== SITE NAV ===================== -->
+<nav class="site-nav">
+  <div class="wrap">
+    <a class="brand" href="index.html"><span class="mark">K</span> KAI</a>
+    <div class="links">
+      <a href="index.html">Home</a>
+      <a href="problems.html">Problem</a>
+      <a href="solution.html">Solution</a>
+      <a href="products.html">Products</a>
+      <a href="insurance.html">Insurance</a>
+      <a href="pension.html">Pension</a>
+      <a href="trust.html">Trust</a>
+      <a href="ecosystem.html">Ecosystem</a>
+      <a href="tokens.html" class="active">Tokens</a>
+      <a href="DAO.html">DAO</a>
+    </div>
+  </div>
+</nav>
+
 <!-- ===================== HERO ===================== -->
 <header class="hero">
   <div class="wrap hero-inner">
-    <div class="eyebrow">Nuvari Protocol · Technical Whitepaper</div>
+    <div class="eyebrow">KAI Protocol · Technical Whitepaper</div>
     <h1>Six tokens.<br>One <em>settlement engine</em>.</h1>
     <p class="lede">
       A token architecture built on Avalanche — engineered so that
@@ -400,12 +452,12 @@
         <div class="v">6 compartments</div>
       </div>
       <div>
-        <div class="k">Settlement unit</div>
-        <div class="v">NUVARI STABLE</div>
+        <div class="k">Buffer layer</div>
+        <div class="v">yBOB</div>
       </div>
       <div>
         <div class="k">Entry point</div>
-        <div class="v">NUVARI CENTS</div>
+        <div class="v">CENTS</div>
       </div>
     </div>
   </div>
@@ -417,14 +469,12 @@
     <div class="kicker">01 — Architecture Overview</div>
     <h2 class="title">A multi-chain framework, built for two different jobs.</h2>
     <p class="lead">
-      Nuvari runs on two chains because no single chain does both jobs well. Avalanche
-      carries the microtransactions — sub-second finality and near-zero fees make it viable for
-      cents-denominated savings, insurance premiums, and pension top-ups moving constantly in the
-      background. Avalanche handles the complexity — deep DeFi liquidity and full EVM composability
-      make it the venue for yield strategy execution that would be impractical or unsupported
-      natively on Avalanche. Each of the six tokens is deployed across both, with a role that stays
-      compartmentalized rather than overlapping — governance doesn't touch settlement, settlement
-      doesn't touch rewards, and rewards never carry investment risk.
+      KAI runs entirely on Avalanche because one chain already does both jobs well. Sub-second
+      finality and near-zero fees make it viable for cents-denominated savings, insurance premiums,
+      and pension top-ups moving constantly in the background, while deep DeFi liquidity and full
+      EVM composability make it the venue for yield strategy execution. Each of the six tokens keeps
+      a role that stays compartmentalized rather than overlapping — governance doesn't touch the
+      buffer layer, the buffer layer doesn't touch rewards, and rewards never carry investment risk.
     </p>
 
     <div class="diagram">
@@ -443,26 +493,26 @@
         <div class="layer-label">Yield Vault Layer</div>
         <div class="layer-cells">
           <div class="cell">
-            <div class="name">Y Token ETF</div>
-            <div class="sub">2.1B cap · diversified yield basket</div>
+            <div class="name">YTOKEN</div>
+            <div class="sub">2.1B cap · diversified yield basket · 14.8% vault APY</div>
           </div>
           <div class="cell">
-            <div class="name">YGold ETF</div>
-            <div class="sub">4.2B cap · gold-anchored defensive vault</div>
+            <div class="name">YGOLD</div>
+            <div class="sub">4.2B cap · gold-anchored defensive vault · 12.4% vault APY</div>
           </div>
         </div>
       </div>
       <div class="connector"></div>
 
       <div class="layer settlement">
-        <div class="layer-label">Settlement &amp; Pipeline Layer</div>
+        <div class="layer-label">Buffer &amp; Pipeline Layer</div>
         <div class="layer-cells">
           <div class="cell">
-            <div class="name">NUVARI STABLE</div>
-            <div class="sub">150% USDC-collateralized · settles all payouts</div>
+            <div class="name">yBOB</div>
+            <div class="sub">7.5% vault APY · absorbs drawdown before payouts</div>
           </div>
           <div class="cell">
-            <div class="name">NUVARI CENTS</div>
+            <div class="name">CENTS</div>
             <div class="sub">Micro-entry · restaking receipt</div>
           </div>
         </div>
@@ -486,11 +536,11 @@
 
     <div class="token-index">
       <a href="#nvr">NVR</a>
-      <a href="#stable">NUVARI STABLE</a>
-      <a href="#ytoken">Y TOKEN ETF</a>
-      <a href="#ygold">YGOLD ETF</a>
+      <a href="#stable">yBOB</a>
+      <a href="#ytoken">YTOKEN</a>
+      <a href="#ygold">YGOLD</a>
       <a href="#gami">GAMI</a>
-      <a href="#cents">NUVARI CENTS</a>
+      <a href="#cents">CENTS</a>
     </div>
   </div>
 </section>
@@ -528,34 +578,34 @@
       </div>
     </article>
 
-    <!-- NUVARI STABLE -->
+    <!-- yBOB -->
     <article class="token" id="stable">
       <div class="token-id">
         <div class="token-num">02 / 06</div>
-        <div class="token-symbol">NUVARI<br>STABLE</div>
-        <div class="token-name">Settlement Unit of Account</div>
-        <div class="token-type">Over-collateralized Stablecoin</div>
+        <div class="token-symbol">yBOB</div>
+        <div class="token-name">Volatility Buffer &amp; Drawdown Protection</div>
+        <div class="token-type">Buffer · Vault Receipt</div>
       </div>
       <div class="token-body">
         <h4>Specification</h4>
         <div class="spec-grid">
-          <div class="spec"><div class="sk">Supply</div><div class="sv">Elastic</div></div>
-          <div class="spec"><div class="sk">Collateralization</div><div class="sv">150% USDC</div></div>
+          <div class="spec"><div class="sk">Supply</div><div class="sv">Elastic, vault-linked</div></div>
+          <div class="spec"><div class="sk">Vault APY</div><div class="sv">7.5%</div></div>
         </div>
 
         <h4>Architecture &amp; Mechanics</h4>
         <ul class="mechanics">
-          <li><strong>Settlement engine</strong> — functions as the primary price-stable unit of account for insurance premium payments, pension distributions, trust releases, and SME treasury payouts.</li>
-          <li><strong>Peg stability</strong> — maintained through 150% USDC over-collateralization combined with algorithmic rebalancing and circuit breakers to prevent de-pegging during extreme volatility.</li>
+          <li><strong>Drawdown absorption</strong> — sits between the yield vaults and every downstream payout, so a bad week in the market shows up as a smaller buffer, not a missed insurance premium or pension distribution.</li>
+          <li><strong>Vault-linked yield</strong> — earns a steady 7.5% vault APY while it sits as a buffer, so protection doesn't come at the cost of idle capital.</li>
         </ul>
       </div>
     </article>
 
-    <!-- Y TOKEN ETF -->
+    <!-- YTOKEN -->
     <article class="token" id="ytoken">
       <div class="token-id">
         <div class="token-num">03 / 06</div>
-        <div class="token-symbol">Y TOKEN<br>ETF</div>
+        <div class="token-symbol">YTOKEN</div>
         <div class="token-name">Diversified Yield Vault</div>
         <div class="token-type">Investment Vault · Basket Token</div>
       </div>
@@ -584,11 +634,11 @@
       </div>
     </article>
 
-    <!-- YGOLD ETF -->
+    <!-- YGOLD -->
     <article class="token" id="ygold">
       <div class="token-id">
         <div class="token-num">04 / 06</div>
-        <div class="token-symbol">YGOLD<br>ETF</div>
+        <div class="token-symbol">YGOLD</div>
         <div class="token-name">Commodity-Backed Yield Vault</div>
         <div class="token-type">Commodity-Anchored Vault Token</div>
       </div>
@@ -639,11 +689,11 @@
       </div>
     </article>
 
-    <!-- NUVARI CENTS -->
+    <!-- CENTS -->
     <article class="token" id="cents">
       <div class="token-id">
         <div class="token-num">06 / 06</div>
-        <div class="token-symbol">NUVARI<br>CENTS</div>
+        <div class="token-symbol">CENTS</div>
         <div class="token-name">Micro-Savings &amp; Restaking</div>
         <div class="token-type">Restaking · Vault Receipt Token</div>
       </div>
@@ -694,21 +744,21 @@
             <td>Staking, voting, protocol revenue sharing</td>
           </tr>
           <tr>
-            <td class="tok">NUVARI STABLE</td>
+            <td class="tok">yBOB</td>
             <td>Avalanche</td>
             <td class="cap">Elastic</td>
-            <td>Ecosystem settlement unit</td>
-            <td>150% USDC collateralization</td>
+            <td>Volatility buffer</td>
+            <td>Vault receipt · 7.5% APY · absorbs drawdown first</td>
           </tr>
           <tr>
-            <td class="tok">Y Token ETF</td>
+            <td class="tok">YTOKEN</td>
             <td>Avalanche</td>
             <td class="cap">2.1B</td>
             <td>Growth investment vault</td>
             <td>AVAX staking, Trader Joe, Benqi, bonds</td>
           </tr>
           <tr>
-            <td class="tok">YGold ETF</td>
+            <td class="tok">YGOLD</td>
             <td>Avalanche</td>
             <td class="cap">4.2B</td>
             <td>Defensive investment vault</td>
@@ -722,7 +772,7 @@
             <td>Distributed via active platform engagement</td>
           </tr>
           <tr>
-            <td class="tok">Nuvari Cents</td>
+            <td class="tok">CENTS</td>
             <td>Avalanche</td>
             <td class="cap">Elastic</td>
             <td>Micro-savings &amp; restaking</td>
@@ -738,9 +788,9 @@
 <footer>
   <div class="wrap">
     <div class="foot-grid">
-      <div class="brand">Nuvari</div>
+      <div class="brand">KAI Protocol</div>
       <p class="disclaimer">
-        This document describes the technical architecture of the Nuvari token ecosystem for
+        This document describes the technical architecture of the KAI token ecosystem for
         informational purposes. Supply caps, collateralization ratios, and mechanisms are subject
         to change via protocol governance. This is not an offer to sell or a solicitation of an
         offer to buy any security.
@@ -748,6 +798,20 @@
     </div>
   </div>
 </footer>
+
+<div class="site-foot">
+  <div class="wrap">
+    <div class="links">
+      <a href="index.html">Home</a>
+      <a href="problems.html">Problem</a>
+      <a href="solution.html">Solution</a>
+      <a href="products.html">Products</a>
+      <a href="ecosystem.html">Ecosystem</a>
+      <a href="DAO.html">DAO</a>
+    </div>
+    <span style="font-family:'IBM Plex Mono', monospace; font-size:12px; color:var(--cream-faint);">&copy; 2026 KAI Protocol. Built on Avalanche.</span>
+  </div>
+</div>
 
 </body>
 </html>
