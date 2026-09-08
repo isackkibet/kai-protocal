@@ -148,9 +148,46 @@
     .principle-grid{grid-template-columns:1fr 1fr;}
   }
   @media (prefers-reduced-motion: reduce){ html{scroll-behavior:auto;} }
+
+  /* ---------- site nav / footer (scoped to this page's own palette) ---------- */
+  .site-nav{
+    position:sticky; top:0; z-index:20;
+    background:rgba(10,42,32,0.92); backdrop-filter:blur(10px);
+    border-bottom:1px solid rgba(246,242,231,0.14);
+  }
+  .site-nav .wrap{display:flex; align-items:center; justify-content:space-between; padding:16px 32px; flex-wrap:wrap; gap:14px;}
+  .site-nav .brand{font-family:'Fraunces', serif; font-size:18px; color:var(--paper); display:flex; align-items:center; gap:10px; text-decoration:none;}
+  .site-nav .brand .mark{width:28px; height:28px; border-radius:50%; background:var(--gold); color:var(--pine-deep); font-weight:700; display:flex; align-items:center; justify-content:center;}
+  .site-nav .links{display:flex; flex-wrap:wrap; gap:20px;}
+  .site-nav .links a{font-family:'IBM Plex Mono', monospace; font-size:12px; letter-spacing:0.06em; text-transform:uppercase; color:rgba(246,242,231,0.7); text-decoration:none;}
+  .site-nav .links a:hover, .site-nav .links a.active{color:var(--gold-soft);}
+  .site-foot{border-top:1px solid var(--line); padding:0 0 40px;}
+  .site-foot .wrap{display:flex; justify-content:space-between; flex-wrap:wrap; gap:18px; padding-top:28px;}
+  .site-foot .links{display:flex; flex-wrap:wrap; gap:16px;}
+  .site-foot .links a{font-family:'IBM Plex Mono', monospace; font-size:12px; color:var(--ink-soft); text-decoration:none;}
+  .site-foot .links a:hover{color:var(--clay);}
 </style>
 </head>
 <body>
+
+<!-- ============ SITE NAV ============ -->
+<nav class="site-nav">
+  <div class="wrap">
+    <a class="brand" href="index.html"><span class="mark">K</span> KAI</a>
+    <div class="links">
+      <a href="index.html">Home</a>
+      <a href="problems.html">Problem</a>
+      <a href="solution.html">Solution</a>
+      <a href="products.html">Products</a>
+      <a href="insurance.html">Insurance</a>
+      <a href="pension.html">Pension</a>
+      <a href="trust.html">Trust</a>
+      <a href="tokens.html">Tokens</a>
+      <a href="ecosystem.html" class="active">Ecosystem</a>
+      <a href="DAO.html">DAO</a>
+    </div>
+  </div>
+</nav>
 
 <!-- ============ HERO ============ -->
 <header class="hero">
@@ -168,7 +205,7 @@
       <span class="step">Earn</span><span class="arrow">→</span>
       <span class="step">Invest</span><span class="arrow">→</span>
       <span class="step">Protect</span><span class="arrow">→</span>
-      <span class="step">save</span><span class="arrow">→</span>
+      <span class="step">Retire</span><span class="arrow">→</span>
       <span class="step">Transfer</span>
     </div>
   </div>
@@ -380,6 +417,18 @@
 
 </main>
 
+<div class="site-foot">
+  <div class="wrap">
+    <div class="links">
+      <a href="index.html">Home</a>
+      <a href="problems.html">Problem</a>
+      <a href="solution.html">Solution</a>
+      <a href="products.html">Products</a>
+      <a href="tokens.html">Tokens</a>
+      <a href="DAO.html">DAO</a>
+    </div>
+  </div>
+</div>
 <footer>KAI Ecosystem · Africa's Digital Financial Operating System</footer>
 
 </body>

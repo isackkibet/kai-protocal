@@ -86,12 +86,17 @@ function detectProposal(query: string): AgentProposal | undefined {
     };
   }
   if (q.includes('transfer') && q.includes('ybob')) {
+    // Only propose a real transfer when the user actually gave a recipient address —
+    // this proposal card executes on-chain as soon as it's approved, with no way to
+    // edit the recipient, so it must never fall back to a made-up address.
+    const addressMatch = query.match(/0x[a-fA-F0-9]{40}/);
+    if (!addressMatch) return undefined;
     return {
       agentName: 'Tx Agent', actionType: 'TRANSFER',
       title: 'Transfer yBOB',
       description: 'Transfer yBOB on Avalanche Fuji testnet.',
       amount: '5', tokenSymbol: 'yBOB', tokenAddress: yBOB?.address as `0x${string}`,
-      recipientAddress: '0x70997970C51812dc3A010C7d01b50e0d17dc79C8',
+      recipientAddress: addressMatch[0] as `0x${string}`,
     };
   }
 }
@@ -120,7 +125,8 @@ export default function AIPage() {
 
   const checkHealth = useCallback(async () => {
     try {
-      const r = await fetch('http://127.0.0.1:8000/health', { signal: AbortSignal.timeout(3000) });
+      const base = process.env.NEXT_PUBLIC_BACKEND_API_URL || 'http://127.0.0.1:8000';
+      const r = await fetch(`${base}/health`, { signal: AbortSignal.timeout(3000) });
       setOnline(r.ok);
     } catch { setOnline(false); }
   }, []);

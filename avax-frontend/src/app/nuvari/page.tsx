@@ -154,7 +154,8 @@ export default function KaiPlayground() {
     setAiDraft("");
     try {
       // Quick health check first
-      const health = await fetch("http://127.0.0.1:8000/health", { signal: AbortSignal.timeout(2000) }).catch(() => null);
+      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_API_URL || "http://127.0.0.1:8000";
+      const health = await fetch(`${backendUrl}/health`, { signal: AbortSignal.timeout(2000) }).catch(() => null);
       if (!health?.ok) {
         setAiAvailable(false);
         setAiDraft("AI assistant offline - start the agent server to enable suggestions.\nYour policy will still work without it.");

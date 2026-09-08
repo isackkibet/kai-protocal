@@ -346,9 +346,48 @@
   @media (prefers-reduced-motion: reduce){
     html{ scroll-behavior:auto; }
   }
+
+  /* ---------- site nav / footer (scoped to this page's own palette) ---------- */
+  .site-nav{
+    position:sticky; top:0; z-index:20;
+    background:rgba(18,33,27,0.94); backdrop-filter:blur(10px);
+    border-bottom:1px solid var(--rule);
+  }
+  .site-nav .wrap{
+    max-width:1100px; margin:0 auto; display:flex; align-items:center; justify-content:space-between;
+    padding:16px 24px; flex-wrap:wrap; gap:14px;
+  }
+  .site-nav .brand{font-family:'Fraunces', serif; font-size:18px; color:var(--paper); display:flex; align-items:center; gap:10px; text-decoration:none;}
+  .site-nav .brand .mark{width:28px; height:28px; border-radius:50%; background:var(--gold); color:var(--bg); font-weight:700; display:flex; align-items:center; justify-content:center; font-family:'Space Grotesk', sans-serif;}
+  .site-nav .links{display:flex; flex-wrap:wrap; gap:20px;}
+  .site-nav .links a{font-family:'Space Grotesk', sans-serif; font-size:12px; letter-spacing:0.06em; text-transform:uppercase; color:var(--ink-dim); text-decoration:none;}
+  .site-nav .links a:hover, .site-nav .links a.active{color:var(--gold-bright);}
+  .site-foot{border-top:1px solid var(--rule); padding:32px 24px 0; max-width:1100px; margin:0 auto;}
+  .site-foot .links{display:flex; flex-wrap:wrap; justify-content:center; gap:18px; margin-bottom:20px;}
+  .site-foot .links a{font-family:'Space Grotesk', sans-serif; font-size:12px; color:var(--ink-dim); text-decoration:none;}
+  .site-foot .links a:hover{color:var(--gold-bright);}
 </style>
 </head>
 <body>
+
+<!-- ============ SITE NAV ============ -->
+<nav class="site-nav">
+  <div class="wrap">
+    <a class="brand" href="index.html"><span class="mark">K</span> KAI</a>
+    <div class="links">
+      <a href="index.html">Home</a>
+      <a href="problems.html">Problem</a>
+      <a href="solution.html">Solution</a>
+      <a href="products.html">Products</a>
+      <a href="insurance.html">Insurance</a>
+      <a href="pension.html">Pension</a>
+      <a href="trust.html">Trust</a>
+      <a href="tokens.html">Tokens</a>
+      <a href="ecosystem.html">Ecosystem</a>
+      <a href="DAO.html" class="active">DAO</a>
+    </div>
+  </div>
+</nav>
 
 <header class="hero">
   <div class="mark" aria-hidden="true">
@@ -364,7 +403,7 @@
       <circle cx="120" cy="94" r="7" fill="none" stroke="#6E8A6C" stroke-width="1.4"/>
     </svg>
   </div>
-  <div class="eyebrow">KAI Nuvari · Governance Framework</div>
+  <div class="eyebrow">KAI Protocol · Governance Framework</div>
   <h1 class="title">KAI DAO<br><em>Governance Architecture</em></h1>
   <p class="subtitle">A federated, multi-DAO system where specialized councils govern their own domains under one shared constitution — built to decentralize progressively, without sacrificing security.</p>
 </header>
@@ -389,7 +428,7 @@
     <section id="introduction">
       <div class="kicker">01 — Introduction</div>
       <h2>One constitution, many councils</h2>
-      <p class="lede">The KAI DAO is the decentralized governance layer of the KAI Nuvari ecosystem.</p>
+      <p class="lede">The KAI DAO is the decentralized governance layer of the KAI ecosystem.</p>
       <p>Rather than concentrating authority within a single governing body, KAI adopts a <strong>multi-DAO governance architecture</strong>, where specialized DAOs independently govern their respective domains while collaborating under a shared constitutional framework.</p>
       <p>This model distributes responsibility across multiple expert communities, improving efficiency, transparency, resilience, and decentralization. Strategic ecosystem decisions are coordinated through the KAI DAO Assembly, while operational decisions are delegated to domain-specific DAOs.</p>
       <p>The framework is designed to evolve through progressive decentralization — keeping KAI secure during its early stages while ultimately becoming a fully community-governed financial operating system.</p>
@@ -624,13 +663,23 @@
       <h2>Governance Principles</h2>
       <p>Every DAO within the KAI ecosystem upholds the same core principles: decentralization, transparency, accountability, security, community ownership, responsible innovation, financial inclusion, sustainability, collaboration, and open participation.</p>
       <div class="quote">KAI ensures that the ecosystem can adapt, innovate, and remain resilient — while empowering individuals, organizations, and institutions to shape the future of decentralized finance together.</div>
-      <p>This architecture is stronger than a single DAO because it prevents concentration of power, creates clear accountability, and gives investors confidence that governance can scale as KAI Nuvari grows.</p>
+      <p>This architecture is stronger than a single DAO because it prevents concentration of power, creates clear accountability, and gives investors confidence that governance can scale as KAI grows.</p>
     </section>
 
   </main>
 </div>
 
-<footer>KAI DAO · BANKAI LABS · BUILT ON AVALANCHE</footer>
+<div class="site-foot">
+  <div class="links">
+    <a href="index.html">Home</a>
+    <a href="problems.html">Problem</a>
+    <a href="solution.html">Solution</a>
+    <a href="products.html">Products</a>
+    <a href="tokens.html">Tokens</a>
+    <a href="ecosystem.html">Ecosystem</a>
+  </div>
+</div>
+<footer>KAI DAO · KAI PROTOCOL · BUILT ON AVALANCHE</footer>
 
 </body>
 </html>

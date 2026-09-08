@@ -32,7 +32,7 @@ export async function GET() {
       { id: 'l5', type: 'EXPENSE',      amountKes: 5_500,  counterparty: 'Kenya Power',          description: 'Monthly electricity bill',      categoryTag: 'Utilities', paymentMethod: 'MPESA',   timestamp: '2026-08-26T08:30:00Z' },
       { id: 'l6', type: 'INCOME',       amountKes: 32_000, counterparty: 'Retail Walk-ins',      description: 'POS daily retail sales',        categoryTag: 'Sales',     paymentMethod: 'CASH',    timestamp: '2026-08-25T18:00:00Z' },
       { id: 'l7', type: 'DEBT_OWED',    amountKes: 14_500, counterparty: 'Simlaw Seeds Kenya',   description: 'Hybrid seed stock on credit',   categoryTag: 'Debt',      paymentMethod: 'PENDING', timestamp: '2026-08-24T10:00:00Z' },
-      { id: 'l8', type: 'INCOME',       amountKes: 9_600,  counterparty: 'Chama Bulk Order',     description: 'Women group fertiliser order',  categoryTag: 'Sales',     paymentMethod: 'YBOB',    timestamp: '2026-08-23T12:00:00Z' },
+      { id: 'l8', type: 'INCOME',       amountKes: 9_600,  counterparty: 'Chama Bulk Order',     description: 'Women group fertiliser order',  categoryTag: 'Sales',     paymentMethod: 'yBOB',    timestamp: '2026-08-23T12:00:00Z' },
     ],
     cashFlowTokens: [
       { id: 't1', tokenRef: 'RWA-INV-2026-0041', invoiceAmountKes: 100_000, discountPriceKes: 92_000, debtorName: 'Uchumi Supermarket', maturityDate: '2026-10-15', status: 'FUNDED'            },
