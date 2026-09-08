@@ -67,9 +67,18 @@ model KaiUser {
   createdAt  DateTime    @default(now())
   updatedAt  DateTime    @updatedAt
   authUserId String?     @unique
+  /// Privy user ID from Google login (PRD 1 auth linkage).
+  privyUserId String?    @unique
+  /// Set to REVIEW / BLOCKED by anti-abuse tooling (PRD 2 §13).
+  status     KaiUserStatus @default(NORMAL)
   activities Activity[]
   authUser   User?       @relation(fields: [authUserId], references: [id])
   wallets    KaiWallet[]
+  kaiBarLedger    KaiBarLedger[]
+  taskCompletions TaskCompletion[]
+  airdropEligibility AirdropEligibility?
+  sentReferrals   Referral[] @relation("Referrer")
+  receivedReferrals Referral[] @relation("Referred")
 
   @@map("kai_users")
 }
@@ -89,6 +98,99 @@ model KaiWallet {
   @@index([userId])
   @@index([address])
   @@map("kai_wallets")
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  KAI BAR — REWARDS & AIRDROP (PRD 2)
+// ═══════════════════════════════════════════════════════════════
+
+/// Append-only ledger of every Kai Bar point event (PRD 2 §4).
+/// Balance is computed by summing these rows — never stored as a single
+/// overwritable number so it stays auditable.
+model KaiBarLedger {
+  id          String          @id @default(cuid())
+  userId      String
+  type        KaiBarEntryType
+  /// Signed amount, e.g. +1000 or -100 for an adjustment.
+  amount      Int
+  description String
+  referenceId String?
+  createdAt   DateTime        @default(now())
+
+  user        KaiUser         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([type])
+  @@index([referenceId])
+  @@map("kai_bar_ledger")
+}
+
+/// Configurable reward task definitions (PRD 2 §9). Frontend renders
+/// whatever tasks have active === true.
+model RewardTask {
+  id              String         @id @default(cuid())
+  name            String
+  description     String?
+  rewardAmount    Int
+  taskType        RewardTaskType
+  active          Boolean        @default(true)
+  maxCompletions  Int?
+  createdAt       DateTime       @default(now())
+
+  completions     TaskCompletion[]
+
+  @@index([active])
+  @@map("reward_tasks")
+}
+
+/// Records which user completed which task (anti-repeat guard, PRD 2 §13).
+model TaskCompletion {
+  id        String    @id @default(cuid())
+  userId    String
+  taskId    String
+  createdAt DateTime  @default(now())
+
+  user      KaiUser   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  task      RewardTask @relation(fields: [taskId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, taskId])
+  @@index([taskId])
+  @@map("task_completions")
+}
+
+/// Referral tree — records the full network (PRD 2 §6, §8).
+/// A referral is only rewarded after the referred user hits a milestone.
+model Referral {
+  id             String          @id @default(cuid())
+  referrerUserId String
+  referredUserId String
+  referralCode   String
+  status         ReferralStatus  @default(PENDING)
+  createdAt      DateTime        @default(now())
+  rewardedAt     DateTime?
+
+  referrer       KaiUser         @relation("Referrer", fields: [referrerUserId], references: [id], onDelete: Cascade)
+  referred       KaiUser         @relation("Referred", fields: [referredUserId], references: [id], onDelete: Cascade)
+
+  @@index([referrerUserId])
+  @@index([referredUserId])
+  @@index([referralCode])
+  @@map("referrals")
+}
+
+/// Airdrop eligibility snapshot per user (PRD 2 §11).
+model AirdropEligibility {
+  id                String   @id @default(cuid())
+  userId            String   @unique
+  eligible          Boolean  @default(false)
+  contributionScore Int      @default(0)
+  referralScore     Int      @default(0)
+  activityScore     Int      @default(0)
+  updatedAt         DateTime @updatedAt
+
+  user              KaiUser  @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("airdrop_eligibility")
 }
 
 /// An audit-style record of important user actions on the KAI platform.
@@ -153,6 +255,47 @@ enum UserRole {
 enum Chain {
   ARBITRUM
   AVALANCHE
+}
+
+/// Anti-abuse triage for users/rewards (PRD 2 §13).
+enum KaiUserStatus {
+  NORMAL
+  REVIEW
+  BLOCKED
+}
+
+/// Why a Kai Bar amount was credited/debited (PRD 2 §4).
+enum KaiBarEntryType {
+  WELCOME_BONUS
+  PROFILE_COMPLETION
+  EMAIL_VERIFIED
+  REFERRAL
+  REFERRAL_REFERRER
+  REFERRAL_SECOND_LEVEL
+  FIRST_TRANSACTION
+  COMMUNITY_ACTIVITY
+  CAMPAIGN
+  TASK
+  ADJUSTMENT
+}
+
+/// Which RewardTask family an entry belongs to (PRD 2 §9).
+enum RewardTaskType {
+  SIGNUP
+  EMAIL_VERIFY
+  COMPLETE_PROFILE
+  INVITE_FRIEND
+  FIRST_TRANSACTION
+  DAILY_CHECKIN
+  CAMPAIGN
+  OTHER
+}
+
+enum ReferralStatus {
+  PENDING
+  VALID
+  REWARDED
+  INVALID
 }
 
 enum ActivityType {
