@@ -62,6 +62,12 @@ const TOKEN_ICON: Record<string, React.ComponentType<{ size:number; color:string
   YTOKEN: TrendingUp, YGOLD: BarChart3, GAMI: Coins, CENTS: CircleDollarSign,
 };
 
+/* No price oracle is wired up yet — these are manually maintained estimates,
+   not a live feed. Keep the UI label ("Est. Portfolio Value") honest about that. */
+const ESTIMATED_USD_RATES: Record<string, number> = {
+  avax: 26, ybob: 1, nvr: 0.12, ygold: 2.01, ytoken: 0.27, gami: 0.056, cents: 0.009,
+};
+
 export default function Home() {
   const { address, isConnected } = useAccount();
   const { data: avaxBal, refetch: refetchAvax } = useBalance({ address });
@@ -74,11 +80,20 @@ export default function Home() {
   const [agentQ,     setAgentQ]     = useState('');
   const [agentA,     setAgentA]     = useState('');
   const [agentBusy,  setAgentBusy]  = useState(false);
+  const [profile,    setProfile]    = useState<{ name?: string; displayName?: string } | null>(null);
   const agentRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
     isConnected && address ? connectWallet('metamask', address) : disconnectWallet();
   }, [isConnected, address]);
+
+  useEffect(() => {
+    if (!address) { setProfile(null); return; }
+    fetch(`/api/profile?wallet=${address}`)
+      .then(r => r.json())
+      .then(d => setProfile(d.profile ?? null))
+      .catch(() => setProfile(null));
+  }, [address]);
 
   useEffect(() => {
     if (avaxBal) setAvaxBalance(Number(formatUnits(avaxBal.value, avaxBal.decimals)));
@@ -127,7 +142,15 @@ export default function Home() {
     { symbol:'AVAX', value:avaxAmt, color:'#10b981', deployed:true },
     ...ECOSYSTEM_TOKENS.map(t => ({ symbol:t.symbol, value:tokenBals[t.symbol.toLowerCase()]??0, color:t.color, deployed:!!t.address })),
   ];
-  const totalUsd = avaxAmt*26 + (tokenBals.ybob??0)*1 + (tokenBals.nvr??0)*0.12 + (tokenBals.ygold??0)*2.01 + (tokenBals.ytoken??0)*0.27 + (tokenBals.gami??0)*0.056 + (tokenBals.cents??0)*0.009;
+  const totalUsd = avaxAmt*ESTIMATED_USD_RATES.avax
+    + (tokenBals.ybob??0)*ESTIMATED_USD_RATES.ybob
+    + (tokenBals.nvr??0)*ESTIMATED_USD_RATES.nvr
+    + (tokenBals.ygold??0)*ESTIMATED_USD_RATES.ygold
+    + (tokenBals.ytoken??0)*ESTIMATED_USD_RATES.ytoken
+    + (tokenBals.gami??0)*ESTIMATED_USD_RATES.gami
+    + (tokenBals.cents??0)*ESTIMATED_USD_RATES.cents;
+  const activeTokenCount = allTokens.filter(b => b.value > 0).length;
+  const displayName = profile?.displayName || profile?.name || (address ? `${address.slice(0,6)}…${address.slice(-4)}` : '');
 
   const askAgent = async () => {
     if (!agentQ.trim() || agentBusy) return;
@@ -265,7 +288,7 @@ export default function Home() {
                     background:'linear-gradient(135deg,rgba(16,185,129,0.50),rgba(4,78,59,0.88))',
                     display:'flex', alignItems:'center', justifyContent:'center',
                     fontSize:32, fontWeight:900, color:'#6ee7b7',
-                  }}>A</div>
+                  }}>{(displayName || 'K').charAt(0).toUpperCase()}</div>
                 </div>
                 <span style={{
                   position:'absolute', bottom:4, right:2, width:14, height:14, borderRadius:'50%',
@@ -284,12 +307,18 @@ export default function Home() {
             {/* name + handle */}
             <div style={{ marginTop:10, marginBottom:14 }}>
               <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:3 }}>
-                <h2 style={{ fontSize:22, fontWeight:900, margin:0, letterSpacing:'-0.4px', color:'#fff', ...R }}>AUSTIN NAMUYE</h2>
-                <span style={{ width:20, height:20, borderRadius:'50%', background:'linear-gradient(135deg,#10b981,#047857)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:11, flexShrink:0, boxShadow:'0 0 10px rgba(16,185,129,0.55)' }}>✓</span>
+                <h2 style={{ fontSize:22, fontWeight:900, margin:0, letterSpacing:'-0.4px', color:'#fff', ...R }}>
+                  {isConnected ? (displayName || 'KAI Member') : 'Not Connected'}
+                </h2>
+                {isConnected && <span style={{ width:20, height:20, borderRadius:'50%', background:'linear-gradient(135deg,#10b981,#047857)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:11, flexShrink:0, boxShadow:'0 0 10px rgba(16,185,129,0.55)' }}>✓</span>}
               </div>
-              <p style={{ fontSize:12, color:'rgba(255,255,255,0.48)', margin:'0 0 5px', ...Rs }}>@drekahshi</p>
-              <p style={{ fontSize:13, color:'rgba(255,255,255,0.60)', margin:0, lineHeight:1.55, ...Rs }}>
-                DeFi Pioneer · KAI Nuvari member · Forest Guardian
+              {isConnected && !profile && (
+                <Link href="/profile" style={{ fontSize:12, color:'#34d399', margin:'0 0 5px', textDecoration:'none', ...Rs }}>
+                  Complete your profile →
+                </Link>
+              )}
+              <p style={{ fontSize:13, color:'rgba(255,255,255,0.60)', margin:'4px 0 0', lineHeight:1.55, ...Rs }}>
+                {isConnected ? 'KAI Nuvari member · Avalanche Fuji' : 'Connect a wallet to see your profile'}
               </p>
             </div>
 
@@ -301,10 +330,10 @@ export default function Home() {
               boxShadow:'0 0 0 0.5px rgba(255,255,255,0.07) inset',
             }}>
               {[
-                { label:'Portfolio', value:'$0.00',  color:'#34d399', icon:'💼' },
+                { label:'Est. Value', value: isConnected ? `$${totalUsd.toFixed(2)}` : '$0.00', color:'#34d399', icon:'💼' },
                 { label:'Network',   value:'Fuji',   color:null,      icon:'⛰️' },
-                { label:'Tokens',    value:'6',      color:null,      icon:'🪙' },
-                { label:'Status',    value:'Active', color:'#34d399', icon:'⚡' },
+                { label:'Tokens',    value:isConnected ? String(activeTokenCount) : '0', color:null, icon:'🪙' },
+                { label:'Status',    value:isConnected ? 'Active' : 'Idle', color:isConnected ? '#34d399' : null, icon:'⚡' },
               ].map(s => (
                 <div key={s.label} style={{ textAlign:'center' }}>
                   <span style={{ fontSize:18, display:'block', marginBottom:4 }}>{s.icon}</span>
@@ -329,7 +358,7 @@ export default function Home() {
         }}>
           <div style={{ position:'absolute', top:-40, right:-40, width:200, height:200, borderRadius:'50%', background:'radial-gradient(circle,rgba(16,185,129,0.14) 0%,transparent 70%)', pointerEvents:'none' }} />
 
-          <p style={{ fontSize:10, fontWeight:700, letterSpacing:1.4, textTransform:'uppercase', color:'rgba(255,255,255,0.48)', marginBottom:6, ...Rs }}>⛰️ AVAX Portfolio Value</p>
+          <p style={{ fontSize:10, fontWeight:700, letterSpacing:1.4, textTransform:'uppercase', color:'rgba(255,255,255,0.48)', marginBottom:6, ...Rs }}>⛰️ Est. Portfolio Value</p>
           <div style={{ display:'flex', alignItems:'baseline', gap:12, marginBottom:16 }}>
             <span style={{ fontSize:40, fontWeight:900, letterSpacing:-2, color:isConnected?'#fff':'rgba(255,255,255,0.20)', lineHeight:1, ...R }}>
               ${isConnected ? totalUsd.toFixed(2) : '0.00'}

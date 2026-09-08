@@ -59,7 +59,7 @@ function kaiKnowledgeFallback(message: string): string {
   for (const entry of KAI_KB) {
     if (entry.match.test(q)) return entry.answer;
   }
-  return `**KAI Agent** - I'm your DeFi guide for the KAI Nuvari ecosystem on Avalanche.\n\nHere's what I can help you with:\n- **Tokens** - KAI, NVR, yBOB, yGOLD, GAMI, CENTS\n- **Vaults** - Yield strategies from 7.5% to 22% APY\n- **Pools** - AMM liquidity and swap rates\n- **Governance** - DAO proposals and voting\n- **Payments** - M-Pesa KES ↔ yBOB on-ramp\n- **Conservation NFTs** - Forest-backed digital assets\n\nTry asking: *"What are the KAI vault APYs?"* or *"How do I add liquidity?"*`;
+  return `**KAI Agent** - I'm your DeFi guide for the KAI Nuvari ecosystem on Avalanche.\n\nHere's what I can help you with:\n- **Tokens** - NVR, yBOB, YTOKEN, YGOLD, GAMI, CENTS\n- **Vaults** - Yield strategies from 7.5% to 22% APY\n- **Pools** - AMM liquidity and swap rates\n- **Governance** - DAO proposals and voting\n- **Payments** - M-Pesa KES ↔ yBOB on-ramp\n- **Conservation NFTs** - Forest-backed digital assets\n\nTry asking: *"What are the KAI vault APYs?"* or *"How do I add liquidity?"*`;
 }
 
 /** Stream a plain string as SSE events (token by token) */
@@ -93,8 +93,8 @@ function streamText(text: string): Response {
 
 const SYSTEM_PROMPT = `You are KAI, a premium AI advisor for the KAI Nuvari DeFi ecosystem on Avalanche C-Chain.
 You help users with:
-- KAI ecosystem tokens: KAI (governance), KES (stablecoin), NUV (vault), KPEN (pension), KTRUST (trust fund)
-- DeFi vaults and yield strategies on Nuvari AMM (1 AVAX = 100 ecosystem tokens)
+- KAI ecosystem tokens: NVR (governance, 15.2% vault APY), yBOB (volatility buffer, 7.5% APY), YTOKEN (diversified investment vault, 14.8% APY), YGOLD (gold-backed reserve, 12.4% APY), GAMI (community rewards, 22.0% APY), CENTS (micro-utility, 6.5% APY)
+- DeFi vaults and yield strategies on the KAI AMM
 - KAI DAO governance, token burns, and fee model
 - KAI Micro-Pension, Micro-Insurance, and Trust Fund smart contracts
 - Avalanche C-Chain development (Fuji testnet, Snowtrace, MetaMask, Core Wallet)
