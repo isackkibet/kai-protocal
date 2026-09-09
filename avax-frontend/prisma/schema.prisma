@@ -69,6 +69,8 @@ model KaiUser {
   authUserId String?     @unique
   /// Privy user ID from Google login (PRD 1 auth linkage).
   privyUserId String?    @unique
+  /// Unique referral code shared with friends (PRD 2 §6), e.g. AUST92.
+  referralCode String?   @unique
   /// Set to REVIEW / BLOCKED by anti-abuse tooling (PRD 2 §13).
   status     KaiUserStatus @default(NORMAL)
   activities Activity[]
