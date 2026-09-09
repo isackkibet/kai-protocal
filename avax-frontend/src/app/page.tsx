@@ -380,7 +380,7 @@ export default function Home() {
                         boxShadow:`0 0 0 0.5px ${b.color}25 inset`,
                         position:'relative', cursor:'default',
                       }}>
-                        <Icon size={15} color={b.color} strokeWidth={1.8} style={{ display:'block', margin:'0 auto 4px' }} />
+                        <span style={{ display:'block', margin:'0 auto 4px' }}><Icon size={15} color={b.color} strokeWidth={1.8} /></span>
                         <p style={{ fontSize:9, color:'rgba(255,255,255,0.50)', margin:'0 0 2px', fontWeight:700, letterSpacing:0.3 }}>{b.symbol}</p>
                         <p style={{ fontSize:13, fontWeight:800, color:b.color, margin:0, textShadow:`0 0 8px ${b.color}80` }}>
                           {b.value>=1000?`${(b.value/1000).toFixed(1)}K`:b.value>=0.001?b.value.toFixed(3):'0.000'}
