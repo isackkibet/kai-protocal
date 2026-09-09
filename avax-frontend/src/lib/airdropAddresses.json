@@ -1,0 +1,12 @@
+{
+  "network": null,
+  "chainId": null,
+  "deployedAt": null,
+  "deployer": null,
+  "explorerBase": "https://testnet.snowtrace.io",
+  "rootCooldownSeconds": 604800,
+  "contract": {
+    "address": null,
+    "explorer": null
+  }
+}
