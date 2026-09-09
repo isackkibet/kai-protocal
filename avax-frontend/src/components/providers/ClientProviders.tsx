@@ -4,10 +4,12 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { WagmiProvider } from 'wagmi';
 import { useState } from 'react';
 import { config } from '@/lib/wagmi';
+import { PrivyAuthProvider } from '@/components/providers/PrivyAuthProvider';
 
 /**
- * ClientProviders: wraps the whole app in WagmiProvider (Avalanche C-Chain)
- * and TanStack QueryClient.
+ * ClientProviders: wraps the whole app in WagmiProvider (Avalanche C-Chain),
+ * TanStack QueryClient, and PrivyAuthProvider (Google login → embedded
+ * Avalanche wallet, PRD 1).
  */
 export function ClientProviders({ children }: { children: React.ReactNode }) {
   const [queryClient] = useState(() => new QueryClient({
@@ -17,7 +19,9 @@ export function ClientProviders({ children }: { children: React.ReactNode }) {
   return (
     <WagmiProvider config={config}>
       <QueryClientProvider client={queryClient}>
-        {children}
+        <PrivyAuthProvider>
+          {children}
+        </PrivyAuthProvider>
       </QueryClientProvider>
     </WagmiProvider>
   );
