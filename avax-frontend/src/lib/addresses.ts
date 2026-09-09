@@ -9,6 +9,7 @@
 import deployed from './deployedAddresses.json';
 import defi from './defiAddresses.json';
 import agentInfra from './agentInfra.json';
+import airdrop from './airdropAddresses.json';
 
 type Hex = `0x${string}`;
 
@@ -28,10 +29,14 @@ interface AgentInfraFile {
   };
   treasury?: string;
 }
+interface AirdropFile {
+  contract?: { address?: string | null };
+}
 
 const d = deployed as DeployedFile;
 const f = defi as DefiFile;
 const a = agentInfra as AgentInfraFile;
+const ai = airdrop as AirdropFile;
 
 const isAddr = (v?: string | null): v is Hex =>
   !!v && /^0x[a-fA-F0-9]{40}$/.test(v) && !/^0x0+$/.test(v);
@@ -59,6 +64,10 @@ export const ESCROW_ADDRESS = isAddr(a.contracts?.KaiEscrow?.address)
   : null;
 
 export const TREASURY = isAddr(a.treasury) ? a.treasury! : null;
+
+export const AIRDROP_VAULT_ADDRESS = isAddr(ai.contract?.address)
+  ? ai.contract!.address!
+  : null;
 
 export const walletAddress = (envValue?: string): Hex | null => {
   if (isAddr(envValue)) return envValue as Hex;
