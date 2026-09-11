@@ -12,40 +12,29 @@ import { PrivyClient } from '@privy-io/server-auth';
 
 let client: PrivyClient | null | undefined;
 
-/**
- * Never throws — a malformed/misconfigured PRIVY_APP_SECRET must not crash
- * the whole serverless function. Every call site relies on that guarantee.
- */
 function getClient(): PrivyClient | null {
   if (client !== undefined) return client;
   const appId = process.env.NEXT_PUBLIC_PRIVY_APP_ID;
   const appSecret = process.env.PRIVY_APP_SECRET;
-  try {
-    client = appId && appSecret ? new PrivyClient(appId, appSecret) : null;
-  } catch (e) {
-    console.error('[privy-server] failed to construct PrivyClient', e);
-    client = null;
-  }
+  client = appId && appSecret ? new PrivyClient(appId, appSecret) : null;
   return client;
 }
 
-/** Guaranteed to never throw — always resolves, worst case to `null`. */
 export async function verifyPrivyUserId(authHeader: string | null): Promise<string | null> {
+  const token = authHeader?.startsWith('Bearer ') ? authHeader.slice(7).trim() : null;
+  if (!token) return null;
+
+  const privy = getClient();
+  if (!privy) {
+    // Privy server credentials aren't configured (local/dev) — caller decides
+    // how to handle this; we can't verify, so we don't vouch for anyone.
+    return null;
+  }
+
   try {
-    const token = authHeader?.startsWith('Bearer ') ? authHeader.slice(7).trim() : null;
-    if (!token) return null;
-
-    const privy = getClient();
-    if (!privy) {
-      // Privy server credentials aren't configured (local/dev) — caller decides
-      // how to handle this; we can't verify, so we don't vouch for anyone.
-      return null;
-    }
-
     const claims = await privy.verifyAuthToken(token);
     return claims.userId;
-  } catch (e) {
-    console.error('[privy-server] verifyPrivyUserId failed', e);
+  } catch {
     return null;
   }
 }
