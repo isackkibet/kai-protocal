@@ -18,41 +18,37 @@ import {
   Bot, Copy, RefreshCw, ChevronRight, TrendingUp,
   ShieldCheck, Coins, Wallet,
   CircleDollarSign, BarChart3, Activity, Zap,
-  Mountain, Link2, Sparkles,
+  Mountain, Link2,
 } from 'lucide-react';
 
-/* text-shadow so words are always readable over bg image */
-const R:  React.CSSProperties = { textShadow: '0 1px 6px rgba(0,0,0,0.90)' };
-const Rs: React.CSSProperties = { textShadow: '0 1px 4px rgba(0,0,0,0.88)' };
+/* text-shadow so words stay readable over the (now dimmed) background photo */
+const R:  React.CSSProperties = { textShadow: '0 1px 6px rgba(0,0,0,0.60)' };
 
-/* Colour is reserved for the brand name, the portfolio value, and active/live status —
-   everything else reads as plain, professional white/gray text. */
 const HL = {
   green: { color: '#34d399', fontWeight: 700 } as React.CSSProperties,
 };
 
-/* Only real, clickable actions (Connect Wallet, Send, Copy, Refresh) get a filled
-   background. Everything else on this page is plain text/icons with no box —
-   grouped by spacing and this one thin divider, not by a panel behind it. */
+/* Sentence-case, low-emphasis eyebrow label — replaces tracked-out ALL CAPS. */
+const label: React.CSSProperties = { fontSize: 12, color: 'var(--home-muted)', letterSpacing: 0, textTransform: 'none', fontWeight: 600, margin: '0 0 8px' };
 const sectionDivider = '1px solid rgba(255,255,255,0.10)';
 
 const QUICK = [
-  { name: 'AI Agent',   href: '/ai',        icon: Bot,         color: '#10b981' },
-  { name: 'Playground', href: '/nuvari',     icon: FlaskConical,color: '#34d399' },
-  { name: 'Scan & Pay', href: '/pay',        icon: ScanLine,    color: '#22d3ee' },
-  { name: 'Securities', href: '/securities', icon: ShieldCheck, color: '#06b6d4' },
-  { name: 'NFT Mkt',    href: '/connft',     icon: ImageIcon,   color: '#a855f7' },
-  { name: 'Pools',      href: '/pools',      icon: Droplets,    color: '#059669' },
-  { name: 'Vaults',     href: '/vaults',     icon: Lock,        color: '#a3e635' },
-  { name: 'Airdrop',    href: '/mine',       icon: Gift,        color: '#f59e0b' },
-  { name: 'KAI Web',    href: '/kai',        icon: Globe,       color: '#10b981' },
-  { name: 'TaaS',       href: '/taas',       icon: LayoutGrid,  color: '#ec4899' },
+  { name: 'AI Agent',   href: '/ai',        icon: Bot },
+  { name: 'Playground', href: '/nuvari',     icon: FlaskConical },
+  { name: 'Scan & Pay', href: '/pay',        icon: ScanLine },
+  { name: 'Securities', href: '/securities', icon: ShieldCheck },
+  { name: 'NFT Mkt',    href: '/connft',     icon: ImageIcon },
+  { name: 'Pools',      href: '/pools',      icon: Droplets },
+  { name: 'Vaults',     href: '/vaults',     icon: Lock },
+  { name: 'Airdrop',    href: '/mine',       icon: Gift },
+  { name: 'KAI Web',    href: '/kai',        icon: Globe },
+  { name: 'TaaS',       href: '/taas',       icon: LayoutGrid },
 ];
 
 const DASHBOARDS = [
-  { id:'cfa',    href:'/cfa',    icon:Trees, color:'#10b981', label:'CFA Dashboard',  hl:'Community Forest',   sub:'Treasury · Governance'  },
-  { id:'sme',    href:'/sme',    icon:Store, color:'#22d3ee', label:'SME Dashboard',   hl:'Digitise Cash',      sub:'Loans · Inventory'      },
-  { id:'saving', href:'/saving', icon:Users, color:'#a855f7', label:'Saving Group',    hl:'Pool Funds & Yield', sub:'Decentralised Savings'  },
+  { id:'cfa',    href:'/cfa',    icon:Trees, label:'CFA Dashboard',  hl:'Community Forest',   sub:'Treasury and governance'  },
+  { id:'sme',    href:'/sme',    icon:Store, label:'SME Dashboard',   hl:'Digitise Cash',      sub:'Loans and inventory'      },
+  { id:'saving', href:'/saving', icon:Users, label:'Saving Group',    hl:'Pool Funds & Yield', sub:'Decentralised savings'  },
 ];
 
 function buildCalls(addr: `0x${string}` | undefined) {
@@ -71,7 +67,7 @@ const TOKEN_ICON: Record<string, React.ComponentType<{ size:number; color:string
 };
 
 /* No price oracle is wired up yet — these are manually maintained estimates,
-   not a live feed. Keep the UI label ("Est. Portfolio Value") honest about that. */
+   not a live feed. Keep the UI label ("Estimated portfolio value") honest about that. */
 const ESTIMATED_USD_RATES: Record<string, number> = {
   avax: 26, ybob: 1, nvr: 0.12, ygold: 2.01, ytoken: 0.27, gami: 0.056, cents: 0.009,
 };
@@ -90,29 +86,6 @@ export default function Home() {
   const [agentBusy,  setAgentBusy]  = useState(false);
   const [profile,    setProfile]    = useState<{ name?: string; displayName?: string } | null>(null);
   const agentRef = useRef<HTMLTextAreaElement>(null);
-
-  const [activeSection, setActiveSection] = useState('overview');
-  const overviewRef   = useRef<HTMLDivElement>(null);
-  const agentSectionRef = useRef<HTMLDivElement>(null);
-  const dashboardsRef = useRef<HTMLDivElement>(null);
-  const actionsRef    = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    const sections: [string, React.RefObject<HTMLDivElement | null>][] = [
-      ['overview', overviewRef], ['agent', agentSectionRef],
-      ['dashboards', dashboardsRef], ['actions', actionsRef],
-    ];
-    const observer = new IntersectionObserver(entries => {
-      entries.forEach(entry => {
-        if (entry.isIntersecting) {
-          const match = sections.find(([, ref]) => ref.current === entry.target);
-          if (match) setActiveSection(match[0]);
-        }
-      });
-    }, { rootMargin: '-35% 0px -55% 0px', threshold: 0 });
-    sections.forEach(([, ref]) => ref.current && observer.observe(ref.current));
-    return () => observer.disconnect();
-  }, []);
 
   useEffect(() => {
     isConnected && address ? connectWallet('metamask', address) : disconnectWallet();
@@ -190,13 +163,14 @@ export default function Home() {
     finally { setAgentBusy(false); }
   };
 
-  /* ── Centred column, max 1280px, comfortable desktop padding ── */
-  const W: React.CSSProperties = { width:'100%', maxWidth:1280, margin:'0 auto', padding:'0 40px' };
-
   return (
     <main style={{ minHeight:'100dvh', color:'#fff', fontFamily:'var(--font-sans)', position:'relative', paddingBottom:80 }}>
+      {/* Photo demoted behind a dark base + fade — panels carry the page now */}
+      <div className="home-bg-base" aria-hidden />
+      <div className="home-bg-photo" aria-hidden />
+      <div className="home-bg-fade" aria-hidden />
 
-      {/* 1 ── TICKER */}
+      {/* TICKER */}
       <div className="ticker-wrap" style={{ padding:'6px 0', position:'relative', zIndex:5 }}>
         <div className="ticker-track" style={{ display:'inline-flex', gap:36, paddingLeft:20, whiteSpace:'nowrap' }}>
           {[...TICKER_TOKENS,...TICKER_TOKENS,...TICKER_TOKENS].map((t,i) => (
@@ -209,339 +183,244 @@ export default function Home() {
         </div>
       </div>
 
-      {/* 1.5 ── STICKY SECTION NAV — jump between sections, tracks scroll position */}
-      <div style={{
-        position:'sticky', top:0, zIndex:15, padding:'10px 0',
-        background:'rgba(4,4,8,0.92)',
-        borderBottom: sectionDivider,
-      }}>
-        <div style={{ ...W, display:'flex', gap:20, overflowX:'auto', scrollbarWidth:'none' }}>
-          {[
-            { id:'overview',   label:'Overview' },
-            { id:'agent',      label:'KAI Agent' },
-            { id:'dashboards', label:'Dashboards' },
-            { id:'actions',    label:'Quick Actions' },
-          ].map(s => (
-            <a key={s.id} href={`#${s.id}`} style={{
-              padding:'7px 0', fontSize:12, fontWeight:700,
-              whiteSpace:'nowrap', textDecoration:'none', transition:'color 0.2s', flexShrink:0,
-              color:      activeSection===s.id ? '#34d399' : 'rgba(255,255,255,0.55)',
-              borderBottom: activeSection===s.id ? '2px solid #34d399' : '2px solid transparent',
-            }}>{s.label}</a>
-          ))}
+      {/* Bottom nav (site-wide) is the one and only navigation on this page —
+          no second, competing top tab bar. */}
+
+      <div className="home-container" style={{ position:'relative', zIndex:5 }}>
+
+        {/* HERO */}
+        <div style={{ paddingTop:48, textAlign:'center', position:'relative', zIndex:5 }}>
+          <Mountain size={36} color="#6ee7b7" strokeWidth={1.6} style={{ marginBottom:12 }}/>
+          <h1 style={{ fontSize:34, fontWeight:900, margin:'0 0 8px', letterSpacing:'-1px', ...R }}>
+            <span style={HL.green}>KAI</span> <span style={{ color:'#fff' }}>Nuvari</span>
+          </h1>
+          <p style={{ fontSize:14, color:'var(--home-muted)', margin:0, maxWidth:480, marginInline:'auto', lineHeight:1.6 }}>
+            A DeFi ecosystem on Avalanche C-Chain with six tokens, yield vaults, liquidity pools, and DAO governance.
+          </p>
+
+          <motion.button whileTap={{ scale:0.98 }} onClick={() => setShowModal(true)}
+            style={{
+              marginTop:24, display:'inline-flex', alignItems:'center', justifyContent:'center', gap:10,
+              padding:'13px 28px', borderRadius:12, cursor:'pointer', border:'none',
+              background:'var(--home-accent)',
+              fontSize:15, fontWeight:800, color:'#04140f',
+            }}>
+            <Link2 size={16}/>
+            {isConnected ? `Connected: ${address?.slice(0,6)}…${address?.slice(-4)}` : 'Connect Wallet'}
+            {isConnected && <span style={{ width:8, height:8, borderRadius:'50%', background:'#04140f' }} />}
+          </motion.button>
+
+          <p style={{ marginTop:16, fontSize:12, color:'var(--home-muted)' }}>
+            Avalanche C-Chain · MetaMask and Core Wallet supported
+          </p>
         </div>
-      </div>
 
-      {/* 2 ── BRAND HERO */}
-      <motion.div id="overview" ref={overviewRef}
-        initial={{ opacity:0, y:-10 }} animate={{ opacity:1, y:0 }} transition={{ delay:0.05 }}
-        style={{ ...W, paddingTop:28, textAlign:'center', position:'relative', zIndex:5, scrollMarginTop:70 }}>
-        <div className="float" style={{
-          width:60, height:60, borderRadius:'50%', margin:'0 auto 12px',
-          display:'flex', alignItems:'center', justifyContent:'center',
-        }}><Mountain size={34} color="#6ee7b7" strokeWidth={1.6}/></div>
-        <h1 style={{ fontSize:32, fontWeight:900, margin:'0 0 5px', letterSpacing:'-1px', ...R }}>
-          <span style={HL.green}>KAI</span> <span style={{ color:'#fff' }}>NUVARI</span>
-        </h1>
-        <p style={{ fontSize:11, fontWeight:700, letterSpacing:2.8, textTransform:'uppercase', color:'rgba(255,255,255,0.52)', margin:0, ...Rs }}>
-          AVAX C-CHAIN · DEFI ECOSYSTEM
-        </p>
-      </motion.div>
+        {/* TWO-COLUMN LAYOUT — wallet/profile + agent on the right (sticky on
+            desktop), portfolio/dashboards/actions on the left */}
+        <div className="home-grid" style={{ marginTop:56 }}>
 
-      {/* 3 ── CONNECT WALLET — the one primary action, so it's the one solid button up here */}
-      <motion.div initial={{ opacity:0, y:6 }} animate={{ opacity:1, y:0 }} transition={{ delay:0.10 }}
-        style={{ ...W, marginTop:16, position:'relative', zIndex:5 }}>
-        <motion.button whileTap={{ scale:0.98 }} onClick={() => setShowModal(true)}
-          style={{
-            width:'100%', display:'flex', alignItems:'center', justifyContent:'center', gap:10,
-            padding:'13px 24px', borderRadius:12, cursor:'pointer', border:'none',
-            background:'#047857',
-            fontSize:15, fontWeight:800, color:'#fff',
-          }}>
-          <Link2 size={16}/>
-          {isConnected ? `Connected: ${address?.slice(0,6)}…${address?.slice(-4)}` : 'Connect Wallet'}
-          {isConnected && <span style={{ width:8, height:8, borderRadius:'50%', background:'#6ee7b7' }} />}
-        </motion.button>
-      </motion.div>
+          <div className="home-aside">
+            {/* PROFILE */}
+            <div className="home-panel">
+              <div style={{ display:'flex', alignItems:'center', gap:14, marginBottom:16 }}>
+                <div style={{ position:'relative', flexShrink:0 }}>
+                  <div style={{
+                    width:52, height:52, borderRadius:'50%', border:'2px solid var(--home-accent)',
+                    display:'flex', alignItems:'center', justifyContent:'center',
+                    fontSize:20, fontWeight:900, color:'#6ee7b7',
+                  }}>{(displayName || 'K').charAt(0).toUpperCase()}</div>
+                  <span style={{ position:'absolute', bottom:1, right:0, width:11, height:11, borderRadius:'50%', background:'#22c55e', border:'2px solid #0c1e18' }} />
+                </div>
+                <div>
+                  <p style={{ fontSize:17, fontWeight:800, margin:0, color:'#fff' }}>
+                    {isConnected ? (displayName || 'KAI Member') : 'Not connected'}
+                  </p>
+                  <p style={{ fontSize:13, color:'var(--home-muted)', margin:'2px 0 0', lineHeight:1.5 }}>
+                    {isConnected
+                      ? "You're an active KAI Nuvari member on Avalanche Fuji, based in Kenya."
+                      : 'Connect a wallet to see your profile.'}
+                  </p>
+                  {isConnected && !profile && (
+                    <Link href="/profile" className="text-link" style={{ fontSize:12 }}>Complete your profile →</Link>
+                  )}
+                </div>
+              </div>
 
-      {/* 4 ── NETWORK STRIP — plain row, no panel behind it */}
-      <motion.div initial={{ opacity:0, y:8 }} animate={{ opacity:1, y:0 }} transition={{ delay:0.14 }}
-        style={{ ...W, marginTop:20, position:'relative', zIndex:5 }}>
-        <div style={{ display:'flex', alignItems:'center', gap:14 }}>
-          <Mountain size={22} color="rgba(255,255,255,0.85)" strokeWidth={1.7} style={{ flexShrink:0 }}/>
-          <div style={{ flex:1 }}>
-            <p style={{ fontSize:14, fontWeight:800, margin:'0 0 2px', color:'rgba(255,255,255,0.92)', ...R }}>
-              Avalanche C-Chain
-              <span style={{ color:'rgba(255,255,255,0.55)', fontWeight:500 }}> · MetaMask &amp; Core Wallet</span>
-            </p>
-            <p style={{ fontSize:12, color:'rgba(255,255,255,0.50)', margin:0, ...Rs }}>
-              6 Ecosystem Tokens · DeFi Vaults · DAO Governance
-            </p>
-          </div>
-        </div>
-      </motion.div>
-
-      {/* 5 ── PROFILE — plain text, no card, no cover photo */}
-      <motion.div initial={{ opacity:0, y:10 }} animate={{ opacity:1, y:0 }} transition={{ delay:0.18 }}
-        style={{ ...W, marginTop:28, paddingTop:20, borderTop: sectionDivider, position:'relative', zIndex:5 }}>
-
-        <div style={{ display:'flex', alignItems:'center', gap:14, marginBottom:12 }}>
-          <div style={{ position:'relative', flexShrink:0 }}>
-            <div style={{
-              width:56, height:56, borderRadius:'50%',
-              border:'2px solid #34d399',
-              display:'flex', alignItems:'center', justifyContent:'center',
-              fontSize:22, fontWeight:900, color:'#6ee7b7',
-            }}>{(displayName || 'K').charAt(0).toUpperCase()}</div>
-            <span style={{
-              position:'absolute', bottom:2, right:0, width:12, height:12, borderRadius:'50%',
-              background:'#22c55e', border:'2px solid #050508',
-            }} />
-          </div>
-          <div>
-            <div style={{ display:'flex', alignItems:'center', gap:8 }}>
-              <h2 style={{ fontSize:20, fontWeight:900, margin:0, letterSpacing:'-0.4px', color:'#fff', ...R }}>
-                {isConnected ? (displayName || 'KAI Member') : 'Not Connected'}
-              </h2>
-              {isConnected && <span style={{ color:'#34d399', fontWeight:800 }}>✓</span>}
+              <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:10, paddingTop:16, borderTop: sectionDivider }}>
+                {[
+                  { l:'Est. value', v: isConnected ? (balancesLoading ? '…' : `$${totalUsd.toFixed(2)}`) : '$0.00', color:'#34d399', icon:Wallet },
+                  { l:'Network',   v:'Fuji',   color:null,      icon:Mountain },
+                  { l:'Tokens',    v:isConnected ? (balancesLoading ? '…' : String(activeTokenCount)) : '0', color:null, icon:Coins },
+                  { l:'Status',    v:isConnected ? 'Active' : 'Idle', color:isConnected ? '#34d399' : null, icon:Zap },
+                ].map(s => (
+                  <div key={s.l} style={{ textAlign:'center' }}>
+                    <s.icon size={16} color={s.color ?? 'var(--home-muted)'} strokeWidth={1.8} style={{ display:'block', margin:'0 auto 6px' }}/>
+                    <p style={{ fontSize:14, fontWeight:800, color:s.color ?? '#fff', margin:'0 0 2px' }}>{s.v}</p>
+                    <p style={{ fontSize:10, color:'var(--home-muted)', margin:0 }}>{s.l}</p>
+                  </div>
+                ))}
+              </div>
             </div>
-            <p style={{ fontSize:13, color:'rgba(255,255,255,0.60)', margin:'2px 0 0', lineHeight:1.55, ...Rs }}>
+
+            {/* KAI AGENT */}
+            <div className="home-panel" id="agent"
+              style={{ scrollMarginTop:70 }}>
+              <div style={{ display:'flex', alignItems:'center', gap:10, marginBottom:6 }}>
+                <Bot size={20} color="#34d399" />
+                <p style={{ fontSize:15, fontWeight:800, margin:0, color:'#fff' }}>
+                  <span style={HL.green}>KAI</span> Intelligence
+                </p>
+              </div>
+              <p style={{ fontSize:13, color:'var(--home-muted)', margin:'0 0 14px', lineHeight:1.6 }}>
+                Live and ready to help, powered by Qwen3 RAG.{' '}
+                <button onClick={openAIChat} className="text-link" style={{ background:'none', border:'none', cursor:'pointer', padding:0, font:'inherit', fontSize:'inherit' }}>Open the full chat →</button>
+              </p>
+
+              <p style={label}>Quick ask</p>
+              <p style={{ fontSize:13, lineHeight:2, marginBottom:14 }}>
+                {['What tokens does KAI have?','Best yield now?','How to get started?','Pool rates?'].map((q,i,arr) => (
+                  <span key={q}>
+                    <button onClick={() => setAgentQ(q)} style={{ background:'none', border:'none', cursor:'pointer', padding:0, font:'inherit', fontWeight:600, color: agentQ===q ? '#34d399' : 'rgba(255,255,255,0.65)' }}>{q}</button>
+                    {i < arr.length-1 && <span style={{ color:'rgba(255,255,255,0.25)' }}> · </span>}
+                  </span>
+                ))}
+              </p>
+
+              <div style={{ display:'flex', gap:9, marginBottom: agentA ? 16 : 0 }}>
+                <textarea ref={agentRef} value={agentQ}
+                  onChange={e => setAgentQ(e.target.value)}
+                  onKeyDown={e => e.key==='Enter' && !e.shiftKey && (e.preventDefault(), askAgent())}
+                  placeholder="Ask KAI anything…" rows={2}
+                  style={{ flex:1, background:'rgba(255,255,255,0.04)', border:'1px solid rgba(255,255,255,0.16)', borderRadius:10, padding:'10px 13px', fontSize:13, color:'#fff', outline:'none', fontFamily:'inherit', resize:'none', lineHeight:1.5, caretColor:'#34d399' }}
+                  onFocus={e => (e.target.style.borderColor='rgba(52,211,153,0.65)')}
+                  onBlur={e  => (e.target.style.borderColor='rgba(255,255,255,0.16)')}
+                />
+                <button onClick={askAgent} disabled={agentBusy||!agentQ.trim()} style={{
+                  padding:'0 18px', borderRadius:10, alignSelf:'flex-end', flexShrink:0, border:'none', height:44,
+                  background:agentQ.trim()&&!agentBusy?'var(--home-accent)':'rgba(255,255,255,0.08)',
+                  color:agentQ.trim()&&!agentBusy?'#04140f':'rgba(255,255,255,0.30)',
+                  cursor:agentQ.trim()?'pointer':'not-allowed',
+                  fontSize:13, fontWeight:700,
+                }}>
+                  {agentBusy ? 'Asking…' : 'Send'}
+                </button>
+              </div>
+
+              <AnimatePresence>
+                {agentA && (
+                  <motion.div initial={{ opacity:0, height:0 }} animate={{ opacity:1, height:'auto' }} exit={{ opacity:0, height:0 }}
+                    style={{ paddingLeft:14, borderLeft:'2px solid #34d399', fontSize:13, color:'rgba(255,255,255,0.85)', lineHeight:1.65, maxHeight:200, overflowY:'auto' }}>
+                    <span dangerouslySetInnerHTML={{ __html:formatChat(agentA) }} />
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+          </div>
+
+          <div className="home-main">
+            {/* PORTFOLIO */}
+            <div className="home-panel">
+              <p style={label}>Estimated portfolio value</p>
+              {balancesLoading ? (
+                <p style={{ fontSize:14, color:'var(--home-muted)', marginBottom:16 }}>Loading…</p>
+              ) : (
+                <div style={{ display:'flex', alignItems:'baseline', gap:12, marginBottom:20 }}>
+                  <span style={{ fontSize:40, fontWeight:900, letterSpacing:-2, color:isConnected?'#fff':'rgba(255,255,255,0.25)', lineHeight:1 }}>
+                    ${isConnected ? totalUsd.toFixed(2) : '0.00'}
+                  </span>
+                  {isConnected && totalUsd>0 && <span style={{ fontSize:13, ...HL.green }}>+0.00%</span>}
+                </div>
+              )}
+
               {isConnected ? (
-                <>KAI Nuvari member · Avalanche Fuji · <span style={{ color:'#34d399' }}>✨ KAI Member</span> · ● Active · Kenya</>
-              ) : 'Connect a wallet to see your profile'}
-            </p>
-            {isConnected && !profile && (
-              <Link href="/profile" style={{ fontSize:12, color:'#34d399', textDecoration:'none', ...Rs }}>
-                Complete your profile →
-              </Link>
-            )}
-          </div>
-        </div>
-
-        {/* stats — plain columns, one thin divider above the whole row */}
-        <div style={{
-          display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:10,
-          paddingTop:13, borderTop: sectionDivider,
-        }}>
-          {[
-            { label:'Est. Value', value: isConnected ? (balancesLoading ? '…' : `$${totalUsd.toFixed(2)}`) : '$0.00', color:'#34d399', icon:Wallet },
-            { label:'Network',   value:'Fuji',   color:null,      icon:Mountain },
-            { label:'Tokens',    value:isConnected ? (balancesLoading ? '…' : String(activeTokenCount)) : '0', color:null, icon:Coins },
-            { label:'Status',    value:isConnected ? 'Active' : 'Idle', color:isConnected ? '#34d399' : null, icon:Zap },
-          ].map(s => (
-            <div key={s.label} style={{ textAlign:'center' }}>
-              <s.icon size={18} color={s.color ?? 'rgba(255,255,255,0.75)'} strokeWidth={1.8} style={{ display:'block', margin:'0 auto 4px' }}/>
-              <p style={{ fontSize:15, fontWeight:800, color:s.color ?? 'rgba(255,255,255,0.90)', margin:'0 0 2px', ...Rs }}>{s.value}</p>
-              <p style={{ fontSize:10, color:'rgba(255,255,255,0.38)', fontWeight:700, letterSpacing:0.6, textTransform:'uppercase', margin:0 }}>{s.label}</p>
-            </div>
-          ))}
-        </div>
-      </motion.div>
-
-      {/* 6 ── PORTFOLIO — plain values and a plain list of holdings */}
-      <motion.div initial={{ opacity:0 }} animate={{ opacity:1 }} transition={{ delay:0.22, duration:0.35 }}
-        style={{ ...W, marginTop:28, paddingTop:20, borderTop: sectionDivider, position:'relative', zIndex:5 }}>
-        <p style={{ fontSize:10, fontWeight:700, letterSpacing:1.4, textTransform:'uppercase', color:'rgba(255,255,255,0.48)', marginBottom:6, ...Rs }}>Est. Portfolio Value</p>
-        {balancesLoading ? (
-          <p style={{ fontSize:14, color:'rgba(255,255,255,0.45)', marginBottom:16 }}>Loading…</p>
-        ) : (
-          <div style={{ display:'flex', alignItems:'baseline', gap:12, marginBottom:16 }}>
-            <span style={{ fontSize:40, fontWeight:900, letterSpacing:-2, color:isConnected?'#fff':'rgba(255,255,255,0.20)', lineHeight:1, ...R }}>
-              ${isConnected ? totalUsd.toFixed(2) : '0.00'}
-            </span>
-            {isConnected && totalUsd>0 && <span style={{ fontSize:13, ...HL.green }}>+0.00%</span>}
-          </div>
-        )}
-
-        {isConnected ? (
-          <>
-            <div style={{ overflowX:'auto', scrollbarWidth:'none', marginBottom:14 }}>
-              <div style={{ display:'flex', gap:22, minWidth:'max-content' }}>
-                {balancesLoading ? <p style={{ fontSize:13, color:'rgba(255,255,255,0.40)' }}>Loading balances…</p> : allTokens.map(b => {
-                  const Icon = TOKEN_ICON[b.symbol] || Coins;
-                  return (
-                    <div key={b.symbol} style={{ textAlign:'center', position:'relative' }}>
-                      <span style={{ display:'block', margin:'0 auto 4px' }}><Icon size={16} color={b.color} strokeWidth={1.8} /></span>
-                      <p style={{ fontSize:9, color:'rgba(255,255,255,0.50)', margin:'0 0 2px', fontWeight:700, letterSpacing:0.3 }}>{b.symbol}</p>
-                      <p style={{ fontSize:13, fontWeight:800, color:b.color, margin:0 }}>
-                        {b.value>=1000?`${(b.value/1000).toFixed(1)}K`:b.value>=0.001?b.value.toFixed(3):'0.000'}
-                      </p>
-                      {!b.deployed && <p style={{ fontSize:8, color:'rgba(255,255,255,0.30)', fontWeight:700, margin:'2px 0 0' }}>SOON</p>}
+                <>
+                  <div style={{ overflowX:'auto', scrollbarWidth:'none', marginBottom:18 }}>
+                    <div style={{ display:'flex', gap:24, minWidth:'max-content' }}>
+                      {balancesLoading ? <p style={{ fontSize:13, color:'rgba(255,255,255,0.40)' }}>Loading balances…</p> : allTokens.map(b => {
+                        const Icon = TOKEN_ICON[b.symbol] || Coins;
+                        return (
+                          <div key={b.symbol} style={{ textAlign:'center' }}>
+                            <span style={{ display:'block', margin:'0 auto 4px' }}><Icon size={16} color={b.color} strokeWidth={1.8} /></span>
+                            <p style={{ fontSize:9, color:'var(--home-muted)', margin:'0 0 2px', fontWeight:700 }}>{b.symbol}</p>
+                            <p style={{ fontSize:13, fontWeight:800, color:b.color, margin:0 }}>
+                              {b.value>=1000?`${(b.value/1000).toFixed(1)}K`:b.value>=0.001?b.value.toFixed(3):'0.000'}
+                            </p>
+                            {!b.deployed && <p style={{ fontSize:8, color:'rgba(255,255,255,0.30)', fontWeight:700, margin:'2px 0 0' }}>Coming soon</p>}
+                          </div>
+                        );
+                      })}
                     </div>
+                  </div>
+                  <p style={{ fontSize:12, color:'var(--home-muted)', display:'flex', flexWrap:'wrap', alignItems:'center', gap:14 }}>
+                    <span style={{ fontFamily:'monospace' }}>{address}</span>
+                    <button onClick={copyAddress} style={{ padding:'6px 12px', borderRadius:8, border:'none', cursor:'pointer', background:copied?'var(--home-accent)':'rgba(255,255,255,0.10)', color:copied?'#04140f':'rgba(255,255,255,0.75)', fontSize:11, fontWeight:700, display:'flex', alignItems:'center', gap:4 }}>
+                      {copied?'✓ Copied':(<><Copy size={12}/> Copy</>)}
+                    </button>
+                    <button onClick={handleRefresh} style={{ padding:'6px 12px', borderRadius:8, border:'none', cursor:'pointer', background:'rgba(255,255,255,0.10)', color:'rgba(255,255,255,0.75)', fontSize:11, fontWeight:700, display:'flex', alignItems:'center', gap:4 }}>
+                      <RefreshCw size={12} style={{ animation:refreshing?'spin 1s linear infinite':'none' }} /> Refresh
+                    </button>
+                  </p>
+                </>
+              ) : (
+                <button onClick={() => setShowModal(true)} className="text-link" style={{ background:'none', border:'none', cursor:'pointer', padding:0, font:'inherit', fontSize:14 }}>
+                  Connect a wallet to see your balances →
+                </button>
+              )}
+            </div>
+
+            {/* DASHBOARDS */}
+            <div className="home-panel" id="dashboards"
+              style={{ marginTop:32, scrollMarginTop:70 }}>
+              <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:4 }}>
+                <p style={{ ...label, margin:0 }}>Dashboards</p>
+                <span style={{ fontSize:12, fontWeight:700, color:'#34d399' }}>● 3 active</span>
+              </div>
+              <div>
+                {DASHBOARDS.map((d) => {
+                  const Icon = d.icon;
+                  return (
+                    <Link key={d.id} href={d.href} className="dash-row">
+                      <Icon size={22} className="action-icon" strokeWidth={1.6} style={{ flexShrink:0 }}/>
+                      <div style={{ flex:1 }}>
+                        <p style={{ fontSize:15, fontWeight:800, margin:'0 0 3px', color:'rgba(255,255,255,0.95)' }}>{d.hl} <span style={{ fontWeight:600, color:'var(--home-muted)', fontSize:13 }}>· {d.label}</span></p>
+                        <p style={{ fontSize:12, color:'var(--home-muted)', margin:0 }}>{d.sub}</p>
+                      </div>
+                      <span className="dash-open" style={{ fontSize:12, fontWeight:700, color:'var(--home-muted)', display:'flex', alignItems:'center', gap:4, flexShrink:0, transition:'color 0.15s ease' }}>
+                        Open <ChevronRight size={13}/>
+                      </span>
+                    </Link>
                   );
                 })}
               </div>
             </div>
-            <p style={{ fontSize:12, color:'rgba(255,255,255,0.45)', display:'flex', flexWrap:'wrap', alignItems:'center', gap:14 }}>
-              <span style={{ fontFamily:'monospace' }}>{address}</span>
-              <button onClick={copyAddress} style={{ padding:'6px 12px', borderRadius:8, border:'none', cursor:'pointer', background:copied?'#047857':'rgba(255,255,255,0.10)', color:copied?'#fff':'rgba(255,255,255,0.75)', fontSize:11, fontWeight:700, display:'flex', alignItems:'center', gap:4 }}>
-                {copied?'✓ Copied':(<><Copy size={12}/> Copy</>)}
-              </button>
-              <button onClick={handleRefresh} style={{ padding:'6px 12px', borderRadius:8, border:'none', cursor:'pointer', background:'rgba(255,255,255,0.10)', color:'rgba(255,255,255,0.75)', fontSize:11, fontWeight:700, display:'flex', alignItems:'center', gap:4 }}>
-                <RefreshCw size={12} style={{ animation:refreshing?'spin 1s linear infinite':'none' }} /> Refresh
-              </button>
-            </p>
-          </>
-        ) : (
-          <button onClick={() => setShowModal(true)} style={{
-            display:'flex', alignItems:'center', justifyContent:'center', gap:9,
-            background:'#047857', color:'#fff',
-            borderRadius:10, padding:'12px 20px', cursor:'pointer', border:'none',
-            fontSize:14, fontWeight:700,
-          }}>
-            <Wallet size={16}/> Connect MetaMask / Core Wallet to view balances
-          </button>
-        )}
-      </motion.div>
 
-      {/* 7 ── STAT PILLS — plain columns */}
-      <motion.div initial={{ opacity:0, y:8 }} animate={{ opacity:1, y:0 }} transition={{ delay:0.26 }}
-        style={{ ...W, marginTop:28, display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:10, position:'relative', zIndex:5 }}>
-        {[
-          { icon:Mountain, label:'Chain',  value:'Fuji Testnet', color:'#34d399' },
-          { icon:Coins,    label:'Tokens', value:'6 Active',     color:'#fbbf24' },
-          { icon:Bot,      label:'AI',     value:'Qwen3 RAG',   color:'#c084fc' },
-        ].map((s,i) => (
-          <motion.div key={s.label}
-            initial={{ opacity:0, y:8 }} animate={{ opacity:1, y:0 }} transition={{ delay:0.28+i*0.05 }}
-            style={{ textAlign:'center' }}>
-            <s.icon size={22} color={s.color} strokeWidth={1.7} style={{ display:'block', margin:'0 auto 6px' }}/>
-            <p style={{ fontSize:10, fontWeight:700, letterSpacing:1.0, textTransform:'uppercase', color:'rgba(255,255,255,0.40)', margin:'0 0 3px' }}>{s.label}</p>
-            <p style={{ fontSize:14, fontWeight:800, color:'rgba(255,255,255,0.90)', margin:0 }}>{s.value}</p>
-          </motion.div>
-        ))}
-      </motion.div>
-
-      {/* 8 ── KAI AGENT */}
-      <motion.div id="agent" ref={agentSectionRef}
-        initial={{ opacity:0, y:16 }} whileInView={{ opacity:1, y:0 }} viewport={{ once:true, margin:'-60px' }} transition={{ duration:0.4 }}
-        style={{ ...W, marginTop:28, paddingTop:20, borderTop: sectionDivider, position:'relative', zIndex:5, scrollMarginTop:70 }}>
-
-        <div style={{ display:'flex', alignItems:'center', gap:12, marginBottom:14 }}>
-          <Bot size={22} color="#34d399" />
-          <div style={{ flex:1 }}>
-            <p style={{ fontSize:15, fontWeight:800, margin:'0 0 2px', color:'#fff', ...Rs }}>
-              <span style={HL.green}>KAI</span> Intelligence
-            </p>
-            <p style={{ fontSize:10, color:'#34d399', margin:0, fontWeight:700 }}>● RAG Agent · Qwen3 · Live</p>
-          </div>
-          <button onClick={openAIChat} style={{ fontSize:12, color:'rgba(255,255,255,0.55)', background:'none', border:'none', cursor:'pointer', fontWeight:700, display:'flex', alignItems:'center', gap:3, flexShrink:0 }}>
-            Full chat <ChevronRight size={13}/>
-          </button>
-        </div>
-
-        {/* quick ask — plain text links, not chip buttons */}
-        <p style={{ fontSize:9, fontWeight:700, letterSpacing:1.2, textTransform:'uppercase', color:'rgba(255,255,255,0.38)', marginBottom:9 }}>Quick Ask</p>
-        <p style={{ fontSize:13, lineHeight:2, marginBottom:14 }}>
-          {['What tokens does KAI have?','Best yield now?','How to get started?','Pool rates?'].map((q,i,arr) => (
-            <span key={q}>
-              <button onClick={() => setAgentQ(q)} style={{ background:'none', border:'none', cursor:'pointer', padding:0, font:'inherit', fontWeight:600, color: agentQ===q ? '#34d399' : 'rgba(255,255,255,0.65)' }}>{q}</button>
-              {i < arr.length-1 && <span style={{ color:'rgba(255,255,255,0.25)' }}> · </span>}
-            </span>
-          ))}
-        </p>
-
-        {/* input */}
-        <div style={{ display:'flex', gap:9, marginBottom: agentA ? 16 : 0 }}>
-          <textarea ref={agentRef} value={agentQ}
-            onChange={e => setAgentQ(e.target.value)}
-            onKeyDown={e => e.key==='Enter' && !e.shiftKey && (e.preventDefault(), askAgent())}
-            placeholder="Ask KAI anything about the ecosystem…" rows={2}
-            style={{ flex:1, background:'transparent', border:'1px solid rgba(255,255,255,0.18)', borderRadius:10, padding:'10px 13px', fontSize:13, color:'#fff', outline:'none', fontFamily:'inherit', resize:'none', lineHeight:1.5, caretColor:'#34d399' }}
-            onFocus={e => (e.target.style.borderColor='rgba(52,211,153,0.65)')}
-            onBlur={e  => (e.target.style.borderColor='rgba(255,255,255,0.18)')}
-          />
-          <button onClick={askAgent} disabled={agentBusy||!agentQ.trim()} style={{
-            padding:'0 20px', borderRadius:10, alignSelf:'flex-end', flexShrink:0, border:'none', height:44,
-            background:agentQ.trim()&&!agentBusy?'#047857':'rgba(255,255,255,0.08)',
-            color:agentQ.trim()&&!agentBusy?'#fff':'rgba(255,255,255,0.30)',
-            cursor:agentQ.trim()?'pointer':'not-allowed',
-            fontSize:13, fontWeight:700,
-            transition:'all 0.2s',
-          }}>
-            {agentBusy ? 'Asking…' : 'Send'}
-          </button>
-        </div>
-
-        <AnimatePresence>
-          {agentA && (
-            <motion.div initial={{ opacity:0, height:0 }} animate={{ opacity:1, height:'auto' }} exit={{ opacity:0, height:0 }}
-              style={{ paddingLeft:14, borderLeft:'2px solid #34d399', fontSize:13, color:'rgba(255,255,255,0.85)', lineHeight:1.65, maxHeight:200, overflowY:'auto' }}>
-              <span dangerouslySetInnerHTML={{ __html:formatChat(agentA) }} />
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </motion.div>
-
-      {/* 9 ── DASHBOARDS — plain list, one row per dashboard */}
-      <motion.div id="dashboards" ref={dashboardsRef}
-        initial={{ opacity:0, y:12 }} whileInView={{ opacity:1, y:0 }} viewport={{ once:true, margin:'-60px' }} transition={{ duration:0.4 }}
-        style={{ ...W, marginTop:28, paddingTop:20, borderTop: sectionDivider, position:'relative', zIndex:5, scrollMarginTop:70 }}>
-        <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:6 }}>
-          <p style={{ fontSize:10, fontWeight:700, letterSpacing:1.4, textTransform:'uppercase', color:'rgba(255,255,255,0.52)', margin:0 }}>Dashboards</p>
-          <span style={{ fontSize:11, fontWeight:700, color:'#34d399' }}>● 3 active</span>
-        </div>
-        <div>
-          {DASHBOARDS.map((d,i) => {
-            const Icon = d.icon;
-            return (
-              <motion.div key={d.id}
-                initial={{ opacity:0, y:10 }} whileInView={{ opacity:1, y:0 }} viewport={{ once:true, margin:'-40px' }} transition={{ delay:i*0.08, duration:0.4 }}>
-                <Link href={d.href} style={{
-                  textDecoration:'none', display:'flex', alignItems:'center', gap:16,
-                  padding:'16px 0', borderBottom: i < DASHBOARDS.length-1 ? sectionDivider : 'none',
-                }}>
-                  <Icon size={24} color={d.color} strokeWidth={1.6} style={{ flexShrink:0 }}/>
-                  <div style={{ flex:1 }}>
-                    <p style={{ fontSize:16, fontWeight:800, margin:'0 0 3px', color:'rgba(255,255,255,0.95)', ...R }}>{d.hl} <span style={{ fontWeight:600, color:'rgba(255,255,255,0.55)', fontSize:13 }}>· {d.label}</span></p>
-                    <p style={{ fontSize:12, color:'rgba(255,255,255,0.50)', margin:0 }}>{d.sub}</p>
-                  </div>
-                  <span style={{ fontSize:12, fontWeight:700, color:d.color, display:'flex', alignItems:'center', gap:4, flexShrink:0 }}>
-                    Open <ChevronRight size={13}/>
-                  </span>
-                </Link>
-              </motion.div>
-            );
-          })}
-        </div>
-      </motion.div>
-
-      {/* 10 ── QUICK ACTIONS — plain icon + label grid, no tile backgrounds */}
-      <motion.div id="actions" ref={actionsRef}
-        initial={{ opacity:0, y:12 }} whileInView={{ opacity:1, y:0 }} viewport={{ once:true, margin:'-60px' }} transition={{ duration:0.4 }}
-        style={{ ...W, marginTop:28, paddingTop:20, borderTop: sectionDivider, paddingBottom:40, position:'relative', zIndex:5, scrollMarginTop:70 }}>
-        <p style={{ fontSize:10, fontWeight:700, letterSpacing:1.4, textTransform:'uppercase', color:'rgba(255,255,255,0.52)', margin:'0 0 14px' }}>
-          Quick Actions
-        </p>
-        <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill,minmax(110px,1fr))', gap:'18px 12px' }}>
-          {QUICK.map((a,i) => {
-            const Icon = a.icon;
-            const isAgent = a.href === '/ai';
-            const tile = (
-              <div style={{ display:'flex', flexDirection:'column', alignItems:'center', gap:8, cursor:'pointer' }}>
-                <Icon size={26} color={a.color} strokeWidth={1.6}/>
-                <span style={{ fontSize:12, fontWeight:700, color:'rgba(255,255,255,0.88)', textAlign:'center', lineHeight:1.2, textShadow:'0 1px 5px rgba(0,0,0,0.85)' }}>
-                  {a.name}
-                </span>
+            {/* QUICK ACTIONS */}
+            <div id="actions"
+              style={{ marginTop:32, scrollMarginTop:70 }}>
+              <p style={label}>Quick actions</p>
+              <div className="qa-grid">
+                {QUICK.map((a) => {
+                  const Icon = a.icon;
+                  const isAgent = a.href === '/ai';
+                  const content = (
+                    <>
+                      <Icon size={22} className="action-icon" strokeWidth={1.6}/>
+                      <span style={{ fontSize:12, fontWeight:600, color:'rgba(255,255,255,0.85)', textAlign:'center', lineHeight:1.2 }}>
+                        {a.name}
+                      </span>
+                    </>
+                  );
+                  return isAgent ? (
+                    <button key={a.name} onClick={openAIChat} className="qa-card">{content}</button>
+                  ) : (
+                    <Link key={a.name} href={a.href} className="qa-card">{content}</Link>
+                  );
+                })}
               </div>
-            );
-            return (
-              <motion.div key={a.name}
-                initial={{ opacity:0, y:10 }} whileInView={{ opacity:1, y:0 }} viewport={{ once:true, margin:'-40px' }} transition={{ delay:i*0.03, duration:0.35 }}>
-                {isAgent ? (
-                  <button onClick={openAIChat} style={{ textDecoration:'none', background:'none', border:'none', padding:0, width:'100%', font:'inherit' }}>
-                    {tile}
-                  </button>
-                ) : (
-                  <Link href={a.href} style={{ textDecoration:'none' }}>
-                    {tile}
-                  </Link>
-                )}
-              </motion.div>
-            );
-          })}
+            </div>
+          </div>
         </div>
-      </motion.div>
+      </div>
 
       {showModal && <WalletConnectModal onClose={() => setShowModal(false)} />}
     </main>
