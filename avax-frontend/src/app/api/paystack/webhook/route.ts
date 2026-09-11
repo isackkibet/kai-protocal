@@ -42,6 +42,11 @@ export async function POST(request: Request) {
 
     const { event: eventName, data } = event;
 
+    if (!prisma) {
+      // 503 (not 200) so Paystack retries once the database is back.
+      return NextResponse.json({ error: "Database unavailable" }, { status: 503 });
+    }
+
     if (eventName === "charge.success") {
       await prisma.payment.updateMany({
         where: { reference: data.reference },

@@ -1,6 +1,10 @@
 generator client {
   provider      = "prisma-client-js"
-  binaryTargets = ["native", "linux-musl-openssl-3.0.x"]
+  // "native" covers local dev. Vercel's Node.js serverless functions run on
+  // Amazon Linux 2 (glibc), which needs "rhel-openssl-3.0.x" — not a
+  // musl/Alpine target. A missing or mismatched query engine binary here is
+  // a classic cause of a serverless function crashing on first invocation.
+  binaryTargets = ["native", "rhel-openssl-3.0.x"]
 }
 
 datasource db {
