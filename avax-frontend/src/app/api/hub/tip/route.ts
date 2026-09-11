@@ -47,8 +47,6 @@ export async function POST(request: Request) {
     const amountKobo   = amountKesInt * 100; // Paystack amounts are in kobo (KES × 100)
     const reference    = `TIP-${(slug ?? "hub").slice(0, 6).toUpperCase()}-${Date.now().toString(36)}`;
 
-    if (!prisma) return NextResponse.json({ error: "Database unavailable" }, { status: 503 });
-
     await prisma.payment.upsert({
       where:  { reference },
       create: {

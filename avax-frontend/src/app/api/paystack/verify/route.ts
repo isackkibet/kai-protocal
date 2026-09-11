@@ -27,7 +27,6 @@ async function handle(reference: string) {
     const tx = await verifyTransaction(reference);
 
     // Persist updated status
-    if (!prisma) return NextResponse.json({ error: "Database unavailable" }, { status: 503 });
     await prisma.payment.updateMany({
       where: { reference },
       data:  { status: tx.status },

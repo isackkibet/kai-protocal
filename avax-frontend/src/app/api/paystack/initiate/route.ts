@@ -54,8 +54,6 @@ export async function POST(request: Request) {
     const amountKobo = usdToKobo(priceUsd);
     const amountKes  = usdToKes(priceUsd);
 
-    if (!prisma) return NextResponse.json({ error: "Database unavailable" }, { status: 503 });
-
     // Persist a pending payment record in Neon
     await prisma.payment.upsert({
       where:  { reference },
