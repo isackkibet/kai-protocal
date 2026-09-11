@@ -1,6 +1,5 @@
 import { NextResponse } from 'next/server';
 import { getPrisma } from '@/lib/db';
-import { verifyPrivyUserId } from '@/lib/privy-server';
 
 /**
  * /api/kai-bar/referral  —  GET + POST
@@ -92,18 +91,10 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
   }
 
-  // Mints Kai Bar points, so identity is verified server-side (PRD 1 §12) —
-  // never trusted from the body, even though the frontend doesn't currently
-  // call this route (referral redemption happens via /api/kai-bar/onboard).
-  // It's still a public HTTP endpoint and must be safe to call directly.
-  const privyUserId = await verifyPrivyUserId(req.headers.get('authorization'));
-  if (!privyUserId) {
-    return NextResponse.json({ error: 'Could not verify your session. Please sign in again.' }, { status: 401 });
-  }
-
+  const privyUserId = String(body.privyUserId ?? '').trim();
   const code = String(body.code ?? '').trim().toUpperCase();
-  if (!code) {
-    return NextResponse.json({ error: 'code required' }, { status: 400 });
+  if (!privyUserId || !code) {
+    return NextResponse.json({ error: 'privyUserId and code required' }, { status: 400 });
   }
 
   const prisma = await getPrisma();
