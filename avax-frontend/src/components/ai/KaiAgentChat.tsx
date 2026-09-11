@@ -208,15 +208,8 @@ export default function KaiAgentChat({ onClose }: KaiAgentChatProps) {
         borderBottom: '1px solid rgba(16,185,129,0.20)',
         boxShadow: '0 1px 0 rgba(255,255,255,0.03), 0 4px 20px rgba(0,0,0,0.40)',
       }}>
-        {onClose ? (
-          <button onClick={onClose} style={{
-            background: 'none', border: 'none', cursor: 'pointer', padding: 0,
-            color: 'rgba(255,255,255,0.30)', display: 'flex', alignItems: 'center', marginRight: 2,
-          }}>
-            <ChevronLeft size={20} />
-          </button>
-        ) : (
-          <Link href="/" style={{ color: 'rgba(255,255,255,0.30)', textDecoration: 'none', display: 'flex', alignItems: 'center', marginRight: 2 }}>
+        {!onClose && (
+          <Link href="/" aria-label="Back" style={{ color: 'rgba(255,255,255,0.30)', textDecoration: 'none', display: 'flex', alignItems: 'center', marginRight: 2 }}>
             <ChevronLeft size={20} />
           </Link>
         )}
@@ -254,7 +247,7 @@ export default function KaiAgentChat({ onClose }: KaiAgentChatProps) {
         </button>
 
         {/* Health refresh */}
-        <button onClick={checkHealth} style={{
+        <button onClick={checkHealth} aria-label="Refresh connection status" style={{
           width: 32, height: 32, borderRadius: 8, flexShrink: 0, cursor: 'pointer',
           background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
