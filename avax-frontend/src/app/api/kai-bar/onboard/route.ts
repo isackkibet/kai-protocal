@@ -242,7 +242,7 @@ export async function POST(req: Request) {
     if (activityModel) {
       try {
         await activityModel.create({
-          data: { userId: user.authUserId!, type: 'WALLET_CREATED', description: 'Privy wallet onboarded' },
+          data: { userId: user.id, type: 'WALLET_CREATED', description: 'Privy wallet onboarded' },
         });
       } catch {
         /* audit trail is best-effort */
