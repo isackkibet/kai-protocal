@@ -32,12 +32,12 @@ export async function GET() {
       { id: 'm5', name: 'Agnes Chebet',   role: 'AUDITOR',   wallet: '0xdef0…7890', patrols: 16, joinedAt: '2022-03-15' },
     ],
     zones: [
-      { id: 'z1', zoneName: 'Zone A — Core',       areaHa: 320, treeCount: 4200, status: 'PROTECTED'    },
-      { id: 'z2', zoneName: 'Zone B — Buffer',      areaHa: 180, treeCount: 2100, status: 'ACTIVE'       },
-      { id: 'z3', zoneName: 'Zone C — Regeneration',areaHa: 240, treeCount: 3800, status: 'RESTORED'     },
-      { id: 'z4', zoneName: 'Zone D — Honey Belt',  areaHa: 160, treeCount: 1900, status: 'ACTIVE'       },
-      { id: 'z5', zoneName: 'Zone E — Riverine',    areaHa: 200, treeCount: 2800, status: 'ACTIVE'       },
-      { id: 'z6', zoneName: 'Zone F — Alert Zone',  areaHa: 140, treeCount: 1620, status: 'UNDER_THREAT' },
+      { id: 'z1', zoneName: 'Zone A: Core',       areaHa: 320, treeCount: 4200, status: 'PROTECTED'    },
+      { id: 'z2', zoneName: 'Zone B: Buffer',      areaHa: 180, treeCount: 2100, status: 'ACTIVE'       },
+      { id: 'z3', zoneName: 'Zone C: Regeneration',areaHa: 240, treeCount: 3800, status: 'RESTORED'     },
+      { id: 'z4', zoneName: 'Zone D: Honey Belt',  areaHa: 160, treeCount: 1900, status: 'ACTIVE'       },
+      { id: 'z5', zoneName: 'Zone E: Riverine',    areaHa: 200, treeCount: 2800, status: 'ACTIVE'       },
+      { id: 'z6', zoneName: 'Zone F: Alert Zone',  areaHa: 140, treeCount: 1620, status: 'UNDER_THREAT' },
     ],
     recentPatrols: [
       { id: 'p1', memberName: 'Joseph Kimani', zone: 'Zone A', durationMins: 120, treesPlanted: 15, status: 'COMPLETED', patrolDate: '2026-08-28' },
@@ -56,7 +56,7 @@ export async function GET() {
     ],
     proposals: [
       { id: 'g1', proposalRef: 'KIP-001', title: 'Increase Honey Reserve yield to 15%',  votesFor: 234, votesAgainst: 45,  status: 'ACTIVE',  deadline: '2026-09-01' },
-      { id: 'g2', proposalRef: 'KIP-002', title: 'Add new Forest Ward — Karura',          votesFor: 156, votesAgainst: 12,  status: 'PASSED',  deadline: '2026-08-20' },
+      { id: 'g2', proposalRef: 'KIP-002', title: 'Add new Forest Ward: Karura',          votesFor: 156, votesAgainst: 12,  status: 'PASSED',  deadline: '2026-08-20' },
       { id: 'g3', proposalRef: 'KIP-003', title: 'Seed Bank expansion to Meru County',   votesFor: 89,  votesAgainst: 33,  status: 'ACTIVE',  deadline: '2026-09-05' },
     ],
     monthlyTrend: [

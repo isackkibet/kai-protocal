@@ -24,11 +24,11 @@ import { parseEther, formatEther }          from "viem";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
-const { viem }     = await network.create();
+const { viem, networkName: connectionName } = await network.create();
 const publicClient = await viem.getPublicClient();
 const [deployer]   = await viem.getWalletClients();
 
-const networkName = publicClient.chain?.name ?? network.name;
+const networkName = publicClient.chain?.name ?? connectionName;
 const chainId     = publicClient.chain?.id   ?? 0;
 const explorer    = chainId === 43113
   ? "https://testnet.snowtrace.io"
@@ -41,7 +41,7 @@ console.log(`Deployer : ${deployer.account.address}`);
 const balance = await publicClient.getBalance({ address: deployer.account.address });
 console.log(`Balance  : ${formatEther(balance)} AVAX`);
 
-if (network.name === "fuji" && balance < parseEther("0.15")) {
+if (connectionName === "fuji" && balance < parseEther("0.15")) {
   throw new Error(
     `Low balance (${formatEther(balance)} AVAX). Need ≥0.15 AVAX. ` +
     "Top up at https://faucet.avax.network",

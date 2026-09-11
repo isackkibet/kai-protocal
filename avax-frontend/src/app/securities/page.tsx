@@ -502,7 +502,7 @@ export default function SecuritiesPage() {
                       {product.tokenSymbol} · {deployed ? (
                         <span style={{ color: "#22C55E" }}>✓ Deployed</span>
                       ) : (
-                        <span style={{ color: "#F97316" }}>⏳ Coming soon</span>
+                        <span style={{ color: "#F97316" }}>Coming soon</span>
                       )}
                     </p>
                   </div>

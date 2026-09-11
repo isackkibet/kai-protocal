@@ -4,10 +4,13 @@ import { usePathname } from 'next/navigation';
 import BottomNav from '@/components/shared/BottomNav';
 
 const FULLSCREEN_ROUTES = ['/nuvari', '/ai', '/chat'];
+/* Exact matches only — '/kai' would otherwise prefix-match '/kai-bar' */
+const FULLSCREEN_EXACT_ROUTES = ['/kai'];
 
 export default function LayoutWrapper({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  const isFullscreen = FULLSCREEN_ROUTES.some(r => pathname?.startsWith(r));
+  const isFullscreen = FULLSCREEN_ROUTES.some(r => pathname?.startsWith(r))
+    || FULLSCREEN_EXACT_ROUTES.includes(pathname ?? '');
 
   if (isFullscreen) {
     return (

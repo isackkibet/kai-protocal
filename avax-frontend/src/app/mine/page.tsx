@@ -1,5 +1,5 @@
 'use client';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAccount } from 'wagmi';
@@ -44,6 +44,29 @@ const TASKS = [
   { id:'community', title:'Join Community',  desc:'Follow ecosystem update',  reward:'1 YTOKEN', color:'#a855f7', icon:UserPlus  },
 ];
 
+/* Numbers that visibly count up when they change feel alive, not just swapped */
+function useCountUp(target: number, duration = 600) {
+  const [display, setDisplay] = useState(target);
+  const prevRef = useRef(target);
+  useEffect(() => {
+    const from = prevRef.current;
+    const to = target;
+    if (from === to) return;
+    const start = performance.now();
+    let raf = 0;
+    const tick = (now: number) => {
+      const t = Math.min(1, (now - start) / duration);
+      const eased = 1 - Math.pow(1 - t, 3);
+      setDisplay(Math.round(from + (to - from) * eased));
+      if (t < 1) raf = requestAnimationFrame(tick);
+      else prevRef.current = to;
+    };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, [target, duration]);
+  return display;
+}
+
 function Bar({ v, max, c }: { v:number; max:number; c:string }) {
   return (
     <div style={{ height:4, borderRadius:4, background:'rgba(255,255,255,0.08)', overflow:'hidden' }}>
@@ -73,11 +96,22 @@ export default function MinePage() {
   const [taskMsg,    setTaskMsg]    = useState('');
   const [agentOn,    setAgentOn]    = useState(false);
   const [activePool, setActivePool] = useState<number|null>(null);
+  const [heroMsg,    setHeroMsg]    = useState('');
+  const [minedAmount,setMinedAmount]= useState(0);
 
   useEffect(() => {
     const id = setInterval(() => setCountdown(c => Math.max(0,c-1)), 1000);
     return () => clearInterval(id);
   }, []);
+
+  useEffect(() => {
+    if (!agentOn) return;
+    const id = setInterval(() => setMinedAmount(m => m + 0.003), 1000);
+    return () => clearInterval(id);
+  }, [agentOn]);
+
+  const pts = doneTasks.length * 5 + (claimed ? 10 : 0);
+  const displayPts = useCountUp(pts);
 
   const fmt = (s:number) => {
     const h   = Math.floor(s/3600).toString().padStart(2,'0');
@@ -92,6 +126,8 @@ export default function MinePage() {
     await new Promise(r => setTimeout(r,1400));
     setTokenBalance('nvr', useKaivaxStore.getState().balances.nvr + 10);
     setClaimed(true); setClaiming(false);
+    setHeroMsg('10 NVR added to your wallet. Nice work!');
+    setTimeout(() => setHeroMsg(''), 4000);
   };
 
   const doTask = (id:string, reward:string) => {
@@ -109,8 +145,6 @@ export default function MinePage() {
     if (!mintName||!mintSym||!mintSupply) return;
     setMinted(`0x${Math.random().toString(16).slice(2,12).toUpperCase()}`);
   };
-
-  const pts = doneTasks.length * 5 + (claimed ? 10 : 0);
 
   return (
     <main style={{ minHeight:'100dvh', color:'#fff', fontFamily:'var(--font-sans)', position:'relative', paddingBottom:100 }}>
@@ -132,7 +166,7 @@ export default function MinePage() {
             <ArrowLeft size={14}/> Back to Home
           </Link>
 
-          <div style={{ display:'grid', gridTemplateColumns:'1fr auto', gap:40, alignItems:'center' }}>
+          <div className="airdrop-hero-grid" style={{ display:'grid', gridTemplateColumns:'1fr auto', gap:40, alignItems:'center' }}>
             <div>
               {/* live badge */}
               <div style={{ display:'inline-flex', alignItems:'center', gap:8, padding:'5px 14px', borderRadius:999, background:'rgba(16,185,129,0.13)', boxShadow:'0 0 0 1px rgba(16,185,129,0.28) inset', marginBottom:16 }}>
@@ -152,14 +186,24 @@ export default function MinePage() {
                 </span>
               </h1>
 
-              <p style={{ fontSize:'clamp(13px,1.1vw,15px)', color:'rgba(255,255,255,0.65)', margin:'0 0 28px', lineHeight:1.65, maxWidth:520, ...Rs }}>
-                Complete tasks, claim daily rewards, and join exclusive{' '}
-                <span style={HL.cyan}>launchpools</span>.
-                Every action earns you{' '}
-                <span style={HL.amber}>Kai Bar points</span>{' '}
-                and builds your path to the future{' '}
-                <span style={HL.green}>KAI token airdrop</span>.
-              </p>
+              {isConnected ? (
+                <p style={{ fontSize:'clamp(13px,1.1vw,15px)', color:'rgba(255,255,255,0.78)', margin:'0 0 20px', lineHeight:1.65, maxWidth:520, fontWeight:600, ...Rs }}>
+                  Welcome back. You&apos;ve banked{' '}
+                  <span style={HL.green}>{pts} pts</span> so far.{' '}
+                  {doneTasks.length < TASKS.length
+                    ? <>Just <span style={HL.amber}>{TASKS.length - doneTasks.length} task{TASKS.length - doneTasks.length === 1 ? '' : 's'}</span> left to max out today&apos;s drop.</>
+                    : <>All tasks done for today. Nice streak!</>}
+                </p>
+              ) : (
+                <p style={{ fontSize:'clamp(13px,1.1vw,15px)', color:'rgba(255,255,255,0.65)', margin:'0 0 28px', lineHeight:1.65, maxWidth:520, ...Rs }}>
+                  Complete tasks, claim daily rewards, and join exclusive{' '}
+                  <span style={HL.cyan}>launchpools</span>.
+                  Every action earns you{' '}
+                  <span style={HL.amber}>Kai Bar points</span>{' '}
+                  and builds your path to the future{' '}
+                  <span style={HL.green}>KAI token airdrop</span>.
+                </p>
+              )}
 
               <div style={{ display:'flex', gap:12, flexWrap:'wrap' }}>
                 <motion.button whileHover={{ scale:1.04 }} whileTap={{ scale:0.96 }}
@@ -187,13 +231,23 @@ export default function MinePage() {
                   </motion.button>
                 </Link>
               </div>
+
+              <AnimatePresence>
+                {heroMsg && (
+                  <motion.div initial={{ opacity:0, y:8, scale:0.9 }} animate={{ opacity:1, y:0, scale:1 }} exit={{ opacity:0, scale:0.9 }}
+                    className="celebrate-pop"
+                    style={{ marginTop:14, display:'inline-flex', alignItems:'center', gap:8, padding:'9px 18px', borderRadius:999, background:'rgba(34,197,94,0.14)', boxShadow:'0 0 0 1px rgba(34,197,94,0.30) inset', color:'#4ade80', fontSize:13, fontWeight:700 }}>
+                    {heroMsg}
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </div>
 
             {/* hero stats */}
-            <motion.div initial={{ opacity:0, x:20 }} animate={{ opacity:1, x:0 }} transition={{ delay:0.15 }}
+            <motion.div className="airdrop-summary-grid" initial={{ opacity:0, x:20 }} animate={{ opacity:1, x:0 }} transition={{ delay:0.15 }}
               style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:10, minWidth:280 }}>
               {[
-                { Icon:Trophy,      label:'Your Points', value:pts,                          suffix:'pts',  color:'#34d399' },
+                { Icon:Trophy,      label:'Your Points', value:displayPts,                   suffix:'pts',  color:'#34d399' },
                 { Icon:Flame,       label:'Day Streak',  value:3,                            suffix:'days', color:'#f59e0b' },
                 { Icon:CheckCircle, label:'Tasks Done',  value:`${doneTasks.length}/${TASKS.length}`, suffix:'', color:'#60a5fa' },
                 { Icon:Zap,         label:'NVR Earned',  value:claimed?10:0,                 suffix:'NVR',  color:'#a855f7' },
@@ -214,13 +268,13 @@ export default function MinePage() {
       </div>
 
       {/* MAIN CONTENT GRID */}
-      <div style={{ ...W, marginTop:28, display:'grid', gridTemplateColumns:'1fr 1fr', gap:20, position:'relative', zIndex:5 }}>
+      <div className="airdrop-main-grid" style={{ ...W, marginTop:28, display:'grid', gridTemplateColumns:'1fr 1fr', gap:20, position:'relative', zIndex:5 }}>
 
         {/* LEFT COLUMN */}
         <div style={{ display:'flex', flexDirection:'column', gap:18 }}>
 
           {/* TOKEN DROPS */}
-          <motion.section initial={{ opacity:0, y:14 }} animate={{ opacity:1, y:0 }} transition={{ delay:0.10 }}>
+          <motion.section initial={{ opacity:0, y:14 }} whileInView={{ opacity:1, y:0 }} viewport={{ once:true, margin:'-60px' }} transition={{ duration:0.4 }}>
             <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:14 }}>
               <div>
                 <h2 style={{ fontSize:16, fontWeight:900, color:'#fff', margin:0, ...Rs }}>
@@ -232,7 +286,7 @@ export default function MinePage() {
               </div>
               <span style={{ fontSize:10, fontWeight:800, letterSpacing:0.8, padding:'3px 10px', borderRadius:999, background:'rgba(16,185,129,0.10)', boxShadow:'0 0 0 1px rgba(16,185,129,0.22) inset', ...HL.green }}>LIVE</span>
             </div>
-            <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:12 }}>
+            <div className="airdrop-token-grid" style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:12 }}>
               {TOKEN_DROPS.map((t,i) => (
                 <motion.div key={t.symbol}
                   initial={{ opacity:0, y:10 }} animate={{ opacity:1, y:0 }} transition={{ delay:0.12+i*0.05 }}
@@ -259,7 +313,7 @@ export default function MinePage() {
           </motion.section>
 
           {/* LAUNCHPOOLS */}
-          <motion.section initial={{ opacity:0, y:14 }} animate={{ opacity:1, y:0 }} transition={{ delay:0.16 }}>
+          <motion.section initial={{ opacity:0, y:14 }} whileInView={{ opacity:1, y:0 }} viewport={{ once:true, margin:'-60px' }} transition={{ duration:0.4 }}>
             <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:14 }}>
               <div>
                 <h2 style={{ fontSize:16, fontWeight:900, color:'#fff', margin:0, ...Rs }}>
@@ -313,7 +367,7 @@ export default function MinePage() {
           </motion.section>
 
           {/* AUTO-DROP AGENT */}
-          <motion.section initial={{ opacity:0, y:14 }} animate={{ opacity:1, y:0 }} transition={{ delay:0.22 }}>
+          <motion.section initial={{ opacity:0, y:14 }} whileInView={{ opacity:1, y:0 }} viewport={{ once:true, margin:'-60px' }} transition={{ duration:0.4 }}>
             <div style={{ padding:'20px 22px', borderRadius:18, background:'rgba(8,8,14,0.60)', backdropFilter:'blur(22px)', boxShadow:'0 0 0 0.5px rgba(16,185,129,0.14) inset, 0 8px 28px rgba(0,0,0,0.35)', position:'relative', overflow:'hidden' }}>
               <div style={{ position:'absolute', top:-30, right:-30, width:120, height:120, borderRadius:'50%', background:'radial-gradient(circle,rgba(16,185,129,0.10) 0%,transparent 70%)', pointerEvents:'none' }} />
               <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:16 }}>
@@ -337,9 +391,9 @@ export default function MinePage() {
               </div>
               <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:10 }}>
                 {[
-                  { l:'Mining Rate', v:agentOn?'0.003/s':'0.000/s', c:'#10b981' },
-                  { l:'Total Mined',  v:agentOn?'0.2 NVR':'0.0 NVR', c:'#10b981' },
-                  { l:'Status',       v:agentOn?'Active':'Idle',      c:agentOn?'#4ade80':'#94a3b8' },
+                  { l:'Mining Rate', v:agentOn?'0.003/s':'0.000/s',        c:'#10b981' },
+                  { l:'Total Mined',  v:`${minedAmount.toFixed(3)} NVR`,   c:'#10b981' },
+                  { l:'Status',       v:agentOn?'Active':'Idle',           c:agentOn?'#4ade80':'#94a3b8' },
                 ].map(s => (
                   <div key={s.l} style={{ padding:'12px 14px', borderRadius:12, background:'rgba(255,255,255,0.04)', boxShadow:'0 0 0 0.5px rgba(255,255,255,0.07) inset' }}>
                     <p style={{ fontSize:9, color:'rgba(255,255,255,0.38)', margin:'0 0 5px', fontWeight:700, textTransform:'uppercase', letterSpacing:0.6 }}>{s.l}</p>
@@ -355,7 +409,7 @@ export default function MinePage() {
         <div style={{ display:'flex', flexDirection:'column', gap:18 }}>
 
           {/* DAILY TASKS */}
-          <motion.section initial={{ opacity:0, y:14 }} animate={{ opacity:1, y:0 }} transition={{ delay:0.12 }}>
+          <motion.section initial={{ opacity:0, y:14 }} whileInView={{ opacity:1, y:0 }} viewport={{ once:true, margin:'-60px' }} transition={{ duration:0.4 }}>
             <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:14 }}>
               <div>
                 <h2 style={{ fontSize:16, fontWeight:900, color:'#fff', margin:0, ...Rs }}>
@@ -413,10 +467,10 @@ export default function MinePage() {
           </motion.section>
 
           {/* EARLY ACCESS + MINT */}
-          <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:14 }}>
+          <div className="airdrop-side-grid" style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:14 }}>
 
             {/* EARLY ACCESS */}
-            <motion.div initial={{ opacity:0, y:14 }} animate={{ opacity:1, y:0 }} transition={{ delay:0.24 }}
+            <motion.div initial={{ opacity:0, y:14 }} whileInView={{ opacity:1, y:0 }} viewport={{ once:true, margin:'-40px' }} transition={{ duration:0.4 }}
               style={{ padding:'18px', borderRadius:18, background:'linear-gradient(145deg,rgba(167,139,250,0.12),rgba(8,8,14,0.65))', backdropFilter:'blur(20px)', boxShadow:'0 0 0 0.5px rgba(167,139,250,0.20) inset, 0 8px 26px rgba(0,0,0,0.35)', position:'relative', overflow:'hidden' }}>
               <div style={{ position:'absolute', top:-20, right:-20, width:90, height:90, borderRadius:'50%', background:'radial-gradient(circle,rgba(167,139,250,0.15) 0%,transparent 70%)', pointerEvents:'none' }} />
               <Star size={16} color="#a78bfa" style={{ marginBottom:8 }}/>
@@ -441,7 +495,7 @@ export default function MinePage() {
             </motion.div>
 
             {/* MINT TOKEN */}
-            <motion.div initial={{ opacity:0, y:14 }} animate={{ opacity:1, y:0 }} transition={{ delay:0.26 }}
+            <motion.div initial={{ opacity:0, y:14 }} whileInView={{ opacity:1, y:0 }} viewport={{ once:true, margin:'-40px' }} transition={{ duration:0.4 }}
               style={{ padding:'18px', borderRadius:18, background:'rgba(8,8,14,0.60)', backdropFilter:'blur(20px)', boxShadow:'0 0 0 0.5px rgba(167,139,250,0.14) inset, 0 8px 26px rgba(0,0,0,0.32)' }}>
               <TrendingUp size={16} color="#a78bfa" style={{ marginBottom:8 }}/>
               <p style={{ fontSize:14, fontWeight:900, color:'#a78bfa', margin:'0 0 5px' }}>Mint Token</p>
@@ -485,7 +539,7 @@ export default function MinePage() {
           </div>
 
           {/* COUNTDOWN */}
-          <motion.div initial={{ opacity:0, y:14 }} animate={{ opacity:1, y:0 }} transition={{ delay:0.28 }}
+          <motion.div initial={{ opacity:0, y:14 }} whileInView={{ opacity:1, y:0 }} viewport={{ once:true, margin:'-40px' }} transition={{ duration:0.4 }}
             style={{ padding:'20px 22px', borderRadius:18, background:'linear-gradient(135deg,rgba(245,158,11,0.10),rgba(8,8,14,0.65))', backdropFilter:'blur(20px)', boxShadow:'0 0 0 0.5px rgba(245,158,11,0.18) inset, 0 8px 28px rgba(0,0,0,0.35)', display:'flex', alignItems:'center', gap:18 }}>
             <div style={{ width:52, height:52, borderRadius:16, background:'rgba(245,158,11,0.14)', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0, boxShadow:'0 0 18px rgba(245,158,11,0.25)' }}>
               <Timer size={24} color="#fbbf24"/>

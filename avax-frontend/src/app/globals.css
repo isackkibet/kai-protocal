@@ -78,6 +78,7 @@
 /* ── Reset ────────────────────────────────────────────────── */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 html, body { height: 100%; }
+html { scroll-behavior: smooth; }
 
 /* ══════════════════════════════════════════════════════════════
    BODY — background image shows through at full richness.
@@ -574,6 +575,20 @@ body {
   to   { left: 130%;  }
 }
 
+/* Loading skeleton — used while balances/data are still being fetched,
+   instead of flashing a misleading "0" that looks like a real value. */
+@keyframes skeleton-shimmer {
+  0%   { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+.skeleton-sweep {
+  background: linear-gradient(90deg,
+    rgba(255,255,255,0.05) 25%, rgba(255,255,255,0.12) 50%, rgba(255,255,255,0.05) 75%);
+  background-size: 200% 100%;
+  animation: skeleton-shimmer 1.4s ease-in-out infinite;
+  box-shadow: 0 0 0 0.5px rgba(255,255,255,0.06) inset;
+}
+
 /* ── Utility classes ───────────────────────────────────────── */
 .float        { animation: float      4s ease-in-out infinite; }
 .float-slow   { animation: float-slow 7s ease-in-out infinite; }
@@ -653,6 +668,38 @@ body {
   .airdrop-task-grid { grid-template-columns: 1fr !important; }
   .airdrop-summary-grid > :first-child { grid-column: auto; }
 }
+
+/* Airdrop page — hero (headline vs stat tiles) and the two-column
+   main layout need to collapse to a single column on narrower screens;
+   the side-by-side (Early Access / Mint) cards collapse a bit later. */
+.airdrop-hero-grid, .airdrop-main-grid, .airdrop-side-grid { width: 100%; }
+
+@media (max-width: 900px) {
+  .airdrop-hero-grid { grid-template-columns: 1fr !important; }
+  .airdrop-main-grid { grid-template-columns: 1fr !important; }
+}
+@media (max-width: 520px) {
+  .airdrop-side-grid { grid-template-columns: 1fr !important; }
+}
+
+/* KAI Web browser (app/kai) — the page-list sidebar overlays the iframe on
+   narrow screens instead of permanently squeezing it into a sliver. */
+@media (max-width: 640px) {
+  .kaiweb-sidebar {
+    position: absolute !important;
+    top: 0; bottom: 0; left: 0; z-index: 20;
+    box-shadow: 12px 0 32px rgba(0,0,0,0.55);
+  }
+}
+
+/* Celebration pop — used for the claim-success / task-complete moments
+   so a reward actually feels like it landed, not just a state flip. */
+@keyframes celebrate-pop {
+  0%   { transform: scale(0.7); opacity: 0; }
+  55%  { transform: scale(1.08); opacity: 1; }
+  100% { transform: scale(1);    opacity: 1; }
+}
+.celebrate-pop { animation: celebrate-pop 0.45s cubic-bezier(.34,1.56,.64,1) both; }
 
 /* ══════════════════════════════════════════════════════════════
    KAI HOME PAGE — single column, max-width centred

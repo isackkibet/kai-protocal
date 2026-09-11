@@ -16,6 +16,7 @@ import {
   Bot, Copy, RefreshCw, ChevronRight, TrendingUp,
   ShieldCheck, Coins, Wallet,
   CircleDollarSign, BarChart3, Activity, Zap,
+  Mountain, Link2, Sparkles,
 } from 'lucide-react';
 
 /* text-shadow so words are always readable over bg image */
@@ -82,6 +83,29 @@ export default function Home() {
   const [agentBusy,  setAgentBusy]  = useState(false);
   const [profile,    setProfile]    = useState<{ name?: string; displayName?: string } | null>(null);
   const agentRef = useRef<HTMLTextAreaElement>(null);
+
+  const [activeSection, setActiveSection] = useState('overview');
+  const overviewRef   = useRef<HTMLDivElement>(null);
+  const agentSectionRef = useRef<HTMLDivElement>(null);
+  const dashboardsRef = useRef<HTMLDivElement>(null);
+  const actionsRef    = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const sections: [string, React.RefObject<HTMLDivElement | null>][] = [
+      ['overview', overviewRef], ['agent', agentSectionRef],
+      ['dashboards', dashboardsRef], ['actions', actionsRef],
+    ];
+    const observer = new IntersectionObserver(entries => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          const match = sections.find(([, ref]) => ref.current === entry.target);
+          if (match) setActiveSection(match[0]);
+        }
+      });
+    }, { rootMargin: '-35% 0px -55% 0px', threshold: 0 });
+    sections.forEach(([, ref]) => ref.current && observer.observe(ref.current));
+    return () => observer.disconnect();
+  }, []);
 
   useEffect(() => {
     isConnected && address ? connectWallet('metamask', address) : disconnectWallet();
@@ -150,6 +174,7 @@ export default function Home() {
     + (tokenBals.gami??0)*ESTIMATED_USD_RATES.gami
     + (tokenBals.cents??0)*ESTIMATED_USD_RATES.cents;
   const activeTokenCount = allTokens.filter(b => b.value > 0).length;
+  const balancesLoading = isConnected && tokenData === undefined;
   const displayName = profile?.displayName || profile?.name || (address ? `${address.slice(0,6)}…${address.slice(-4)}` : '');
 
   const askAgent = async () => {
@@ -189,16 +214,41 @@ export default function Home() {
         </div>
       </div>
 
+      {/* 1.5 ── STICKY SECTION NAV — jump between sections, tracks scroll position */}
+      <div style={{
+        position:'sticky', top:0, zIndex:15, padding:'10px 0',
+        background:'rgba(4,4,8,0.55)', backdropFilter:'blur(20px)',
+        boxShadow:'0 1px 0 rgba(255,255,255,0.05)',
+      }}>
+        <div style={{ ...W, display:'flex', gap:8, overflowX:'auto', scrollbarWidth:'none' }}>
+          {[
+            { id:'overview',   label:'Overview' },
+            { id:'agent',      label:'KAI Agent' },
+            { id:'dashboards', label:'Dashboards' },
+            { id:'actions',    label:'Quick Actions' },
+          ].map(s => (
+            <a key={s.id} href={`#${s.id}`} style={{
+              padding:'7px 16px', borderRadius:999, fontSize:12, fontWeight:700,
+              whiteSpace:'nowrap', textDecoration:'none', transition:'all 0.2s', flexShrink:0,
+              background: activeSection===s.id ? 'rgba(16,185,129,0.16)' : 'rgba(255,255,255,0.04)',
+              color:      activeSection===s.id ? '#34d399' : 'rgba(255,255,255,0.55)',
+              boxShadow:  activeSection===s.id ? '0 0 0 1px rgba(16,185,129,0.35) inset' : '0 0 0 1px rgba(255,255,255,0.06) inset',
+            }}>{s.label}</a>
+          ))}
+        </div>
+      </div>
+
       {/* 2 ── BRAND HERO */}
-      <motion.div initial={{ opacity:0, y:-10 }} animate={{ opacity:1, y:0 }} transition={{ delay:0.05 }}
-        style={{ ...W, paddingTop:28, textAlign:'center', position:'relative', zIndex:5 }}>
+      <motion.div id="overview" ref={overviewRef}
+        initial={{ opacity:0, y:-10 }} animate={{ opacity:1, y:0 }} transition={{ delay:0.05 }}
+        style={{ ...W, paddingTop:28, textAlign:'center', position:'relative', zIndex:5, scrollMarginTop:70 }}>
         <div className="float" style={{
           width:68, height:68, borderRadius:'50%', margin:'0 auto 12px',
           background:'linear-gradient(135deg,rgba(16,185,129,0.38),rgba(4,78,59,0.80))',
           backdropFilter:'blur(12px)',
-          display:'flex', alignItems:'center', justifyContent:'center', fontSize:30,
+          display:'flex', alignItems:'center', justifyContent:'center',
           boxShadow:'0 0 36px rgba(16,185,129,0.42), 0 0 0 1.5px rgba(16,185,129,0.35) inset',
-        }}>⛰️</div>
+        }}><Mountain size={30} color="#6ee7b7" strokeWidth={1.8}/></div>
         <h1 style={{ fontSize:32, fontWeight:900, margin:'0 0 5px', letterSpacing:'-1px', ...R }}>
           <span style={HL.green}>KAI</span> <span style={{ color:'#fff' }}>NUVARI</span>
         </h1>
@@ -218,7 +268,7 @@ export default function Home() {
             boxShadow:'0 6px 28px rgba(16,185,129,0.45), 0 1px 0 rgba(255,255,255,0.18) inset',
             fontSize:15, fontWeight:800, color:'#fff', ...R,
           }}>
-          <span style={{ fontSize:16 }}>🔗</span>
+          <Link2 size={16}/>
           {isConnected ? `Connected: ${address?.slice(0,6)}…${address?.slice(-4)}` : 'Connect Wallet'}
           {isConnected && <span style={{ width:8, height:8, borderRadius:'50%', background:'#6ee7b7', boxShadow:'0 0 8px #6ee7b7', animation:'pulse-dot 2s ease-in-out infinite' }} />}
         </motion.button>
@@ -233,7 +283,7 @@ export default function Home() {
           boxShadow:'0 0 0 1px rgba(16,185,129,0.22) inset, 0 3px 20px rgba(0,0,0,0.32)',
           display:'flex', alignItems:'center', gap:14,
         }}>
-          <span style={{ fontSize:22, flexShrink:0 }}>⛰️</span>
+          <Mountain size={22} color="rgba(255,255,255,0.85)" strokeWidth={1.7} style={{ flexShrink:0 }}/>
           <div style={{ flex:1 }}>
             <p style={{ fontSize:14, fontWeight:800, margin:'0 0 2px', color:'rgba(255,255,255,0.92)', ...R }}>
               Avalanche C-Chain
@@ -265,11 +315,12 @@ export default function Home() {
             {/* KAI member badge */}
             <div style={{
               position:'absolute', top:12, right:14,
+              display:'flex', alignItems:'center', gap:5,
               padding:'4px 11px', borderRadius:999,
               background:'rgba(16,185,129,0.16)', backdropFilter:'blur(10px)',
               boxShadow:'0 0 0 1px rgba(16,185,129,0.36) inset',
               fontSize:11, fontWeight:800, color:'#34d399',
-            }}>✦ KAI Member</div>
+            }}><Sparkles size={12}/> KAI Member</div>
           </div>
 
           {/* body */}
@@ -300,7 +351,7 @@ export default function Home() {
               {/* status pills */}
               <div style={{ display:'flex', gap:8, marginBottom:6 }}>
                 <span style={{ padding:'5px 12px', borderRadius:9, background:'rgba(16,185,129,0.11)', boxShadow:'0 0 0 1px rgba(16,185,129,0.28) inset', fontSize:12, fontWeight:700, color:'#34d399' }}>● Active</span>
-                <span style={{ padding:'5px 12px', borderRadius:9, background:'rgba(255,255,255,0.05)', boxShadow:'0 0 0 0.5px rgba(255,255,255,0.10) inset', fontSize:12, fontWeight:600, color:'rgba(255,255,255,0.58)' }}>🇰🇪 Kenya</span>
+                <span style={{ padding:'5px 12px', borderRadius:9, background:'rgba(255,255,255,0.05)', boxShadow:'0 0 0 0.5px rgba(255,255,255,0.10) inset', fontSize:12, fontWeight:600, color:'rgba(255,255,255,0.58)' }}>Kenya</span>
               </div>
             </div>
 
@@ -330,13 +381,13 @@ export default function Home() {
               boxShadow:'0 0 0 0.5px rgba(255,255,255,0.07) inset',
             }}>
               {[
-                { label:'Est. Value', value: isConnected ? `$${totalUsd.toFixed(2)}` : '$0.00', color:'#34d399', icon:'💼' },
-                { label:'Network',   value:'Fuji',   color:null,      icon:'⛰️' },
-                { label:'Tokens',    value:isConnected ? String(activeTokenCount) : '0', color:null, icon:'🪙' },
-                { label:'Status',    value:isConnected ? 'Active' : 'Idle', color:isConnected ? '#34d399' : null, icon:'⚡' },
+                { label:'Est. Value', value: isConnected ? (balancesLoading ? '…' : `$${totalUsd.toFixed(2)}`) : '$0.00', color:'#34d399', icon:Wallet },
+                { label:'Network',   value:'Fuji',   color:null,      icon:Mountain },
+                { label:'Tokens',    value:isConnected ? (balancesLoading ? '…' : String(activeTokenCount)) : '0', color:null, icon:Coins },
+                { label:'Status',    value:isConnected ? 'Active' : 'Idle', color:isConnected ? '#34d399' : null, icon:Zap },
               ].map(s => (
                 <div key={s.label} style={{ textAlign:'center' }}>
-                  <span style={{ fontSize:18, display:'block', marginBottom:4 }}>{s.icon}</span>
+                  <s.icon size={18} color={s.color ?? 'rgba(255,255,255,0.75)'} strokeWidth={1.8} style={{ display:'block', margin:'0 auto 4px' }}/>
                   <p style={{ fontSize:15, fontWeight:800, color:s.color ?? 'rgba(255,255,255,0.90)', margin:'0 0 2px', ...(s.color ? { textShadow:`0 0 10px ${s.color}50` } : {}), ...Rs }}>{s.value}</p>
                   <p style={{ fontSize:10, color:'rgba(255,255,255,0.38)', fontWeight:700, letterSpacing:0.6, textTransform:'uppercase', margin:0 }}>{s.label}</p>
                 </div>
@@ -358,19 +409,25 @@ export default function Home() {
         }}>
           <div style={{ position:'absolute', top:-40, right:-40, width:200, height:200, borderRadius:'50%', background:'radial-gradient(circle,rgba(16,185,129,0.14) 0%,transparent 70%)', pointerEvents:'none' }} />
 
-          <p style={{ fontSize:10, fontWeight:700, letterSpacing:1.4, textTransform:'uppercase', color:'rgba(255,255,255,0.48)', marginBottom:6, ...Rs }}>⛰️ Est. Portfolio Value</p>
-          <div style={{ display:'flex', alignItems:'baseline', gap:12, marginBottom:16 }}>
-            <span style={{ fontSize:40, fontWeight:900, letterSpacing:-2, color:isConnected?'#fff':'rgba(255,255,255,0.20)', lineHeight:1, ...R }}>
-              ${isConnected ? totalUsd.toFixed(2) : '0.00'}
-            </span>
-            {isConnected && totalUsd>0 && <span style={{ fontSize:13, ...HL.green }}>+0.00%</span>}
-          </div>
+          <p style={{ fontSize:10, fontWeight:700, letterSpacing:1.4, textTransform:'uppercase', color:'rgba(255,255,255,0.48)', marginBottom:6, ...Rs }}>Est. Portfolio Value</p>
+          {balancesLoading ? (
+            <div className="skeleton-sweep" style={{ width:180, height:40, borderRadius:10, marginBottom:16 }} />
+          ) : (
+            <div style={{ display:'flex', alignItems:'baseline', gap:12, marginBottom:16 }}>
+              <span style={{ fontSize:40, fontWeight:900, letterSpacing:-2, color:isConnected?'#fff':'rgba(255,255,255,0.20)', lineHeight:1, ...R }}>
+                ${isConnected ? totalUsd.toFixed(2) : '0.00'}
+              </span>
+              {isConnected && totalUsd>0 && <span style={{ fontSize:13, ...HL.green }}>+0.00%</span>}
+            </div>
+          )}
 
           {isConnected ? (
             <>
               <div style={{ overflowX:'auto', scrollbarWidth:'none', marginBottom:14 }}>
                 <div style={{ display:'flex', gap:8, minWidth:'max-content' }}>
-                  {allTokens.map(b => {
+                  {balancesLoading ? Array.from({ length:7 }).map((_,i) => (
+                    <div key={i} className="skeleton-sweep" style={{ minWidth:78, height:74, borderRadius:14 }} />
+                  )) : allTokens.map(b => {
                     const Icon = TOKEN_ICON[b.symbol] || Coins;
                     return (
                       <motion.div key={b.symbol} whileHover={{ y:-3, scale:1.05 }} style={{
@@ -419,9 +476,9 @@ export default function Home() {
       <motion.div initial={{ opacity:0, y:8 }} animate={{ opacity:1, y:0 }} transition={{ delay:0.26 }}
         style={{ ...W, marginTop:12, display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:10, position:'relative', zIndex:5 }}>
         {[
-          { icon:'⛰️', label:'Chain',  value:'Fuji Testnet', color:'#34d399' },
-          { icon:'🪙', label:'Tokens', value:'6 Active',     color:'#fbbf24' },
-          { icon:'🤖', label:'AI',     value:'Qwen3 RAG',   color:'#c084fc' },
+          { icon:Mountain, label:'Chain',  value:'Fuji Testnet', color:'#34d399' },
+          { icon:Coins,    label:'Tokens', value:'6 Active',     color:'#fbbf24' },
+          { icon:Bot,      label:'AI',     value:'Qwen3 RAG',   color:'#c084fc' },
         ].map((s,i) => (
           <motion.div key={s.label} className="glass hover-shine"
             initial={{ opacity:0, y:8 }} animate={{ opacity:1, y:0 }} whileHover={{ y:-4, scale:1.03 }} transition={{ delay:0.28+i*0.05 }}
@@ -430,7 +487,7 @@ export default function Home() {
               background:'rgba(8,8,16,0.58)', backdropFilter:'blur(16px)',
               boxShadow:`0 0 0 0.5px ${s.color}25 inset, 0 4px 18px rgba(0,0,0,0.35)`,
             }}>
-            <span style={{ fontSize:22, display:'block', marginBottom:6 }}>{s.icon}</span>
+            <s.icon size={22} color={s.color} strokeWidth={1.7} style={{ display:'block', margin:'0 auto 6px' }}/>
             <p style={{ fontSize:10, fontWeight:700, letterSpacing:1.0, textTransform:'uppercase', color:'rgba(255,255,255,0.40)', margin:'0 0 3px' }}>{s.label}</p>
             <p style={{ fontSize:14, fontWeight:800, color:'rgba(255,255,255,0.90)', margin:0 }}>{s.value}</p>
           </motion.div>
@@ -438,8 +495,9 @@ export default function Home() {
       </motion.div>
 
       {/* 8 ── KAI AGENT */}
-      <motion.div initial={{ opacity:0, y:10 }} animate={{ opacity:1, y:0 }} transition={{ delay:0.30 }}
-        style={{ ...W, marginTop:12, position:'relative', zIndex:5 }}>
+      <motion.div id="agent" ref={agentSectionRef}
+        initial={{ opacity:0, y:16 }} whileInView={{ opacity:1, y:0 }} viewport={{ once:true, margin:'-60px' }} transition={{ duration:0.4 }}
+        style={{ ...W, marginTop:12, position:'relative', zIndex:5, scrollMarginTop:70 }}>
         <div className="glass-prism" style={{
           borderRadius:20,
           background:'rgba(6,6,14,0.72)', backdropFilter:'blur(26px) saturate(1.8)',
@@ -513,37 +571,44 @@ export default function Home() {
       </motion.div>
 
       {/* 9 ── DASHBOARDS */}
-      <motion.div initial={{ opacity:0, y:12 }} animate={{ opacity:1, y:0 }} transition={{ delay:0.34 }}
-        style={{ ...W, marginTop:24, position:'relative', zIndex:5 }}>
+      <motion.div id="dashboards" ref={dashboardsRef}
+        initial={{ opacity:0, y:12 }} whileInView={{ opacity:1, y:0 }} viewport={{ once:true, margin:'-60px' }} transition={{ duration:0.4 }}
+        style={{ ...W, marginTop:24, position:'relative', zIndex:5, scrollMarginTop:70 }}>
         <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:14 }}>
           <p style={{ fontSize:10, fontWeight:700, letterSpacing:1.4, textTransform:'uppercase', color:'rgba(255,255,255,0.52)', margin:0 }}>Dashboards</p>
           <span className="badge badge-live">3 Active</span>
         </div>
-        <div style={{ display:'flex', flexDirection:'column', gap:10 }}>
+        <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fit,minmax(260px,1fr))', gap:14 }}>
           {DASHBOARDS.map((d,i) => {
             const Icon = d.icon;
             return (
               <motion.div key={d.id}
-                initial={{ opacity:0, x:-14 }} animate={{ opacity:1, x:0 }} transition={{ delay:0.36+i*0.06 }}
-                whileHover={{ x:4 }}>
+                initial={{ opacity:0, y:16 }} whileInView={{ opacity:1, y:0 }} viewport={{ once:true, margin:'-40px' }} transition={{ delay:i*0.08, duration:0.4 }}
+                whileHover={{ y:-5 }}>
                 <Link href={d.href} style={{ textDecoration:'none' }}>
                   <div className="hover-shine" style={{
-                    borderRadius:16, padding:'14px 18px',
-                    display:'flex', alignItems:'center', gap:14,
-                    background:`linear-gradient(110deg,${d.color}10 0%,rgba(6,6,14,0.60) 100%)`,
+                    borderRadius:18, padding:'20px 20px 16px', height:'100%',
+                    display:'flex', flexDirection:'column', gap:12,
+                    background:`linear-gradient(145deg,${d.color}12 0%,rgba(6,6,14,0.68) 100%)`,
                     backdropFilter:'blur(20px)',
-                    boxShadow:`0 0 0 0.5px ${d.color}20 inset, 0 6px 26px rgba(0,0,0,0.35)`,
+                    boxShadow:`0 0 0 0.5px ${d.color}22 inset, 0 8px 30px rgba(0,0,0,0.38)`,
                     transition:'box-shadow 0.22s',
+                    boxSizing:'border-box',
                   }}>
-                    <div style={{ width:46, height:46, borderRadius:14, flexShrink:0, background:`${d.color}16`, backdropFilter:'blur(8px)', display:'flex', alignItems:'center', justifyContent:'center', boxShadow:`0 0 18px ${d.color}28` }}>
-                      <Icon size={22} color={d.color} strokeWidth={1.65}/>
+                    <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between' }}>
+                      <div style={{ width:48, height:48, borderRadius:14, flexShrink:0, background:`${d.color}18`, backdropFilter:'blur(8px)', display:'flex', alignItems:'center', justifyContent:'center', boxShadow:`0 0 18px ${d.color}28` }}>
+                        <Icon size={23} color={d.color} strokeWidth={1.65}/>
+                      </div>
+                      <ChevronRight size={16} color="rgba(255,255,255,0.25)"/>
                     </div>
-                    <div style={{ flex:1, minWidth:0 }}>
-                      <p style={{ fontSize:15, fontWeight:800, margin:'0 0 2px', color:'rgba(255,255,255,0.94)', ...R }}>{d.hl}</p>
-                      <p style={{ fontSize:12, fontWeight:600, color:'rgba(255,255,255,0.80)', margin:'0 0 1px', ...Rs }}>{d.label}</p>
+                    <div>
+                      <p style={{ fontSize:16, fontWeight:800, margin:'0 0 3px', color:'rgba(255,255,255,0.95)', ...R }}>{d.hl}</p>
+                      <p style={{ fontSize:12, fontWeight:600, color:'rgba(255,255,255,0.75)', margin:'0 0 6px', ...Rs }}>{d.label}</p>
                       <p style={{ fontSize:11, color:'rgba(255,255,255,0.45)', margin:0 }}>{d.sub}</p>
                     </div>
-                    <ChevronRight size={16} color="rgba(255,255,255,0.25)"/>
+                    <div style={{ marginTop:'auto', paddingTop:10, borderTop:`1px solid ${d.color}20`, display:'flex', alignItems:'center', gap:5, fontSize:11, fontWeight:700, color:d.color }}>
+                      Open dashboard <ChevronRight size={12}/>
+                    </div>
                   </div>
                 </Link>
               </motion.div>
@@ -553,8 +618,9 @@ export default function Home() {
       </motion.div>
 
       {/* 10 ── QUICK ACTIONS */}
-      <motion.div initial={{ opacity:0, y:12 }} animate={{ opacity:1, y:0 }} transition={{ delay:0.38 }}
-        style={{ ...W, marginTop:24, paddingBottom:40, position:'relative', zIndex:5 }}>
+      <motion.div id="actions" ref={actionsRef}
+        initial={{ opacity:0, y:12 }} whileInView={{ opacity:1, y:0 }} viewport={{ once:true, margin:'-60px' }} transition={{ duration:0.4 }}
+        style={{ ...W, marginTop:24, paddingBottom:40, position:'relative', zIndex:5, scrollMarginTop:70 }}>
         <p style={{ fontSize:10, fontWeight:700, letterSpacing:1.4, textTransform:'uppercase', color:'rgba(255,255,255,0.52)', margin:'0 0 14px' }}>
           Quick Actions
         </p>
@@ -563,7 +629,7 @@ export default function Home() {
             const Icon = a.icon;
             return (
               <motion.div key={a.name}
-                initial={{ opacity:0, y:14 }} animate={{ opacity:1, y:0 }} transition={{ delay:0.40+i*0.03 }}
+                initial={{ opacity:0, y:14 }} whileInView={{ opacity:1, y:0 }} viewport={{ once:true, margin:'-40px' }} transition={{ delay:i*0.03, duration:0.35 }}
                 whileHover={{ y:-6, scale:1.04 }} whileTap={{ scale:0.95 }}>
                 <Link href={a.href} style={{ textDecoration:'none' }}>
                   <div className="hover-shine" style={{

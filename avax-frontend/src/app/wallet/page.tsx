@@ -8,7 +8,7 @@ import { formatUnits, type Address } from 'viem';
 import {
   Wallet, Copy, RefreshCw, Send, QrCode, ArrowDownToLine,
   ChevronRight, CheckCircle2, Loader2, ImageIcon, ShieldCheck,
-  Info, ExternalLink, ArrowUpRight,
+  Info, ExternalLink, ArrowUpRight, Mountain,
 } from 'lucide-react';
 import { usePrivyAuth } from '@/lib/privy-auth';
 import { useNFTs } from '@/hooks/useNFTs';
@@ -140,7 +140,7 @@ export default function WalletDashboard() {
             <span style={{ color: '#34d399' }}>Kainovari</span> Wallet
           </h1>
           <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.60)', margin: '8px 0 26px', ...Rs }}>
-            Sign in with Google to get your Avalanche wallet — no seed phrase, no extensions.
+            Sign in with Google to get your Avalanche wallet. No seed phrase, no extensions.
           </p>
           <motion.button whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }} onClick={signInWithGoogle}
             style={{
@@ -169,7 +169,7 @@ export default function WalletDashboard() {
           <div>
             <p style={{ fontSize: 10, fontWeight: 700, letterSpacing: 1.4, textTransform: 'uppercase', color: 'rgba(255,255,255,0.48)', margin: 0 }}>Kainovari Wallet</p>
             <h1 style={{ fontSize: 26, fontWeight: 900, margin: '4px 0 0', letterSpacing: -0.5, ...Rs }}>
-              Hello, <span style={{ color: '#34d399' }}>{name?.split(' ')[0] || 'Member'}</span> 👋
+              Hello, <span style={{ color: '#34d399' }}>{name?.split(' ')[0] || 'Member'}</span>
             </h1>
           </div>
           <div style={{ display: 'flex', gap: 8 }}>
@@ -192,7 +192,7 @@ export default function WalletDashboard() {
           boxShadow: '0 0 0 1px rgba(16,185,129,0.22) inset',
           display: 'flex', alignItems: 'center', gap: 12,
         }}>
-          <span style={{ fontSize: 20 }}>⛰️</span>
+          <Mountain size={20} color="rgba(255,255,255,0.85)" strokeWidth={1.7}/>
           <div style={{ flex: 1 }}>
             <p style={{ fontSize: 13, fontWeight: 800, margin: 0, ...Rs }}>Avalanche C-Chain <span style={{ color: 'rgba(255,255,255,0.5)', fontWeight: 500 }}>· Fuji Testnet</span></p>
             <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.5)', margin: '2px 0 0' }}>Embedded wallet · Non-custodial</p>
@@ -336,7 +336,7 @@ export default function WalletDashboard() {
                   <label style={{ fontSize: 9, fontWeight: 800, letterSpacing: 1, textTransform: 'uppercase', color: 'rgba(255,255,255,0.4)', display: 'block', marginBottom: 5 }}>Asset</label>
                   <select value={token ?? ''} onChange={e => setToken(e.target.value as Address)} style={selectStyle}>
                     {ECOSYSTEM_TOKENS.filter((t): t is typeof t & { address: `0x${string}` } => !!t.address).map(t => (
-                      <option key={t.symbol} value={t.address}>{t.symbol} — {formatTokenAmount(tokenBals[t.symbol] ?? 0)} bal.</option>
+                      <option key={t.symbol} value={t.address}>{t.symbol} ({formatTokenAmount(tokenBals[t.symbol] ?? 0)} bal.)</option>
                     ))}
                   </select>
                 </div>
