@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getPrisma } from '@/lib/db';
 import { Prisma } from '@prisma/client';
+import { verifyPrivyUserId } from '@/lib/privy-server';
 
 type KaiUserWithWallets = Prisma.KaiUserGetPayload<{ include: { wallets: true } }>;
 
@@ -18,6 +19,11 @@ type KaiUserWithWallets = Prisma.KaiUserGetPayload<{ include: { wallets: true } 
  *
  * Idempotent: running it twice for the same Privy user is a no-op that just
  * returns the existing record.
+ *
+ * Security (PRD 1 §12): the caller's Privy identity is verified server-side
+ * against the bearer token, never trusted from the request body. Without this,
+ * anyone could POST an arbitrary privyUserId to farm welcome bonuses or
+ * repoint another user's wallet address.
  */
 export async function POST(req: Request) {
   let body: any = {};
@@ -27,13 +33,18 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
   }
 
-  const privyUserId = String(body.privyUserId ?? '').trim();
+  const verifiedPrivyUserId = await verifyPrivyUserId(req.headers.get('authorization'));
+  if (!verifiedPrivyUserId) {
+    return NextResponse.json({ error: 'Could not verify your session. Please sign in again.' }, { status: 401 });
+  }
+
+  const privyUserId = verifiedPrivyUserId;
   const email = String(body.email ?? '').trim().toLowerCase();
   const name = String(body.name ?? '').trim();
   const address = String(body.address ?? '').trim();
 
-  if (!privyUserId || !email || !name) {
-    return NextResponse.json({ error: 'privyUserId, email and name required' }, { status: 400 });
+  if (!email || !name) {
+    return NextResponse.json({ error: 'email and name required' }, { status: 400 });
   }
   if (!/^0x[a-fA-F0-9]{40}$/.test(address)) {
     return NextResponse.json({ error: 'A valid wallet address is required' }, { status: 400 });
