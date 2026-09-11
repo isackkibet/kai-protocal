@@ -755,6 +755,74 @@ body {
 .celebrate-pop { animation: celebrate-pop 0.45s cubic-bezier(.34,1.56,.64,1) both; }
 
 /* ══════════════════════════════════════════════════════════════
-   KAI HOME PAGE — single column, max-width centred
-   Everything stacks top-to-bottom in one clean column.
+   KAI HOME PAGE — v2: real surfaces, one accent, two-column desktop
    ══════════════════════════════════════════════════════════════ */
+:root {
+  --home-accent: #14b87d;
+  --home-text:   #e8f2ee;
+  --home-muted:  #7e9a90;
+  --home-line:   rgba(255,255,255,0.08);
+}
+
+/* Photo demoted to a dim, saturated-down backdrop behind a dark base,
+   so panels — not the picture — carry the page. */
+.home-bg-base  { position: fixed; inset: 0; z-index: 0; background: #06120e; }
+.home-bg-photo {
+  position: fixed; inset: 0; z-index: 0;
+  background: url('/kai-background.jpg') center 20% / cover no-repeat;
+  opacity: 0.18;
+  filter: saturate(0.7);
+}
+.home-bg-fade {
+  position: fixed; inset: 0; z-index: 0;
+  background: linear-gradient(180deg, #06120e 0%, rgba(6,18,14,0.55) 40%, #06120e 100%);
+}
+
+.home-container { width: 100%; max-width: 1120px; margin-inline: auto; padding-inline: 24px; box-sizing: border-box; }
+
+/* A real surface: soft fill, thin border, blur, consistent padding/radius. */
+.home-panel {
+  background: rgba(12,30,24,0.72);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border: 1px solid var(--home-line);
+  border-radius: 14px;
+  padding: 24px;
+}
+
+/* Two-column split on desktop — content left, sticky wallet/agent rail right.
+   Below 1024px it's a single column and the in-page section tabs (the only
+   navigation that actually needs them at that width) take over from here. */
+.home-grid { display: grid; grid-template-columns: 1fr; gap: 32px; }
+@media (min-width: 1024px) {
+  .home-grid  { grid-template-columns: 65fr 35fr; align-items: start; }
+  .home-main  { order: 1; }
+  .home-aside { order: 2; position: sticky; top: 88px; display: flex; flex-direction: column; gap: 32px; }
+  .home-section-nav { display: none; }
+}
+
+/* Shared "one accent, neutral until hover" treatment for dashboard rows
+   and quick-action cards — icons carry colour only when a row/card is live. */
+.action-icon { color: var(--home-muted); transition: color 0.15s ease; }
+.dash-row:hover .action-icon,
+.qa-card:hover  .action-icon { color: var(--home-accent); }
+
+.dash-row {
+  display: flex; align-items: center; gap: 16px; padding: 16px 0;
+  text-decoration: none; border-bottom: 1px solid var(--home-line);
+}
+.dash-row:last-child { border-bottom: none; }
+.dash-row:hover .dash-open { color: var(--home-accent); }
+
+/* Quick Actions — bordered mini-cards, one neutral accent, colour only on hover. */
+.qa-card {
+  display: flex; flex-direction: column; align-items: center; gap: 8px;
+  padding: 16px 8px; border: 1px solid var(--home-line); border-radius: 12px;
+  text-decoration: none; background: transparent; cursor: pointer; width: 100%;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+.qa-card:hover { border-color: rgba(20,184,125,0.45); background: rgba(20,184,125,0.07); }
+.qa-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
+@media (min-width: 640px) {
+  .qa-grid { grid-template-columns: repeat(5, 1fr); }
+}
