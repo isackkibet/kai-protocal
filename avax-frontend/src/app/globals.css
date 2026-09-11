@@ -791,14 +791,13 @@ body {
 }
 
 /* Two-column split on desktop — content left, sticky wallet/agent rail right.
-   Below 1024px it's a single column and the in-page section tabs (the only
-   navigation that actually needs them at that width) take over from here. */
+   Below 1024px it's a single column; the bottom nav is the only navigation
+   at every width, so there's no second in-page tab bar competing with it. */
 .home-grid { display: grid; grid-template-columns: 1fr; gap: 32px; }
 @media (min-width: 1024px) {
   .home-grid  { grid-template-columns: 65fr 35fr; align-items: start; }
   .home-main  { order: 1; }
-  .home-aside { order: 2; position: sticky; top: 88px; display: flex; flex-direction: column; gap: 32px; }
-  .home-section-nav { display: none; }
+  .home-aside { order: 2; position: sticky; top: 24px; display: flex; flex-direction: column; gap: 32px; }
 }
 
 /* Shared "one accent, neutral until hover" treatment for dashboard rows
