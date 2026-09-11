@@ -6,6 +6,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useAccount, useBalance, useReadContracts } from 'wagmi';
 import { formatUnits } from 'viem';
 import { useKaivaxStore } from '@/store/useKaivaxStore';
+import { useAIChatStore } from '@/store/useAIChatStore';
 import WalletConnectModal from '@/components/WalletConnectModal';
 import { ECOSYSTEM_TOKENS, TICKER_TOKENS } from '@/lib/tokens';
 import { ERC20_ABI } from '@/lib/erc20abi';
@@ -73,6 +74,7 @@ export default function Home() {
   const { address, isConnected } = useAccount();
   const { data: avaxBal, refetch: refetchAvax } = useBalance({ address });
   const { connectWallet, disconnectWallet, setAvaxBalance, setAllBalances } = useKaivaxStore();
+  const openAIChat = useAIChatStore(s => s.open);
 
   const [showModal,  setShowModal]  = useState(false);
   const [tickerOff,  setTickerOff]  = useState(0);
@@ -515,9 +517,9 @@ export default function Home() {
               </p>
               <p style={{ fontSize:10, color:'#34d399', margin:0, fontWeight:700 }}>● RAG Agent · Qwen3 · Live</p>
             </div>
-            <Link href="/ai" style={{ fontSize:12, color:'rgba(255,255,255,0.48)', textDecoration:'none', fontWeight:700, display:'flex', alignItems:'center', gap:3, flexShrink:0 }}>
+            <button onClick={openAIChat} style={{ fontSize:12, color:'rgba(255,255,255,0.48)', background:'none', border:'none', cursor:'pointer', fontWeight:700, display:'flex', alignItems:'center', gap:3, flexShrink:0 }}>
               Full chat <ChevronRight size={13}/>
-            </Link>
+            </button>
           </div>
 
           {/* chips */}
