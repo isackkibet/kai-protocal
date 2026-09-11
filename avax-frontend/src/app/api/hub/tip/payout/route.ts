@@ -31,6 +31,8 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "reference is required" }, { status: 400 });
     }
 
+    if (!prisma) return NextResponse.json({ error: "Database unavailable" }, { status: 503 });
+
     const payment = await prisma.payment.findUnique({ where: { reference } });
     if (!payment) {
       return NextResponse.json({ error: "Payment not found" }, { status: 404 });

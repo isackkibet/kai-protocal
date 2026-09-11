@@ -57,6 +57,8 @@ export async function POST(request: Request) {
       currency: "KES",
     });
 
+    if (!prisma) return NextResponse.json({ error: "Database unavailable" }, { status: 503 });
+
     await prisma.creatorPayout.upsert({
       where:  { name },
       create: {
