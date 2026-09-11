@@ -2,6 +2,7 @@
 
 import { usePathname } from 'next/navigation';
 import BottomNav from '@/components/shared/BottomNav';
+import AIChatOverlay from '@/components/ai/AIChatOverlay';
 
 const FULLSCREEN_ROUTES = ['/nuvari', '/ai', '/chat'];
 /* Exact matches only — '/kai' would otherwise prefix-match '/kai-bar' */
@@ -16,6 +17,7 @@ export default function LayoutWrapper({ children }: { children: React.ReactNode 
     return (
       <div style={{ width: '100%', minHeight: '100dvh', display: 'flex', flexDirection: 'column' }}>
         {children}
+        <AIChatOverlay />
       </div>
     );
   }
@@ -27,6 +29,7 @@ export default function LayoutWrapper({ children }: { children: React.ReactNode 
         {children}
       </div>
       <BottomNav />
+      <AIChatOverlay />
     </>
   );
 }
