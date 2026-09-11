@@ -629,32 +629,42 @@ export default function Home() {
         <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill,minmax(130px,1fr))', gap:12 }}>
           {QUICK.map((a,i) => {
             const Icon = a.icon;
+            const isAgent = a.href === '/ai';
+            const tile = (
+              <div className="hover-shine" style={{
+                display:'flex', flexDirection:'column', alignItems:'center', gap:9,
+                padding:'18px 10px', borderRadius:18, cursor:'pointer',
+                background:'rgba(4,4,10,0.52)', backdropFilter:'blur(18px)',
+                boxShadow:`0 0 0 0.5px ${a.color}20 inset, 0 5px 20px rgba(0,0,0,0.40)`,
+                transition:'box-shadow 0.22s',
+              }}>
+                <div style={{
+                  width:50, height:50, borderRadius:16, flexShrink:0,
+                  background:`linear-gradient(145deg,${a.bg},rgba(4,4,10,0.70))`,
+                  backdropFilter:'blur(10px)',
+                  display:'flex', alignItems:'center', justifyContent:'center',
+                  boxShadow:`0 4px 16px ${a.color}22, 0 0 0 0.5px ${a.color}28 inset`,
+                }}>
+                  <Icon size={23} color={a.color} strokeWidth={1.6}/>
+                </div>
+                <span style={{ fontSize:12, fontWeight:700, color:'rgba(255,255,255,0.88)', textAlign:'center', lineHeight:1.2, textShadow:'0 1px 5px rgba(0,0,0,0.85)' }}>
+                  {a.name}
+                </span>
+              </div>
+            );
             return (
               <motion.div key={a.name}
                 initial={{ opacity:0, y:14 }} whileInView={{ opacity:1, y:0 }} viewport={{ once:true, margin:'-40px' }} transition={{ delay:i*0.03, duration:0.35 }}
                 whileHover={{ y:-6, scale:1.04 }} whileTap={{ scale:0.95 }}>
-                <Link href={a.href} style={{ textDecoration:'none' }}>
-                  <div className="hover-shine" style={{
-                    display:'flex', flexDirection:'column', alignItems:'center', gap:9,
-                    padding:'18px 10px', borderRadius:18, cursor:'pointer',
-                    background:'rgba(4,4,10,0.52)', backdropFilter:'blur(18px)',
-                    boxShadow:`0 0 0 0.5px ${a.color}20 inset, 0 5px 20px rgba(0,0,0,0.40)`,
-                    transition:'box-shadow 0.22s',
-                  }}>
-                    <div style={{
-                      width:50, height:50, borderRadius:16, flexShrink:0,
-                      background:`linear-gradient(145deg,${a.bg},rgba(4,4,10,0.70))`,
-                      backdropFilter:'blur(10px)',
-                      display:'flex', alignItems:'center', justifyContent:'center',
-                      boxShadow:`0 4px 16px ${a.color}22, 0 0 0 0.5px ${a.color}28 inset`,
-                    }}>
-                      <Icon size={23} color={a.color} strokeWidth={1.6}/>
-                    </div>
-                    <span style={{ fontSize:12, fontWeight:700, color:'rgba(255,255,255,0.88)', textAlign:'center', lineHeight:1.2, textShadow:'0 1px 5px rgba(0,0,0,0.85)' }}>
-                      {a.name}
-                    </span>
-                  </div>
-                </Link>
+                {isAgent ? (
+                  <button onClick={openAIChat} style={{ textDecoration:'none', background:'none', border:'none', padding:0, width:'100%', font:'inherit' }}>
+                    {tile}
+                  </button>
+                ) : (
+                  <Link href={a.href} style={{ textDecoration:'none' }}>
+                    {tile}
+                  </Link>
+                )}
               </motion.div>
             );
           })}
