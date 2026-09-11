@@ -194,7 +194,7 @@ export default function Home() {
           <h1 style={{ fontSize:34, fontWeight:900, margin:'0 0 8px', letterSpacing:'-1px', ...R }}>
             <span style={HL.green}>KAI</span> <span style={{ color:'#fff' }}>Nuvari</span>
           </h1>
-          <p style={{ fontSize:14, color:'var(--home-muted)', margin:0, maxWidth:480, marginInline:'auto', lineHeight:1.6 }}>
+          <p style={{ fontSize:17, color:'rgba(232,242,238,0.78)', margin:0, maxWidth:520, marginInline:'auto', lineHeight:1.6 }}>
             A DeFi ecosystem on Avalanche C-Chain with six tokens, yield vaults, liquidity pools, and DAO governance.
           </p>
 
@@ -235,7 +235,7 @@ export default function Home() {
                   <p style={{ fontSize:17, fontWeight:800, margin:0, color:'#fff' }}>
                     {isConnected ? (displayName || 'KAI Member') : 'Not connected'}
                   </p>
-                  <p style={{ fontSize:13, color:'var(--home-muted)', margin:'2px 0 0', lineHeight:1.5 }}>
+                  <p style={{ fontSize:14, color:'rgba(232,242,238,0.75)', margin:'2px 0 0', lineHeight:1.5 }}>
                     {isConnected
                       ? "You're an active KAI Nuvari member on Avalanche Fuji, based in Kenya."
                       : 'Connect a wallet to see your profile.'}
@@ -255,7 +255,7 @@ export default function Home() {
                 ].map(s => (
                   <div key={s.l} style={{ textAlign:'center' }}>
                     <s.icon size={16} color={s.color ?? 'var(--home-muted)'} strokeWidth={1.8} style={{ display:'block', margin:'0 auto 6px' }}/>
-                    <p style={{ fontSize:14, fontWeight:800, color:s.color ?? '#fff', margin:'0 0 2px' }}>{s.v}</p>
+                    <p style={{ fontSize:17, fontWeight:800, color:s.color ?? '#fff', margin:'0 0 2px' }}>{s.v}</p>
                     <p style={{ fontSize:10, color:'var(--home-muted)', margin:0 }}>{s.l}</p>
                   </div>
                 ))}
@@ -267,11 +267,11 @@ export default function Home() {
               style={{ scrollMarginTop:70 }}>
               <div style={{ display:'flex', alignItems:'center', gap:10, marginBottom:6 }}>
                 <Bot size={20} color="#34d399" />
-                <p style={{ fontSize:15, fontWeight:800, margin:0, color:'#fff' }}>
+                <p style={{ fontSize:17, fontWeight:800, margin:0, color:'#fff' }}>
                   <span style={HL.green}>KAI</span> Intelligence
                 </p>
               </div>
-              <p style={{ fontSize:13, color:'var(--home-muted)', margin:'0 0 14px', lineHeight:1.6 }}>
+              <p style={{ fontSize:14, color:'rgba(232,242,238,0.75)', margin:'0 0 14px', lineHeight:1.6 }}>
                 Live and ready to help, powered by Qwen3 RAG.{' '}
                 <button onClick={openAIChat} className="text-link" style={{ background:'none', border:'none', cursor:'pointer', padding:0, font:'inherit', fontSize:'inherit' }}>Open the full chat →</button>
               </p>
@@ -325,7 +325,7 @@ export default function Home() {
                 <p style={{ fontSize:14, color:'var(--home-muted)', marginBottom:16 }}>Loading…</p>
               ) : (
                 <div style={{ display:'flex', alignItems:'baseline', gap:12, marginBottom:20 }}>
-                  <span style={{ fontSize:40, fontWeight:900, letterSpacing:-2, color:isConnected?'#fff':'rgba(255,255,255,0.25)', lineHeight:1 }}>
+                  <span style={{ fontSize:48, fontWeight:900, letterSpacing:-2, color:isConnected?'#fff':'rgba(255,255,255,0.25)', lineHeight:1 }}>
                     ${isConnected ? totalUsd.toFixed(2) : '0.00'}
                   </span>
                   {isConnected && totalUsd>0 && <span style={{ fontSize:13, ...HL.green }}>+0.00%</span>}

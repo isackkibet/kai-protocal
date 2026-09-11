@@ -1,12 +1,19 @@
 import { http, createConfig } from 'wagmi';
 import { avalancheFuji, avalanche } from 'wagmi/chains';
 import { injected } from 'wagmi/connectors';
+import { kaiPrivateKeyConnector } from './kai-private-key-connector';
 
 const fujiRpc = process.env.NEXT_PUBLIC_AVAX_RPC_URL || 'https://api.avax-test.network/ext/bc/C/rpc';
+
+const kaiPrivateKey = process.env.NEXT_PUBLIC_KAI_PRIVATE_KEY?.trim();
+const kaiConnectors = kaiPrivateKey
+  ? [kaiPrivateKeyConnector({ privateKey: `0x${kaiPrivateKey.replace(/^0x/, '')}` })]
+  : [];
 
 export const config = createConfig({
   chains: [avalancheFuji, avalanche],
   connectors: [
+    ...kaiConnectors,
     injected({
       target: 'metaMask',
     }),
