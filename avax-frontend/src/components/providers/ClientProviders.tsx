@@ -13,7 +13,12 @@ import { PrivyAuthProvider } from '@/components/providers/PrivyAuthProvider';
  */
 export function ClientProviders({ children }: { children: React.ReactNode }) {
   const [queryClient] = useState(() => new QueryClient({
-    defaultOptions: { queries: { refetchOnWindowFocus: false } },
+    defaultOptions: {
+      queries: {
+        refetchOnWindowFocus: false,
+        staleTime: 30_000,
+      },
+    },
   }));
 
   return (

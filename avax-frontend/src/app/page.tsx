@@ -1,13 +1,14 @@
-﻿'use client';
+'use client';
 
 import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
+import dynamic from 'next/dynamic';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAccount, useBalance, useReadContracts } from 'wagmi';
 import { formatUnits } from 'viem';
 import { useKaivaxStore } from '@/store/useKaivaxStore';
 import { useAIChatStore } from '@/store/useAIChatStore';
-import WalletConnectModal from '@/components/WalletConnectModal';
+const WalletConnectModal = dynamic(() => import('@/components/WalletConnectModal'), { ssr: false });
 import { ECOSYSTEM_TOKENS, TICKER_TOKENS } from '@/lib/tokens';
 import { ERC20_ABI } from '@/lib/erc20abi';
 import { formatChat } from '@/lib/formatChat';
@@ -30,17 +31,22 @@ const HL = {
   green: { color: '#34d399', fontWeight: 700 } as React.CSSProperties,
 };
 
+/* Flat panel — replaces the old blurred/glowing "glass" card look.
+   Same grouping, no backdrop-filter, no neon box-shadow. */
+const flat: React.CSSProperties = { background: 'rgba(255,255,255,0.03)', boxShadow: '0 0 0 1px rgba(255,255,255,0.08) inset' };
+const flatDivider = '1px solid rgba(255,255,255,0.08)';
+
 const QUICK = [
-  { name: 'AI Agent',   href: '/ai',        icon: Bot,         color: '#10b981', bg: 'rgba(16,185,129,0.14)' },
-  { name: 'Playground', href: '/nuvari',     icon: FlaskConical,color: '#34d399', bg: 'rgba(52,211,153,0.14)' },
-  { name: 'Scan & Pay', href: '/pay',        icon: ScanLine,    color: '#22d3ee', bg: 'rgba(34,211,238,0.14)' },
-  { name: 'Securities', href: '/securities', icon: ShieldCheck, color: '#06b6d4', bg: 'rgba(6,182,212,0.14)'  },
-  { name: 'NFT Mkt',    href: '/connft',     icon: ImageIcon,   color: '#a855f7', bg: 'rgba(168,85,247,0.14)' },
-  { name: 'Pools',      href: '/pools',      icon: Droplets,    color: '#059669', bg: 'rgba(5,150,105,0.14)'  },
-  { name: 'Vaults',     href: '/vaults',     icon: Lock,        color: '#a3e635', bg: 'rgba(163,230,53,0.14)' },
-  { name: 'Airdrop',    href: '/mine',       icon: Gift,        color: '#f59e0b', bg: 'rgba(245,158,11,0.14)' },
-  { name: 'KAI Web',    href: '/kai',        icon: Globe,       color: '#10b981', bg: 'rgba(16,185,129,0.14)' },
-  { name: 'TaaS',       href: '/taas',       icon: LayoutGrid,  color: '#ec4899', bg: 'rgba(236,72,153,0.14)' },
+  { name: 'AI Agent',   href: '/ai',        icon: Bot,         color: '#10b981' },
+  { name: 'Playground', href: '/nuvari',     icon: FlaskConical,color: '#34d399' },
+  { name: 'Scan & Pay', href: '/pay',        icon: ScanLine,    color: '#22d3ee' },
+  { name: 'Securities', href: '/securities', icon: ShieldCheck, color: '#06b6d4' },
+  { name: 'NFT Mkt',    href: '/connft',     icon: ImageIcon,   color: '#a855f7' },
+  { name: 'Pools',      href: '/pools',      icon: Droplets,    color: '#059669' },
+  { name: 'Vaults',     href: '/vaults',     icon: Lock,        color: '#a3e635' },
+  { name: 'Airdrop',    href: '/mine',       icon: Gift,        color: '#f59e0b' },
+  { name: 'KAI Web',    href: '/kai',        icon: Globe,       color: '#10b981' },
+  { name: 'TaaS',       href: '/taas',       icon: LayoutGrid,  color: '#ec4899' },
 ];
 
 const DASHBOARDS = [
@@ -77,7 +83,6 @@ export default function Home() {
   const openAIChat = useAIChatStore(s => s.open);
 
   const [showModal,  setShowModal]  = useState(false);
-  const [tickerOff,  setTickerOff]  = useState(0);
   const [refreshing, setRefreshing] = useState(false);
   const [copied,     setCopied]     = useState(false);
   const [agentQ,     setAgentQ]     = useState('');
@@ -151,11 +156,6 @@ export default function Home() {
     setRefreshing(false);
   };
 
-  useEffect(() => {
-    const id = setInterval(() => setTickerOff(o => (o-1)%800), 26);
-    return () => clearInterval(id);
-  }, []);
-
   const copyAddress = () => {
     if (!address) return;
     navigator.clipboard.writeText(address);
@@ -196,16 +196,9 @@ export default function Home() {
   return (
     <main style={{ minHeight:'100dvh', color:'#fff', fontFamily:'var(--font-sans)', position:'relative', paddingBottom:80 }}>
 
-      {/* ambient orbs */}
-      <div aria-hidden style={{ position:'fixed', inset:0, pointerEvents:'none', zIndex:0 }}>
-        <div style={{ position:'absolute', top:'6%', right:'-10%', width:420, height:420, borderRadius:'50%', background:'radial-gradient(circle,rgba(16,185,129,0.09) 0%,transparent 68%)', animation:'orb-drift-a 12s ease-in-out infinite' }} />
-        <div style={{ position:'absolute', bottom:'28%', left:'-8%', width:320, height:320, borderRadius:'50%', background:'radial-gradient(circle,rgba(6,182,212,0.06) 0%,transparent 68%)', animation:'orb-drift-b 15s ease-in-out infinite' }} />
-        <div style={{ position:'absolute', top:'42%', left:'22%', width:280, height:280, borderRadius:'50%', background:'radial-gradient(circle,rgba(168,85,247,0.06) 0%,transparent 68%)', animation:'orb-drift-b 19s ease-in-out infinite reverse' }} />
-      </div>
-
       {/* 1 ── TICKER */}
       <div className="ticker-wrap" style={{ padding:'6px 0', position:'relative', zIndex:5 }}>
-        <div style={{ display:'inline-flex', gap:36, paddingLeft:20, transform:`translateX(${tickerOff}px)`, whiteSpace:'nowrap', transition:'none' }}>
+        <div className="ticker-track" style={{ display:'inline-flex', gap:36, paddingLeft:20, whiteSpace:'nowrap' }}>
           {[...TICKER_TOKENS,...TICKER_TOKENS,...TICKER_TOKENS].map((t,i) => (
             <span key={i} style={{ fontSize:11, fontWeight:600 }}>
               <span style={{ color:'rgba(255,255,255,0.40)' }}>{t.s} </span>
@@ -219,10 +212,10 @@ export default function Home() {
       {/* 1.5 ── STICKY SECTION NAV — jump between sections, tracks scroll position */}
       <div style={{
         position:'sticky', top:0, zIndex:15, padding:'10px 0',
-        background:'rgba(4,4,8,0.55)', backdropFilter:'blur(20px)',
-        boxShadow:'0 1px 0 rgba(255,255,255,0.05)',
+        background:'rgba(4,4,8,0.92)',
+        borderBottom: flatDivider,
       }}>
-        <div style={{ ...W, display:'flex', gap:8, overflowX:'auto', scrollbarWidth:'none' }}>
+        <div style={{ ...W, display:'flex', gap:20, overflowX:'auto', scrollbarWidth:'none' }}>
           {[
             { id:'overview',   label:'Overview' },
             { id:'agent',      label:'KAI Agent' },
@@ -230,11 +223,10 @@ export default function Home() {
             { id:'actions',    label:'Quick Actions' },
           ].map(s => (
             <a key={s.id} href={`#${s.id}`} style={{
-              padding:'7px 16px', borderRadius:999, fontSize:12, fontWeight:700,
-              whiteSpace:'nowrap', textDecoration:'none', transition:'all 0.2s', flexShrink:0,
-              background: activeSection===s.id ? 'rgba(16,185,129,0.16)' : 'rgba(255,255,255,0.04)',
+              padding:'7px 0', fontSize:12, fontWeight:700,
+              whiteSpace:'nowrap', textDecoration:'none', transition:'color 0.2s', flexShrink:0,
               color:      activeSection===s.id ? '#34d399' : 'rgba(255,255,255,0.55)',
-              boxShadow:  activeSection===s.id ? '0 0 0 1px rgba(16,185,129,0.35) inset' : '0 0 0 1px rgba(255,255,255,0.06) inset',
+              borderBottom: activeSection===s.id ? '2px solid #34d399' : '2px solid transparent',
             }}>{s.label}</a>
           ))}
         </div>
@@ -246,10 +238,9 @@ export default function Home() {
         style={{ ...W, paddingTop:28, textAlign:'center', position:'relative', zIndex:5, scrollMarginTop:70 }}>
         <div className="float" style={{
           width:68, height:68, borderRadius:'50%', margin:'0 auto 12px',
-          background:'linear-gradient(135deg,rgba(16,185,129,0.38),rgba(4,78,59,0.80))',
-          backdropFilter:'blur(12px)',
+          background:'rgba(16,185,129,0.16)',
+          boxShadow:'0 0 0 1.5px rgba(16,185,129,0.35) inset',
           display:'flex', alignItems:'center', justifyContent:'center',
-          boxShadow:'0 0 36px rgba(16,185,129,0.42), 0 0 0 1.5px rgba(16,185,129,0.35) inset',
         }}><Mountain size={30} color="#6ee7b7" strokeWidth={1.8}/></div>
         <h1 style={{ fontSize:32, fontWeight:900, margin:'0 0 5px', letterSpacing:'-1px', ...R }}>
           <span style={HL.green}>KAI</span> <span style={{ color:'#fff' }}>NUVARI</span>
@@ -262,27 +253,25 @@ export default function Home() {
       {/* 3 ── CONNECT WALLET */}
       <motion.div initial={{ opacity:0, y:6 }} animate={{ opacity:1, y:0 }} transition={{ delay:0.10 }}
         style={{ ...W, marginTop:16, position:'relative', zIndex:5 }}>
-        <motion.button whileHover={{ scale:1.02 }} whileTap={{ scale:0.97 }} onClick={() => setShowModal(true)}
+        <motion.button whileTap={{ scale:0.98 }} onClick={() => setShowModal(true)}
           style={{
             width:'100%', display:'flex', alignItems:'center', justifyContent:'center', gap:10,
-            padding:'13px 24px', borderRadius:14, cursor:'pointer', border:'none',
-            background:'linear-gradient(135deg,#10b981,#047857)',
-            boxShadow:'0 6px 28px rgba(16,185,129,0.45), 0 1px 0 rgba(255,255,255,0.18) inset',
-            fontSize:15, fontWeight:800, color:'#fff', ...R,
+            padding:'13px 24px', borderRadius:12, cursor:'pointer', border:'none',
+            background:'#047857',
+            fontSize:15, fontWeight:800, color:'#fff',
           }}>
           <Link2 size={16}/>
           {isConnected ? `Connected: ${address?.slice(0,6)}…${address?.slice(-4)}` : 'Connect Wallet'}
-          {isConnected && <span style={{ width:8, height:8, borderRadius:'50%', background:'#6ee7b7', boxShadow:'0 0 8px #6ee7b7', animation:'pulse-dot 2s ease-in-out infinite' }} />}
+          {isConnected && <span style={{ width:8, height:8, borderRadius:'50%', background:'#6ee7b7' }} />}
         </motion.button>
       </motion.div>
 
       {/* 4 ── NETWORK STRIP */}
-      <motion.div initial={{ opacity:0, y:8 }} animate={{ opacity:1, y:0 }} whileHover={{ y:-2 }} transition={{ delay:0.14 }}
+      <motion.div initial={{ opacity:0, y:8 }} animate={{ opacity:1, y:0 }} transition={{ delay:0.14 }}
         style={{ ...W, marginTop:12, position:'relative', zIndex:5 }}>
-        <div className="glass hover-shine" style={{
-          padding:'12px 20px', borderRadius:14,
-          background:'rgba(16,185,129,0.08)', backdropFilter:'blur(16px)',
-          boxShadow:'0 0 0 1px rgba(16,185,129,0.22) inset, 0 3px 20px rgba(0,0,0,0.32)',
+        <div style={{
+          padding:'12px 20px', borderRadius:12,
+          ...flat,
           display:'flex', alignItems:'center', gap:14,
         }}>
           <Mountain size={22} color="rgba(255,255,255,0.85)" strokeWidth={1.7} style={{ flexShrink:0 }}/>
@@ -296,7 +285,7 @@ export default function Home() {
             </p>
           </div>
           <div style={{ display:'flex', gap:4, flexShrink:0 }}>
-            {[0,1,2].map(i => <div key={i} style={{ width:7, height:7, borderRadius:'50%', background:'#34d399', opacity:0.4+i*0.22, animation:`pulse-gold ${0.9+i*0.22}s ease-in-out infinite` }} />)}
+            {[0,1,2].map(i => <div key={i} style={{ width:7, height:7, borderRadius:'50%', background:'#34d399', opacity:0.4+i*0.22 }} />)}
           </div>
         </div>
       </motion.div>
@@ -304,7 +293,7 @@ export default function Home() {
       {/* 5 ── PROFILE HERO */}
       <motion.div initial={{ opacity:0, y:10 }} animate={{ opacity:1, y:0 }} transition={{ delay:0.18 }}
         style={{ ...W, marginTop:12, position:'relative', zIndex:5 }}>
-        <div className="glass-elevated" style={{ borderRadius:20, overflow:'hidden', boxShadow:'0 0 0 0.5px rgba(16,185,129,0.18) inset, 0 12px 48px rgba(0,0,0,0.48)' }}>
+        <div style={{ borderRadius:16, overflow:'hidden', ...flat }}>
 
           {/* cover */}
           <div style={{
@@ -312,21 +301,19 @@ export default function Home() {
             background:'linear-gradient(135deg,rgba(4,78,59,0.88) 0%,rgba(6,182,212,0.32) 50%,rgba(168,85,247,0.25) 100%)',
             position:'relative', overflow:'hidden',
           }}>
-            <div style={{ position:'absolute', inset:0, background:'repeating-linear-gradient(110deg,transparent 0px,transparent 36px,rgba(255,255,255,0.025) 36px,rgba(255,255,255,0.025) 37px)', pointerEvents:'none' }} />
-            <div style={{ position:'absolute', bottom:-30, right:-30, width:160, height:160, borderRadius:'50%', background:'radial-gradient(circle,rgba(16,185,129,0.25) 0%,transparent 70%)', pointerEvents:'none' }} />
             {/* KAI member badge */}
             <div style={{
               position:'absolute', top:12, right:14,
               display:'flex', alignItems:'center', gap:5,
               padding:'4px 11px', borderRadius:999,
-              background:'rgba(16,185,129,0.16)', backdropFilter:'blur(10px)',
+              background:'rgba(16,185,129,0.20)',
               boxShadow:'0 0 0 1px rgba(16,185,129,0.36) inset',
               fontSize:11, fontWeight:800, color:'#34d399',
             }}><Sparkles size={12}/> KAI Member</div>
           </div>
 
           {/* body */}
-          <div style={{ background:'rgba(8,8,16,0.80)', backdropFilter:'blur(24px)', padding:'0 24px 20px' }}>
+          <div style={{ background:'rgba(8,8,16,0.60)', padding:'0 24px 20px' }}>
 
             {/* avatar row */}
             <div style={{ display:'flex', alignItems:'flex-end', justifyContent:'space-between', marginTop:-40 }}>
@@ -334,11 +321,11 @@ export default function Home() {
                 <div style={{
                   width:82, height:82, borderRadius:'50%',
                   background:'linear-gradient(135deg,#10b981,#22d3ee,#a855f7)',
-                  padding:2.5, boxShadow:'0 0 28px rgba(16,185,129,0.48)',
+                  padding:2.5,
                 }}>
-                  <div className="float" style={{
+                  <div style={{
                     width:'100%', height:'100%', borderRadius:'50%',
-                    background:'linear-gradient(135deg,rgba(16,185,129,0.50),rgba(4,78,59,0.88))',
+                    background:'#0a2e22',
                     display:'flex', alignItems:'center', justifyContent:'center',
                     fontSize:32, fontWeight:900, color:'#6ee7b7',
                   }}>{(displayName || 'K').charAt(0).toUpperCase()}</div>
@@ -346,14 +333,13 @@ export default function Home() {
                 <span style={{
                   position:'absolute', bottom:4, right:2, width:14, height:14, borderRadius:'50%',
                   background:'#22c55e', border:'2.5px solid rgba(8,8,16,0.88)',
-                  boxShadow:'0 0 8px rgba(34,197,94,0.65)',
-                  animation:'pulse-dot 2.5s ease-in-out infinite', display:'block',
+                  display:'block',
                 }} />
               </div>
               {/* status pills */}
               <div style={{ display:'flex', gap:8, marginBottom:6 }}>
-                <span style={{ padding:'5px 12px', borderRadius:9, background:'rgba(16,185,129,0.11)', boxShadow:'0 0 0 1px rgba(16,185,129,0.28) inset', fontSize:12, fontWeight:700, color:'#34d399' }}>● Active</span>
-                <span style={{ padding:'5px 12px', borderRadius:9, background:'rgba(255,255,255,0.05)', boxShadow:'0 0 0 0.5px rgba(255,255,255,0.10) inset', fontSize:12, fontWeight:600, color:'rgba(255,255,255,0.58)' }}>Kenya</span>
+                <span style={{ padding:'5px 12px', borderRadius:8, background:'rgba(16,185,129,0.14)', fontSize:12, fontWeight:700, color:'#34d399' }}>● Active</span>
+                <span style={{ padding:'5px 12px', borderRadius:8, background:'rgba(255,255,255,0.06)', fontSize:12, fontWeight:600, color:'rgba(255,255,255,0.58)' }}>Kenya</span>
               </div>
             </div>
 
@@ -363,7 +349,7 @@ export default function Home() {
                 <h2 style={{ fontSize:22, fontWeight:900, margin:0, letterSpacing:'-0.4px', color:'#fff', ...R }}>
                   {isConnected ? (displayName || 'KAI Member') : 'Not Connected'}
                 </h2>
-                {isConnected && <span style={{ width:20, height:20, borderRadius:'50%', background:'linear-gradient(135deg,#10b981,#047857)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:11, flexShrink:0, boxShadow:'0 0 10px rgba(16,185,129,0.55)' }}>✓</span>}
+                {isConnected && <span style={{ width:20, height:20, borderRadius:'50%', background:'#047857', display:'flex', alignItems:'center', justifyContent:'center', fontSize:11, flexShrink:0 }}>✓</span>}
               </div>
               {isConnected && !profile && (
                 <Link href="/profile" style={{ fontSize:12, color:'#34d399', margin:'0 0 5px', textDecoration:'none', ...Rs }}>
@@ -378,9 +364,8 @@ export default function Home() {
             {/* stats strip */}
             <div style={{
               display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:10,
-              padding:'13px 16px', borderRadius:14,
-              background:'rgba(255,255,255,0.04)',
-              boxShadow:'0 0 0 0.5px rgba(255,255,255,0.07) inset',
+              padding:'13px 16px', borderRadius:12,
+              borderTop: flatDivider,
             }}>
               {[
                 { label:'Est. Value', value: isConnected ? (balancesLoading ? '…' : `$${totalUsd.toFixed(2)}`) : '$0.00', color:'#34d399', icon:Wallet },
@@ -390,7 +375,7 @@ export default function Home() {
               ].map(s => (
                 <div key={s.label} style={{ textAlign:'center' }}>
                   <s.icon size={18} color={s.color ?? 'rgba(255,255,255,0.75)'} strokeWidth={1.8} style={{ display:'block', margin:'0 auto 4px' }}/>
-                  <p style={{ fontSize:15, fontWeight:800, color:s.color ?? 'rgba(255,255,255,0.90)', margin:'0 0 2px', ...(s.color ? { textShadow:`0 0 10px ${s.color}50` } : {}), ...Rs }}>{s.value}</p>
+                  <p style={{ fontSize:15, fontWeight:800, color:s.color ?? 'rgba(255,255,255,0.90)', margin:'0 0 2px', ...Rs }}>{s.value}</p>
                   <p style={{ fontSize:10, color:'rgba(255,255,255,0.38)', fontWeight:700, letterSpacing:0.6, textTransform:'uppercase', margin:0 }}>{s.label}</p>
                 </div>
               ))}
@@ -402,15 +387,10 @@ export default function Home() {
       {/* 6 ── PORTFOLIO */}
       <motion.div initial={{ opacity:0, scale:0.98 }} animate={{ opacity:1, scale:1 }} transition={{ delay:0.22, duration:0.35 }}
         style={{ ...W, marginTop:12, position:'relative', zIndex:5 }}>
-        <div className="glass-elevated hover-shine" style={{
-          borderRadius:20, padding:'22px 26px 18px',
-          background:'linear-gradient(145deg,rgba(10,20,16,0.78),rgba(6,6,14,0.72))',
-          backdropFilter:'blur(28px) saturate(1.8)',
-          boxShadow:'0 1px 0 rgba(255,255,255,0.09) inset, 0 0 0 0.5px rgba(16,185,129,0.18) inset, 0 16px 50px rgba(0,0,0,0.50)',
-          overflow:'hidden', position:'relative',
+        <div style={{
+          borderRadius:16, padding:'22px 26px 18px',
+          ...flat,
         }}>
-          <div style={{ position:'absolute', top:-40, right:-40, width:200, height:200, borderRadius:'50%', background:'radial-gradient(circle,rgba(16,185,129,0.14) 0%,transparent 70%)', pointerEvents:'none' }} />
-
           <p style={{ fontSize:10, fontWeight:700, letterSpacing:1.4, textTransform:'uppercase', color:'rgba(255,255,255,0.48)', marginBottom:6, ...Rs }}>Est. Portfolio Value</p>
           {balancesLoading ? (
             <div className="skeleton-sweep" style={{ width:180, height:40, borderRadius:10, marginBottom:16 }} />
@@ -428,48 +408,46 @@ export default function Home() {
               <div style={{ overflowX:'auto', scrollbarWidth:'none', marginBottom:14 }}>
                 <div style={{ display:'flex', gap:8, minWidth:'max-content' }}>
                   {balancesLoading ? Array.from({ length:7 }).map((_,i) => (
-                    <div key={i} className="skeleton-sweep" style={{ minWidth:78, height:74, borderRadius:14 }} />
+                    <div key={i} className="skeleton-sweep" style={{ minWidth:78, height:74, borderRadius:12 }} />
                   )) : allTokens.map(b => {
                     const Icon = TOKEN_ICON[b.symbol] || Coins;
                     return (
-                      <motion.div key={b.symbol} whileHover={{ y:-3, scale:1.05 }} style={{
-                        minWidth:78, padding:'9px 8px', borderRadius:14, textAlign:'center',
-                        background:`linear-gradient(145deg,${b.color}12,rgba(6,6,10,0.55))`,
-                        backdropFilter:'blur(10px)',
-                        boxShadow:`0 0 0 0.5px ${b.color}25 inset`,
+                      <div key={b.symbol} style={{
+                        minWidth:78, padding:'9px 8px', borderRadius:12, textAlign:'center',
+                        background:'rgba(255,255,255,0.03)',
+                        boxShadow:`0 0 0 1px ${b.color}30 inset`,
                         position:'relative', cursor:'default',
                       }}>
                         <span style={{ display:'block', margin:'0 auto 4px' }}><Icon size={15} color={b.color} strokeWidth={1.8} /></span>
                         <p style={{ fontSize:9, color:'rgba(255,255,255,0.50)', margin:'0 0 2px', fontWeight:700, letterSpacing:0.3 }}>{b.symbol}</p>
-                        <p style={{ fontSize:13, fontWeight:800, color:b.color, margin:0, textShadow:`0 0 8px ${b.color}80` }}>
+                        <p style={{ fontSize:13, fontWeight:800, color:b.color, margin:0 }}>
                           {b.value>=1000?`${(b.value/1000).toFixed(1)}K`:b.value>=0.001?b.value.toFixed(3):'0.000'}
                         </p>
                         {!b.deployed && <div style={{ position:'absolute', top:2, right:4, fontSize:6, color:'rgba(255,255,255,0.25)', fontWeight:700 }}>SOON</div>}
-                      </motion.div>
+                      </div>
                     );
                   })}
                 </div>
               </div>
               <div style={{ display:'flex', gap:7 }}>
-                <div style={{ flex:1, background:'rgba(255,255,255,0.05)', backdropFilter:'blur(8px)', boxShadow:'0 0 0 0.5px rgba(255,255,255,0.07) inset', borderRadius:10, padding:'7px 12px', fontFamily:'monospace', fontSize:10, color:'rgba(255,255,255,0.48)', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{address}</div>
-                <motion.button whileTap={{ scale:0.93 }} onClick={copyAddress} style={{ padding:'7px 12px', borderRadius:10, border:'none', cursor:'pointer', background:copied?'rgba(52,211,153,0.14)':'rgba(255,255,255,0.05)', backdropFilter:'blur(8px)', color:copied?'#34d399':'rgba(255,255,255,0.48)', fontSize:11, fontWeight:700, display:'flex', alignItems:'center', gap:4, transition:'all 0.2s' }}>
+                <div style={{ flex:1, background:'rgba(255,255,255,0.04)', borderRadius:8, padding:'7px 12px', fontFamily:'monospace', fontSize:10, color:'rgba(255,255,255,0.48)', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{address}</div>
+                <button onClick={copyAddress} style={{ padding:'7px 12px', borderRadius:8, border:'none', cursor:'pointer', background:copied?'rgba(52,211,153,0.16)':'rgba(255,255,255,0.05)', color:copied?'#34d399':'rgba(255,255,255,0.48)', fontSize:11, fontWeight:700, display:'flex', alignItems:'center', gap:4, transition:'all 0.2s' }}>
                   {copied?'✓':(<><Copy size={12}/> Copy</>)}
-                </motion.button>
-                <motion.button whileTap={{ scale:0.93 }} onClick={handleRefresh} style={{ padding:'7px 10px', borderRadius:10, border:'none', cursor:'pointer', background:'rgba(255,255,255,0.05)', backdropFilter:'blur(8px)', color:'rgba(255,255,255,0.48)' }}>
+                </button>
+                <button onClick={handleRefresh} style={{ padding:'7px 10px', borderRadius:8, border:'none', cursor:'pointer', background:'rgba(255,255,255,0.05)', color:'rgba(255,255,255,0.48)' }}>
                   <RefreshCw size={12} style={{ animation:refreshing?'spin 1s linear infinite':'none' }} />
-                </motion.button>
+                </button>
               </div>
             </>
           ) : (
-            <motion.button whileHover={{ scale:1.02 }} whileTap={{ scale:0.97 }} onClick={() => setShowModal(true)} style={{
+            <button onClick={() => setShowModal(true)} style={{
               width:'100%', display:'flex', alignItems:'center', justifyContent:'center', gap:9,
-              background:'rgba(16,185,129,0.08)', backdropFilter:'blur(14px)',
-              boxShadow:'0 0 0 1px rgba(16,185,129,0.26) inset',
-              borderRadius:13, padding:'12px 0', cursor:'pointer', border:'none',
+              background:'rgba(16,185,129,0.10)',
+              borderRadius:10, padding:'12px 0', cursor:'pointer', border:'none',
               fontSize:14, fontWeight:700, ...HL.green,
             }}>
               <Wallet size={16}/> Connect MetaMask / Core Wallet to view balances
-            </motion.button>
+            </button>
           )}
         </div>
       </motion.div>
@@ -482,12 +460,12 @@ export default function Home() {
           { icon:Coins,    label:'Tokens', value:'6 Active',     color:'#fbbf24' },
           { icon:Bot,      label:'AI',     value:'Qwen3 RAG',   color:'#c084fc' },
         ].map((s,i) => (
-          <motion.div key={s.label} className="glass hover-shine"
-            initial={{ opacity:0, y:8 }} animate={{ opacity:1, y:0 }} whileHover={{ y:-4, scale:1.03 }} transition={{ delay:0.28+i*0.05 }}
+          <motion.div key={s.label}
+            initial={{ opacity:0, y:8 }} animate={{ opacity:1, y:0 }} transition={{ delay:0.28+i*0.05 }}
             style={{
-              padding:'14px 12px', borderRadius:14, textAlign:'center',
-              background:'rgba(8,8,16,0.58)', backdropFilter:'blur(16px)',
-              boxShadow:`0 0 0 0.5px ${s.color}25 inset, 0 4px 18px rgba(0,0,0,0.35)`,
+              padding:'14px 12px', borderRadius:12, textAlign:'center',
+              background:'rgba(255,255,255,0.03)',
+              boxShadow:`0 0 0 1px ${s.color}30 inset`,
             }}>
             <s.icon size={22} color={s.color} strokeWidth={1.7} style={{ display:'block', margin:'0 auto 6px' }}/>
             <p style={{ fontSize:10, fontWeight:700, letterSpacing:1.0, textTransform:'uppercase', color:'rgba(255,255,255,0.40)', margin:'0 0 3px' }}>{s.label}</p>
@@ -500,15 +478,14 @@ export default function Home() {
       <motion.div id="agent" ref={agentSectionRef}
         initial={{ opacity:0, y:16 }} whileInView={{ opacity:1, y:0 }} viewport={{ once:true, margin:'-60px' }} transition={{ duration:0.4 }}
         style={{ ...W, marginTop:12, position:'relative', zIndex:5, scrollMarginTop:70 }}>
-        <div className="glass-prism" style={{
-          borderRadius:20,
-          background:'rgba(6,6,14,0.72)', backdropFilter:'blur(26px) saturate(1.8)',
-          boxShadow:'0 0 0 0.5px rgba(16,185,129,0.20) inset, 0 12px 40px rgba(0,0,0,0.48)',
+        <div style={{
+          borderRadius:16,
+          ...flat,
           overflow:'hidden',
         }}>
           {/* header */}
-          <div style={{ padding:'14px 22px', background:'rgba(16,185,129,0.08)', boxShadow:'0 1px 0 rgba(255,255,255,0.05)', display:'flex', alignItems:'center', gap:12 }}>
-            <div className="float" style={{ width:38, height:38, borderRadius:'50%', background:'linear-gradient(135deg,#10b981,#064e3b)', display:'flex', alignItems:'center', justifyContent:'center', boxShadow:'0 0 16px rgba(16,185,129,0.55)', flexShrink:0 }}>
+          <div style={{ padding:'14px 22px', borderBottom: flatDivider, display:'flex', alignItems:'center', gap:12 }}>
+            <div style={{ width:38, height:38, borderRadius:'50%', background:'#065f46', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>
               <Bot size={19} color="#fff" />
             </div>
             <div style={{ flex:1 }}>
@@ -527,14 +504,12 @@ export default function Home() {
             <p style={{ fontSize:9, fontWeight:700, letterSpacing:1.2, textTransform:'uppercase', color:'rgba(255,255,255,0.38)', marginBottom:9 }}>Quick Ask</p>
             <div style={{ display:'flex', flexWrap:'wrap', gap:7, marginBottom:12 }}>
               {['What tokens does KAI have?','Best yield now?','How to get started?','Pool rates?'].map(q => (
-                <motion.button key={q} whileHover={{ scale:1.03, y:-1 }} whileTap={{ scale:0.96 }} onClick={() => setAgentQ(q)} style={{
-                  padding:'6px 13px', borderRadius:18, border:'none', cursor:'pointer',
-                  background:agentQ===q?'rgba(16,185,129,0.14)':'rgba(255,255,255,0.05)',
-                  backdropFilter:'blur(8px)',
-                  boxShadow:agentQ===q?'0 0 0 1px rgba(52,211,153,0.38) inset':'0 0 0 0.5px rgba(255,255,255,0.08) inset',
+                <button key={q} onClick={() => setAgentQ(q)} style={{
+                  padding:'6px 13px', borderRadius:8, border:'none', cursor:'pointer',
+                  background:agentQ===q?'rgba(16,185,129,0.16)':'rgba(255,255,255,0.05)',
                   color:agentQ===q?'#34d399':'rgba(255,255,255,0.65)',
                   fontSize:12, fontWeight:600, transition:'all 0.14s',
-                }}>{q}</motion.button>
+                }}>{q}</button>
               ))}
             </div>
           </div>
@@ -545,26 +520,25 @@ export default function Home() {
               onChange={e => setAgentQ(e.target.value)}
               onKeyDown={e => e.key==='Enter' && !e.shiftKey && (e.preventDefault(), askAgent())}
               placeholder="Ask KAI anything about the ecosystem…" rows={2}
-              style={{ flex:1, background:'rgba(255,255,255,0.05)', border:'none', boxShadow:'0 0 0 1px rgba(255,255,255,0.09) inset', borderRadius:12, padding:'10px 13px', fontSize:13, color:'#fff', outline:'none', fontFamily:'inherit', resize:'none', lineHeight:1.5, caretColor:'#34d399' }}
-              onFocus={e => (e.target.style.boxShadow='0 0 0 1.5px rgba(52,211,153,0.48) inset')}
-              onBlur={e  => (e.target.style.boxShadow='0 0 0 1px rgba(255,255,255,0.09) inset')}
+              style={{ flex:1, background:'rgba(255,255,255,0.04)', border:'1px solid rgba(255,255,255,0.10)', borderRadius:10, padding:'10px 13px', fontSize:13, color:'#fff', outline:'none', fontFamily:'inherit', resize:'none', lineHeight:1.5, caretColor:'#34d399' }}
+              onFocus={e => (e.target.style.borderColor='rgba(52,211,153,0.55)')}
+              onBlur={e  => (e.target.style.borderColor='rgba(255,255,255,0.10)')}
             />
-            <motion.button whileHover={{ scale:1.09 }} whileTap={{ scale:0.92 }} onClick={askAgent} disabled={agentBusy||!agentQ.trim()} style={{
-              width:44, height:44, borderRadius:12, alignSelf:'flex-end', flexShrink:0, border:'none',
-              background:agentQ.trim()&&!agentBusy?'linear-gradient(135deg,#34d399,#047857)':'rgba(255,255,255,0.06)',
+            <button onClick={askAgent} disabled={agentBusy||!agentQ.trim()} style={{
+              width:44, height:44, borderRadius:10, alignSelf:'flex-end', flexShrink:0, border:'none',
+              background:agentQ.trim()&&!agentBusy?'#047857':'rgba(255,255,255,0.06)',
               cursor:agentQ.trim()?'pointer':'not-allowed',
               display:'flex', alignItems:'center', justifyContent:'center',
-              boxShadow:agentQ.trim()&&!agentBusy?'0 0 16px rgba(52,211,153,0.48)':'none',
               transition:'all 0.2s',
             }}>
               <Activity size={19} color={agentQ.trim()&&!agentBusy?'#fff':'rgba(255,255,255,0.20)'} />
-            </motion.button>
+            </button>
           </div>
 
           <AnimatePresence>
             {agentA && (
               <motion.div initial={{ opacity:0, height:0 }} animate={{ opacity:1, height:'auto' }} exit={{ opacity:0, height:0 }}
-                style={{ margin:'0 22px 18px', padding:'12px 15px', background:'rgba(16,185,129,0.08)', boxShadow:'0 0 0 1px rgba(52,211,153,0.18) inset', borderRadius:12, fontSize:13, color:'rgba(255,255,255,0.85)', lineHeight:1.65, maxHeight:200, overflowY:'auto' }}>
+                style={{ margin:'0 22px 18px', padding:'12px 15px', borderLeft:'2px solid #34d399', borderRadius:6, fontSize:13, color:'rgba(255,255,255,0.85)', lineHeight:1.65, maxHeight:200, overflowY:'auto' }}>
                 <span dangerouslySetInnerHTML={{ __html:formatChat(agentA) }} />
               </motion.div>
             )}
@@ -585,20 +559,17 @@ export default function Home() {
             const Icon = d.icon;
             return (
               <motion.div key={d.id}
-                initial={{ opacity:0, y:16 }} whileInView={{ opacity:1, y:0 }} viewport={{ once:true, margin:'-40px' }} transition={{ delay:i*0.08, duration:0.4 }}
-                whileHover={{ y:-5 }}>
+                initial={{ opacity:0, y:16 }} whileInView={{ opacity:1, y:0 }} viewport={{ once:true, margin:'-40px' }} transition={{ delay:i*0.08, duration:0.4 }}>
                 <Link href={d.href} style={{ textDecoration:'none' }}>
-                  <div className="hover-shine" style={{
-                    borderRadius:18, padding:'20px 20px 16px', height:'100%',
+                  <div style={{
+                    borderRadius:14, padding:'20px 20px 16px', height:'100%',
                     display:'flex', flexDirection:'column', gap:12,
-                    background:`linear-gradient(145deg,${d.color}12 0%,rgba(6,6,14,0.68) 100%)`,
-                    backdropFilter:'blur(20px)',
-                    boxShadow:`0 0 0 0.5px ${d.color}22 inset, 0 8px 30px rgba(0,0,0,0.38)`,
-                    transition:'box-shadow 0.22s',
+                    background:'rgba(255,255,255,0.03)',
+                    boxShadow:`0 0 0 1px ${d.color}25 inset`,
                     boxSizing:'border-box',
                   }}>
                     <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between' }}>
-                      <div style={{ width:48, height:48, borderRadius:14, flexShrink:0, background:`${d.color}18`, backdropFilter:'blur(8px)', display:'flex', alignItems:'center', justifyContent:'center', boxShadow:`0 0 18px ${d.color}28` }}>
+                      <div style={{ width:48, height:48, borderRadius:12, flexShrink:0, background:`${d.color}18`, display:'flex', alignItems:'center', justifyContent:'center' }}>
                         <Icon size={23} color={d.color} strokeWidth={1.65}/>
                       </div>
                       <ChevronRight size={16} color="rgba(255,255,255,0.25)"/>
@@ -631,19 +602,16 @@ export default function Home() {
             const Icon = a.icon;
             const isAgent = a.href === '/ai';
             const tile = (
-              <div className="hover-shine" style={{
+              <div style={{
                 display:'flex', flexDirection:'column', alignItems:'center', gap:9,
-                padding:'18px 10px', borderRadius:18, cursor:'pointer',
-                background:'rgba(4,4,10,0.52)', backdropFilter:'blur(18px)',
-                boxShadow:`0 0 0 0.5px ${a.color}20 inset, 0 5px 20px rgba(0,0,0,0.40)`,
-                transition:'box-shadow 0.22s',
+                padding:'18px 10px', borderRadius:14, cursor:'pointer',
+                background:'rgba(255,255,255,0.03)',
+                boxShadow:`0 0 0 1px ${a.color}25 inset`,
               }}>
                 <div style={{
-                  width:50, height:50, borderRadius:16, flexShrink:0,
-                  background:`linear-gradient(145deg,${a.bg},rgba(4,4,10,0.70))`,
-                  backdropFilter:'blur(10px)',
+                  width:50, height:50, borderRadius:14, flexShrink:0,
+                  background:`${a.color}18`,
                   display:'flex', alignItems:'center', justifyContent:'center',
-                  boxShadow:`0 4px 16px ${a.color}22, 0 0 0 0.5px ${a.color}28 inset`,
                 }}>
                   <Icon size={23} color={a.color} strokeWidth={1.6}/>
                 </div>
@@ -654,8 +622,7 @@ export default function Home() {
             );
             return (
               <motion.div key={a.name}
-                initial={{ opacity:0, y:14 }} whileInView={{ opacity:1, y:0 }} viewport={{ once:true, margin:'-40px' }} transition={{ delay:i*0.03, duration:0.35 }}
-                whileHover={{ y:-6, scale:1.04 }} whileTap={{ scale:0.95 }}>
+                initial={{ opacity:0, y:14 }} whileInView={{ opacity:1, y:0 }} viewport={{ once:true, margin:'-40px' }} transition={{ delay:i*0.03, duration:0.35 }}>
                 {isAgent ? (
                   <button onClick={openAIChat} style={{ textDecoration:'none', background:'none', border:'none', padding:0, width:'100%', font:'inherit' }}>
                     {tile}
