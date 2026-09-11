@@ -27,7 +27,7 @@ const TASK_ICON: Record<string, React.ComponentType<{ size: number; color: strin
 const NEXT_MILESTONE = 15000;
 
 export default function KaiBarDashboard() {
-  const { authenticated, ready, address, signInWithGoogle } = usePrivyAuth();
+  const { authenticated, ready, address, signInWithGoogle, getAccessToken } = usePrivyAuth();
   const { privyUserId, kaiBar, tasks, referralCode, referralStats, airdrop, entries, loading, reload } = useKaiBar();
 
   const [copied, setCopied] = useState(false);
@@ -247,9 +247,12 @@ export default function KaiBarDashboard() {
                       onClick={async () => {
                         setCompleting(t.id);
                         try {
+                          const token = await getAccessToken();
+                          if (!token) { setToast('Could not verify your session.'); return; }
                           const res = await fetch('/api/kai-bar/tasks/complete', {
-                            method: 'POST', headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ privyUserId, taskId: t.id }),
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+                            body: JSON.stringify({ taskId: t.id }),
                           });
                           const d = await res.json();
                           if (d.error) { setToast(d.error); return; }
