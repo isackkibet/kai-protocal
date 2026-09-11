@@ -1,8 +1,9 @@
 "use client";
 
 import { usePathname } from 'next/navigation';
+import dynamic from 'next/dynamic';
 import BottomNav from '@/components/shared/BottomNav';
-import AIChatOverlay from '@/components/ai/AIChatOverlay';
+const AIChatOverlay = dynamic(() => import('@/components/ai/AIChatOverlay'), { ssr: false });
 
 const FULLSCREEN_ROUTES = ['/nuvari', '/ai', '/chat'];
 /* Exact matches only — '/kai' would otherwise prefix-match '/kai-bar' */

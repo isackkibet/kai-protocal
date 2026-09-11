@@ -270,6 +270,51 @@ body {
 .btn-primary:active { transform: translateY(0); opacity: 0.88; }
 .btn-primary:disabled { opacity: 0.35; cursor: not-allowed; transform: none; box-shadow: none; }
 
+/* Plain text link — used on the home page instead of pill/glass buttons */
+.text-link {
+  color: var(--green-bright);
+  text-decoration: none;
+  cursor: pointer;
+}
+.text-link:hover, .text-link:focus-visible {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+/* Flat, solid CTA — no gradient, no glow, for the plain/professional layout */
+.btn-plain {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: var(--green-dark);
+  color: #fff;
+  font-weight: 700;
+  font-size: 15px;
+  border: none;
+  border-radius: 8px;
+  padding: 12px 22px;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+.btn-plain:hover { background: var(--green-vivid); }
+.btn-plain:disabled { opacity: 0.4; cursor: not-allowed; }
+
+/* Outline button — secondary actions in the plain layout */
+.btn-outline {
+  background: transparent;
+  border: 1px solid rgba(255,255,255,0.18);
+  color: var(--text-secondary);
+  border-radius: 8px;
+  padding: 8px 16px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: border-color 0.15s ease, color 0.15s ease;
+}
+.btn-outline:hover { border-color: var(--green-bright); color: var(--green-bright); }
+.btn-outline:disabled { opacity: 0.4; cursor: not-allowed; }
+
 .btn-ghost {
   background: rgba(255,255,255,0.06);
   border: none;
@@ -476,6 +521,14 @@ body {
     rgba(4,4,8,1) 0%, transparent 9%, transparent 91%, rgba(4,4,8,1) 100%);
   pointer-events: none;
   z-index: 2;
+}
+.ticker-track {
+  will-change: transform;
+  animation: ticker-scroll 22s linear infinite;
+}
+@keyframes ticker-scroll {
+  from { transform: translateX(0); }
+  to   { transform: translateX(-33.333%); }
 }
 
 /* ══ GLOW UTILITIES ══════════════════════════════════════════ */
