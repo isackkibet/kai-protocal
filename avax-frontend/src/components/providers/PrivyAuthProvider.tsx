@@ -182,7 +182,7 @@ function PrivyAuthContextProvider({ children }: { children: React.ReactNode }) {
       setError('Could not reach our servers. Please try again.');
       return { ok: false, reason: 'network', isNew: false };
     }
-  }, [privyUserId, email, name, address]);
+  }, [privyUserId, email, name, address, getAccessToken]);
 
   /**
    * One-shot "Continue with Google": logs in, then links the account to the
