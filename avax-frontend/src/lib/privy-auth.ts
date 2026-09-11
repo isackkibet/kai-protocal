@@ -42,6 +42,9 @@ export interface PrivyAuthValue {
   sendToken: (params: { tokenAddress: Address; to: Address; amount: bigint }) => Promise<string | { hash: Address }>;
   claimAirdrop: (params: { vault: Address; amount: bigint; proof: `0x${string}`[] }) => Promise<string | { hash: Address }>;
   syncToBackend: () => Promise<PrivyAuthSyncResult>;
+  /** Raw Privy access token — attach as `Authorization: Bearer <token>` on any
+   *  API call that must verify the caller's identity server-side (PRD 1 §12). */
+  getAccessToken: () => Promise<string | null>;
   syncState: 'idle' | 'linking' | 'linked' | 'error';
   error: string | null;
 }
