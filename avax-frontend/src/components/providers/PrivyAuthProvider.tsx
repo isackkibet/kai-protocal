@@ -65,7 +65,7 @@ export function PrivyAuthProvider({ children }: { children: React.ReactNode }) {
  * the safe no-op stub defined in lib/privy-auth.ts.
  */
 function PrivyAuthContextProvider({ children }: { children: React.ReactNode }) {
-  const { ready, authenticated, user, login, logout, createWallet } = usePrivy();
+  const { ready, authenticated, user, login, logout, createWallet, getAccessToken } = usePrivy();
   const { wallets, ready: walletsReady } = useWallets();
 
   const [syncState, setSyncState] = useState<PrivyAuthValue['syncState']>('idle');
@@ -156,9 +156,15 @@ function PrivyAuthContextProvider({ children }: { children: React.ReactNode }) {
     }
     setSyncState('linking');
     try {
+      const token = await getAccessToken();
+      if (!token) {
+        setSyncState('error');
+        setError('Could not verify your session. Please try again.');
+        return { ok: false, reason: 'no-access-token', isNew: false };
+      }
       const res = await fetch('/api/kai-bar/onboard', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
         body: JSON.stringify({ privyUserId, email, name, address }),
       });
       const data = await res.json();
