@@ -52,7 +52,7 @@ const AM = { color:'#fbbf24', fontWeight:800 } as React.CSSProperties;
 const CY = { color:'#22d3ee', fontWeight:800 } as React.CSSProperties;
 const PU = { color:'#c084fc', fontWeight:800 } as React.CSSProperties;
 
-/* ── bare underline input, readable on any bg ── */
+/* ── glass input, matches the elevated-card look used across this page ── */
 function KInput({ value, onChange, placeholder, type='text', big=false }:{
   value:string; onChange:(v:string)=>void; placeholder?:string; type?:string; big?:boolean;
 }) {
@@ -61,19 +61,21 @@ function KInput({ value, onChange, placeholder, type='text', big=false }:{
     <input type={type} value={value} onChange={e=>onChange(e.target.value)}
       placeholder={placeholder}
       style={{
-        background:'rgba(0,0,0,0.45)',
+        background: f ? 'rgba(16,185,129,0.07)' : 'rgba(255,255,255,0.045)',
         border:'none',
-        borderBottom:`2px solid ${f?'#10b981':'rgba(255,255,255,0.20)'}`,
-        borderRadius:8,
+        borderRadius:14,
         padding: big ? '14px 16px' : '12px 14px',
         fontSize: big ? 16 : 15,
         color:'#fff',
         outline:'none',
         fontFamily:'inherit',
         width:'100%',
-        backdropFilter:'blur(12px)',
+        backdropFilter:'blur(16px)',
         boxSizing:'border-box',
-        transition:'border-color 0.2s',
+        boxShadow: f
+          ? '0 0 0 1.5px rgba(16,185,129,0.55) inset, 0 0 0 4px rgba(16,185,129,0.12), 0 4px 16px rgba(0,0,0,0.30)'
+          : '0 0 0 1px rgba(255,255,255,0.09) inset, 0 4px 16px rgba(0,0,0,0.30)',
+        transition:'box-shadow 0.2s, background 0.2s',
         textShadow:'0 1px 6px rgba(0,0,0,0.90)',
       }}
       onFocus={()=>setF(true)} onBlur={()=>setF(false)}
@@ -88,20 +90,22 @@ function KSelect({ value, onChange, options, placeholder }:{
   return (
     <select value={value} onChange={e=>onChange(e.target.value)}
       style={{
-        background:'rgba(0,0,0,0.50)',
+        background: f ? 'rgba(16,185,129,0.07)' : 'rgba(255,255,255,0.045)',
         border:'none',
-        borderBottom:`2px solid ${f?'#10b981':'rgba(255,255,255,0.20)'}`,
-        borderRadius:8,
+        borderRadius:14,
         padding:'12px 14px',
         fontSize:15,
         color: value ? '#fff' : 'rgba(255,255,255,0.45)',
         outline:'none',
         fontFamily:'inherit',
         width:'100%',
-        backdropFilter:'blur(12px)',
+        backdropFilter:'blur(16px)',
         boxSizing:'border-box',
         appearance:'none',
-        transition:'border-color 0.2s',
+        boxShadow: f
+          ? '0 0 0 1.5px rgba(16,185,129,0.55) inset, 0 0 0 4px rgba(16,185,129,0.12), 0 4px 16px rgba(0,0,0,0.30)'
+          : '0 0 0 1px rgba(255,255,255,0.09) inset, 0 4px 16px rgba(0,0,0,0.30)',
+        transition:'box-shadow 0.2s, background 0.2s',
         cursor:'pointer',
       }}
       onFocus={()=>setF(true)} onBlur={()=>setF(false)}>
@@ -112,10 +116,13 @@ function KSelect({ value, onChange, options, placeholder }:{
 }
 
 function FormRow({ label, children }:{ label:string; children:React.ReactNode }) {
+  const required = label.trim().endsWith('*');
+  const text = required ? label.trim().slice(0, -1).trim() : label;
   return (
     <div style={{ display:'flex', flexDirection:'column', gap:8 }}>
       <span style={{ fontSize:12, fontWeight:700, letterSpacing:1.0, textTransform:'uppercase', color:'rgba(255,255,255,0.55)', ...Rs }}>
-        {label}
+        {text}
+        {required && <span style={{ color:'#fbbf24', marginLeft:4 }}>*</span>}
       </span>
       {children}
     </div>
@@ -157,7 +164,7 @@ export default function ProfilePage() {
       if (r.ok) {
         setSaved(true); setToast('Profile saved'); setEditing(false);
         setTimeout(()=>{ setSaved(false); setToast(''); }, 3000);
-      } else setToast('Save failed — try again');
+      } else setToast('Save failed. Try again');
     } catch { setToast('Network error'); }
     finally { setSaving(false); }
   };
@@ -313,7 +320,7 @@ export default function ProfilePage() {
           )}
           {!profile.cfaGroup && !profile.businessName && !profile.chamaName && (
             <span style={{ fontSize:14, color:'rgba(255,255,255,0.35)', fontStyle:'italic', ...Rs }}>
-              No memberships yet — fill in the tabs below to add them
+              No memberships yet. Fill in the tabs below to add them
             </span>
           )}
         </motion.div>
