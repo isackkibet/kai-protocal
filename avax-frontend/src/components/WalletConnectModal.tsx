@@ -43,17 +43,9 @@ function KaiWalletTile() {
     <div style={{
       display: 'flex', alignItems: 'center', gap: 14, padding: '14px 16px',
       borderRadius: 14, border: '1px solid rgba(34,197,94,0.25)',
-      background: 'rgba(34,197,94,0.04)', position: 'relative', overflow: 'hidden',
+      background: 'rgba(34,197,94,0.04)',
       cursor: 'default', opacity: 0.75,
     }}>
-      {/* Coming-soon badge */}
-      <div style={{
-        position: 'absolute', top: 8, right: 10,
-        background: 'rgba(34,197,94,0.15)', border: '1px solid rgba(34,197,94,0.3)',
-        borderRadius: 6, padding: '2px 8px', fontSize: 9, fontWeight: 700, color: '#22c55e',
-        letterSpacing: 1,
-      }}>COMING SOON</div>
-
       <div style={{
         width: 48, height: 48, borderRadius: 12,
         background: 'linear-gradient(135deg,#15803d,#166534)',
@@ -69,6 +61,12 @@ function KaiWalletTile() {
           Native KAI identity · DID · x402 payments
         </p>
       </div>
+      {/* Vertically centered like the chevron on the other two rows, not pinned to the top */}
+      <div style={{
+        background: 'rgba(34,197,94,0.15)', border: '1px solid rgba(34,197,94,0.3)',
+        borderRadius: 6, padding: '2px 8px', fontSize: 9, fontWeight: 700, color: '#22c55e',
+        letterSpacing: 1, flexShrink: 0,
+      }}>COMING SOON</div>
     </div>
   );
 }
