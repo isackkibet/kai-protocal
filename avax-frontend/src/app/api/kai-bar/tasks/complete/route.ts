@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getPrisma } from '@/lib/db';
+import { verifyPrivyUserId } from '@/lib/privy-server';
 
 /**
  * /api/kai-bar/tasks/complete  —  POST
@@ -7,6 +8,10 @@ import { getPrisma } from '@/lib/db';
  * Marks a reward task complete and credits the reward to the Kai Bar ledger.
  * Guards against repeat completion (PRD 2 §13 anti-abuse) and respects
  * maxCompletions.
+ *
+ * Security (PRD 1 §12): this mints Kai Bar points, so the caller's identity
+ * is verified server-side from the bearer token rather than trusted from the
+ * request body — otherwise anyone could complete tasks on another account.
  */
 export async function POST(req: Request) {
   let body: any = {};
@@ -16,10 +21,14 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
   }
 
-  const privyUserId = String(body.privyUserId ?? '').trim();
+  const privyUserId = await verifyPrivyUserId(req.headers.get('authorization'));
+  if (!privyUserId) {
+    return NextResponse.json({ error: 'Could not verify your session. Please sign in again.' }, { status: 401 });
+  }
+
   const taskId = String(body.taskId ?? '').trim();
-  if (!privyUserId || !taskId) {
-    return NextResponse.json({ error: 'privyUserId and taskId required' }, { status: 400 });
+  if (!taskId) {
+    return NextResponse.json({ error: 'taskId required' }, { status: 400 });
   }
 
   const prisma = await getPrisma();

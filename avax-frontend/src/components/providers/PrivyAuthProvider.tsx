@@ -248,13 +248,14 @@ function PrivyAuthContextProvider({ children }: { children: React.ReactNode }) {
       sendToken,
       claimAirdrop,
       syncToBackend,
+      getAccessToken,
       syncState,
       error,
     }),
     [
       ready, walletsReady, authenticated, user, privyUserId, email, name, address,
       wallet, signInWithGoogle, loginFn, logout, createWallet, sendToken,
-      claimAirdrop, syncToBackend, syncState, error,
+      claimAirdrop, syncToBackend, getAccessToken, syncState, error,
     ],
   );
 

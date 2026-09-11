@@ -77,6 +77,7 @@ export function usePrivyAuth(): PrivyAuthValue {
       sendToken: async () => { throw new Error('Wallet not connected'); },
       claimAirdrop: async () => { throw new Error('Wallet not connected'); },
       syncToBackend: async () => ({ ok: false, reason: 'privy-not-configured' }),
+      getAccessToken: async () => null,
       syncState: 'idle',
       error: null,
     };
