@@ -29,7 +29,7 @@ export default function TAASPage() {
     <main style={{
       minHeight: "100dvh",
       background:
-        "radial-gradient(ellipse 70% 40% at 80% 0%, rgba(139,92,246,0.07) 0%, transparent 65%), #08080a",
+        "radial-gradient(ellipse 70% 40% at 80% 0%, rgba(139,92,246,0.07) 0%, transparent 65%)",
       color: "#f8f8fa",
       paddingBottom: 96,
     }}>

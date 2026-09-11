@@ -550,7 +550,7 @@ export default function KaiPlayground() {
               </span>
             </div>
             <div style={{ display:"flex", gap:"7px" }}>
-              <input value={aiPrompt} onChange={e => setAiPrompt(e.target.value)} onKeyDown={e => { if (e.key === "Enter") askPolicyAssistant(); }} placeholder="Describe what you need — AI will suggest field values…"
+              <input value={aiPrompt} onChange={e => setAiPrompt(e.target.value)} onKeyDown={e => { if (e.key === "Enter") askPolicyAssistant(); }} placeholder="Describe what you need. AI will suggest field values..."
                 style={{ flex:1, background:"rgba(0,0,0,0.25)", border:"1px solid rgba(255,255,255,0.12)", borderRadius:"6px", padding:"8px 10px", fontSize:"12px", color:"#fff", outline:"none" }} />
               <button onClick={askPolicyAssistant} disabled={aiLoading || !aiPrompt.trim()} style={{ background: aiAvailable === false ? "rgba(255,255,255,0.08)" : "#2563eb", color:"#fff", border:"none", borderRadius:"6px", padding:"8px 12px", fontSize:"11px", cursor: aiLoading || !aiPrompt.trim() ? "not-allowed" : "pointer", opacity: aiLoading ? 0.6 : 1 }}>
                 {aiLoading ? "Thinking…" : "Ask AI"}

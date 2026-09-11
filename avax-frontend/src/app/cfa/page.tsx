@@ -95,7 +95,7 @@ export default function CFAPage() {
   useEffect(() => { load(); }, []);
 
   if (loading) return (
-    <div style={{ minHeight: '100dvh', background: '#08080a', display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: 16 }}>
+    <div style={{ minHeight: '100dvh', display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: 16 }}>
       <div style={{ width: 52, height: 52, borderRadius: '50%', background: 'linear-gradient(135deg,#10b981,#064e3b)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
         <Trees size={26} color="#fff" />
       </div>
@@ -107,7 +107,7 @@ export default function CFAPage() {
   const totalVotes = (p: typeof d.proposals[0]) => p.votesFor + p.votesAgainst;
 
   return (
-    <main style={{ minHeight: '100dvh', background: 'radial-gradient(ellipse 80% 50% at 10% -5%, rgba(16,185,129,0.12) 0%, transparent 60%), radial-gradient(ellipse 60% 40% at 90% 100%, rgba(34,197,94,0.06) 0%, transparent 55%), #08080a', color: '#f8f8fa', paddingBottom: 96, fontFamily: 'var(--font-sans)' }}>
+    <main style={{ minHeight: '100dvh', background: 'radial-gradient(ellipse 80% 50% at 10% -5%, rgba(16,185,129,0.12) 0%, transparent 60%), radial-gradient(ellipse 60% 40% at 90% 100%, rgba(34,197,94,0.06) 0%, transparent 55%)', color: '#f8f8fa', paddingBottom: 96, fontFamily: 'var(--font-sans)' }}>
 
       {/* ── HERO HEADER ── */}
       <div style={{ padding: '22px 18px 0', background: 'linear-gradient(180deg, rgba(16,185,129,0.09) 0%, transparent 100%)', borderBottom: '1px solid rgba(16,185,129,0.14)' }}>
@@ -201,7 +201,7 @@ export default function CFAPage() {
               <p className="label-caps" style={{ marginBottom: 12 }}>Forest Zones</p>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                 {d.zones.map(z => {
-                  const zc = ZONE_COLOR[z.status] ?? { color: '#3b82f6', icon: '🌳' };
+                  const zc = ZONE_COLOR[z.status] ?? { color: '#3b82f6', icon: '' };
                   const pct = Math.min(100, Math.round((z.treeCount / 5000) * 100));
                   return (
                     <div key={z.id} style={{ borderRadius: 16, padding: '13px 15px', background: `linear-gradient(90deg, ${zc.color}08 0%, rgba(10,10,12,0.90) 100%)`, border: `1px solid ${zc.color}22`, position: 'relative', overflow: 'hidden' }}>

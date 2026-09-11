@@ -94,7 +94,7 @@ export default function SMEPage() {
   useEffect(() => { load(); }, []);
 
   if (loading) return (
-    <div style={{ minHeight: '100dvh', background: '#08080a', display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: 16 }}>
+    <div style={{ minHeight: '100dvh', display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: 16 }}>
       <div style={{ width: 52, height: 52, borderRadius: '50%', background: 'linear-gradient(135deg,#3b82f6,#1d4ed8)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
         <Store size={26} color="#fff" />
       </div>
@@ -105,7 +105,7 @@ export default function SMEPage() {
   const d = data!;
 
   return (
-    <main style={{ minHeight: '100dvh', background: 'radial-gradient(ellipse 80% 50% at 90% -5%, rgba(59,130,246,0.10) 0%, transparent 60%), radial-gradient(ellipse 60% 40% at 10% 100%, rgba(232,65,66,0.06) 0%, transparent 55%), #08080a', color: '#f8f8fa', paddingBottom: 96, fontFamily: 'var(--font-sans)' }}>
+    <main style={{ minHeight: '100dvh', background: 'radial-gradient(ellipse 80% 50% at 90% -5%, rgba(59,130,246,0.10) 0%, transparent 60%), radial-gradient(ellipse 60% 40% at 10% 100%, rgba(232,65,66,0.06) 0%, transparent 55%)', color: '#f8f8fa', paddingBottom: 96, fontFamily: 'var(--font-sans)' }}>
 
       {/* ── HERO ── */}
       <div style={{ padding: '22px 18px 0', background: 'linear-gradient(180deg, rgba(59,130,246,0.08) 0%, transparent 100%)', borderBottom: '1px solid rgba(59,130,246,0.14)' }}>
@@ -269,7 +269,7 @@ export default function SMEPage() {
           <div>
             <p className="label-caps" style={{ marginBottom: 6 }}>Cash Flow Tokenisation (RWA)</p>
             <p style={{ fontSize: 11, color: 'rgba(248,248,250,0.45)', marginBottom: 14, lineHeight: 1.5 }}>
-              Turn unpaid invoices into on-chain tokens. Investors fund KES upfront — you repay at maturity.
+              Turn unpaid invoices into on-chain tokens. Investors fund KES upfront, you repay at maturity.
             </p>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
               {d.cashFlowTokens.map(t => {

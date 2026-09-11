@@ -10,7 +10,7 @@ import { formatChat } from '@/lib/formatChat';
 
 const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_API_URL || 'http://localhost:8000';
 
-const WELCOME = `Hey! I'm **KAI AVAX Agent** — your Avalanche DeFi companion powered by **Groq (Llama 3.1 8B)** with RAG context from Nuvari docs.
+const WELCOME = `Hey! I'm **KAI AVAX Agent**, your Avalanche DeFi companion powered by **Groq (Llama 3.1 8B)** with RAG context from Nuvari docs.
 
 Ask me about:
 • Ecosystem tokens (NVR, yBOB, YTOKEN, YGOLD, GAMI, CENTS)
@@ -20,12 +20,12 @@ Ask me about:
 • Nuvari business model & revenue`;
 
 const QUICK_PROMPTS = [
-  { label: ' NVR token', q: 'What is the NVR token?' },
-  { label: '💵 yBOB', q: 'Explain yBOB Stablecoin' },
-  { label: '📈 Yield', q: 'How do YToken and YGold work?' },
-  { label: '⚡ x402', q: 'Explain the x402 settlement layer' },
-  { label: '🔧 Fuji setup', q: 'AVAX Fuji testnet setup' },
-  { label: '🔍 RAG context', q: 'RAG context available?' },
+  { label: 'NVR token',   q: 'What is the NVR token?' },
+  { label: 'yBOB',        q: 'Explain yBOB Stablecoin' },
+  { label: 'Yield',       q: 'How do YToken and YGold work?' },
+  { label: 'x402',        q: 'Explain the x402 settlement layer' },
+  { label: 'Fuji setup',  q: 'AVAX Fuji testnet setup' },
+  { label: 'RAG context', q: 'RAG context available?' },
 ];
 
 interface Msg { role: 'ai' | 'user'; text: string; agent?: string; isRag?: boolean; }

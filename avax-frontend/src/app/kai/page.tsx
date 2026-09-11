@@ -22,12 +22,12 @@ export default function KaiWebPage() {
   const [sidebarOpen, setSidebarOpen] = useState(true);
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: '100dvh', background: '#0a0a0c', fontFamily: 'inherit' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', height: '100dvh', background: 'linear-gradient(165deg,#051810 0%,#07090c 55%,#0a0a0e 100%)', fontFamily: 'inherit' }}>
 
       {/* ── Top Bar ── */}
       <div style={{
         display: 'flex', alignItems: 'center', gap: 10, padding: '10px 16px',
-        background: 'rgba(10,10,12,0.95)', borderBottom: '1px solid rgba(16,185,129,0.18)',
+        background: 'rgba(7,20,16,0.92)', borderBottom: '1px solid rgba(16,185,129,0.20)',
         backdropFilter: 'blur(16px)', flexShrink: 0, zIndex: 10,
       }}>
         <Link href="/" style={{ color: 'rgba(255,255,255,0.5)', display: 'flex', alignItems: 'center' }}>
@@ -61,13 +61,14 @@ export default function KaiWebPage() {
       </div>
 
       {/* ── Body ── */}
-      <div style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
+      <div style={{ display: 'flex', flex: 1, overflow: 'hidden', position: 'relative' }}>
 
-        {/* ── Sidebar ── */}
+        {/* ── Sidebar — overlays on narrow screens instead of squeezing the iframe ── */}
         {sidebarOpen && (
-          <aside style={{
-            width: 210, flexShrink: 0, background: 'rgba(16,16,20,0.97)',
-            borderRight: '1px solid rgba(16,185,129,0.12)', overflowY: 'auto',
+          <aside className="kaiweb-sidebar" style={{
+            width: 210, flexShrink: 0, background: 'rgba(6,16,13,0.94)',
+            backdropFilter: 'blur(16px)',
+            borderRight: '1px solid rgba(16,185,129,0.16)', overflowY: 'auto',
             display: 'flex', flexDirection: 'column', gap: 2, padding: '10px 8px',
           }}>
             <p style={{ fontSize: 9, fontWeight: 800, color: 'rgba(255,255,255,0.3)', letterSpacing: 2, textTransform: 'uppercase', padding: '4px 8px 8px' }}>

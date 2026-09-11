@@ -78,7 +78,7 @@ export default function SavingGroupPage() {
   useEffect(() => { load(); }, []);
 
   if (loading) return (
-    <div style={{ minHeight: '100dvh', background: '#08080a', display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: 16 }}>
+    <div style={{ minHeight: '100dvh', display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: 16 }}>
       <div style={{ width: 52, height: 52, borderRadius: '50%', background: 'linear-gradient(135deg,#a855f7,#7c3aed)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
         <Users size={26} color="#fff" />
       </div>
@@ -92,7 +92,7 @@ export default function SavingGroupPage() {
   const activeStrategy = d.vaultStrategies.find(v => v.key === d.chama.activeVaultStrategy) ?? d.vaultStrategies[1];
 
   return (
-    <main style={{ minHeight: '100dvh', background: 'radial-gradient(ellipse 80% 50% at 50% -5%, rgba(168,85,247,0.12) 0%, transparent 60%), radial-gradient(ellipse 60% 40% at 10% 100%, rgba(232,65,66,0.06) 0%, transparent 55%), #08080a', color: '#f8f8fa', paddingBottom: 96, fontFamily: 'var(--font-sans)' }}>
+    <main style={{ minHeight: '100dvh', background: 'radial-gradient(ellipse 80% 50% at 50% -5%, rgba(168,85,247,0.12) 0%, transparent 60%), radial-gradient(ellipse 60% 40% at 10% 100%, rgba(232,65,66,0.06) 0%, transparent 55%)', color: '#f8f8fa', paddingBottom: 96, fontFamily: 'var(--font-sans)' }}>
 
       {/* ── HERO ── */}
       <div style={{ padding: '22px 18px 0', background: 'linear-gradient(180deg, rgba(168,85,247,0.09) 0%, transparent 100%)', borderBottom: '1px solid rgba(168,85,247,0.15)' }}>

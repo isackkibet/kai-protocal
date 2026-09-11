@@ -116,7 +116,7 @@ export default function KaiBarDashboard() {
             boxShadow: '0 1px 0 rgba(255,255,255,0.09) inset, 0 0 0 0.5px rgba(245,158,11,0.22) inset, 0 16px 50px rgba(0,0,0,0.5)',
           }}>
           <div style={{ position: 'absolute', top: -60, right: -40, width: 220, height: 220, borderRadius: '50%', background: 'radial-gradient(circle,rgba(245,158,11,0.16) 0%,transparent 70%)', pointerEvents: 'none' }} />
-          <p style={{ fontSize: 10, fontWeight: 700, letterSpacing: 1.4, textTransform: 'uppercase', color: 'rgba(255,255,255,0.45)', marginBottom: 4 }}>🔥 KAI BAR</p>
+          <p style={{ fontSize: 10, fontWeight: 700, letterSpacing: 1.4, textTransform: 'uppercase', color: 'rgba(255,255,255,0.45)', marginBottom: 4 }}>KAI BAR</p>
           <div style={{ display: 'flex', alignItems: 'baseline', gap: 10, marginBottom: 12 }}>
             <span style={{ fontSize: 44, fontWeight: 900, letterSpacing: -2, lineHeight: 1, color: '#fbbf24', textShadow: '0 0 24px rgba(245,158,11,0.5)', ...Rs }}>{kaiBar.toLocaleString()}</span>
             <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.4)', fontWeight: 600 }}>points</span>
