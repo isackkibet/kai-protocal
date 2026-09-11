@@ -270,7 +270,7 @@ export default function KaiAgentChat({ onClose }: KaiAgentChatProps) {
 
         {/* Overlay close button */}
         {onClose && (
-          <button onClick={onClose} style={{
+          <button onClick={onClose} aria-label="Close chat" style={{
             width: 32, height: 32, borderRadius: 8, flexShrink: 0, cursor: 'pointer',
             background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
