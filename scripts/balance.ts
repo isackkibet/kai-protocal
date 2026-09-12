@@ -13,5 +13,4 @@ const deployments = JSON.parse(
 const { viem } = await network.create();
 const token = await viem.getContractAt("NuvariToken", deployments.nuvariToken);
 const balance = await token.read.balanceOf([getAddress(walletAddress)]);
-
-console.log(`NVR balance: ${formatUnits(balance, 18)}`);
+console.log(`NVR balance: ${formatUnits(balance as bigint, 18)}`);
