@@ -10,8 +10,8 @@ export default function TopHeader() {
   return (
     <header className="sticky top-0 z-40 bg-[#121212]/80 backdrop-blur-md w-full px-4 py-4 flex items-center justify-between border-b border-white/5">
       <div className="flex items-center gap-3">
-        <div className="w-8 h-8 rounded-md bg-gradient-to-br from-emerald-400 to-green-600 flex items-center justify-center shadow-[0_0_12px_rgba(16,185,129,0.3)]">
-          <span className="text-black font-black text-sm">K</span>
+        <div className="relative w-8 h-8 rounded-full overflow-hidden border border-emerald-500/40 shadow-[0_0_12px_rgba(16,185,129,0.4)] flex items-center justify-center bg-black/60">
+          <img src="/kai-logo.png" alt="KAI Nuvari" className="w-full h-full object-cover" />
         </div>
         <h1 className="font-bold text-lg tracking-wide text-white">KAI Nuvari</h1>
       </div>
