@@ -6,43 +6,39 @@ import { useAccount } from 'wagmi';
 import WalletConnectModal from '@/components/WalletConnectModal';
 import { useKaivaxStore } from '@/store/useKaivaxStore';
 import {
-  CheckCircle, Users, UserPlus, ArrowLeft,
-  CircleCheck, Gift, Sparkles, Coins,
-  Zap, TrendingUp, Trophy, Clock, Star,
-  Layers, Flame, Timer,
+  ArrowLeft, CheckCircle, Clock, Coins, Gift,
+  Layers, Sparkles, Star, Timer, TrendingUp,
+  UserPlus, Zap,
 } from 'lucide-react';
 
-const Rs: React.CSSProperties = { textShadow: '0 1px 4px rgba(0,0,0,0.88)' };
-const R:  React.CSSProperties = { textShadow: '0 2px 8px rgba(0,0,0,0.90)' };
-
-/* key word highlight helpers */
-const HL = {
-  green:  { color:'#34d399', fontWeight:700, textShadow:'0 0 12px rgba(52,211,153,0.55)'  } as React.CSSProperties,
-  amber:  { color:'#fbbf24', fontWeight:700, textShadow:'0 0 12px rgba(251,191,36,0.55)'  } as React.CSSProperties,
-  cyan:   { color:'#22d3ee', fontWeight:700, textShadow:'0 0 12px rgba(34,211,238,0.50)'  } as React.CSSProperties,
-  purple: { color:'#c084fc', fontWeight:700, textShadow:'0 0 12px rgba(192,132,252,0.50)' } as React.CSSProperties,
-  white:  { color:'#ffffff', fontWeight:800, textShadow:'0 0 10px rgba(255,255,255,0.35)' } as React.CSSProperties,
-};
-
 const POOLS = [
-  { name:'AVAX Alpha Miners', spots:'247/500', pct:49, badge:'Hot',    open:true,  reward:'500 NVR',   color:'#10b981' },
-  { name:'NVR Launch Pool',   spots:'89/200',  pct:45, badge:'Early',  open:true,  reward:'1,000 NVR', color:'#22d3ee' },
-  { name:'Core Wallet Promo', spots:'500/500', pct:100,badge:'Closed', open:false, reward:'200 NVR',   color:'#6366f1' },
+  { name:'AVAX Alpha Miners', spots:'247/500', pct:49, open:true,  reward:500,  unit:'NVR' },
+  { name:'NVR Launch Pool',   spots:'89/200',  pct:45, open:true,  reward:1000, unit:'NVR' },
+  { name:'Core Wallet Promo', spots:'500/500', pct:100,open:false, reward:200,  unit:'NVR' },
 ];
 
 const TOKEN_DROPS = [
-  { symbol:'NVR',    name:'Nuvari Token',    reward:'10 NVR',   color:'#10b981', Icon:Zap         },
-  { symbol:'YBOB',   name:'Stablecoin',      reward:'2 YBOB',   color:'#22c55e', Icon:Layers      },
-  { symbol:'YTOKEN', name:'Yield Token',     reward:'1 YTOKEN', color:'#60a5fa', Icon:TrendingUp  },
-  { symbol:'GAMI',   name:'Community',       reward:'5 GAMI',   color:'#f59e0b', Icon:Users       },
+  { symbol:'NVR',    name:'Nuvari Token',  reward:10, unit:'NVR',    color:'#E84142' },
+  { symbol:'YBOB',   name:'Stablecoin',    reward:2,  unit:'YBOB',   color:'#22c55e' },
+  { symbol:'YTOKEN', name:'Yield Token',   reward:1,  unit:'YTOKEN', color:'#60a5fa' },
+  { symbol:'GAMI',   name:'Community',     reward:5,  unit:'GAMI',   color:'#f59e0b' },
 ];
 
 const TASKS = [
-  { id:'checkin',   title:'Daily Check-in',  desc:'Open app today',           reward:'5 NVR',    color:'#10b981', icon:Gift      },
-  { id:'policy',    title:'Explore Policy',  desc:'Open any policy template', reward:'2 YBOB',   color:'#22d3ee', icon:Sparkles  },
-  { id:'agent',     title:'Ask KAI Agent',   desc:'Chat with KAI once',       reward:'1 GAMI',   color:'#f59e0b', icon:Coins     },
-  { id:'community', title:'Join Community',  desc:'Follow ecosystem update',  reward:'1 YTOKEN', color:'#a855f7', icon:UserPlus  },
+  { id:'checkin',   title:'Daily check-in',  desc:'Open the app today',       reward:5,    unit:'NVR',    color:'#E84142' },
+  { id:'policy',    title:'Explore policy',  desc:'Open any policy template', reward:2,    unit:'YBOB',   color:'#22c55e' },
+  { id:'agent',     title:'Ask KAI agent',   desc:'Chat with KAI once',       reward:1,    unit:'GAMI',   color:'#f59e0b' },
+  { id:'community', title:'Join community',  desc:'Follow ecosystem updates', reward:1,    unit:'YTOKEN', color:'#60a5fa' },
 ];
+
+const h2: React.CSSProperties = { fontSize:15, fontWeight:600, color:'var(--mine-text)', margin:0, letterSpacing:'-0.01em' };
+const sub: React.CSSProperties = { fontSize:13, color:'var(--mine-text-2)', margin:'3px 0 0' };
+const cardIcon: React.CSSProperties = {
+  width:36, height:36, borderRadius:10, flexShrink:0,
+  display:'flex', alignItems:'center', justifyContent:'center',
+  background:'var(--mine-surface-2)', color:'var(--mine-text-2)',
+};
+const W: React.CSSProperties = { width:'100%', maxWidth:1280, margin:'0 auto', padding:'0 40px' };
 
 /* Numbers that visibly count up when they change feel alive, not just swapped */
 function useCountUp(target: number, duration = 600) {
@@ -67,17 +63,16 @@ function useCountUp(target: number, duration = 600) {
   return display;
 }
 
-function Bar({ v, max, c }: { v:number; max:number; c:string }) {
+/* Flat, neutral progress bar — no token colour, no glow. */
+function Bar({ v, max }: { v:number; max:number }) {
   return (
-    <div style={{ height:4, borderRadius:4, background:'rgba(255,255,255,0.08)', overflow:'hidden' }}>
+    <div style={{ height:4, borderRadius:4, background:'rgba(255,255,255,0.06)', overflow:'hidden' }}>
       <motion.div initial={{ width:0 }} animate={{ width:`${Math.min(v/max*100,100)}%` }}
-        transition={{ duration:1, ease:'easeOut' }}
-        style={{ height:'100%', borderRadius:4, background:`linear-gradient(90deg,${c},${c}cc)`, boxShadow:`0 0 8px ${c}80` }} />
+        transition={{ duration:0.9, ease:'easeOut' }}
+        style={{ height:'100%', borderRadius:4, background:'var(--mine-text-2)' }} />
     </div>
   );
 }
-
-const W: React.CSSProperties = { width:'100%', maxWidth:1280, margin:'0 auto', padding:'0 40px' };
 
 export default function MinePage() {
   const { isConnected } = useAccount();
@@ -88,6 +83,7 @@ export default function MinePage() {
   const [claiming,   setClaiming]   = useState(false);
   const [countdown,  setCountdown]  = useState(86400);
   const [joinedWait, setJoinedWait] = useState(false);
+  const [showMint,   setShowMint]   = useState(false);
   const [minted,     setMinted]     = useState<string|null>(null);
   const [mintName,   setMintName]   = useState('');
   const [mintSym,    setMintSym]    = useState('');
@@ -112,6 +108,8 @@ export default function MinePage() {
 
   const pts = doneTasks.length * 5 + (claimed ? 10 : 0);
   const displayPts = useCountUp(pts);
+  /* Streak stays honest: it starts at 0 and only ticks once you engage. */
+  const streak = claimed || doneTasks.length > 0 ? 1 : 0;
 
   const fmt = (s:number) => {
     const h   = Math.floor(s/3600).toString().padStart(2,'0');
@@ -126,18 +124,17 @@ export default function MinePage() {
     await new Promise(r => setTimeout(r,1400));
     setTokenBalance('nvr', useKaivaxStore.getState().balances.nvr + 10);
     setClaimed(true); setClaiming(false);
-    setHeroMsg('10 NVR added to your wallet. Nice work!');
+    setHeroMsg('10 NVR added to your wallet.');
     setTimeout(() => setHeroMsg(''), 4000);
   };
 
-  const doTask = (id:string, reward:string) => {
+  const doTask = (id:string, reward:number, unit:string) => {
     if (!isConnected) { setShowModal(true); return; }
     if (doneTasks.includes(id)) return;
-    const [amt, sym] = reward.split(' ');
-    const k = sym.toLowerCase() as 'nvr'|'ybob'|'ytoken'|'gami';
-    setTokenBalance(k, useKaivaxStore.getState().balances[k] + Number(amt));
+    const k = unit.toLowerCase() as 'nvr'|'ybob'|'ytoken'|'gami';
+    setTokenBalance(k, useKaivaxStore.getState().balances[k] + reward);
     setDoneTasks(t => [...t, id]);
-    setTaskMsg(`+${reward} added to wallet`);
+    setTaskMsg(`+${reward} ${unit} added to wallet`);
     setTimeout(() => setTaskMsg(''), 3000);
   };
 
@@ -147,421 +144,355 @@ export default function MinePage() {
   };
 
   return (
-    <main style={{ minHeight:'100dvh', color:'#fff', fontFamily:'var(--font-sans)', position:'relative', paddingBottom:100 }}>
+    <main style={{ minHeight:'100dvh', backgroundColor:'var(--mine-bg)', color:'var(--mine-text)', fontFamily:'var(--font-sans)', position:'relative', paddingBottom:88 }}>
+      <div style={{ ...W, paddingTop:28 }}>
+        <Link href="/" style={{ display:'inline-flex', alignItems:'center', gap:8, textDecoration:'none', color:'var(--mine-dim)', fontSize:13, marginBottom:36, transition:'color 0.15s ease' }}
+          onMouseEnter={e => (e.currentTarget.style.color='var(--mine-text)')}
+          onMouseLeave={e => (e.currentTarget.style.color='var(--mine-dim)')}>
+          <ArrowLeft size={14}/> Back to Home
+        </Link>
 
-      {/* ambient orbs */}
-      <div aria-hidden style={{ position:'fixed', inset:0, pointerEvents:'none', zIndex:0 }}>
-        <div style={{ position:'absolute', top:'0%', right:'-5%', width:500, height:500, borderRadius:'50%', background:'radial-gradient(circle,rgba(16,185,129,0.12) 0%,transparent 65%)', animation:'orb-drift-a 14s ease-in-out infinite' }} />
-        <div style={{ position:'absolute', bottom:'20%', left:'-5%', width:400, height:400, borderRadius:'50%', background:'radial-gradient(circle,rgba(245,158,11,0.08) 0%,transparent 65%)', animation:'orb-drift-b 18s ease-in-out infinite' }} />
-        <div style={{ position:'absolute', top:'50%', right:'10%', width:260, height:260, borderRadius:'50%', background:'radial-gradient(circle,rgba(168,85,247,0.07) 0%,transparent 65%)', animation:'orb-drift-a 22s ease-in-out infinite reverse' }} />
-      </div>
-
-      {/* HERO BANNER */}
-      <div style={{ position:'relative', zIndex:5, overflow:'hidden' }}>
-        <div style={{ position:'absolute', inset:0, background:'linear-gradient(135deg,rgba(4,78,59,0.60) 0%,rgba(6,6,12,0.82) 50%,rgba(4,38,78,0.55) 100%)' }} />
-        <div style={{ position:'absolute', inset:0, background:'repeating-linear-gradient(110deg,transparent 0px,transparent 60px,rgba(255,255,255,0.02) 60px,rgba(255,255,255,0.02) 61px)', pointerEvents:'none' }} />
-
-        <div style={{ ...W, position:'relative', zIndex:2, paddingTop:28, paddingBottom:40 }}>
-          <Link href="/" style={{ display:'inline-flex', alignItems:'center', gap:8, textDecoration:'none', color:'rgba(255,255,255,0.52)', fontSize:13, marginBottom:28 }}>
-            <ArrowLeft size={14}/> Back to Home
-          </Link>
-
-          <div className="airdrop-hero-grid" style={{ display:'grid', gridTemplateColumns:'1fr auto', gap:40, alignItems:'center' }}>
-            <div>
-              {/* live badge */}
-              <div style={{ display:'inline-flex', alignItems:'center', gap:8, padding:'5px 14px', borderRadius:999, background:'rgba(16,185,129,0.13)', boxShadow:'0 0 0 1px rgba(16,185,129,0.28) inset', marginBottom:16 }}>
-                <span style={{ width:6, height:6, borderRadius:'50%', background:'#34d399', boxShadow:'0 0 8px #34d399', animation:'pulse-dot 2s ease-in-out infinite' }} />
-                <span style={{ fontSize:11, fontWeight:800, letterSpacing:1.4, textTransform:'uppercase', ...HL.green }}>
-                  Live Rewards Desk · Fuji Testnet
-                </span>
-              </div>
-
-              <h1 style={{ fontSize:'clamp(28px,3.5vw,52px)', fontWeight:900, margin:'0 0 12px', letterSpacing:'-1.5px', lineHeight:1.1, ...R }}>
-                Mine and Earn{' '}
-                <span style={{ color:'#34d399', textShadow:'0 0 20px rgba(52,211,153,0.60)' }}>NVR Tokens</span>
-                <br/>
-                <span style={{ color:'rgba(255,255,255,0.68)', fontSize:'0.65em', fontWeight:700, letterSpacing:'-0.5px' }}>
-                  Free daily airdrops on{' '}
-                  <span style={HL.cyan}>Avalanche</span>
-                </span>
-              </h1>
-
-              {isConnected ? (
-                <p style={{ fontSize:'clamp(13px,1.1vw,15px)', color:'rgba(255,255,255,0.78)', margin:'0 0 20px', lineHeight:1.65, maxWidth:520, fontWeight:600, ...Rs }}>
-                  Welcome back. You&apos;ve banked{' '}
-                  <span style={HL.green}>{pts} pts</span> so far.{' '}
-                  {doneTasks.length < TASKS.length
-                    ? <>Just <span style={HL.amber}>{TASKS.length - doneTasks.length} task{TASKS.length - doneTasks.length === 1 ? '' : 's'}</span> left to max out today&apos;s drop.</>
-                    : <>All tasks done for today. Nice streak!</>}
-                </p>
-              ) : (
-                <p style={{ fontSize:'clamp(13px,1.1vw,15px)', color:'rgba(255,255,255,0.65)', margin:'0 0 28px', lineHeight:1.65, maxWidth:520, ...Rs }}>
-                  Complete tasks, claim daily rewards, and join exclusive{' '}
-                  <span style={HL.cyan}>launchpools</span>.
-                  Every action earns you{' '}
-                  <span style={HL.amber}>Kai Bar points</span>{' '}
-                  and builds your path to the future{' '}
-                  <span style={HL.green}>KAI token airdrop</span>.
-                </p>
-              )}
-
-              <div style={{ display:'flex', gap:12, flexWrap:'wrap' }}>
-                <motion.button whileHover={{ scale:1.04 }} whileTap={{ scale:0.96 }}
-                  onClick={claim} disabled={claimed||claiming}
-                  style={{
-                    display:'flex', alignItems:'center', gap:10,
-                    padding:'13px 28px', borderRadius:14, border:'none',
-                    cursor:claimed?'default':'pointer',
-                    background:claimed?'rgba(34,197,94,0.15)':'linear-gradient(135deg,#10b981,#047857)',
-                    color:claimed?'#4ade80':'#fff', fontSize:15, fontWeight:800,
-                    boxShadow:claimed?'0 0 0 1px rgba(34,197,94,0.30) inset':'0 8px 28px rgba(16,185,129,0.50)',
-                    transition:'all 0.2s',
-                  }}>
-                  {claiming
-                    ? <><Clock size={17} style={{ animation:'spin 1s linear infinite' }}/> Processing</>
-                    : claimed
-                      ? <><CheckCircle size={17}/> Claimed · Next in {fmt(countdown)}</>
-                      : <><Gift size={17}/> Claim 10 NVR Free</>
-                  }
-                </motion.button>
-                <Link href="/kai-bar" style={{ textDecoration:'none' }}>
-                  <motion.button whileHover={{ scale:1.04 }} whileTap={{ scale:0.96 }}
-                    style={{ display:'flex', alignItems:'center', gap:8, padding:'13px 24px', borderRadius:14, border:'none', cursor:'pointer', background:'rgba(255,255,255,0.08)', backdropFilter:'blur(12px)', boxShadow:'0 0 0 1px rgba(255,255,255,0.12) inset', color:'#fff', fontSize:15, fontWeight:700 }}>
-                    <Trophy size={17}/> View Kai Bar
-                  </motion.button>
-                </Link>
-              </div>
-
-              <AnimatePresence>
-                {heroMsg && (
-                  <motion.div initial={{ opacity:0, y:8, scale:0.9 }} animate={{ opacity:1, y:0, scale:1 }} exit={{ opacity:0, scale:0.9 }}
-                    className="celebrate-pop"
-                    style={{ marginTop:14, display:'inline-flex', alignItems:'center', gap:8, padding:'9px 18px', borderRadius:999, background:'rgba(34,197,94,0.14)', boxShadow:'0 0 0 1px rgba(34,197,94,0.30) inset', color:'#4ade80', fontSize:13, fontWeight:700 }}>
-                    {heroMsg}
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </div>
-
-            {/* hero stats */}
-            <motion.div className="airdrop-summary-grid" initial={{ opacity:0, x:20 }} animate={{ opacity:1, x:0 }} transition={{ delay:0.15 }}
-              style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:10, minWidth:280 }}>
-              {[
-                { Icon:Trophy,      label:'Your Points', value:displayPts,                   suffix:'pts',  color:'#34d399' },
-                { Icon:Flame,       label:'Day Streak',  value:3,                            suffix:'days', color:'#f59e0b' },
-                { Icon:CheckCircle, label:'Tasks Done',  value:`${doneTasks.length}/${TASKS.length}`, suffix:'', color:'#60a5fa' },
-                { Icon:Zap,         label:'NVR Earned',  value:claimed?10:0,                 suffix:'NVR',  color:'#a855f7' },
-              ].map((s,i) => (
-                <motion.div key={s.label}
-                  initial={{ opacity:0, y:10 }} animate={{ opacity:1, y:0 }} transition={{ delay:0.18+i*0.06 }}
-                  style={{ padding:'14px 16px', borderRadius:16, background:'rgba(8,8,14,0.65)', backdropFilter:'blur(18px)', boxShadow:`0 0 0 0.5px ${s.color}22 inset, 0 8px 24px rgba(0,0,0,0.40)`, textAlign:'center' }}>
-                  <s.Icon size={20} color={s.color} style={{ display:'block', margin:'0 auto 6px', filter:`drop-shadow(0 0 6px ${s.color}88)` }}/>
-                  <p style={{ fontSize:'clamp(16px,1.6vw,22px)', fontWeight:900, color:s.color, margin:'0 0 2px', textShadow:`0 0 12px ${s.color}80` }}>
-                    {s.value}{s.suffix && <span style={{ fontSize:'0.55em', fontWeight:700, opacity:0.7 }}> {s.suffix}</span>}
-                  </p>
-                  <p style={{ fontSize:10, color:'rgba(255,255,255,0.40)', fontWeight:700, letterSpacing:0.8, textTransform:'uppercase', margin:0 }}>{s.label}</p>
-                </motion.div>
-              ))}
-            </motion.div>
+        {/* HERO — centred, flat. The claim action is the one loud thing on the page. */}
+        <div style={{ textAlign:'center', maxWidth:640, margin:'0 auto' }}>
+          <div style={{ display:'inline-flex', alignItems:'center', gap:8, marginBottom:20 }}>
+            <span style={{ width:6, height:6, borderRadius:'50%', background:'var(--mine-accent)', animation:'pulse-dot 2s ease-in-out infinite' }} />
+            <span style={{ fontSize:11.5, fontWeight:600, color:'var(--mine-text-2)', letterSpacing:0.2 }}>Live rewards · Fuji testnet</span>
           </div>
+
+          <h1 style={{ fontSize:'clamp(30px,4vw,44px)', fontWeight:700, letterSpacing:'-1px', lineHeight:1.1, color:'var(--mine-text)', margin:'0 0 14px' }}>
+            Claim <span className="mine-num" style={{ color:'var(--mine-accent)', fontWeight:700 }}>10 NVR</span> daily
+          </h1>
+          <p style={{ fontSize:16, lineHeight:1.65, color:'var(--mine-text-2)', margin:'0 auto', maxWidth:460 }}>
+            Complete tasks to earn <span className="mine-hl">Kai Bar points</span> toward the <span className="mine-hl">KAI airdrop</span>.
+          </p>
+
+          <p className="mine-num" style={{ marginTop:18, fontSize:14, fontWeight:500, color:'var(--mine-text)' }}>
+            {displayPts} pts&ensp;·&ensp;{streak}-day streak&ensp;·&ensp;{doneTasks.length}/{TASKS.length} today
+          </p>
+
+          <div style={{ display:'flex', justifyContent:'center', alignItems:'center', gap:8, flexWrap:'wrap', marginTop:26 }}>
+            <motion.button
+              whileHover={claimed||claiming?{}:{ scale:1.02 }}
+              whileTap={claimed||claiming?{}:{ scale:0.98 }}
+              onClick={claim} disabled={claimed||claiming}
+              style={{
+                display:'inline-flex', alignItems:'center', gap:10,
+                padding:'16px 34px', borderRadius:12, border:'none',
+                cursor: claimed||claiming?'default':'pointer',
+                background: claimed?'var(--mine-surface-2)':'var(--mine-accent)',
+                color: claimed?'var(--mine-text-2)':'#fff',
+                fontSize:16, fontWeight:700, letterSpacing:'-0.01em',
+                boxShadow: claimed?'inset 0 0 0 1px var(--mine-line)':'none',
+                transition:'background 0.2s',
+              }}>
+              {claiming
+                ? <><Clock size={18} style={{ animation:'spin 1s linear infinite' }}/> Processing…</>
+                : claimed
+                  ? <><CheckCircle size={18}/> Claimed · next in <span className="mine-num">{fmt(countdown)}</span></>
+                  : <><Gift size={18}/> Claim 10 NVR</>
+              }
+            </motion.button>
+            <span style={{ width:1, height:22, background:'var(--mine-line)' }} />
+            <Link href="/kai-bar" className="mine-link" style={{ fontSize:14, fontWeight:500, padding:'6px 8px' }}>
+              View Kai Bar →
+            </Link>
+          </div>
+
+          <AnimatePresence>
+            {heroMsg && (
+              <motion.div initial={{ opacity:0, y:6 }} animate={{ opacity:1, y:0 }} exit={{ opacity:0 }}
+                style={{ margin:'16px auto 0', display:'inline-flex', alignItems:'center', gap:8, padding:'7px 16px', borderRadius:999,
+                  background:'var(--mine-surface-2)', boxShadow:'inset 0 0 0 1px var(--mine-line)', color:'var(--mine-text-2)', fontSize:13 }}>
+                <CheckCircle size={13} style={{ color:'var(--mine-accent)' }}/> {heroMsg}
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
       </div>
 
       {/* MAIN CONTENT GRID */}
-      <div className="airdrop-main-grid" style={{ ...W, marginTop:28, display:'grid', gridTemplateColumns:'1fr 1fr', gap:20, position:'relative', zIndex:5 }}>
+      <div className="airdrop-main-grid" style={{ ...W, marginTop:44, display:'grid', gridTemplateColumns:'1fr 1fr', gap:28, alignItems:'start' }}>
 
         {/* LEFT COLUMN */}
-        <div style={{ display:'flex', flexDirection:'column', gap:18 }}>
+        <div style={{ display:'flex', flexDirection:'column', gap:28 }}>
 
           {/* TOKEN DROPS */}
-          <motion.section initial={{ opacity:0, y:14 }} whileInView={{ opacity:1, y:0 }} viewport={{ once:true, margin:'-60px' }} transition={{ duration:0.4 }}>
+          <section>
             <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:14 }}>
               <div>
-                <h2 style={{ fontSize:16, fontWeight:900, color:'#fff', margin:0, ...Rs }}>
-                  Ecosystem{' '}<span style={HL.amber}>Token Drops</span>
-                </h2>
-                <p style={{ fontSize:12, color:'rgba(255,255,255,0.42)', margin:'3px 0 0' }}>
-                  Rotating rewards for <span style={{ color:'rgba(255,255,255,0.70)', fontWeight:600 }}>active community members</span>
-                </p>
+                <h2 style={h2}>Ecosystem token drops</h2>
+                <p style={sub}>Rotating rewards for active members</p>
               </div>
-              <span style={{ fontSize:10, fontWeight:800, letterSpacing:0.8, padding:'3px 10px', borderRadius:999, background:'rgba(16,185,129,0.10)', boxShadow:'0 0 0 1px rgba(16,185,129,0.22) inset', ...HL.green }}>LIVE</span>
+              <span style={{ fontSize:11.5, color:'var(--mine-text-2)', fontWeight:500 }}>4 tokens</span>
             </div>
             <div className="airdrop-token-grid" style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:12 }}>
-              {TOKEN_DROPS.map((t,i) => (
-                <motion.div key={t.symbol}
-                  initial={{ opacity:0, y:10 }} animate={{ opacity:1, y:0 }} transition={{ delay:0.12+i*0.05 }}
-                  whileHover={{ y:-4, scale:1.02 }}
-                  style={{ padding:'18px 16px', borderRadius:18, cursor:'default', position:'relative', overflow:'hidden', background:`linear-gradient(145deg,${t.color}12 0%,rgba(6,6,12,0.65) 100%)`, backdropFilter:'blur(18px)', boxShadow:`0 0 0 0.5px ${t.color}25 inset, 0 8px 28px rgba(0,0,0,0.35)` }}>
-                  <div style={{ position:'absolute', top:-20, right:-20, width:80, height:80, borderRadius:'50%', background:`radial-gradient(circle,${t.color}18 0%,transparent 70%)`, pointerEvents:'none' }} />
-                  <div style={{ display:'flex', alignItems:'center', gap:10, marginBottom:12 }}>
-                    <div style={{ width:38, height:38, borderRadius:12, background:`${t.color}1e`, display:'flex', alignItems:'center', justifyContent:'center', boxShadow:`0 0 14px ${t.color}30` }}>
-                      <t.Icon size={18} color={t.color}/>
-                    </div>
+              {TOKEN_DROPS.map(t => (
+                <motion.div key={t.symbol} whileHover={{ y:-2 }}
+                  style={{ padding:'18px 16px', background:'var(--mine-surface)', border:'1px solid var(--mine-line)', borderRadius:12 }}>
+                  <div style={{ display:'flex', alignItems:'center', gap:10, marginBottom:14 }}>
+                    <span style={{ width:8, height:8, borderRadius:'50%', background:t.color, flexShrink:0 }} />
                     <div>
-                      <p style={{ fontSize:13, fontWeight:800, color:'#fff', margin:0 }}>{t.symbol}</p>
-                      <p style={{ fontSize:10, color:'rgba(255,255,255,0.42)', margin:0 }}>{t.name}</p>
-                    </div>
+                      <p style={{ fontSize:13, fontWeight:700, color:'var(--mine-text)', margin:0 }}>{t.symbol}</p>
+<p style={{ fontSize:11.5, color:'var(--mine-text-2)', margin:'1px 0 0' }}>{t.name}</p>
                   </div>
-                  <div style={{ display:'flex', alignItems:'baseline', gap:5 }}>
-                    <span style={{ fontSize:22, fontWeight:900, color:t.color, textShadow:`0 0 16px ${t.color}80` }}>{t.reward.split(' ')[0]}</span>
-                    <span style={{ fontSize:12, fontWeight:700, color:`${t.color}cc` }}>{t.reward.split(' ')[1]}</span>
-                  </div>
-                  <p style={{ fontSize:10, color:'rgba(255,255,255,0.35)', margin:'4px 0 0', fontWeight:600 }}>Per claim cycle</p>
+                </div>
+                <p className="mine-num" style={{ fontSize:22, fontWeight:500, color:'var(--mine-text)', margin:'0 0 5px' }}>
+                  {t.reward.toLocaleString()}<span style={{ fontSize:12.5, color:'var(--mine-text-2)', fontWeight:400, marginLeft:6 }}>{t.unit}</span>
+                </p>
+                  <p style={{ fontSize:11, color:'var(--mine-text-2)', fontWeight:600, margin:0 }}>Per claim cycle</p>
                 </motion.div>
               ))}
             </div>
-          </motion.section>
+          </section>
 
           {/* LAUNCHPOOLS */}
-          <motion.section initial={{ opacity:0, y:14 }} whileInView={{ opacity:1, y:0 }} viewport={{ once:true, margin:'-60px' }} transition={{ duration:0.4 }}>
+          <section>
             <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:14 }}>
               <div>
-                <h2 style={{ fontSize:16, fontWeight:900, color:'#fff', margin:0, ...Rs }}>
-                  Active{' '}<span style={HL.cyan}>Launchpools</span>
-                </h2>
-                <p style={{ fontSize:12, color:'rgba(255,255,255,0.42)', margin:'3px 0 0' }}>
-                  Join early for <span style={{ color:'rgba(255,255,255,0.70)', fontWeight:600 }}>maximum rewards</span>
-                </p>
+                <h2 style={h2}>Active launchpools</h2>
+                <p style={sub}>Join early for maximum rewards</p>
               </div>
-              <span style={{ fontSize:10, fontWeight:800, padding:'3px 10px', borderRadius:999, background:'rgba(34,211,238,0.08)', boxShadow:'0 0 0 1px rgba(34,211,238,0.20) inset', ...HL.cyan }}>3 POOLS</span>
+              <span style={{ fontSize:11, color:'var(--mine-text-2)', fontWeight:500 }}>{POOLS.filter(p=>p.open).length} open</span>
             </div>
             <div style={{ display:'flex', flexDirection:'column', gap:10 }}>
               {POOLS.map((p,i) => (
                 <motion.div key={i}
-                  initial={{ opacity:0, x:-12 }} animate={{ opacity:1, x:0 }} transition={{ delay:0.18+i*0.06 }}
-                  whileHover={{ x:4 }}
+                  whileHover={{ x:2 }}
                   onClick={() => setActivePool(activePool===i?null:i)}
-                  style={{ padding:'16px 18px', borderRadius:16, cursor:'pointer', overflow:'hidden', background:`linear-gradient(110deg,${p.color}0f 0%,rgba(6,6,14,0.65) 100%)`, backdropFilter:'blur(20px)', boxShadow:`0 0 0 0.5px ${p.color}20 inset, 0 6px 24px rgba(0,0,0,0.32)`, transition:'box-shadow 0.22s' }}>
+                  style={{ padding:'16px 18px', cursor:'pointer', background:'var(--mine-surface)', border:'1px solid var(--mine-line)', borderRadius:12 }}>
                   <div style={{ display:'flex', alignItems:'center', gap:14 }}>
-                    <div style={{ width:44, height:44, borderRadius:13, background:`${p.color}18`, display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0, boxShadow:`0 0 16px ${p.color}28` }}>
-                      <Layers size={20} color={p.color}/>
-                    </div>
+                    <div style={cardIcon}><Layers size={17} /></div>
                     <div style={{ flex:1, minWidth:0 }}>
-                      <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:4 }}>
-                        <p style={{ fontSize:14, fontWeight:800, color:'#fff', margin:0, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{p.name}</p>
-                        <span style={{
-                          fontSize:10, fontWeight:800, padding:'2px 8px', borderRadius:999,
-                          background:p.open?'rgba(34,197,94,0.12)':'rgba(248,113,113,0.12)',
-                          color:p.open?'#4ade80':'#f87171',
-                          boxShadow:`0 0 0 1px ${p.open?'rgba(34,197,94,0.25)':'rgba(248,113,113,0.25)'} inset`,
-                          flexShrink:0,
-                        }}>{p.badge}</span>
+                      <div style={{ display:'flex', alignItems:'center', gap:8 }}>
+                        <p style={{ fontSize:13.5, fontWeight:600, color:'var(--mine-text)', margin:0, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{p.name}</p>
+                        <span style={{ fontSize:10, fontWeight:600, padding:'2px 8px', borderRadius:999, background:'var(--mine-surface-2)', color:'var(--mine-text-2)', boxShadow:'inset 0 0 0 1px var(--mine-line)', flexShrink:0 }}>
+                          {p.open ? 'Open' : 'Closed'}
+                        </span>
                       </div>
-                      <div style={{ display:'flex', gap:12, alignItems:'center' }}>
-                        <span style={{ fontSize:11, color:'rgba(255,255,255,0.45)' }}>{p.spots} joined</span>
-                        <span style={{ fontSize:11, fontWeight:800, color:p.color }}>{p.reward}</span>
+                      <div style={{ display:'flex', gap:14, alignItems:'center', margin:'5px 0 8px' }}>
+                        <span className="mine-num" style={{ fontSize:12, color:'var(--mine-text-2)' }}>{p.spots}&nbsp;joined</span>
+                        <span className="mine-num" style={{ fontSize:12, fontWeight:500, color:'var(--mine-text)' }}>{p.reward.toLocaleString()}&nbsp;{p.unit}</span>
                       </div>
-                      <div style={{ marginTop:8 }}><Bar v={p.pct} max={100} c={p.color}/></div>
+                      <Bar v={p.pct} max={100} />
                     </div>
                     <motion.button
-                      whileHover={p.open?{ scale:1.06 }:{}} whileTap={p.open?{ scale:0.94 }:{}}
+                      whileHover={p.open?{ borderColor:'rgba(255,255,255,0.28)', color:'var(--mine-text)' }:{}}
+                      whileTap={p.open?{ scale:0.97 }:{}}
                       disabled={!p.open}
                       onClick={e => { e.stopPropagation(); if(!isConnected) setShowModal(true); }}
-                      style={{ padding:'8px 18px', borderRadius:10, border:'none', cursor:p.open?'pointer':'not-allowed', flexShrink:0, background:p.open?`linear-gradient(135deg,${p.color},${p.color}99)`:'rgba(255,255,255,0.06)', color:p.open?'#fff':'rgba(255,255,255,0.25)', fontSize:12, fontWeight:800, boxShadow:p.open?`0 4px 14px ${p.color}40`:'none', transition:'all 0.18s' }}>
-                      {p.open?'Join':'Closed'}
+                      className="mine-btn-outline"
+                      style={{ padding:'7px 18px', borderRadius:8, fontSize:12, fontWeight:600, flexShrink:0, fontFamily:'inherit' }}>
+                      {p.open ? 'Join' : 'Closed'}
                     </motion.button>
                   </div>
                 </motion.div>
               ))}
             </div>
-          </motion.section>
+          </section>
 
           {/* AUTO-DROP AGENT */}
-          <motion.section initial={{ opacity:0, y:14 }} whileInView={{ opacity:1, y:0 }} viewport={{ once:true, margin:'-60px' }} transition={{ duration:0.4 }}>
-            <div style={{ padding:'20px 22px', borderRadius:18, background:'rgba(8,8,14,0.60)', backdropFilter:'blur(22px)', boxShadow:'0 0 0 0.5px rgba(16,185,129,0.14) inset, 0 8px 28px rgba(0,0,0,0.35)', position:'relative', overflow:'hidden' }}>
-              <div style={{ position:'absolute', top:-30, right:-30, width:120, height:120, borderRadius:'50%', background:'radial-gradient(circle,rgba(16,185,129,0.10) 0%,transparent 70%)', pointerEvents:'none' }} />
+          <section>
+            <div className="mine-card" style={{ padding:'20px' }}>
               <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:16 }}>
-                <div>
-                  <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:4 }}>
-                    <Zap size={15} color="#10b981"/>
-                    <p style={{ fontSize:14, fontWeight:900, color:'#fff', margin:0, ...Rs }}>
-                      Auto-Drop <span style={HL.green}>Agent</span>
-                    </p>
+                <div style={{ display:'flex', alignItems:'center', gap:10 }}>
+                  <div style={cardIcon}><Zap size={16} /></div>
+                  <div>
+                    <p style={{ fontSize:14, fontWeight:600, color:'var(--mine-text)', margin:0 }}>Auto-Drop Agent</p>
+                    <p style={{ fontSize:12, color:'var(--mine-text-2)', margin:'2px 0 0' }}>Mines <span className="mine-hl">NVR</span> while you&apos;re away</p>
                   </div>
-                  <p style={{ fontSize:12, color:'rgba(255,255,255,0.45)', margin:0 }}>
-                    AI mines <span style={HL.green}>NVR tokens</span> 24/7 on <span style={HL.cyan}>Fuji</span>
-                  </p>
                 </div>
                 <motion.button whileTap={{ scale:0.94 }}
                   onClick={() => { if (!isConnected) setShowModal(true); else setAgentOn(v=>!v); }}
-                  style={{ width:52, height:28, borderRadius:14, border:'none', cursor:'pointer', position:'relative', background:agentOn?'linear-gradient(135deg,#10b981,#047857)':'rgba(255,255,255,0.10)', boxShadow:agentOn?'0 0 14px rgba(16,185,129,0.40)':'none', transition:'all 0.28s' }}>
+                  aria-pressed={agentOn}
+                  style={{ width:52, height:28, borderRadius:14, border:'none', cursor:'pointer', position:'relative', background:agentOn?'var(--mine-accent)':'var(--mine-surface-2)', boxShadow:'inset 0 0 0 1px var(--mine-line)', transition:'background 0.28s' }}>
                   <motion.div animate={{ left:agentOn?26:3 }} transition={{ type:'spring', stiffness:500, damping:30 }}
-                    style={{ width:22, height:22, borderRadius:'50%', background:'#fff', position:'absolute', top:3, boxShadow:'0 2px 6px rgba(0,0,0,0.30)' }} />
+                    style={{ width:22, height:22, borderRadius:'50%', background:'#fff', position:'absolute', top:3, boxShadow:'0 1px 4px rgba(0,0,0,0.4)' }} />
                 </motion.button>
               </div>
               <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:10 }}>
                 {[
-                  { l:'Mining Rate', v:agentOn?'0.003/s':'0.000/s',        c:'#10b981' },
-                  { l:'Total Mined',  v:`${minedAmount.toFixed(3)} NVR`,   c:'#10b981' },
-                  { l:'Status',       v:agentOn?'Active':'Idle',           c:agentOn?'#4ade80':'#94a3b8' },
+                  { l:'Mining rate', v:agentOn?'0.003/s':'0.000/s' },
+                  { l:'Total mined',  v:`${minedAmount.toFixed(3)} NVR` },
+                  { l:'Status',       v:agentOn?'Active':'Idle' },
                 ].map(s => (
-                  <div key={s.l} style={{ padding:'12px 14px', borderRadius:12, background:'rgba(255,255,255,0.04)', boxShadow:'0 0 0 0.5px rgba(255,255,255,0.07) inset' }}>
-                    <p style={{ fontSize:9, color:'rgba(255,255,255,0.38)', margin:'0 0 5px', fontWeight:700, textTransform:'uppercase', letterSpacing:0.6 }}>{s.l}</p>
-                    <p style={{ fontSize:14, fontWeight:900, color:s.c, margin:0, textShadow:`0 0 8px ${s.c}60` }}>{s.v}</p>
+                  <div key={s.l} style={{ padding:'12px 14px', borderRadius:10, background:'var(--mine-surface-2)' }}>
+                    <p style={{ fontSize:10.5, color:'var(--mine-text-2)', margin:'0 0 5px' }}>{s.l}</p>
+                    <p className="mine-num" style={{ fontSize:14, fontWeight:500, color:'var(--mine-text)', margin:0 }}>{s.v}</p>
                   </div>
                 ))}
               </div>
             </div>
-          </motion.section>
+          </section>
         </div>
 
         {/* RIGHT COLUMN */}
-        <div style={{ display:'flex', flexDirection:'column', gap:18 }}>
+        <div style={{ display:'flex', flexDirection:'column', gap:28 }}>
 
           {/* DAILY TASKS */}
-          <motion.section initial={{ opacity:0, y:14 }} whileInView={{ opacity:1, y:0 }} viewport={{ once:true, margin:'-60px' }} transition={{ duration:0.4 }}>
+          <section>
             <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:14 }}>
               <div>
-                <h2 style={{ fontSize:16, fontWeight:900, color:'#fff', margin:0, ...Rs }}>
-                  Today&apos;s <span style={HL.amber}>Tasks</span>
-                </h2>
-                <p style={{ fontSize:12, color:'rgba(255,255,255,0.42)', margin:'3px 0 0' }}>
-                  Complete all <span style={{ color:'rgba(255,255,255,0.70)', fontWeight:600 }}>4 tasks</span> for maximum daily rewards
-                </p>
+                <h2 style={h2}>Today&apos;s tasks</h2>
+                <p style={sub}>Complete all four for the daily drop</p>
               </div>
               <AnimatePresence>
                 {taskMsg && (
-                  <motion.div initial={{ opacity:0, scale:0.8, y:4 }} animate={{ opacity:1, scale:1, y:0 }} exit={{ opacity:0, scale:0.8 }}
-                    style={{ display:'flex', alignItems:'center', gap:6, padding:'5px 12px', borderRadius:999, background:'rgba(34,197,94,0.12)', boxShadow:'0 0 0 1px rgba(34,197,94,0.25) inset', fontSize:12, fontWeight:700, color:'#4ade80' }}>
-                    <CheckCircle size={12}/> {taskMsg}
+                  <motion.div initial={{ opacity:0, y:-4 }} animate={{ opacity:1, y:0 }} exit={{ opacity:0 }}
+                    style={{ fontSize:11.5, color:'var(--mine-text-2)', boxShadow:'inset 0 0 0 1px var(--mine-line)', background:'var(--mine-surface-2)', padding:'5px 12px', borderRadius:999 }}>
+                    {taskMsg}
                   </motion.div>
                 )}
               </AnimatePresence>
             </div>
 
-            <div style={{ marginBottom:14 }}>
-              <div style={{ display:'flex', justifyContent:'space-between', marginBottom:6 }}>
-                <span style={{ fontSize:11, color:'rgba(255,255,255,0.45)', fontWeight:600 }}>Daily Progress</span>
-                <span style={{ fontSize:11, fontWeight:800, ...HL.amber }}>{doneTasks.length}/{TASKS.length} completed</span>
+            <div className="mine-card" style={{ padding:'14px 16px', marginBottom:10 }}>
+              <div style={{ display:'flex', justifyContent:'space-between', marginBottom:8 }}>
+                <span style={{ fontSize:11, color:'var(--mine-text-2)' }}>Progress</span>
+                <span className="mine-num" style={{ fontSize:11, color:'var(--mine-text)' }}>{doneTasks.length}/{TASKS.length}</span>
               </div>
-              <Bar v={doneTasks.length} max={TASKS.length} c="#fbbf24"/>
+              <Bar v={doneTasks.length} max={TASKS.length} />
             </div>
 
             <div style={{ display:'flex', flexDirection:'column', gap:10 }}>
               {TASKS.map((task,i) => {
-                const Icon = task.icon;
                 const done = doneTasks.includes(task.id);
                 return (
                   <motion.button key={task.id}
-                    initial={{ opacity:0, x:14 }} animate={{ opacity:1, x:0 }} transition={{ delay:0.14+i*0.05 }}
-                    whileHover={done?{}:{ x:4, scale:1.01 }} whileTap={done?{}:{ scale:0.98 }}
-                    onClick={() => doTask(task.id, task.reward)} disabled={done}
-                    style={{ textAlign:'left', display:'flex', alignItems:'center', gap:14, padding:'14px 16px', borderRadius:16, border:'none', cursor:done?'default':'pointer', background:done?'rgba(34,197,94,0.07)':'rgba(255,255,255,0.04)', backdropFilter:'blur(10px)', boxShadow:done?`0 0 0 0.5px rgba(34,197,94,0.22) inset, 0 4px 16px rgba(0,0,0,0.25)`:`0 0 0 0.5px ${task.color}18 inset, 0 4px 16px rgba(0,0,0,0.25)`, color:'#fff', transition:'all 0.18s' }}>
-                    <div style={{ width:40, height:40, borderRadius:13, flexShrink:0, display:'flex', alignItems:'center', justifyContent:'center', background:done?'rgba(34,197,94,0.14)':`${task.color}18`, boxShadow:done?'0 0 14px rgba(34,197,94,0.25)':`0 0 14px ${task.color}28`, color:done?'#4ade80':task.color }}>
-                      {done ? <CircleCheck size={19}/> : <Icon size={19}/>}
+                    initial={{ opacity:0, x:10 }} animate={{ opacity:1, x:0 }} transition={{ delay:0.05+i*0.04 }}
+                    whileHover={done?{}:{ borderColor:'rgba(255,255,255,0.24)' }}
+                    onClick={() => doTask(task.id, task.reward, task.unit)} disabled={done}
+                    style={{ textAlign:'left', display:'flex', alignItems:'center', gap:14, padding:'14px 16px', borderRadius:12, cursor:done?'default':'pointer', background:done?'var(--mine-surface-2)':'var(--mine-surface)', border:'1px solid var(--mine-line)', color:'var(--mine-text)', opacity:done?0.72:1, fontFamily:'inherit', transition:'border-color 0.15s' }}>
+                    <div style={{ width:34, height:34, borderRadius:10, flexShrink:0, display:'flex', alignItems:'center', justifyContent:'center', background:'var(--mine-surface-2)', color:done?'var(--mine-dim)':'var(--mine-text-2)' }}>
+                      {done ? <CheckCircle size={16} style={{ color:'var(--mine-accent)' }}/> : <TaskIcon id={task.id}/>}
                     </div>
                     <div style={{ flex:1, minWidth:0 }}>
-                      <p style={{ fontSize:14, fontWeight:800, color:done?'rgba(255,255,255,0.45)':'#fff', margin:0 }}>{task.title}</p>
-                      <p style={{ fontSize:11, color:'rgba(255,255,255,0.38)', margin:'2px 0 0' }}>{done ? 'Completed today' : task.desc}</p>
+                      <p style={{ fontSize:13.5, fontWeight:600, color:done?'var(--mine-dim)':'var(--mine-text)', margin:0 }}>{task.title}</p>
+                      <p style={{ fontSize:11, color:done?'var(--mine-dim)':'var(--mine-dim)', margin:'2px 0 0' }}>{done ? 'Completed today' : task.desc}</p>
                     </div>
-                    <div style={{ textAlign:'right', flexShrink:0 }}>
-                      <span style={{ display:'block', fontSize:13, fontWeight:900, color:done?'#4ade80':task.color, textShadow:done?'0 0 10px rgba(34,197,94,0.50)':`0 0 10px ${task.color}60` }}>
-                        {done ? 'Done' : `+${task.reward}`}
-                      </span>
-                      {!done && <span style={{ fontSize:10, color:'rgba(255,255,255,0.30)', fontWeight:600 }}>Tap to complete</span>}
+                    <div style={{ display:'flex', alignItems:'center', gap:10, flexShrink:0 }}>
+                      <span style={{ width:7, height:7, borderRadius:'50%', background:done?'transparent':task.color }} />
+                      {!done && <span className="mine-num" style={{ fontSize:13, fontWeight:500, color:'var(--mine-text)' }}>+{task.reward}&nbsp;{task.unit}</span>}
                     </div>
                   </motion.button>
                 );
               })}
             </div>
-          </motion.section>
+          </section>
 
           {/* EARLY ACCESS + MINT */}
           <div className="airdrop-side-grid" style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:14 }}>
 
             {/* EARLY ACCESS */}
-            <motion.div initial={{ opacity:0, y:14 }} whileInView={{ opacity:1, y:0 }} viewport={{ once:true, margin:'-40px' }} transition={{ duration:0.4 }}
-              style={{ padding:'18px', borderRadius:18, background:'linear-gradient(145deg,rgba(167,139,250,0.12),rgba(8,8,14,0.65))', backdropFilter:'blur(20px)', boxShadow:'0 0 0 0.5px rgba(167,139,250,0.20) inset, 0 8px 26px rgba(0,0,0,0.35)', position:'relative', overflow:'hidden' }}>
-              <div style={{ position:'absolute', top:-20, right:-20, width:90, height:90, borderRadius:'50%', background:'radial-gradient(circle,rgba(167,139,250,0.15) 0%,transparent 70%)', pointerEvents:'none' }} />
-              <Star size={16} color="#a78bfa" style={{ marginBottom:8 }}/>
-              <p style={{ fontSize:14, fontWeight:900, color:'#a78bfa', margin:'0 0 5px' }}>Early Access</p>
-              <p style={{ fontSize:12, color:'rgba(255,255,255,0.50)', margin:'0 0 14px', lineHeight:1.5 }}>
-                Unlock <span style={HL.purple}>higher reward tiers</span> before public launch
+            <div className="mine-card" style={{ padding:'18px' }}>
+              <Star size={16} style={{ color:'var(--mine-text-2)', marginBottom:10 }} />
+              <p style={{ fontSize:14, fontWeight:600, color:'var(--mine-text)', margin:'0 0 5px' }}>Early access</p>
+              <p style={{ fontSize:12.5, color:'var(--mine-text-2)', margin:'0 0 14px', lineHeight:1.5 }}>
+                Higher reward tiers at launch.
               </p>
               <AnimatePresence mode="wait">
                 {!joinedWait ? (
-                  <motion.button key="join" whileHover={{ scale:1.04 }} whileTap={{ scale:0.96 }}
+                  <motion.button key="join" whileTap={{ scale:0.97 }}
                     onClick={() => setJoinedWait(true)}
-                    style={{ width:'100%', background:'linear-gradient(135deg,#a78bfa,#7c3aed)', color:'#fff', fontWeight:800, fontSize:13, padding:'10px', borderRadius:11, border:'none', cursor:'pointer', boxShadow:'0 6px 18px rgba(139,92,246,0.42)' }}>
-                    Join Waitlist
+                    className="mine-btn-outline"
+                    style={{ width:'100%', fontWeight:600, fontSize:12.5, padding:'10px', borderRadius:10, fontFamily:'inherit' }}>
+                    Join waitlist
                   </motion.button>
                 ) : (
-                  <motion.div key="done" initial={{ scale:0.85, opacity:0 }} animate={{ scale:1, opacity:1 }}
-                    style={{ display:'flex', alignItems:'center', gap:7, padding:'10px 14px', borderRadius:11, background:'rgba(34,197,94,0.10)', boxShadow:'0 0 0 1px rgba(34,197,94,0.22) inset', color:'#22c55e', fontWeight:800, fontSize:13 }}>
-                    <CheckCircle size={15}/> You are on the list!
+                  <motion.div key="done" initial={{ opacity:0 }} animate={{ opacity:1 }}
+                    style={{ display:'flex', alignItems:'center', gap:7, padding:'10px 12px', borderRadius:10, background:'var(--mine-surface-2)', boxShadow:'inset 0 0 0 1px var(--mine-line)', color:'var(--mine-text-2)', fontWeight:600, fontSize:12.5 }}>
+                    <CheckCircle size={14} style={{ color:'var(--mine-accent)' }}/> You&apos;re on the list.
                   </motion.div>
                 )}
               </AnimatePresence>
-            </motion.div>
+            </div>
 
-            {/* MINT TOKEN */}
-            <motion.div initial={{ opacity:0, y:14 }} whileInView={{ opacity:1, y:0 }} viewport={{ once:true, margin:'-40px' }} transition={{ duration:0.4 }}
-              style={{ padding:'18px', borderRadius:18, background:'rgba(8,8,14,0.60)', backdropFilter:'blur(20px)', boxShadow:'0 0 0 0.5px rgba(167,139,250,0.14) inset, 0 8px 26px rgba(0,0,0,0.32)' }}>
-              <TrendingUp size={16} color="#a78bfa" style={{ marginBottom:8 }}/>
-              <p style={{ fontSize:14, fontWeight:900, color:'#a78bfa', margin:'0 0 5px' }}>Mint Token</p>
-              <p style={{ fontSize:12, color:'rgba(255,255,255,0.50)', margin:'0 0 12px' }}>
-                Deploy your own <span style={HL.purple}>ERC-20</span> on <span style={HL.cyan}>Fuji</span>
+            {/* MINT TOKEN — quiet entry point; the form opens on request */}
+            <div className="mine-card" style={{ padding:'18px' }}>
+              <TrendingUp size={16} style={{ color:'var(--mine-text-2)', marginBottom:10 }} />
+              <p style={{ fontSize:14, fontWeight:600, color:'var(--mine-text)', margin:'0 0 5px' }}>Mint a token</p>
+              <p style={{ fontSize:12.5, color:'var(--mine-text-2)', margin:'0 0 14px', lineHeight:1.5 }}>
+                Deploy your own ERC-20 on Fuji.
               </p>
               <AnimatePresence mode="wait">
                 {!minted ? (
-                  <motion.div key="form" style={{ display:'flex', flexDirection:'column', gap:7 }}>
-                    {[
-                      { v:mintName,   s:setMintName,   p:'Token Name',        t:'text'   },
-                      { v:mintSym,    s:setMintSym,    p:'Symbol (e.g. TKN)', t:'text'   },
-                      { v:mintSupply, s:setMintSupply, p:'Total Supply',      t:'number' },
-                    ].map(({ v,s,p,t }) => (
-                      <input key={p} value={v} onChange={e => s(e.target.value)} placeholder={p} type={t}
-                        style={{ background:'rgba(255,255,255,0.06)', border:'none', boxShadow:'0 0 0 1px rgba(255,255,255,0.09) inset', borderRadius:10, padding:'9px 12px', fontSize:12, color:'#fff', outline:'none', fontFamily:'inherit', transition:'box-shadow 0.18s', width:'100%', boxSizing:'border-box' }}
-                        onFocus={e => (e.target.style.boxShadow='0 0 0 1.5px rgba(167,139,250,0.48) inset')}
-                        onBlur={e  => (e.target.style.boxShadow='0 0 0 1px rgba(255,255,255,0.09) inset')}
-                      />
-                    ))}
-                    <motion.button onClick={mintToken}
-                      whileHover={(mintName&&mintSym&&mintSupply)?{ scale:1.02 }:{}}
-                      whileTap={(mintName&&mintSym&&mintSupply)?{ scale:0.97 }:{}}
-                      style={{ background:(mintName&&mintSym&&mintSupply)?'linear-gradient(135deg,#a78bfa,#7c3aed)':'rgba(255,255,255,0.07)', color:(mintName&&mintSym&&mintSupply)?'#fff':'rgba(255,255,255,0.28)', fontWeight:800, fontSize:12, padding:'10px', borderRadius:10, border:'none', cursor:mintName?'pointer':'not-allowed', fontFamily:'inherit', boxShadow:(mintName&&mintSym&&mintSupply)?'0 6px 16px rgba(139,92,246,0.40)':'none', transition:'all 0.18s' }}>
-                      Deploy on Fuji
-                    </motion.button>
+                  <motion.div key="inner" initial={{ opacity:0 }} animate={{ opacity:1 }} exit={{ opacity:0 }}>
+                    {showMint ? (
+                      <div style={{ display:'flex', flexDirection:'column', gap:8 }}>
+                        {[
+                          { v:mintName,   s:setMintName,   p:'Token name',  t:'text'   },
+                          { v:mintSym,    s:setMintSym,    p:'Symbol (TKN)', t:'text'   },
+                          { v:mintSupply, s:setMintSupply, p:'Total supply', t:'number' },
+                        ].map(({ v,s,p,t }) => (
+                          <input key={p} value={v} onChange={e => s(e.target.value)} placeholder={p} type={t}
+                            style={{ background:'var(--mine-surface-2)', border:'1px solid var(--mine-line)', borderRadius:10, padding:'9px 12px', fontSize:12.5, color:'var(--mine-text)', outline:'none', fontFamily:'inherit', width:'100%', boxSizing:'border-box', transition:'border-color 0.15s' }}
+                            onFocus={e => (e.target.style.borderColor='rgba(255,255,255,0.35)')}
+                            onBlur={e  => (e.target.style.borderColor='var(--mine-line)')}
+                          />
+                        ))}
+                        <motion.button onClick={mintToken}
+                          disabled={!(mintName&&mintSym&&mintSupply)}
+                          whileTap={(mintName&&mintSym&&mintSupply)?{ scale:0.97 }:{}}
+                          className="mine-btn-quiet"
+                          style={{ fontWeight:600, fontSize:12.5, padding:'10px', borderRadius:10, fontFamily:'inherit', opacity:(mintName&&mintSym&&mintSupply)?1:0.5 }}>
+                          Deploy on Fuji
+                        </motion.button>
+                      </div>
+                    ) : (
+                      <button onClick={() => setShowMint(true)} className="mine-link"
+                        style={{ background:'none', border:'none', padding:0, font:'inherit', fontSize:12.5 }}>
+                        Deploy on Fuji →
+                      </button>
+                    )}
                   </motion.div>
                 ) : (
-                  <motion.div key="success" initial={{ opacity:0, scale:0.9 }} animate={{ opacity:1, scale:1 }}
-                    style={{ textAlign:'center', padding:'8px 0' }}>
-                    <p style={{ fontSize:13, fontWeight:800, color:'#22c55e', margin:'0 0 6px' }}>Token Deployed!</p>
-                    <p style={{ fontFamily:'monospace', fontSize:10, color:'#10b981', margin:'0 0 10px', wordBreak:'break-all', background:'rgba(16,185,129,0.08)', padding:'6px 8px', borderRadius:8 }}>{minted}</p>
-                    <button onClick={() => { setMinted(null); setMintName(''); setMintSym(''); setMintSupply(''); }}
-                      style={{ fontSize:11, color:'rgba(255,255,255,0.45)', background:'rgba(255,255,255,0.06)', border:'none', borderRadius:8, padding:'6px 14px', cursor:'pointer', fontFamily:'inherit' }}>
+                  <motion.div key="success" initial={{ opacity:0 }} animate={{ opacity:1 }}
+                    style={{ textAlign:'center', padding:'4px 0' }}>
+                    <p style={{ fontSize:12.5, fontWeight:600, color:'var(--mine-text)', margin:'0 0 6px' }}>Token deployed</p>
+                    <p className="mine-num" style={{ fontSize:10.5, color:'var(--mine-dim)', margin:'0 0 10px', wordBreak:'break-all', background:'var(--mine-surface-2)', padding:'6px 8px', borderRadius:8 }}>{minted}</p>
+                    <button onClick={() => { setMinted(null); setShowMint(false); setMintName(''); setMintSym(''); setMintSupply(''); }}
+                      className="mine-link" style={{ fontSize:11, background:'none', border:'none', padding:0, font:'inherit' }}>
                       Deploy another
                     </button>
                   </motion.div>
                 )}
               </AnimatePresence>
-            </motion.div>
+            </div>
           </div>
 
           {/* COUNTDOWN */}
-          <motion.div initial={{ opacity:0, y:14 }} whileInView={{ opacity:1, y:0 }} viewport={{ once:true, margin:'-40px' }} transition={{ duration:0.4 }}
-            style={{ padding:'20px 22px', borderRadius:18, background:'linear-gradient(135deg,rgba(245,158,11,0.10),rgba(8,8,14,0.65))', backdropFilter:'blur(20px)', boxShadow:'0 0 0 0.5px rgba(245,158,11,0.18) inset, 0 8px 28px rgba(0,0,0,0.35)', display:'flex', alignItems:'center', gap:18 }}>
-            <div style={{ width:52, height:52, borderRadius:16, background:'rgba(245,158,11,0.14)', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0, boxShadow:'0 0 18px rgba(245,158,11,0.25)' }}>
-              <Timer size={24} color="#fbbf24"/>
-            </div>
+          <div className="mine-card" style={{ padding:'18px 20px', display:'flex', alignItems:'center', gap:18 }}>
+            <div style={cardIcon}><Timer size={19} /></div>
             <div style={{ flex:1 }}>
-              <p style={{ fontSize:12, color:'rgba(255,255,255,0.50)', margin:'0 0 4px', fontWeight:600 }}>
+              <p style={{ fontSize:12, color:'var(--mine-text-2)', margin:'0 0 4px' }}>
                 {claimed ? 'Next claim available in' : 'Daily claim resets in'}
               </p>
-              <p style={{ fontSize:24, fontWeight:900, color:'#fbbf24', margin:0, fontFamily:'monospace', textShadow:'0 0 14px rgba(251,191,36,0.55)', letterSpacing:2 }}>
+              <p className="mine-num" style={{ fontSize:26, fontWeight:500, color:'var(--mine-text)', margin:0, letterSpacing:1 }}>
                 {fmt(countdown)}
               </p>
             </div>
-            <div style={{ textAlign:'right' }}>
-              <p style={{ fontSize:10, color:'rgba(255,255,255,0.38)', margin:'0 0 3px', fontWeight:600, textTransform:'uppercase', letterSpacing:0.6 }}>Streak</p>
-              <p style={{ fontSize:20, fontWeight:900, color:'#f59e0b', margin:0, textShadow:'0 0 12px rgba(245,158,11,0.60)' }}>3 days</p>
+            <div style={{ width:1, height:34, background:'var(--mine-line)' }} />
+            <div style={{ minWidth:86 }}>
+              <p style={{ fontSize:11.5, color:'var(--mine-text-2)', margin:'0 0 4px' }}>Streak</p>
+              <p className="mine-num" style={{ fontSize:17, fontWeight:500, color:'var(--mine-text)', margin:0 }}>
+                {streak} {streak === 1 ? 'day' : 'days'}
+              </p>
             </div>
-          </motion.div>
-
+          </div>
         </div>
       </div>
 
       {showModal && <WalletConnectModal onClose={() => setShowModal(false)} />}
     </main>
   );
+}
+
+/* Neutral icon per task type — colour stays off the chrome. */
+function TaskIcon({ id }: { id:string }) {
+  const common = { size:16 };
+  switch (id) {
+    case 'checkin':   return <Gift {...common}/>;
+    case 'policy':    return <Sparkles {...common}/>;
+    case 'community': return <UserPlus {...common}/>;
+    default:          return <Coins {...common}/>;
+  }
 }

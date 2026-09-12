@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useConnect, useAccount, useDisconnect, type Connector } from 'wagmi';
 import { X, LogOut, RefreshCw, Wallet, Shield, Leaf } from 'lucide-react';
+import { usePrivyAuth } from '@/lib/privy-auth';
 
 interface WalletConnectModalProps {
   onClose: () => void;
@@ -35,6 +36,39 @@ function getWalletMeta(connector: Connector) {
     border: 'rgba(34,197,94,0.3)',
     bg: 'rgba(34,197,94,0.06)',
   };
+}
+
+// ── Continue with Google (Privy embedded wallet) — primary sign-in option ───
+function GoogleTile({ onClick, loading }: { onClick: () => void; loading: boolean }) {
+  return (
+    <button
+      onClick={onClick}
+      disabled={loading}
+      style={{
+        display: 'flex', alignItems: 'center', gap: 14,
+        padding: '14px 16px', borderRadius: 14, textAlign: 'left',
+        border: '1px solid rgba(255,255,255,0.14)', background: 'rgba(255,255,255,0.04)',
+        cursor: loading ? 'not-allowed' : 'pointer', opacity: loading ? 0.6 : 1,
+        transition: 'all 0.2s', width: '100%',
+      }}>
+      <div style={{
+        width: 48, height: 48, borderRadius: 12, background: 'rgba(255,255,255,0.9)',
+        display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+      }}>
+        <GoogleIcon />
+      </div>
+      <div style={{ flex: 1 }}>
+        <p style={{ fontSize: 14, fontWeight: 800, color: '#f0fdf4', margin: '0 0 2px' }}>Continue with Google</p>
+        <p style={{ fontSize: 11, color: 'rgba(240,253,244,0.5)', margin: 0 }}>
+          Instant embedded wallet - no seed phrase, no extension
+        </p>
+      </div>
+      {loading
+        ? <RefreshCw size={16} color="#22c55e" style={{ animation: 'spin 1s linear infinite' }} />
+        : <span style={{ color: 'rgba(255,255,255,0.3)', fontSize: 18 }}>›</span>
+      }
+    </button>
+  );
 }
 
 // ── KAI Wallet — informational tile (not yet live, coming soon) ──────────────
@@ -75,7 +109,10 @@ export default function WalletConnectModal({ onClose }: WalletConnectModalProps)
   const { connectors, connect, status, error, reset } = useConnect();
   const { address, isConnected, connector: activeConnector } = useAccount();
   const { disconnect } = useDisconnect();
+  const { authenticated: googleAuthenticated, signInWithGoogle } = usePrivyAuth();
   const [connectingId, setConnectingId] = useState<string | null>(null);
+  const [googleLoading, setGoogleLoading] = useState(false);
+  const [googleError, setGoogleError] = useState<string | null>(null);
 
   useEffect(() => {
     if (isConnected) {
@@ -85,12 +122,33 @@ export default function WalletConnectModal({ onClose }: WalletConnectModalProps)
   }, [isConnected, onClose]);
 
   useEffect(() => {
+    if (googleAuthenticated) {
+      const t = setTimeout(onClose, 900);
+      return () => clearTimeout(t);
+    }
+  }, [googleAuthenticated, onClose]);
+
+  useEffect(() => {
     if (status !== 'pending') setConnectingId(null);
   }, [status]);
 
   const handleConnect = (connector: Connector) => {
     setConnectingId(connector.id);
     connect({ connector }, { onError: () => setConnectingId(null) });
+  };
+
+  const handleGoogleSignIn = async () => {
+    setGoogleLoading(true);
+    setGoogleError(null);
+    const result = await signInWithGoogle();
+    setGoogleLoading(false);
+    if (!result.ok && result.reason !== 'login-cancelled') {
+      setGoogleError(
+        result.reason === 'privy-not-configured'
+          ? 'Google sign-in is not configured yet.'
+          : 'Google sign-in failed. Please try again.',
+      );
+    }
   };
 
   return (
@@ -168,6 +226,18 @@ export default function WalletConnectModal({ onClose }: WalletConnectModalProps)
         ) : (
           /* ── Connector list ── */
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+            <GoogleTile onClick={handleGoogleSignIn} loading={googleLoading} />
+
+            {googleError && (
+              <p style={{ fontSize: 11, color: '#f87171', textAlign: 'center', margin: 0 }}>{googleError}</p>
+            )}
+
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, margin: '2px 0' }}>
+              <div style={{ flex: 1, height: 1, background: 'rgba(255,255,255,0.10)' }} />
+              <span style={{ fontSize: 10, fontWeight: 700, color: 'rgba(255,255,255,0.35)', letterSpacing: 1 }}>OR</span>
+              <div style={{ flex: 1, height: 1, background: 'rgba(255,255,255,0.10)' }} />
+            </div>
+
             {connectors.map(connector => {
               const meta = getWalletMeta(connector);
               const connecting = status === 'pending' && connectingId === connector.id;
@@ -228,6 +298,17 @@ export default function WalletConnectModal({ onClose }: WalletConnectModalProps)
 }
 
 /* ── SVG Icon components ───────────────────────────────────────────────────── */
+
+function GoogleIcon() {
+  return (
+    <svg width="24" height="24" viewBox="0 0 48 48">
+      <path fill="#FFC107" d="M43.6 20.1H42V20H24v8h11.3C33.7 32.7 29.2 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.9 1.2 8 3l5.7-5.7C34.7 6.1 29.6 4 24 4 13 4 4 13 4 24s9 20 20 20 20-9 20-20c0-1.3-.1-2.6-.4-3.9z"/>
+      <path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.7 15.1 19 12 24 12c3.1 0 5.9 1.2 8 3l5.7-5.7C34.7 6.1 29.6 4 24 4 16.3 4 9.7 8.3 6.3 14.7z"/>
+      <path fill="#4CAF50" d="M24 44c5.2 0 10-2.2 13.4-5.7l-6.2-5.2C29.2 34.5 26.7 36 24 36c-5.2 0-9.7-3.3-11.3-8l-6.5 5C9.5 39.6 16.2 44 24 44z"/>
+      <path fill="#1976D2" d="M43.6 20.1H42V20H24v8h11.3c-.8 2.3-2.3 4.3-4.1 5.7l6.2 5.2C36.9 39.2 44 34 44 24c0-1.3-.1-2.6-.4-3.9z"/>
+    </svg>
+  );
+}
 
 function MetaMaskIcon() {
   return (
