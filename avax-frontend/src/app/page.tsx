@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
@@ -10,6 +10,8 @@ import WalletConnectModal from '@/components/WalletConnectModal';
 import { ECOSYSTEM_TOKENS, TICKER_TOKENS } from '@/lib/tokens';
 import { ERC20_ABI } from '@/lib/erc20abi';
 import { formatChat } from '@/lib/formatChat';
+import VoiceMicButton from '@/components/VoiceMicButton';
+import SDGImpactCard from '@/components/SDGImpactCard';
 import {
   Trees, Store, Users, FlaskConical, ScanLine,
   Droplets, ImageIcon, Lock, Globe, LayoutGrid, Gift,
@@ -32,7 +34,8 @@ const QUICK = [
   { name: 'AI Agent',   href: '/ai',        icon: Bot,         color: '#10b981', bg: 'rgba(16,185,129,0.14)' },
   { name: 'Playground', href: '/nuvari',     icon: FlaskConical,color: '#34d399', bg: 'rgba(52,211,153,0.14)' },
   { name: 'Scan & Pay', href: '/pay',        icon: ScanLine,    color: '#22d3ee', bg: 'rgba(34,211,238,0.14)' },
-  { name: 'Securities', href: '/securities', icon: ShieldCheck, color: '#06b6d4', bg: 'rgba(6,182,212,0.14)'  },
+  { name: 'Products',   href: '/products',   icon: ShieldCheck, color: '#06b6d4', bg: 'rgba(6,182,212,0.14)'  },
+  { name: 'SDG Impact', href: '/sdg',        icon: Globe,       color: '#10b981', bg: 'rgba(16,185,129,0.14)' },
   { name: 'NFT Mkt',    href: '/connft',     icon: ImageIcon,   color: '#a855f7', bg: 'rgba(168,85,247,0.14)' },
   { name: 'Pools',      href: '/pools',      icon: Droplets,    color: '#059669', bg: 'rgba(5,150,105,0.14)'  },
   { name: 'Vaults',     href: '/vaults',     icon: Lock,        color: '#a3e635', bg: 'rgba(163,230,53,0.14)' },
@@ -152,11 +155,12 @@ export default function Home() {
   const activeTokenCount = allTokens.filter(b => b.value > 0).length;
   const displayName = profile?.displayName || profile?.name || (address ? `${address.slice(0,6)}…${address.slice(-4)}` : '');
 
-  const askAgent = async () => {
-    if (!agentQ.trim() || agentBusy) return;
+  const askAgent = async (overrideText?: string) => {
+    const q = (overrideText ?? agentQ).trim();
+    if (!q || agentBusy) return;
     setAgentBusy(true); setAgentA('');
     try {
-      const r = await fetch('/api/chat', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ message:agentQ, rag:true }) });
+      const r = await fetch('/api/chat', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ message:q, rag:true }) });
       const d = await r.json();
       setAgentA(d.text || d.response || 'No answer returned.');
     } catch { setAgentA('Agent offline. Start the server.'); }
@@ -489,7 +493,18 @@ export default function Home() {
               onFocus={e => (e.target.style.boxShadow='0 0 0 1.5px rgba(52,211,153,0.48) inset')}
               onBlur={e  => (e.target.style.boxShadow='0 0 0 1px rgba(255,255,255,0.09) inset')}
             />
-            <motion.button whileHover={{ scale:1.09 }} whileTap={{ scale:0.92 }} onClick={askAgent} disabled={agentBusy||!agentQ.trim()} style={{
+            <div style={{ alignSelf: 'flex-end' }}>
+              <VoiceMicButton
+                onCommand={(cmd) => {
+                  setAgentQ(cmd);
+                  askAgent(cmd);
+                }}
+                disabled={agentBusy}
+                size="md"
+                showVoiceToggle={false}
+              />
+            </div>
+            <motion.button whileHover={{ scale:1.09 }} whileTap={{ scale:0.92 }} onClick={() => askAgent()} disabled={agentBusy||!agentQ.trim()} style={{
               width:44, height:44, borderRadius:12, alignSelf:'flex-end', flexShrink:0, border:'none',
               background:agentQ.trim()&&!agentBusy?'linear-gradient(135deg,#34d399,#047857)':'rgba(255,255,255,0.06)',
               cursor:agentQ.trim()?'pointer':'not-allowed',
@@ -510,6 +525,12 @@ export default function Home() {
             )}
           </AnimatePresence>
         </div>
+      </motion.div>
+
+      {/* 8.5 ── SDG IMPACT & EFFORT */}
+      <motion.div initial={{ opacity:0, y:12 }} animate={{ opacity:1, y:0 }} transition={{ delay:0.32 }}
+        style={{ ...W, marginTop:24, position:'relative', zIndex:5 }}>
+        <SDGImpactCard />
       </motion.div>
 
       {/* 9 ── DASHBOARDS */}
