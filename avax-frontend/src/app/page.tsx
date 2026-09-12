@@ -197,12 +197,17 @@ export default function Home() {
       <motion.div initial={{ opacity:0, y:-10 }} animate={{ opacity:1, y:0 }} transition={{ delay:0.05 }}
         style={{ ...W, paddingTop:28, textAlign:'center', position:'relative', zIndex:5 }}>
         <div className="float" style={{
-          width:68, height:68, borderRadius:'50%', margin:'0 auto 12px',
-          background:'linear-gradient(135deg,rgba(16,185,129,0.38),rgba(4,78,59,0.80))',
-          backdropFilter:'blur(12px)',
-          display:'flex', alignItems:'center', justifyContent:'center', fontSize:30,
-          boxShadow:'0 0 36px rgba(16,185,129,0.42), 0 0 0 1.5px rgba(16,185,129,0.35) inset',
-        }}>⛰️</div>
+          width:84, height:84, borderRadius:'50%', margin:'0 auto 14px',
+          display:'flex', alignItems:'center', justifyContent:'center', padding:2,
+          background:'radial-gradient(circle,rgba(16,185,129,0.35) 0%,rgba(0,0,0,0.85) 75%)',
+          boxShadow:'0 0 36px rgba(16,185,129,0.48), 0 0 0 1.5px rgba(234,179,8,0.45) inset',
+        }}>
+          <img
+            src="/kai-logo.png"
+            alt="KAI Metatron Sacred Geometry"
+            style={{ width:'100%', height:'100%', borderRadius:'50%', objectFit:'cover' }}
+          />
+        </div>
         <h1 style={{ fontSize:32, fontWeight:900, margin:'0 0 5px', letterSpacing:'-1px', ...R }}>
           <span style={HL.green}>KAI</span> <span style={{ color:'#fff' }}>NUVARI</span>
         </h1>
