@@ -11,6 +11,7 @@ import {
   Zap, TrendingUp, Trophy, Clock, Star,
   Layers, Flame, Timer,
 } from 'lucide-react';
+import SDGImpactCard from '@/components/SDGImpactCard';
 
 const Rs: React.CSSProperties = { textShadow: '0 1px 4px rgba(0,0,0,0.88)' };
 const R:  React.CSSProperties = { textShadow: '0 2px 8px rgba(0,0,0,0.90)' };
@@ -483,6 +484,11 @@ export default function MinePage() {
               </AnimatePresence>
             </motion.div>
           </div>
+
+          {/* SDG IMPACT & EFFORT SCORE */}
+          <motion.div initial={{ opacity:0, y:14 }} animate={{ opacity:1, y:0 }} transition={{ delay:0.25 }} style={{ marginBottom: 20 }}>
+            <SDGImpactCard />
+          </motion.div>
 
           {/* COUNTDOWN */}
           <motion.div initial={{ opacity:0, y:14 }} animate={{ opacity:1, y:0 }} transition={{ delay:0.28 }}
