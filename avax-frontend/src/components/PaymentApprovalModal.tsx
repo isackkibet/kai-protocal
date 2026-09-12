@@ -5,22 +5,14 @@ import { useAccount } from 'wagmi';
 import {
   X, CheckCircle, XCircle, Clock, RefreshCw,
   CreditCard, Zap, ShieldCheck, AlertTriangle, Bell,
+  PlusCircle, Sparkles
 } from 'lucide-react';
+import { useX402ApprovalStore } from '@/store/useX402ApprovalStore';
 
-interface PendingPayment {
-  id: string;
-  route: string;
-  payer: string;
-  amount: number;
-  symbol: string;
-  service: string;
-  requestedAt: string;
-  status: 'pending' | 'approved' | 'rejected';
-  nonce: string;
-}
+interface Props { onClose: () => void; }
 
 const ROUTE_ICONS: Record<string, React.ReactNode> = {
-  '/agents/tx':          <Zap size={14} color="#10b981" />,
+  '/agents/tx':          <Zap size={14} color="#e84142" />,
   '/agents/audit':       <ShieldCheck size={14} color="#22c55e" />,
   '/agents/codegen':     <CreditCard size={14} color="#3b82f6" />,
   '/agents/portfolio':   <CreditCard size={14} color="#f59e0b" />,
@@ -29,7 +21,7 @@ const ROUTE_ICONS: Record<string, React.ReactNode> = {
 
 function routeIcon(route: string) {
   const key = Object.keys(ROUTE_ICONS).find(k => route.startsWith(k));
-  return key ? ROUTE_ICONS[key] : <CreditCard size={14} color="#10b981" />;
+  return key ? ROUTE_ICONS[key] : <CreditCard size={14} color="#e84142" />;
 }
 
 function elapsed(iso: string) {
@@ -39,60 +31,50 @@ function elapsed(iso: string) {
   return `${Math.floor(secs/3600)}h ago`;
 }
 
-interface Props { onClose: () => void; }
-
 export default function PaymentApprovalModal({ onClose }: Props) {
   const { address } = useAccount();
-  const [payments, setPayments] = useState<PendingPayment[]>([]);
-  const [summary,  setSummary]  = useState({ pending: 0, approved: 0, rejected: 0, total: 0 });
-  const [loading,  setLoading]  = useState(true);
-  const [acting,   setActing]   = useState<string | null>(null);
-  const [tab,      setTab]      = useState<'pending' | 'approved' | 'rejected'>('pending');
+  const {
+    payments, summary, loading, activeTab,
+    setActiveTab, fetchPayments, approvePayment, rejectPayment, requestApproval
+  } = useX402ApprovalStore();
 
-  const load = useCallback(async () => {
-    if (!address) return;
-    setLoading(true);
-    try {
-      const r = await fetch(`/api/x402/approve?status=${tab}`, {
-        headers: { 'x-wallet-address': address },
-      });
-      if (r.ok) {
-        const d = await r.json();
-        setPayments(d.payments ?? []);
-        setSummary(d.summary ?? { pending: 0, approved: 0, rejected: 0, total: 0 });
-      }
-    } catch { /* offline */ }
-    finally { setLoading(false); }
-  }, [address, tab]);
+  const [acting, setActing] = useState<string | null>(null);
+  const [simulating, setSimulating] = useState(false);
 
-  useEffect(() => { load(); }, [load]);
+  useEffect(() => {
+    fetchPayments(address);
+  }, [address, fetchPayments]);
 
   const act = async (id: string, action: 'approve' | 'reject') => {
-    if (!address) return;
     setActing(id);
-    try {
-      const r = await fetch('/api/x402/approve', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'x-wallet-address': address },
-        body: JSON.stringify({ id, action }),
-      });
-      if (r.ok) {
-        setPayments(ps => ps.filter(p => p.id !== id));
-        setSummary(s => ({
-          ...s,
-          pending:  s.pending  - 1,
-          approved: action === 'approve' ? s.approved + 1 : s.approved,
-          rejected: action === 'reject'  ? s.rejected + 1 : s.rejected,
-        }));
-      }
-    } catch { /* noop */ }
-    finally { setActing(null); }
+    if (action === 'approve') {
+      await approvePayment(id, address);
+    } else {
+      await rejectPayment(id, address);
+    }
+    setActing(null);
+  };
+
+  const handleSimulateRequest = async () => {
+    setSimulating(true);
+    const demos = [
+      { service: 'Vault Yield Auto-Sweep', amount: 150, symbol: 'CENTS', route: '/agents/tx/analyse' },
+      { service: 'KaiEscrow Vulnerability Audit', amount: 500, symbol: 'CENTS', route: '/agents/audit' },
+      { service: 'Nuvari Policy Strategy Generation', amount: 200, symbol: 'CENTS', route: '/agents/policy/recommend' },
+    ];
+    const picked = demos[Math.floor(Math.random() * demos.length)];
+    await requestApproval({
+      ...picked,
+      payer: address || '0xB13727161583e38185530755a1A96D00fcCae870',
+    });
+    fetchPayments(address);
+    setSimulating(false);
   };
 
   const STATUS_COLOR = { pending: '#f59e0b', approved: '#22c55e', rejected: '#f87171' } as const;
 
   return (
-    <div style={{ position: 'fixed', inset: 0, zIndex: 90, display: 'flex', alignItems: 'flex-end', background: 'rgba(0,0,0,0.70)', backdropFilter: 'blur(8px)' }}>
+    <div style={{ position: 'fixed', inset: 0, zIndex: 90, display: 'flex', alignItems: 'flex-end', background: 'rgba(0,0,0,0.75)', backdropFilter: 'blur(8px)' }}>
       <div style={{
         width: '100%', maxWidth: 520, margin: '0 auto',
         background: 'var(--surface-2, #17171c)',
@@ -105,16 +87,31 @@ export default function PaymentApprovalModal({ onClose }: Props) {
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
               <div style={{ width: 40, height: 40, borderRadius: 13, background: 'rgba(232,65,66,0.14)', border: '1px solid rgba(232,65,66,0.32)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <Bell size={19} color="#10b981" />
+                <Bell size={19} color="#e84142" />
               </div>
               <div>
-                <p style={{ fontSize: 15, fontWeight: 900, color: '#f8f8fa', margin: 0 }}>x402 Payment Approvals</p>
-                <p style={{ fontSize: 10, color: 'rgba(248,248,250,0.40)', margin: 0 }}>Review before agent executes</p>
+                <p style={{ fontSize: 15, fontWeight: 900, color: '#f8f8fa', margin: 0 }}>x402 Transaction Approvals</p>
+                <p style={{ fontSize: 10, color: 'rgba(248,248,250,0.40)', margin: 0 }}>Authorize micro-payments on Avalanche Fuji</p>
               </div>
             </div>
-            <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'rgba(248,248,250,0.38)' }}>
-              <X size={18} />
-            </button>
+            
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <button
+                onClick={handleSimulateRequest}
+                disabled={simulating}
+                title="Create a sample payment approval request"
+                style={{
+                  background: 'rgba(232,65,66,0.12)', border: '1px solid rgba(232,65,66,0.3)',
+                  borderRadius: 10, padding: '4px 8px', color: '#ff6b6b', fontSize: 10, fontWeight: 800,
+                  cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4
+                }}
+              >
+                <PlusCircle size={12} /> {simulating ? 'Adding…' : '+ Simulate'}
+              </button>
+              <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'rgba(248,248,250,0.38)' }}>
+                <X size={18} />
+              </button>
+            </div>
           </div>
 
           {/* Summary strip */}
@@ -134,12 +131,12 @@ export default function PaymentApprovalModal({ onClose }: Props) {
           {/* Tabs */}
           <div style={{ display: 'flex', gap: 4, marginBottom: 0 }}>
             {(['pending', 'approved', 'rejected'] as const).map(t => (
-              <button key={t} onClick={() => setTab(t)} style={{
+              <button key={t} onClick={() => setActiveTab(t)} style={{
                 flex: 1, padding: '8px 0', borderRadius: '10px 10px 0 0', border: 'none', cursor: 'pointer',
-                background: tab === t ? `${STATUS_COLOR[t]}14` : 'rgba(255,255,255,0.03)',
-                borderTop: tab === t ? `1.5px solid ${STATUS_COLOR[t]}50` : '1.5px solid transparent',
-                color: tab === t ? STATUS_COLOR[t] : 'rgba(248,248,250,0.38)',
-                fontSize: 11, fontWeight: tab === t ? 800 : 600, textTransform: 'capitalize', transition: 'all 0.18s',
+                background: activeTab === t ? `${STATUS_COLOR[t]}14` : 'rgba(255,255,255,0.03)',
+                borderTop: activeTab === t ? `1.5px solid ${STATUS_COLOR[t]}50` : '1.5px solid transparent',
+                color: activeTab === t ? STATUS_COLOR[t] : 'rgba(248,248,250,0.38)',
+                fontSize: 11, fontWeight: activeTab === t ? 800 : 600, textTransform: 'capitalize', transition: 'all 0.18s',
               }}>{t}</button>
             ))}
           </div>
@@ -156,7 +153,7 @@ export default function PaymentApprovalModal({ onClose }: Props) {
             <div style={{ textAlign: 'center', padding: '40px 20px' }}>
               <CheckCircle size={32} color="rgba(34,197,94,0.25)" style={{ display: 'block', margin: '0 auto 12px' }} />
               <p style={{ fontSize: 13, color: 'rgba(248,248,250,0.35)', margin: 0 }}>
-                {tab === 'pending' ? 'No pending payments - all clear.' : `No ${tab} payments.`}
+                {activeTab === 'pending' ? 'No pending payments — all clear.' : `No ${activeTab} payments.`}
               </p>
             </div>
           ) : (
@@ -182,9 +179,15 @@ export default function PaymentApprovalModal({ onClose }: Props) {
                     </div>
                   </div>
 
+                  {p.aiVerdict && (
+                    <div style={{ padding: '6px 9px', borderRadius: 8, background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)', marginBottom: 10, fontSize: 10.5, color: '#cbd5e1' }}>
+                      <span style={{ fontWeight: 800, color: '#fbbf24' }}>AI Risk: </span>{p.aiVerdict}
+                    </div>
+                  )}
+
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8, marginBottom: p.status === 'pending' ? 12 : 0 }}>
                     {[
-                      { label: 'Payer',    value: `${p.payer.slice(0,10)}…` },
+                      { label: 'Payer',    value: `${p.payer.slice(0,8)}…` },
                       { label: 'Amount',   value: `${p.amount} ${p.symbol}` },
                       { label: 'When',     value: elapsed(p.requestedAt)    },
                     ].map(s => (
@@ -224,10 +227,10 @@ export default function PaymentApprovalModal({ onClose }: Props) {
 
         {/* Footer */}
         <div style={{ padding: '12px 18px', borderTop: '1px solid rgba(255,255,255,0.06)', display: 'flex', gap: 10, flexShrink: 0 }}>
-          <button onClick={load} style={{ flex: 1, padding: '11px 0', borderRadius: 13, border: '1px solid rgba(255,255,255,0.09)', background: 'rgba(255,255,255,0.04)', color: 'rgba(248,248,250,0.55)', fontSize: 12, fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
+          <button onClick={() => fetchPayments(address)} style={{ flex: 1, padding: '11px 0', borderRadius: 13, border: '1px solid rgba(255,255,255,0.09)', background: 'rgba(255,255,255,0.04)', color: 'rgba(248,248,250,0.55)', fontSize: 12, fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
             <RefreshCw size={13} /> Refresh
           </button>
-          <button onClick={onClose} style={{ flex: 1, padding: '11px 0', borderRadius: 13, border: 'none', background: 'linear-gradient(135deg,#10b981,#047857)', color: '#fff', fontSize: 12, fontWeight: 800, cursor: 'pointer' }}>
+          <button onClick={onClose} style={{ flex: 1, padding: '11px 0', borderRadius: 13, border: 'none', background: 'linear-gradient(135deg,#e84142,#b91c1c)', color: '#fff', fontSize: 12, fontWeight: 800, cursor: 'pointer' }}>
             Close
           </button>
         </div>

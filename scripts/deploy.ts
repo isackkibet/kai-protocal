@@ -20,11 +20,11 @@ import { parseEther, formatEther } from "viem";
 const deploymentsPath = new URL("../deployments.json", import.meta.url);
 
 // ── Bootstrap the viem clients from hardhat ───────────────────────────────
-const { viem, networkName: connectionName } = await network.create();
+const { viem, networkName: hardhatNetworkName } = await network.create();
 const publicClient = await viem.getPublicClient();
 const [deployer] = await viem.getWalletClients();
 
-const networkName: string = publicClient.chain?.name ?? connectionName;
+const networkName: string = publicClient.chain?.name ?? hardhatNetworkName;
 const chainId: number = publicClient.chain?.id ?? 0;
 
 console.log("─────────────────────────────────────────");
@@ -35,7 +35,7 @@ console.log(`Deployer : ${deployer.account.address}`);
 const balance = await publicClient.getBalance({ address: deployer.account.address });
 console.log(`Balance  : ${formatEther(balance)} AVAX`);
 
-if (connectionName === "fuji" && balance === 0n) {
+if (hardhatNetworkName === "fuji" && balance === 0n) {
   throw new Error(
     "Deployer wallet has 0 AVAX on Fuji. Fund it at https://faucet.avax.network before deploying.",
   );
@@ -67,7 +67,7 @@ console.log(`    Mint price      : 0.001 AVAX`);
 console.log(`    Max supply      : 105`);
 
 // ── Write deployments.json ────────────────────────────────────────────────
-const isTestnet = connectionName === "fuji";
+const isTestnet = hardhatNetworkName === "fuji";
 const explorerBase = isTestnet
   ? "https://testnet.snowtrace.io"
   : "https://snowtrace.io";
