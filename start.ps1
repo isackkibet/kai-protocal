@@ -1,5 +1,5 @@
 # ============================================================
-#  KAI App Launcher — starts AI Agent + Next.js
+#  KAI App Launcher - starts AI Agent + Next.js
 #  Usage:  .\start.ps1
 # ============================================================
 
@@ -12,7 +12,7 @@ Write-Host "       KAI Nuvari App Launcher v1.0           " -ForegroundColor Cya
 Write-Host "===============================================" -ForegroundColor Cyan
 Write-Host ""
 
-# ── 1. Set up Python venv if needed ────────────────────────
+# -- 1. Set up Python venv if needed ------------------------
 $AgentDir = Join-Path $Root "ai-agent"
 $VenvPy   = Join-Path $AgentDir ".venv\Scripts\python.exe"
 $VenvPip  = Join-Path $AgentDir ".venv\Scripts\pip.exe"
@@ -27,7 +27,7 @@ Write-Host "   Installing / updating dependencies..." -ForegroundColor Yellow
 & $VenvPip install -q -r (Join-Path $AgentDir "requirements.txt") --upgrade
 Write-Host "   OK Dependencies ready." -ForegroundColor Green
 
-# ── 2. Check for GROQ_API_KEY ────────────────────────────────
+# -- 2. Check for GROQ_API_KEY --------------------------------
 Write-Host ">> Checking environment..." -ForegroundColor Yellow
 $envFile = Join-Path $Root ".env"
 if (Test-Path $envFile) {
@@ -47,7 +47,7 @@ if (Test-Path $envFile) {
     Write-Host "   WARNING: .env file not found. Copy .env.example to .env" -ForegroundColor Red
 }
 
-# ── 3. Launch AI Agent in new window ─────────────────────
+# -- 3. Launch AI Agent in new window ---------------------
 Write-Host ">> Starting KAI AI Agent on port 8000..." -ForegroundColor Yellow
 $agentCmd = "Set-Location '$AgentDir'; & '$VenvPy' -m uvicorn server:app --host 127.0.0.1 --port 8000 --reload"
 Start-Process powershell -ArgumentList "-NoExit", "-Command", $agentCmd -WindowStyle Normal
@@ -56,20 +56,22 @@ Start-Process powershell -ArgumentList "-NoExit", "-Command", $agentCmd -WindowS
 Write-Host "   Waiting for agent to start (index build may take a minute)..." -ForegroundColor Yellow
 $waited = 0
 do {
-    Start-Sleep -Seconds 3; $waited += 3
+    Start-Sleep -Seconds 3
+    $waited += 3
     try {
         $h = Invoke-RestMethod "http://127.0.0.1:8000/health" -TimeoutSec 2
-        Write-Host "   OK AI Agent running — model: $($h.model)" -ForegroundColor Green
+        Write-Host "   OK AI Agent running - model: $($h.model)" -ForegroundColor Green
         break
     } catch {
         # retry
     }
 } while ($waited -lt 90)
+
 if ($waited -ge 90) {
-    Write-Host "   WARNING: Agent did not respond in 90s — check the AI Agent window." -ForegroundColor Red
+    Write-Host "   WARNING: Agent did not respond in 90s - check the AI Agent window." -ForegroundColor Red
 }
 
-# ── 4. Launch Next.js frontend in new window ──────────────
+# -- 4. Launch Next.js frontend in new window --------------
 Write-Host ">> Starting Next.js frontend on port 3000..." -ForegroundColor Yellow
 $FrontendDir = Join-Path $Root "avax-frontend"
 $frontCmd = "Set-Location '$FrontendDir'; npm run dev"
