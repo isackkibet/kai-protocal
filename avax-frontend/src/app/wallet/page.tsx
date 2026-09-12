@@ -192,7 +192,9 @@ export default function WalletDashboard() {
           boxShadow: '0 0 0 1px rgba(16,185,129,0.22) inset',
           display: 'flex', alignItems: 'center', gap: 12,
         }}>
-          <span style={{ fontSize: 20 }}>⛰️</span>
+          <div style={{ width: 28, height: 28, borderRadius: '50%', overflow: 'hidden', flexShrink: 0, border: '1px solid rgba(16,185,129,0.4)', boxShadow: '0 0 8px rgba(16,185,129,0.4)' }}>
+            <img src="/kai-logo.png" alt="KAI Nuvari" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+          </div>
           <div style={{ flex: 1 }}>
             <p style={{ fontSize: 13, fontWeight: 800, margin: 0, ...Rs }}>Avalanche C-Chain <span style={{ color: 'rgba(255,255,255,0.5)', fontWeight: 500 }}>· Fuji Testnet</span></p>
             <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.5)', margin: '2px 0 0' }}>Embedded wallet · Non-custodial</p>
