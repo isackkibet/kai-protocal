@@ -7,5 +7,19 @@
     "outDir": "dist",
     "types": ["node"],
     "verbatimModuleSyntax": true
-  }
+  },
+  "include": [
+    "hardhat.config.ts",
+    "scripts/**/*.ts",
+    "test/**/*.ts",
+    "ignition/**/*.ts"
+  ],
+  "exclude": [
+    "node_modules",
+    "avax-frontend",
+    "dist",
+    ".next",
+    ".agents",
+    "ai-agent"
+  ]
 }
