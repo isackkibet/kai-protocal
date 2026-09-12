@@ -10,6 +10,7 @@ import {
   Layers, Sparkles, Star, Timer, TrendingUp,
   UserPlus, Zap,
 } from 'lucide-react';
+import SDGImpactCard from '@/components/SDGImpactCard';
 
 const POOLS = [
   { name:'AVAX Alpha Miners', spots:'247/500', pct:49, open:true,  reward:500,  unit:'NVR' },
@@ -458,6 +459,11 @@ export default function MinePage() {
               </AnimatePresence>
             </div>
           </div>
+
+          {/* SDG IMPACT & EFFORT SCORE */}
+          <motion.div initial={{ opacity:0, y:14 }} animate={{ opacity:1, y:0 }} transition={{ delay:0.25 }} style={{ marginBottom: 20 }}>
+            <SDGImpactCard />
+          </motion.div>
 
           {/* COUNTDOWN */}
           <div className="mine-card" style={{ padding:'18px 20px', display:'flex', alignItems:'center', gap:18 }}>

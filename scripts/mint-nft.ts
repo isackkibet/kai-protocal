@@ -45,11 +45,11 @@ const mintPriceEther = deployments.contracts.conservationNFT.mintPrice; // e.g. 
 const mintPrice = parseEther(mintPriceEther as `${number}`);
 
 // ── Bootstrap viem clients ────────────────────────────────────────────────
-const { viem, networkName: connectionName } = await network.create();
+const { viem, networkName: hardhatNetworkName } = await network.create();
 const publicClient = await viem.getPublicClient();
 const [deployer] = await viem.getWalletClients();
 
-const networkName: string = publicClient.chain?.name ?? connectionName;
+const networkName: string = publicClient.chain?.name ?? hardhatNetworkName;
 console.log("─────────────────────────────────────────");
 console.log(`Network  : ${networkName}`);
 console.log(`Minter   : ${deployer.account.address}`);
