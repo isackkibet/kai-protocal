@@ -825,3 +825,70 @@ body {
 @media (min-width: 640px) {
   .qa-grid { grid-template-columns: repeat(5, 1fr); }
 }
+
+/* ══════════════════════════════════════════════════════════════
+   MINE / AIRDROP PAGE — flat, one accent (Avalanche red)
+   One accent used sparingly. Cards are flat surfaces with a thin
+   border. Numbers render in a mono face with tabular figures.
+   ══════════════════════════════════════════════════════════════ */
+:root {
+  --mine-bg:         #0A0C0B;
+  --mine-surface:    #121614;
+  --mine-surface-2:  #1A1F1D;
+  --mine-line:       rgba(255,255,255,0.09);
+  --mine-text:       #FFFFFF;
+  --mine-text-2:     rgba(255,255,255,0.88);
+  --mine-dim:        #ADB6B3;
+  --mine-accent:     #E84142;
+}
+
+/* Key word inside body copy — white + bold so it lands without colour noise */
+.mine-hl {
+  color: var(--mine-text);
+  font-weight: 700;
+}
+
+.mine-card {
+  background: var(--mine-surface);
+  border: 1px solid var(--mine-line);
+  border-radius: 12px;
+}
+
+.mine-num {
+  font-family: var(--font-plex-mono), ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.01em;
+}
+
+.mine-link {
+  color: var(--mine-dim);
+  text-decoration: none;
+  cursor: pointer;
+  transition: color 0.15s ease;
+}
+.mine-link:hover, .mine-link:focus-visible {
+  color: var(--mine-text);
+}
+
+.mine-btn-outline {
+  background: transparent;
+  border: 1px solid var(--mine-line);
+  color: var(--mine-text-2);
+  cursor: pointer;
+  transition: border-color 0.15s ease, color 0.15s ease, background 0.15s ease;
+}
+.mine-btn-outline:hover {
+  border-color: rgba(255,255,255,0.28);
+  color: var(--mine-text);
+}
+
+.mine-btn-quiet {
+  background: var(--mine-surface-2);
+  border: 1px solid var(--mine-line);
+  color: var(--mine-text);
+  cursor: pointer;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+.mine-btn-quiet:hover {
+  border-color: rgba(255,255,255,0.28);
+}
