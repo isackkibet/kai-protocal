@@ -33,3 +33,6 @@ avax-frontend/cache/
 
 # Prisma generated
 avax-frontend/node_modules/
+
+# Nested ai-agent repo — managed separately
+ai-agent/

@@ -1,247 +1,223 @@
 "use client";
 
 /**
- * Securities & Insurance page
+ * /securities — KAI Financial Securities & Structured Products
  *
- * Every "Deposit" is a real ERC-20 transfer() from the connected wallet to the
- * TREASURY address on Avalanche Fuji — visible on Snowtrace immediately.
- * Every "Withdraw" sends tokens back from TREASURY to the user (simulated in
- * the UI until a proper vault contract is deployed; the AVAX fee is always real).
- *
- * Token addresses come from deployedAddresses.json (written by deploy script).
+ * Full-featured page: tokenized financial instruments (trusts, pensions,
+ * money-market funds, RWA tokenisation, parametric insurance) backed by
+ * live ERC-20 transfers on Avalanche Fuji.
  */
 
 import { useState } from "react";
 import Link from "next/link";
 import {
-  useAccount, useSendTransaction, useSwitchChain, useWriteContract, useWaitForTransactionReceipt,
+  useAccount,
+  useSendTransaction,
+  useSwitchChain,
+  useWriteContract,
 } from "wagmi";
 import { avalancheFuji } from "wagmi/chains";
-import { parseEther, parseUnits, formatUnits } from "viem";
+import { parseEther, parseUnits } from "viem";
 import {
-  ArrowLeft, Shield, Lock, Unlock, TrendingUp, Bug, ExternalLink, RefreshCw,
+  ArrowLeft, Shield, Lock, Unlock, TrendingUp, ExternalLink,
+  RefreshCw, Clock, CheckCircle2, AlertTriangle, ChevronRight,
+  Banknote, Building2, Leaf, HeartPulse, Coins, Globe, Sparkles,
 } from "lucide-react";
-import { useKaivaxStore } from "@/store/useKaivaxStore";
 import { useEcosystemBalances } from "@/hooks/useEcosystemBalances";
 import WalletConnectModal from "@/components/WalletConnectModal";
 import { ERC20_ABI } from "@/lib/erc20abi";
 import { ECOSYSTEM_TOKENS } from "@/lib/tokens";
-import { TREASURY as TREASURY_ADDR } from "@/lib/addresses";
 
 // ─── Treasury — receives token deposits as policy collateral ─────────────────
-const TREASURY = (TREASURY_ADDR ?? "0xB13727161583e38185530755a1A96D00fcCae870") as `0x${string}`;
-
-// ─── Small AVAX fee per action (covers gas; ~$0.002) ─────────────────────────
+const TREASURY = "0xB13727161583e38185530755a1A96D00fcCae870" as `0x${string}`;
 const FEE_AVAX = "0.0001";
 
-// ─── Types ───────────────────────────────────────────────────────────────────
 type SecurityStatus = "LOCKED" | "UNLOCKED" | "PENDING_DAO";
 
-interface Product {
-  id:             string;
-  icon:           string;
-  name:           string;
-  desc:           string;
-  apy:            string;
-  color:          string;
-  tokenSymbol:    string; // must match ECOSYSTEM_TOKENS symbol
+interface SecuritiesProduct {
+  id: string;
+  icon: string;
+  name: string;
+  desc: string;
+  apy: string;
+  color: string;
+  tokenSymbol: string;
   conditionLabel: string;
-  features:       string[];
+  category: "Securities" | "Insurance" | "Structured";
+  features: string[];
+  tvl: string;
+  sdgGoals: string[];
+  riskRating: "Low" | "Medium" | "High";
 }
 
-// ─── Map each product to one of the live deployed ERC-20 tokens ──────────────
-const SECURITIES: Product[] = [
+const SECURITIES_PRODUCTS: SecuritiesProduct[] = [
   {
-    id: "trust",   icon: "", name: "KAI Trust",      desc: "Time-locked token trust for beneficiaries",
-    apy: "15.2%",  color: "#FFD700", tokenSymbol: "NVR",
+    id: "trust",
+    icon: "🤝",
+    name: "KAI Trust",
+    desc: "Time-locked token trust for beneficiaries. Smart-contract enforced beneficiary assignments with automatic release on maturity.",
+    apy: "15.2%",
+    color: "#FFD700",
+    tokenSymbol: "NVR",
     conditionLabel: "Time-locked for 5 years",
-    features: ["Time-lock smart contract", "Named beneficiary", "Automated release"],
+    category: "Securities",
+    features: ["Time-lock smart contract", "Named beneficiary", "Automated release", "Secondary beneficiary"],
+    tvl: "$24.8K",
+    sdgGoals: ["SDG 1", "SDG 10"],
+    riskRating: "Low",
   },
   {
-    id: "pension",    icon: "", name: "KAIVAX Pension",  desc: "Long-term retirement savings",
-    apy: "12.8%",  color: "#A78BFA", tokenSymbol: "YTOKEN",
+    id: "pension",
+    icon: "🏦",
+    name: "KAIVAX Pension",
+    desc: "Long-term retirement savings with compound yield. Vested schedule with monthly auto-deposit and guardian DeFi protection.",
+    apy: "12.8%",
+    color: "#A78BFA",
+    tokenSymbol: "YTOKEN",
     conditionLabel: "Vested until age 60",
-    features: ["Vesting schedule", "Monthly auto-deposit", "Compound yield"],
+    category: "Securities",
+    features: ["Vesting schedule", "Monthly auto-deposit", "Compound yield", "Guardian contract"],
+    tvl: "$41.2K",
+    sdgGoals: ["SDG 1", "SDG 3"],
+    riskRating: "Low",
   },
   {
-    id: "mmf",     icon: "", name: "Money Market Fund", desc: "Low-risk yBOB liquidity basket",
-    apy: "7.5%",   color: "#22C55E", tokenSymbol: "yBOB",
+    id: "mmf",
+    icon: "💵",
+    name: "Money Market Fund",
+    desc: "Low-risk yBOB liquidity basket. RWA-backed stablecoin strategy offering instant redemption and daily yield.",
+    apy: "7.5%",
+    color: "#22C55E",
+    tokenSymbol: "yBOB",
     conditionLabel: "Instant Liquidity (No Lock)",
-    features: ["Instant liquidity", "RWA-backed", "Daily yield"],
+    category: "Securities",
+    features: ["Instant liquidity", "RWA-backed", "Daily yield", "USD-pegged"],
+    tvl: "$89.6K",
+    sdgGoals: ["SDG 8"],
+    riskRating: "Low",
   },
   {
-    id: "rwa",     icon: "", name: "RWA Tokenization", desc: "Tokenize land, property, or commodity",
-    apy: "18.0%",  color: "#F97316", tokenSymbol: "YGOLD",
+    id: "rwa",
+    icon: "🏗️",
+    name: "RWA Tokenization",
+    desc: "Tokenize land, property, or commodity assets. Legal NFT wrapper with on-chain verification and fractional trading.",
+    apy: "18.0%",
+    color: "#F97316",
+    tokenSymbol: "YGOLD",
     conditionLabel: "Secondary Market Unlocked",
-    features: ["Legal NFT wrapper", "On-chain verification", "Fractional trading"],
+    category: "Structured",
+    features: ["Legal NFT wrapper", "On-chain verification", "Fractional trading", "Cross-border settlement"],
+    tvl: "$156.3K",
+    sdgGoals: ["SDG 10", "SDG 11"],
+    riskRating: "Medium",
   },
-];
-
-const INSURANCE: Product[] = [
   {
-    id: "crop",    icon: "", name: "Community Crop Insurance", desc: "Protect against climate/weather crop loss",
-    apy: "8.5%",   color: "#EAB308", tokenSymbol: "YGOLD",
+    id: "crop",
+    icon: "🌾",
+    name: "Community Crop Insurance",
+    desc: "Parametric insurance protecting farmers against climate and weather crop loss. Instant payouts triggered by satellite oracles.",
+    apy: "8.5%",
+    color: "#EAB308",
+    tokenSymbol: "YGOLD",
     conditionLabel: "Parametric Trigger: Drought / Flood",
-    features: ["Parametric weather triggers", "Instant payouts", "Community pooled risk"],
+    category: "Insurance",
+    features: ["Parametric weather triggers", "Instant payouts", "Community pooled risk", "Satellite oracle"],
+    tvl: "$32.1K",
+    sdgGoals: ["SDG 2", "SDG 13"],
+    riskRating: "Medium",
   },
   {
-    id: "forest",     icon: "", name: "Forest Asset Protection", desc: "Cover for tokenized forest hectares",
-    apy: "10.2%",  color: "#22C55E", tokenSymbol: "GAMI",
+    id: "forest",
+    icon: "🌲",
+    name: "Forest Asset Protection",
+    desc: "Insurance cover for tokenized forest hectares. Wildfire, illegal logging, and satellite-verified coverage.",
+    apy: "10.2%",
+    color: "#22C55E",
+    tokenSymbol: "GAMI",
     conditionLabel: "Satellite Verified Outbreak/Fire",
-    features: ["Wildfire protection", "Illegal logging cover", "Satellite verified"],
+    category: "Insurance",
+    features: ["Wildfire protection", "Illegal logging cover", "Satellite verified", "Carbon credit sync"],
+    tvl: "$18.4K",
+    sdgGoals: ["SDG 13", "SDG 15"],
+    riskRating: "Medium",
   },
   {
-    id: "medical",    icon: "", name: "Medical/Emergency Pool", desc: "Community health emergency coverage",
-    apy: "5.0%",   color: "#EF4444", tokenSymbol: "CENTS",
+    id: "medical",
+    icon: "🏥",
+    name: "Medical Emergency Pool",
+    desc: "Community health emergency coverage with DAO-approved claims and fast medical dispersal.",
+    apy: "5.0%",
+    color: "#EF4444",
+    tokenSymbol: "CENTS",
     conditionLabel: "Requires Verified Medical Receipt",
-    features: ["DAO approved claims", "Fast medical dispersal", "Subsidized premiums"],
+    category: "Insurance",
+    features: ["DAO approved claims", "Fast medical dispersal", "Subsidized premiums", "Family coverage"],
+    tvl: "$12.7K",
+    sdgGoals: ["SDG 3"],
+    riskRating: "Low",
+  },
+  {
+    id: "bond",
+    icon: "📋",
+    name: "Green Bond Instrument",
+    desc: "On-chain green bonds financing verified environmental projects. Fixed coupon payments funded by carbon-credit revenue.",
+    apy: "9.3%",
+    color: "#34D399",
+    tokenSymbol: "NVR",
+    conditionLabel: "Quarterly Coupon · 3yr Tenor",
+    category: "Structured",
+    features: ["Fixed coupon", "Carbon-linked revenue", "DAO-governed", "Impact reporting"],
+    tvl: "$67.5K",
+    sdgGoals: ["SDG 13", "SDG 17"],
+    riskRating: "Low",
   },
 ];
 
-// ─── Community Forest & Indigenous Commodities ────────────────────────────────
-const COMMUNITY: Product[] = [
-  {
-    id: "honey",    icon: "", name: "Forest Honey Reserve",
-    desc: "Wild honey harvested from community-managed forests. Each unit represents 1 kg of certified raw honey.",
-    apy: "14.0%", color: "#F59E0B", tokenSymbol: "GAMI",
-    conditionLabel: "Harvest Verified · Seasonal Release",
-    features: ["Community harvester registry", "Seasonal yield unlocks", "Forest stewardship rewards"],
-  },
-  {
-    id: "beads",    icon: "", name: "Cultural Beadwork NFT",
-    desc: "Maasai, Ndebele & Turkana beadwork tokenized as fractional cultural NFTs. Artisans earn royalties on every trade.",
-    apy: "11.5%", color: "#10b981", tokenSymbol: "NVR",
-    conditionLabel: "Artisan Verified · DAO Curated",
-    features: ["Artisan royalty on-chain", "Cultural IP protection", "Collector marketplace"],
-  },
-  {
-    id: "necklace",    icon: "", name: "Heritage Necklace Vault",
-    desc: "Traditional necklaces and ceremonial jewellery tokenized. Protects artisan income and preserves cultural heritage.",
-    apy: "9.8%", color: "#A78BFA", tokenSymbol: "YTOKEN",
-    conditionLabel: "Artisan Certified · Secondary Market",
-    features: ["Provenance on-chain", "Fractional ownership", "Heritage fund contribution"],
-  },
-  {
-    id: "milk",    icon: "", name: "Pastoral Milk Pool",
-    desc: "Camel, cow & goat milk from pastoral communities tokenized for DeFi yield. Supports smallholder dairy farmers.",
-    apy: "7.2%", color: "#60A5FA", tokenSymbol: "yBOB",
-    conditionLabel: "Daily Collection Verified · Co-op Pooled",
-    features: ["Cooperative milk pooling", "Real-time price oracle", "Farmer direct payments"],
-  },
-  {
-    id: "medicine",    icon: "", name: "Traditional Medicine Registry",
-    desc: "Indigenous medicinal plants and herbal formulations registered on-chain. Healers retain IP and royalties.",
-    apy: "16.0%", color: "#34D399", tokenSymbol: "GAMI",
-    conditionLabel: "Healer Council Approved · Rare Unlock",
-    features: ["Healer IP protection", "Ethnobotanical registry", "Rare-plant conservation fund"],
-  },
-  {
-    id: "recipe",    icon: "", name: "Community Recipe IP Vault",
-    desc: "Traditional food recipes, fermentation methods, and seed-saving techniques stored immutably on-chain.",
-    apy: "8.0%", color: "#F97316", tokenSymbol: "CENTS",
-    conditionLabel: "Community Council Ratified",
-    features: ["Immutable recipe registry", "Licensing fee distribution", "Seed sovereignty protection"],
-  },
-  {
-    id: "charcoal",    icon: "", name: "Sustainable Charcoal Credits",
-    desc: "Community woodlots producing certified sustainable charcoal. Carbon credits generated on each verified batch.",
-    apy: "12.3%", color: "#78716C", tokenSymbol: "YGOLD",
-    conditionLabel: "Carbon Audit Verified",
-    features: ["Carbon credit stacking", "Woodlot stewardship", "Clean-cooking impact"],
-  },
-  {
-    id: "weaving",    icon: "", name: "Textile & Weaving Co-op",
-    desc: "Kikoy, kente, kanga and basket weaving pooled into a community textile fund. Weavers earn advance yield on future sales.",
-    apy: "10.5%", color: "#EC4899", tokenSymbol: "YTOKEN",
-    conditionLabel: "Co-op Verified · Market Linked",
-    features: ["Weaver advance payments", "Export market linkage", "Cultural textile archive"],
-  },
-  {
-    id: "seeds",    icon: "", name: "Heritage Seed Bank",
-    desc: "Indigenous crop varieties preserved and tokenized. Communities stake tokens to fund seed multiplication.",
-    apy: "6.5%", color: "#86EFAC", tokenSymbol: "NVR",
-    conditionLabel: "Germination Verified · Season Unlock",
-    features: ["Biodiversity preservation", "Seed sovereignty", "Community food security"],
-  },
-  {
-    id: "water",    icon: "", name: "Community Water Rights",
-    desc: "Tokenized water source rights for pastoral and farming communities. Collateral for dry-season credit access.",
-    apy: "5.8%", color: "#38BDF8", tokenSymbol: "yBOB",
-    conditionLabel: "Water Table Sensor Verified",
-    features: ["Water rights registry", "Dry-season credit line", "IoT sensor integration"],
-  },
-  {
-    id: "pottery",    icon: "", name: "Artisan Pottery & Ceramics",
-    desc: "Hand-crafted community pottery registered as cultural RWAs. Each piece minted as NFT; proceeds fund pottery co-ops.",
-    apy: "9.0%", color: "#FB923C", tokenSymbol: "CENTS",
-    conditionLabel: "Artisan Guild Certified",
-    features: ["Piece-level NFT minting", "Guild royalty split", "Tourism market access"],
-  },
-  {
-    id: "bark",    icon: "", name: "Bark Cloth & Fibre Arts",
-    desc: "Ugandan bark cloth (UNESCO heritage) and sisal fibre arts tokenized. Protects endangered craft traditions.",
-    apy: "13.2%", color: "#92400E", tokenSymbol: "YGOLD",
-    conditionLabel: "UNESCO Heritage Registry",
-    features: ["UNESCO-linked registry", "Heritage preservation fund", "Artisan livelihood pool"],
-  },
-];
-
-const ALL_PRODUCTS = [...SECURITIES, ...INSURANCE, ...COMMUNITY];
-
-// ─── USD mock prices ──────────────────────────────────────────────────────────
-const USD_PRICE: Record<string, number> = {
-  NVR: 0.12, yBOB: 1.00, YTOKEN: 0.27, YGOLD: 2.01, GAMI: 0.56, CENTS: 0.09,
+const statusColors: Record<SecurityStatus, { bg: string; border: string; color: string; label: string; Icon: any }> = {
+  LOCKED: { bg: "rgba(239,68,68,0.1)", border: "rgba(239,68,68,0.3)", color: "#f87171", label: "Locked", Icon: Lock },
+  UNLOCKED: { bg: "rgba(34,197,94,0.1)", border: "rgba(34,197,94,0.3)", color: "#4ade80", label: "Active", Icon: Unlock },
+  PENDING_DAO: { bg: "rgba(251,191,36,0.1)", border: "rgba(251,191,36,0.3)", color: "#fbbf24", label: "DAO Review", Icon: Clock },
 };
 
-// ─── Clock icon (inline SVG) ──────────────────────────────────────────────────
-function ClockIcon({ size, color }: { size: number; color: string }) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="none"
-      stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" />
-    </svg>
-  );
-}
+const riskColors: Record<string, string> = {
+  Low: "#34d399",
+  Medium: "#fbbf24",
+  High: "#f87171",
+};
 
-// ─── Page ─────────────────────────────────────────────────────────────────────
+const W: React.CSSProperties = { width: "100%", maxWidth: 1120, margin: "0 auto", padding: "0 24px" };
+const Rs: React.CSSProperties = { textShadow: "0 1px 4px rgba(0,0,0,0.88)" };
+
 export default function SecuritiesPage() {
   const { address, isConnected } = useAccount();
   const { sendTransactionAsync } = useSendTransaction();
-  const { switchChainAsync }     = useSwitchChain();
-  const { writeContractAsync }   = useWriteContract();
-  const {
-    isConnected: walletConnected, tokenBalances, holdings, loading: balancesLoading, refresh: refreshBalances,
-  } = useEcosystemBalances();
+  const { switchChainAsync } = useSwitchChain();
+  const { writeContractAsync } = useWriteContract();
+  const { tokenBalances, refresh: refreshBalances } = useEcosystemBalances();
 
-  const [showModal,    setShowModal]   = useState(false);
-  const [activeTab,    setActiveTab]   = useState<"Securities" | "Insurance" | "Community">("Securities");
-  const [activeItem,   setActiveItem]  = useState<string | null>(null);
-  const [statusMsg,    setStatusMsg]   = useState("");
-  const [txUrl,        setTxUrl]       = useState<string | null>(null);
-  const [isLoading,    setIsLoading]   = useState(false);
-  const [stakeAmt,     setStakeAmt]    = useState("");
-  const [devMode,      setDevMode]     = useState(false);
-  const [refreshing,   setRefreshing]  = useState(false);
-
-  // Local on-chain deposit amounts per product (amounts the user has deposited this session)
+  const [showModal, setShowModal] = useState(false);
+  const [activeCategory, setActiveCategory] = useState<"All" | "Securities" | "Insurance" | "Structured">("All");
+  const [activeItem, setActiveItem] = useState<string | null>(null);
+  const [statusMsg, setStatusMsg] = useState("");
+  const [txUrl, setTxUrl] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [stakeAmt, setStakeAmt] = useState("");
+  const [refreshing, setRefreshing] = useState(false);
   const [investments, setInvestments] = useState<Record<string, number>>({});
-  const [conditions,  setConditions]  = useState<Record<string, SecurityStatus>>({
-    // Securities
+  const [conditions, setConditions] = useState<Record<string, SecurityStatus>>({
     trust: "LOCKED", pension: "LOCKED", mmf: "UNLOCKED", rwa: "UNLOCKED",
-    // Insurance
-    crop: "LOCKED",  forest: "LOCKED",  medical: "PENDING_DAO",
-    // Community commodities
-    honey: "UNLOCKED", beads: "UNLOCKED", necklace: "UNLOCKED", milk: "UNLOCKED",
-    medicine: "PENDING_DAO", recipe: "LOCKED", charcoal: "UNLOCKED", weaving: "UNLOCKED",
-    seeds: "LOCKED", water: "UNLOCKED", pottery: "UNLOCKED", bark: "PENDING_DAO",
+    crop: "LOCKED", forest: "LOCKED", medical: "PENDING_DAO", bond: "UNLOCKED",
   });
 
-  // ── Helpers ────────────────────────────────────────────────────────────────
-  const getToken = (sym: string) =>
-    ECOSYSTEM_TOKENS.find(t => t.symbol === sym);
+  const getToken = (sym: string) => ECOSYSTEM_TOKENS.find(t => t.symbol === sym);
+  const walletBalance = (sym: string): number => tokenBalances[sym] ?? 0;
 
-  const walletBalance = (sym: string): number =>
-    tokenBalances[sym] ?? 0;
+  const filteredProducts = activeCategory === "All"
+    ? SECURITIES_PRODUCTS
+    : SECURITIES_PRODUCTS.filter(p => p.category === activeCategory);
+
+  const totalTVL = "$443.6K";
+  const activeProducts = SECURITIES_PRODUCTS.filter(p => conditions[p.id] === "UNLOCKED").length;
 
   const handleRefresh = async () => {
     if (refreshing) return;
@@ -250,456 +226,463 @@ export default function SecuritiesPage() {
     setRefreshing(false);
   };
 
-  // ── Deposit: real ERC-20 transfer from wallet → treasury ──────────────────
-  const handleDeposit = async (product: Product) => {
+  const handleDeposit = async (product: SecuritiesProduct) => {
     if (!isConnected || !address) { setShowModal(true); return; }
 
     const amt = parseFloat(stakeAmt);
-    if (!amt || amt <= 0) { setStatusMsg("Enter an amount to deposit."); return; }
+    if (!amt || amt <= 0 || isNaN(amt)) {
+      setStatusMsg("⚠️ Enter a valid amount to deposit.");
+      return;
+    }
 
     const token = getToken(product.tokenSymbol);
     if (!token?.address) {
-      setStatusMsg(`${product.tokenSymbol} is not yet deployed on Fuji.`);
+      setStatusMsg(`⚠️ ${product.tokenSymbol} is not yet deployed on Fuji.`);
       return;
     }
 
     const walletBal = walletBalance(product.tokenSymbol);
     if (amt > walletBal) {
-      setStatusMsg(`Insufficient ${product.tokenSymbol} balance (you have ${walletBal.toFixed(4)}).`);
+      setStatusMsg(`⚠️ Insufficient ${product.tokenSymbol} balance (you have ${walletBal.toFixed(4)}).`);
       return;
     }
 
     setIsLoading(true);
-    setStatusMsg(`Switching to Avalanche Fuji...`);
+    setStatusMsg("Connecting to Avalanche Fuji network…");
     setTxUrl(null);
 
     try {
-      await switchChainAsync({ chainId: avalancheFuji.id });
+      try { await switchChainAsync({ chainId: avalancheFuji.id }); } catch { /* proceed */ }
 
-      // Step 1 — pay the small AVAX policy fee
-      setStatusMsg(`Paying ${FEE_AVAX} AVAX policy fee...`);
-      const feeTx = await sendTransactionAsync({
-        to: TREASURY, value: parseEther(FEE_AVAX),
-      });
+      setStatusMsg(`Confirming ${FEE_AVAX} AVAX policy fee in wallet…`);
+      const feeTx = await sendTransactionAsync({ to: TREASURY, value: parseEther(FEE_AVAX) });
       setTxUrl(`https://testnet.snowtrace.io/tx/${feeTx}`);
 
-      // Step 2 — ERC-20 transfer of the actual tokens
-      setStatusMsg(`Transferring ${amt} ${product.tokenSymbol} on-chain...`);
+      setStatusMsg(`Confirming ${amt} ${product.tokenSymbol} deposit in wallet…`);
+      const tokenUnits = parseUnits(stakeAmt.trim(), token.decimals);
       const tokenTx = await writeContractAsync({
-        address:      token.address,
-        abi:          ERC20_ABI,
+        address: token.address,
+        abi: ERC20_ABI,
         functionName: "transfer",
-        args:         [TREASURY, parseUnits(amt.toString(), token.decimals)],
-        chainId:      avalancheFuji.id,
+        args: [TREASURY, tokenUnits],
+        chainId: avalancheFuji.id,
       });
 
       setTxUrl(`https://testnet.snowtrace.io/tx/${tokenTx}`);
       setStatusMsg(
-        `Deposited ${amt} ${product.tokenSymbol} - policy active! ` +
+        `✅ Deposited ${amt} ${product.tokenSymbol} — KAI Security policy active! ` +
         `Fee: ${FEE_AVAX} AVAX · Tx: ${tokenTx.slice(0, 14)}…`
       );
-
       setInvestments(prev => ({ ...prev, [product.id]: (prev[product.id] || 0) + amt }));
       setStakeAmt("");
+      setConditions(prev => ({ ...prev, [product.id]: "UNLOCKED" }));
       await refreshBalances();
-
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : "Transaction failed";
-      setStatusMsg(`${msg.slice(0, 120)}`);
+      const msg = err instanceof Error ? err.message : String(err);
+      if (/user rejected|user denied|rejected the request/i.test(msg)) {
+        setStatusMsg("⚠️ Transaction signature canceled.");
+      } else {
+        setStatusMsg(`❌ Error: ${msg.slice(0, 120)}`);
+      }
     } finally {
       setIsLoading(false);
     }
   };
 
-  // ERC-20 transfer from treasury back to user
-  // NOTE: treasury is a simple EOA so this sends FROM the connected wallet
-  // back to itself — the invested balance is reset. A proper vault contract
-  // would escrow funds; this keeps the UX real without a separate vault deploy.
-  const handleWithdraw = async (product: Product) => {
-    if (!isConnected || !address) { setShowModal(true); return; }
-    if (conditions[product.id] !== "UNLOCKED") return;
+  const activeProduct = activeItem ? SECURITIES_PRODUCTS.find(p => p.id === activeItem) : null;
+  const activeStatus = activeItem ? (conditions[activeItem] ?? "UNLOCKED") : "UNLOCKED";
 
-    const invested = investments[product.id] || 0;
-    if (invested <= 0) return;
-
-    const token = getToken(product.tokenSymbol);
-    if (!token?.address) { setStatusMsg(`Token not deployed.`); return; }
-
-    setIsLoading(true);
-    setStatusMsg(`Initiating withdrawal - paying ${FEE_AVAX} AVAX release fee...`);
-    setTxUrl(null);
-
-    try {
-      await switchChainAsync({ chainId: avalancheFuji.id });
-
-      // Pay release fee
-      const feeTx = await sendTransactionAsync({
-        to: TREASURY, value: parseEther(FEE_AVAX),
-      });
-      setTxUrl(`https://testnet.snowtrace.io/tx/${feeTx}`);
-
-      setStatusMsg(`Release fee paid - ${invested} ${product.tokenSymbol} marked withdrawn. Tx: ${feeTx.slice(0, 14)}...`);
-      setInvestments(prev => ({ ...prev, [product.id]: 0 }));
-      await refreshBalances();
-
-    } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : "Transaction failed";
-      setStatusMsg(`${msg.slice(0, 120)}`);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const toggleCondition = (id: string) => {
-    const states: SecurityStatus[] = ["LOCKED", "UNLOCKED", "PENDING_DAO"];
-    const idx  = states.indexOf(conditions[id]);
-    setConditions(prev => ({ ...prev, [id]: states[(idx + 1) % states.length] }));
-  };
-
-  const currentList      = activeTab === "Securities" ? SECURITIES : activeTab === "Insurance" ? INSURANCE : COMMUNITY;
-  const portfolioTotalUsd = Object.entries(investments).reduce((sum, [id, amt]) => {
-    const sym = ALL_PRODUCTS.find(p => p.id === id)?.tokenSymbol ?? "";
-    return sum + amt * (USD_PRICE[sym] ?? 0);
-  }, 0);
-
-  // ── Render ──────────────────────────────────────────────────────────────────
   return (
-    <main style={{ padding: "16px 16px 100px", display: "flex", flexDirection: "column", gap: 16 }}>
+    <main style={{ minHeight: "100dvh", color: "#fff", fontFamily: "var(--font-sans)", position: "relative", paddingBottom: 100 }}>
+      <div style={{ ...W, paddingTop: 32 }}>
 
-      {/* Header */}
-      <div style={{ paddingTop: 32, display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          <Link href="/" style={{
-            width: 36, height: 36, borderRadius: "50%",
-            background: "rgba(232,65,66,0.1)", border: "1px solid rgba(232,65,66,0.3)",
-            display: "flex", alignItems: "center", justifyContent: "center", textDecoration: "none",
-          }}>
-            <ArrowLeft size={18} color="#e84142" />
-          </Link>
-          <div>
-            <h1 style={{ fontSize: 22, fontWeight: 900, color: "#fff", margin: 0 }}>Securities &amp; Insurance</h1>
-            <p style={{ fontSize: 11, color: "rgba(255,255,255,0.45)", margin: "3px 0 0" }}>
-              Real ERC-20 deposits · Condition-based release · Fuji C-Chain
-            </p>
+        {/* ── Top Nav ─────────────────────────────────────────────────── */}
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 28 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+            <Link href="/" style={{
+              width: 38, height: 38, borderRadius: "50%",
+              background: "rgba(16,185,129,0.12)", border: "1px solid rgba(16,185,129,0.25)",
+              display: "flex", alignItems: "center", justifyContent: "center",
+              color: "#34d399", textDecoration: "none",
+            }}>
+              <ArrowLeft size={18} />
+            </Link>
+            <div>
+              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                <h1 style={{ fontSize: 22, fontWeight: 900, margin: 0, letterSpacing: -0.5, ...Rs }}>
+                  🛡️ KAI Securities & Structured Products
+                </h1>
+                <span style={{ fontSize: 10, fontWeight: 800, background: "rgba(52,211,153,0.15)", color: "#34d399", padding: "2px 8px", borderRadius: 20, border: "1px solid rgba(52,211,153,0.3)" }}>
+                  Avalanche Fuji
+                </span>
+              </div>
+              <p style={{ fontSize: 12, color: "rgba(255,255,255,0.5)", margin: "3px 0 0" }}>
+                Tokenized financial instruments · Parametric insurance · RWA-backed DeFi
+              </p>
+            </div>
+          </div>
+
+          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+            <button onClick={handleRefresh} style={{
+              width: 34, height: 34, borderRadius: "50%",
+              background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)",
+              color: "rgba(255,255,255,0.6)", display: "flex", alignItems: "center", justifyContent: "center",
+              cursor: "pointer",
+            }}>
+              <RefreshCw size={14} style={{ animation: refreshing ? "spin 1s linear infinite" : "none" }} />
+            </button>
+
+            {!isConnected ? (
+              <button onClick={() => setShowModal(true)} style={{
+                padding: "8px 16px", borderRadius: 12,
+                background: "linear-gradient(135deg, #10b981, #059669)",
+                color: "#fff", fontSize: 12, fontWeight: 800, border: "none", cursor: "pointer",
+              }}>Connect Wallet</button>
+            ) : (
+              <div style={{ fontSize: 12, color: "#34d399", fontWeight: 700, background: "rgba(52,211,153,0.1)", padding: "6px 12px", borderRadius: 10, border: "1px solid rgba(52,211,153,0.25)" }}>
+                🟢 {address?.slice(0, 6)}…{address?.slice(-4)}
+              </div>
+            )}
           </div>
         </div>
-        <div style={{ display: "flex", gap: 8 }}>
-          <button onClick={handleRefresh} style={{
-            background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.1)",
-            padding: 8, borderRadius: "50%", color: "rgba(255,255,255,0.6)", cursor: "pointer",
-          }}>
-            <RefreshCw size={15} style={{ animation: refreshing ? "spin 1s linear infinite" : "none" }} />
-          </button>
-          <button onClick={() => setDevMode(!devMode)} style={{
-            background: "rgba(255,255,255,0.07)", border: "none",
-            padding: 8, borderRadius: "50%", color: "#FFD700", cursor: "pointer",
-          }}>
-            <Bug size={15} />
-          </button>
-        </div>
-      </div>
 
-      {/* Wallet banner */}
-      {!isConnected && (
-        <button onClick={() => setShowModal(true)} style={{
-          background: "rgba(232,65,66,0.08)", border: "1px dashed rgba(232,65,66,0.4)",
-          borderRadius: 14, padding: "14px 16px", color: "#e84142", fontWeight: 700,
-          fontSize: 13, cursor: "pointer", textAlign: "center",
+        {/* ── Stats Header ─────────────────────────────────────────────── */}
+        <div style={{
+          display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
+          gap: 14, marginBottom: 28,
         }}>
-           Connect wallet to deposit tokens on Fuji
-        </button>
-      )}
-
-      {/* Developer toggles */}
-      {devMode && (
-        <div style={{ background: "rgba(239,68,68,0.08)", border: "1px dashed #EF4444", padding: 12, borderRadius: 12 }}>
-          <p style={{ fontSize: 11, color: "#FCA5A5", fontWeight: 700, margin: "0 0 8px" }}>CONDITION TOGGLES</p>
-          <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
-            {Object.keys(conditions).map(k => (
-              <button key={k} onClick={() => toggleCondition(k)} style={{
-                background: "rgba(0,0,0,0.4)", border: "1px solid rgba(255,255,255,0.15)",
-                color: "#fff", fontSize: 10, padding: "4px 10px", borderRadius: 6, cursor: "pointer",
+          {[
+            { label: "Total Value Locked", value: totalTVL, color: "#34d399", Icon: Coins },
+            { label: "Active Securities", value: `${activeProducts} / ${SECURITIES_PRODUCTS.length}`, color: "#a78bfa", Icon: Shield },
+            { label: "Avg. APY", value: "10.9%", color: "#fbbf24", Icon: TrendingUp },
+            { label: "SDG Goals Covered", value: "7 Goals", color: "#38bdf8", Icon: Globe },
+          ].map(({ label, value, color, Icon }) => (
+            <div key={label} style={{
+              borderRadius: 18, padding: "16px 18px",
+              background: "rgba(10,16,14,0.7)", border: "1px solid rgba(255,255,255,0.06)",
+              display: "flex", alignItems: "center", gap: 12,
+            }}>
+              <div style={{
+                width: 40, height: 40, borderRadius: 12,
+                background: `${color}18`, border: `1px solid ${color}35`,
+                display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0,
               }}>
-                {k.toUpperCase()}: <span style={{ color: conditions[k] === "UNLOCKED" ? "#22C55E" : "#F97316" }}>{conditions[k]}</span>
-              </button>
-            ))}
-          </div>
+                <Icon size={18} color={color} />
+              </div>
+              <div>
+                <p style={{ margin: 0, fontSize: 10, color: "rgba(255,255,255,0.4)", fontWeight: 700, textTransform: "uppercase" }}>{label}</p>
+                <p style={{ margin: 0, fontSize: 18, fontWeight: 900, color }}>{value}</p>
+              </div>
+            </div>
+          ))}
         </div>
-      )}
 
-      {/* Tabs */}
-      <div style={{ display: "flex", gap: 8, background: "rgba(0,0,0,0.2)", padding: 4, borderRadius: 12 }}>
-        {(["Securities", "Insurance", "Community"] as const).map(tab => (
-          <button key={tab}
-            onClick={() => { setActiveTab(tab); setActiveItem(null); setStatusMsg(""); setTxUrl(null); }}
-            style={{
-              flex: 1, padding: "8px 0", borderRadius: 8, fontSize: 12, fontWeight: 700,
-              color:      activeTab === tab ? "#121212" : "#fff",
-              background: activeTab === tab
-                ? tab === "Community" ? "#34D399" : "#FFD700"
-                : "transparent",
-              border: "none", cursor: "pointer", transition: "all 0.2s",
+        {/* ── Category Filter Tabs ──────────────────────────────────────── */}
+        <div style={{ display: "flex", gap: 8, marginBottom: 24, background: "rgba(0,0,0,0.3)", padding: 5, borderRadius: 14, width: "fit-content" }}>
+          {(["All", "Securities", "Insurance", "Structured"] as const).map(cat => (
+            <button key={cat} onClick={() => setActiveCategory(cat)} style={{
+              padding: "8px 16px", borderRadius: 10, fontSize: 12, fontWeight: 800, border: "none",
+              cursor: "pointer",
+              background: activeCategory === cat ? "rgba(52,211,153,0.22)" : "transparent",
+              color: activeCategory === cat ? "#34d399" : "rgba(255,255,255,0.45)",
+              transition: "all 0.15s",
             }}>
-                    {tab === "Community" ? "Community" : tab}
-          </button>
-        ))}
-      </div>
-
-      {/* Portfolio strip */}
-      <div className="glass" style={{
-        display: "flex", alignItems: "center", justifyContent: "space-between",
-        padding: "12px 16px", borderRadius: 16, border: "1px solid rgba(255,215,0,0.18)",
-      }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          <div style={{ background: "rgba(255,215,0,0.1)", padding: 8, borderRadius: 10 }}>
-            <TrendingUp size={16} color="#FFD700" />
-          </div>
-          <div>
-            <p style={{ fontSize: 10, fontWeight: 700, color: "rgba(255,255,255,0.4)", margin: 0 }}>MY PORTFOLIO</p>
-            <p style={{ fontSize: 16, fontWeight: 900, color: "#fff", margin: 0 }}>${portfolioTotalUsd.toFixed(2)} USD</p>
-          </div>
+              {cat === "Securities" ? "🏛️ " : cat === "Insurance" ? "🛡️ " : cat === "Structured" ? "📋 " : ""}
+              {cat}
+            </button>
+          ))}
         </div>
-        <div style={{ textAlign: "right" }}>
-          <p style={{ fontSize: 10, color: "rgba(255,255,255,0.4)", margin: 0 }}>Active Contracts</p>
-          <p style={{ fontSize: 14, fontWeight: 800, color: "#22C55E", margin: 0 }}>
-            {Object.values(investments).filter(v => v > 0).length}
-          </p>
-        </div>
-      </div>
 
-      {/* Product list */}
-      <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-        {currentList.map(product => {
-          const isActive  = activeItem === product.id;
-          const status    = conditions[product.id];
-          const invested  = investments[product.id] || 0;
-          const token     = getToken(product.tokenSymbol);
-          const wBal      = walletBalance(product.tokenSymbol);
-          const deployed  = !!token?.address;
+        {/* ── Main Grid ────────────────────────────────────────────────── */}
+        <div style={{ display: "grid", gridTemplateColumns: activeItem ? "1fr 360px" : "1fr", gap: 20 }}>
 
-          return (
-            <div key={product.id} className="glass" style={{
-              borderRadius: 20, overflow: "hidden",
-              border:     isActive ? `1px solid ${product.color}60` : "1px solid rgba(255,255,255,0.08)",
-              background: isActive ? `${product.color}10` : "rgba(255,255,255,0.03)",
-              transition: "all 0.2s ease",
+          {/* Product Cards */}
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))", gap: 14, alignContent: "start" }}>
+            {filteredProducts.map(product => {
+              const status = conditions[product.id] ?? "UNLOCKED";
+              const sv = statusColors[status];
+              const inv = investments[product.id] ?? 0;
+              const isActive = activeItem === product.id;
+
+              return (
+                <button
+                  key={product.id}
+                  onClick={() => setActiveItem(isActive ? null : product.id)}
+                  style={{
+                    borderRadius: 20,
+                    padding: "18px 18px",
+                    background: isActive
+                      ? "linear-gradient(135deg, rgba(16,185,129,0.18) 0%, rgba(10,16,14,0.95) 100%)"
+                      : "rgba(10,16,14,0.7)",
+                    border: isActive
+                      ? "1.5px solid rgba(52,211,153,0.5)"
+                      : `1px solid ${product.color}30`,
+                    boxShadow: isActive
+                      ? `0 8px 32px rgba(16,185,129,0.25), 0 0 20px ${product.color}20`
+                      : `0 4px 16px rgba(0,0,0,0.3)`,
+                    textAlign: "left",
+                    cursor: "pointer",
+                    transition: "all 0.25s cubic-bezier(0.16, 1, 0.3, 1)",
+                    transform: isActive ? "translateY(-2px)" : "none",
+                  }}
+                >
+                  {/* Top: icon + name + status */}
+                  <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 12 }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                      <div style={{
+                        width: 44, height: 44, borderRadius: 14,
+                        background: `${product.color}20`, border: `1px solid ${product.color}40`,
+                        display: "flex", alignItems: "center", justifyContent: "center",
+                        fontSize: 22, flexShrink: 0,
+                      }}>
+                        {product.icon}
+                      </div>
+                      <div>
+                        <h3 style={{ margin: 0, fontSize: 14, fontWeight: 900, color: "#fff" }}>{product.name}</h3>
+                        <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 2 }}>
+                          <span style={{ fontSize: 10, fontWeight: 700, color: product.color, background: `${product.color}18`, padding: "1px 6px", borderRadius: 4 }}>
+                            {product.tokenSymbol}
+                          </span>
+                          <span style={{ fontSize: 10, color: riskColors[product.riskRating], fontWeight: 700 }}>
+                            ● {product.riskRating} Risk
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                    <div style={{
+                      display: "flex", alignItems: "center", gap: 4, padding: "4px 8px",
+                      borderRadius: 8, background: sv.bg, border: `1px solid ${sv.border}`,
+                    }}>
+                      <sv.Icon size={10} color={sv.color} />
+                      <span style={{ fontSize: 10, fontWeight: 800, color: sv.color }}>{sv.label}</span>
+                    </div>
+                  </div>
+
+                  <p style={{ margin: "0 0 12px", fontSize: 11.5, color: "rgba(255,255,255,0.6)", lineHeight: 1.4 }}>
+                    {product.desc}
+                  </p>
+
+                  {/* APY + TVL + Condition */}
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8, background: "rgba(0,0,0,0.3)", borderRadius: 12, padding: "10px 12px" }}>
+                    <div>
+                      <p style={{ margin: 0, fontSize: 9, color: "rgba(255,255,255,0.4)", fontWeight: 700, textTransform: "uppercase" }}>APY</p>
+                      <p style={{ margin: 0, fontSize: 15, fontWeight: 900, color: "#34d399" }}>{product.apy}</p>
+                    </div>
+                    <div>
+                      <p style={{ margin: 0, fontSize: 9, color: "rgba(255,255,255,0.4)", fontWeight: 700, textTransform: "uppercase" }}>TVL</p>
+                      <p style={{ margin: 0, fontSize: 13, fontWeight: 800, color: "#fff" }}>{product.tvl}</p>
+                    </div>
+                    <div>
+                      <p style={{ margin: 0, fontSize: 9, color: "rgba(255,255,255,0.4)", fontWeight: 700, textTransform: "uppercase" }}>Staked</p>
+                      <p style={{ margin: 0, fontSize: 13, fontWeight: 800, color: inv > 0 ? "#fbbf24" : "rgba(255,255,255,0.35)" }}>
+                        {inv > 0 ? `${inv.toFixed(2)} ${product.tokenSymbol}` : "—"}
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* SDG Tags */}
+                  <div style={{ display: "flex", gap: 5, marginTop: 10, flexWrap: "wrap" }}>
+                    {product.sdgGoals.map(g => (
+                      <span key={g} style={{ fontSize: 9, fontWeight: 700, color: "#34d399", background: "rgba(52,211,153,0.1)", padding: "2px 6px", borderRadius: 4, border: "1px solid rgba(52,211,153,0.2)" }}>
+                        {g}
+                      </span>
+                    ))}
+                    <span style={{ fontSize: 9, color: "rgba(255,255,255,0.35)", fontWeight: 600, marginLeft: "auto" }}>
+                      {product.conditionLabel}
+                    </span>
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+
+          {/* ── Detail Panel (right side when product selected) ──────────── */}
+          {activeProduct && (
+            <div style={{
+              borderRadius: 24, padding: "24px 20px",
+              background: "linear-gradient(135deg, rgba(6,30,20,0.85) 0%, rgba(10,18,14,0.95) 100%)",
+              border: "1px solid rgba(52,211,153,0.3)",
+              boxShadow: "0 12px 40px rgba(0,0,0,0.5), 0 0 24px rgba(16,185,129,0.12)",
+              height: "fit-content",
+              position: "sticky",
+              top: 20,
             }}>
-
-              {/* Header row */}
-              <div
-                onClick={() => { setActiveItem(isActive ? null : product.id); setStatusMsg(""); setTxUrl(null); }}
-                style={{ padding: 16, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "space-between" }}
-              >
-                <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                  <div style={{
-                    width: 44, height: 44, borderRadius: 14, fontSize: 22,
-                    background: `${product.color}20`, border: `1px solid ${product.color}40`,
-                    display: "flex", alignItems: "center", justifyContent: "center",
-                  }}>{product.icon}</div>
-                  <div>
-                    <p style={{ fontSize: 14, fontWeight: 800, color: "#fff", margin: 0 }}>{product.name}</p>
-                    <p style={{ fontSize: 10, color: "rgba(255,255,255,0.4)", margin: "2px 0 0" }}>
-                      {product.tokenSymbol} · {deployed ? (
-                        <span style={{ color: "#22C55E" }}>✓ Deployed</span>
-                      ) : (
-                        <span style={{ color: "#F97316" }}>⏳ Coming soon</span>
-                      )}
-                    </p>
+              {/* Header */}
+              <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 20, paddingBottom: 16, borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
+                <div style={{
+                  width: 52, height: 52, borderRadius: 16,
+                  background: `${activeProduct.color}22`, border: `1px solid ${activeProduct.color}45`,
+                  display: "flex", alignItems: "center", justifyContent: "center", fontSize: 26,
+                }}>
+                  {activeProduct.icon}
+                </div>
+                <div style={{ flex: 1 }}>
+                  <h2 style={{ margin: 0, fontSize: 18, fontWeight: 900, color: "#fff" }}>{activeProduct.name}</h2>
+                  <div style={{ display: "flex", gap: 6, marginTop: 4 }}>
+                    <span style={{ fontSize: 10, fontWeight: 700, color: activeProduct.color, background: `${activeProduct.color}18`, padding: "2px 7px", borderRadius: 5 }}>
+                      {activeProduct.tokenSymbol}
+                    </span>
+                    <span style={{ fontSize: 10, fontWeight: 700, color: "#34d399", background: "rgba(52,211,153,0.12)", padding: "2px 7px", borderRadius: 5 }}>
+                      {activeProduct.category}
+                    </span>
                   </div>
                 </div>
-                <div style={{ textAlign: "right" }}>
-                  {invested > 0 ? (
-                    <div>
-                      <p style={{ fontSize: 13, fontWeight: 900, color: "#fff", margin: 0 }}>{invested.toFixed(2)} {product.tokenSymbol}</p>
-                      <p style={{ fontSize: 9, color: "#22C55E", margin: 0 }}>DEPOSITED</p>
+                <button onClick={() => setActiveItem(null)} style={{
+                  width: 28, height: 28, borderRadius: "50%", background: "rgba(255,255,255,0.06)",
+                  border: "none", color: "rgba(255,255,255,0.5)", cursor: "pointer", fontSize: 14,
+                }}>✕</button>
+              </div>
+
+              {/* Stats */}
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 18 }}>
+                {[
+                  { label: "Target APY", value: activeProduct.apy, color: "#34d399" },
+                  { label: "TVL", value: activeProduct.tvl, color: "#fff" },
+                  { label: "Token", value: activeProduct.tokenSymbol, color: activeProduct.color },
+                  { label: "Risk Level", value: activeProduct.riskRating, color: riskColors[activeProduct.riskRating] },
+                ].map(({ label, value, color }) => (
+                  <div key={label} style={{ background: "rgba(0,0,0,0.3)", borderRadius: 12, padding: "10px 12px" }}>
+                    <p style={{ margin: 0, fontSize: 10, color: "rgba(255,255,255,0.4)", fontWeight: 700, textTransform: "uppercase" }}>{label}</p>
+                    <p style={{ margin: 0, fontSize: 15, fontWeight: 900, color }}>{value}</p>
+                  </div>
+                ))}
+              </div>
+
+              {/* Features */}
+              <div style={{ marginBottom: 18 }}>
+                <p style={{ margin: "0 0 8px", fontSize: 11, fontWeight: 800, color: "rgba(255,255,255,0.5)", textTransform: "uppercase", letterSpacing: 0.5 }}>Features</p>
+                <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                  {activeProduct.features.map(f => (
+                    <div key={f} style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                      <CheckCircle2 size={12} color="#34d399" />
+                      <span style={{ fontSize: 12, color: "rgba(255,255,255,0.75)" }}>{f}</span>
                     </div>
-                  ) : (
-                    <div>
-                      <p style={{ fontSize: 14, fontWeight: 900, color: product.color, margin: 0 }}>{product.apy}</p>
-                      <p style={{ fontSize: 9, color: "rgba(255,255,255,0.35)", margin: 0 }}>APY</p>
-                    </div>
-                  )}
+                  ))}
                 </div>
               </div>
 
-              {/* Expanded panel */}
-              {isActive && (
-                <div style={{ padding: "0 16px 16px" }}>
+              {/* Status Badge */}
+              <div style={{
+                display: "flex", alignItems: "center", gap: 8, padding: "10px 12px",
+                borderRadius: 12, marginBottom: 16,
+                background: statusColors[activeStatus].bg,
+                border: `1px solid ${statusColors[activeStatus].border}`,
+              }}>
+                {(() => { const sv = statusColors[activeStatus]; return <sv.Icon size={14} color={sv.color} />; })()}
+                <div>
+                  <p style={{ margin: 0, fontSize: 11, fontWeight: 800, color: statusColors[activeStatus].color }}>
+                    {activeStatus === "LOCKED" ? "Product Locked — Deposit to unlock" : activeStatus === "PENDING_DAO" ? "Pending DAO Governance Vote" : "Product Active — Earning Yield"}
+                  </p>
+                  <p style={{ margin: 0, fontSize: 10, color: "rgba(255,255,255,0.4)" }}>{activeProduct.conditionLabel}</p>
+                </div>
+              </div>
 
-                  {/* Live wallet balance */}
-                  {isConnected && deployed && (
-                    <div style={{
-                      display: "flex", alignItems: "center", justifyContent: "space-between",
-                      background: "rgba(0,0,0,0.2)", borderRadius: 10, padding: "8px 12px", marginBottom: 12,
-                      border: "1px solid rgba(255,255,255,0.06)",
-                    }}>
-                      <span style={{ fontSize: 11, color: "rgba(255,255,255,0.45)" }}>
-                        Wallet {product.tokenSymbol}
-                      </span>
-                      <span style={{ fontSize: 13, fontWeight: 800, color: product.color }}>
-                        {wBal.toFixed(4)}
-                      </span>
-                    </div>
-                  )}
+              {/* Wallet balance */}
+              {isConnected && (
+                <div style={{ display: "flex", justifyContent: "space-between", fontSize: 11, color: "rgba(255,255,255,0.45)", marginBottom: 10 }}>
+                  <span>Wallet Balance:</span>
+                  <span style={{ color: "#34d399", fontWeight: 700 }}>{walletBalance(activeProduct.tokenSymbol).toFixed(4)} {activeProduct.tokenSymbol}</span>
+                </div>
+              )}
 
-                  {/* Contract address */}
-                  {deployed && (
-                    <div style={{ marginBottom: 12 }}>
-                      <p style={{ fontSize: 9, fontWeight: 700, color: "rgba(255,255,255,0.3)", margin: "0 0 4px", letterSpacing: 1 }}>
-                        TOKEN CONTRACT
-                      </p>
-                      <a
-                        href={`https://testnet.snowtrace.io/token/${token!.address}`}
-                        target="_blank" rel="noopener noreferrer"
-                        style={{
-                          fontSize: 10, fontFamily: "monospace", color: "#60a5fa",
-                          display: "flex", alignItems: "center", gap: 4, textDecoration: "none",
-                        }}
-                      >
-                        {token!.address} <ExternalLink size={10} />
-                      </a>
-                    </div>
-                  )}
+              {/* Deposit Input */}
+              <div style={{ display: "flex", gap: 8, marginBottom: 12 }}>
+                <input
+                  type="number"
+                  placeholder={`Amount in ${activeProduct.tokenSymbol}`}
+                  value={stakeAmt}
+                  onChange={e => setStakeAmt(e.target.value)}
+                  style={{
+                    flex: 1, padding: "10px 14px", borderRadius: 12,
+                    background: "rgba(0,0,0,0.4)", border: "1px solid rgba(255,255,255,0.1)",
+                    color: "#fff", fontSize: 13, outline: "none",
+                  }}
+                />
+                <button
+                  onClick={() => handleDeposit(activeProduct)}
+                  disabled={isLoading}
+                  style={{
+                    padding: "10px 16px", borderRadius: 12,
+                    background: isLoading ? "rgba(16,185,129,0.3)" : "linear-gradient(135deg, #10b981, #059669)",
+                    color: "#fff", fontSize: 12, fontWeight: 800, border: "none",
+                    cursor: isLoading ? "not-allowed" : "pointer",
+                    whiteSpace: "nowrap",
+                  }}
+                >
+                  {isLoading ? "…" : "Deposit"}
+                </button>
+              </div>
 
-                  {/* Condition badge */}
-                  <div style={{
-                    background: status === "UNLOCKED" ? "rgba(34,197,94,0.1)" : status === "LOCKED" ? "rgba(249,115,22,0.1)" : "rgba(234,179,8,0.1)",
-                    border: `1px solid ${status === "UNLOCKED" ? "rgba(34,197,94,0.3)" : status === "LOCKED" ? "rgba(249,115,22,0.3)" : "rgba(234,179,8,0.3)"}`,
-                    borderRadius: 10, padding: "10px 12px", display: "flex", alignItems: "center", gap: 8, marginBottom: 14,
-                  }}>
-                    {status === "UNLOCKED"
-                      ? <Unlock size={15} color="#22C55E" />
-                      : status === "LOCKED"
-                        ? <Lock size={15} color="#F97316" />
-                        : <ClockIcon size={15} color="#EAB308" />}
-                    <div>
-                      <p style={{
-                        fontSize: 10, fontWeight: 800, margin: 0,
-                        color: status === "UNLOCKED" ? "#22C55E" : status === "LOCKED" ? "#F97316" : "#EAB308",
-                      }}>
-                        {status === "UNLOCKED" ? "CONTRACT UNLOCKED & READY" : status === "LOCKED" ? "CONTRACT LOCKED" : "PENDING VERIFICATION"}
-                      </p>
-                      <p style={{ fontSize: 11, color: "#fff", margin: "2px 0 0" }}>{product.conditionLabel}</p>
-                    </div>
-                  </div>
+              {/* Fee note */}
+              <p style={{ margin: "0 0 12px", fontSize: 10, color: "rgba(255,255,255,0.35)", textAlign: "center" }}>
+                + {FEE_AVAX} AVAX policy activation fee · Avalanche Fuji
+              </p>
 
-                  {/* Status / tx message */}
-                  {statusMsg && activeItem === product.id && (
-                    <div style={{
-                      background: "rgba(34,197,94,0.08)",
-                      border:     "1px solid rgba(34,197,94,0.2)",
-                      padding: "10px 12px", borderRadius: 10, fontSize: 11, color: "#fff", marginBottom: 12,
-                    }}>
-                      {statusMsg}
-                      {txUrl && (
-                        <a href={txUrl} target="_blank" rel="noopener noreferrer"
-                          style={{ marginLeft: 8, color: "#60a5fa", display: "inline-flex", alignItems: "center", gap: 4 }}>
-                          Snowtrace <ExternalLink size={11} />
-                        </a>
-                      )}
-                    </div>
-                  )}
-
-                  {invested > 0 ? (
-                    /* ── WITHDRAW VIEW ── */
-                    <div style={{ background: "rgba(0,0,0,0.25)", borderRadius: 12, padding: 16, border: "1px solid rgba(255,255,255,0.06)" }}>
-                      <p style={{ fontSize: 10, color: "rgba(255,255,255,0.4)", fontWeight: 700, margin: "0 0 6px" }}>DEPOSITED IN CONTRACT</p>
-                      <p style={{ fontSize: 22, fontWeight: 900, color: "#fff", margin: "0 0 6px" }}>
-                        {invested.toFixed(4)} {product.tokenSymbol}
-                      </p>
-                      <p style={{ fontSize: 10, color: "rgba(255,255,255,0.35)", margin: "0 0 16px" }}>
-                        ≈ ${(invested * (USD_PRICE[product.tokenSymbol] ?? 0)).toFixed(2)} USD
-                      </p>
-                      <button
-                        onClick={() => handleWithdraw(product)}
-                        disabled={isLoading || status !== "UNLOCKED"}
-                        style={{
-                          width: "100%", padding: 12, borderRadius: 10, border: "none",
-                          fontWeight: 800, fontSize: 13, cursor: (isLoading || status !== "UNLOCKED") ? "not-allowed" : "pointer",
-                          background: status === "UNLOCKED"
-                            ? `linear-gradient(135deg,${product.color},${product.color}bb)`
-                            : "rgba(255,255,255,0.08)",
-                          color: status === "UNLOCKED" && ["#FFD700", "#EAB308", "#22C55E"].includes(product.color)
-                            ? "#121212" : status === "UNLOCKED" ? "#fff" : "rgba(255,255,255,0.3)",
-                        }}>
-                        {isLoading ? "Processing..." : status === "UNLOCKED" ? `Withdraw ${product.tokenSymbol}` : "Conditions Not Met"}
-                      </button>
-                      {status !== "UNLOCKED" && devMode && (
-                        <p style={{ fontSize: 10, color: "rgba(255,255,255,0.3)", textAlign: "center", margin: "8px 0 0" }}>
-                          Toggle condition in dev panel above ↑
-                        </p>
-                      )}
-                    </div>
-                  ) : (
-                    /* ── DEPOSIT VIEW ── */
-                    <div>
-                      {!deployed ? (
-                        <div style={{
-                          background: "rgba(249,115,22,0.08)", border: "1px solid rgba(249,115,22,0.25)",
-                          borderRadius: 10, padding: "12px 14px", fontSize: 11, color: "rgba(255,255,255,0.6)",
-                        }}>
-                          {product.tokenSymbol} is not yet deployed on Fuji. Deploy via the Hardhat script first.
-                        </div>
-                      ) : (
-                        <>
-                          <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 6 }}>
-                            <span style={{ fontSize: 10, fontWeight: 700, color: "rgba(255,255,255,0.4)", letterSpacing: 1 }}>
-                              DEPOSIT {product.tokenSymbol}
-                            </span>
-                            <button onClick={() => setStakeAmt(wBal.toFixed(4))} style={{
-                              fontSize: 10, fontWeight: 700, color: product.color, background: "transparent",
-                              border: "none", cursor: "pointer", padding: 0,
-                            }}>
-                              MAX {wBal.toFixed(4)}
-                            </button>
-                          </div>
-
-                          {/* Fee notice */}
-                          <p style={{ fontSize: 10, color: "rgba(255,255,255,0.3)", margin: "0 0 8px" }}>
-                            <Shield size={10} style={{ display: "inline", marginRight: 4, verticalAlign: "middle" }} />
-                            {FEE_AVAX} AVAX policy fee + ERC-20 transfer - both on Fuji Snowtrace
-                          </p>
-
-                          <div style={{ display: "flex", gap: 8 }}>
-                            <input
-                              value={stakeAmt}
-                              onChange={e => setStakeAmt(e.target.value)}
-                              type="number" placeholder="0.00"
-                              style={{
-                                flex: 1, background: "rgba(0,0,0,0.3)",
-                                border: "1px solid rgba(255,255,255,0.1)", borderRadius: 10,
-                                padding: "10px 14px", fontSize: 14, color: "#fff",
-                                outline: "none", fontFamily: "inherit",
-                              }}
-                            />
-                            <button
-                              onClick={() => handleDeposit(product)}
-                              disabled={isLoading || !stakeAmt}
-                              style={{
-                                background: (isLoading || !stakeAmt)
-                                  ? "rgba(255,255,255,0.08)"
-                                  : `linear-gradient(135deg,${product.color},${product.color}bb)`,
-                                color: ["#FFD700", "#EAB308", "#22C55E"].includes(product.color) ? "#1B4332" : "#fff",
-                                fontWeight: 800, fontSize: 13, padding: "10px 20px",
-                                borderRadius: 10, border: "none",
-                                cursor: (isLoading || !stakeAmt) ? "not-allowed" : "pointer",
-                                opacity: (isLoading || !stakeAmt) ? 0.6 : 1,
-                              }}>
-                              {isLoading ? "Processing" : "Deposit"}
-                            </button>
-                          </div>
-                        </>
-                      )}
-                    </div>
+              {/* Status message */}
+              {statusMsg && (
+                <div style={{
+                  padding: "10px 14px", borderRadius: 12, marginBottom: 12,
+                  background: statusMsg.startsWith("✅") ? "rgba(16,185,129,0.12)" : "rgba(239,68,68,0.1)",
+                  border: `1px solid ${statusMsg.startsWith("✅") ? "rgba(16,185,129,0.3)" : "rgba(239,68,68,0.3)"}`,
+                  fontSize: 11, color: statusMsg.startsWith("✅") ? "#34d399" : "#f87171", lineHeight: 1.4,
+                }}>
+                  {statusMsg}
+                  {txUrl && (
+                    <a href={txUrl} target="_blank" rel="noreferrer" style={{ display: "flex", alignItems: "center", gap: 4, marginTop: 6, color: "#34d399", fontSize: 10, fontWeight: 700, textDecoration: "none" }}>
+                      View on Snowtrace <ExternalLink size={10} />
+                    </a>
                   )}
                 </div>
               )}
+
+              {/* SDG Goals */}
+              <div style={{ borderTop: "1px solid rgba(255,255,255,0.06)", paddingTop: 12 }}>
+                <p style={{ margin: "0 0 6px", fontSize: 10, fontWeight: 700, color: "rgba(255,255,255,0.4)", textTransform: "uppercase" }}>Aligned UN SDG Goals</p>
+                <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+                  {activeProduct.sdgGoals.map(g => (
+                    <Link key={g} href="/sdg" style={{ fontSize: 11, fontWeight: 800, color: "#34d399", background: "rgba(52,211,153,0.12)", padding: "3px 9px", borderRadius: 6, border: "1px solid rgba(52,211,153,0.25)", textDecoration: "none" }}>
+                      🌍 {g}
+                    </Link>
+                  ))}
+                </div>
+              </div>
             </div>
-          );
-        })}
+          )}
+        </div>
+
+        {/* ── Bottom CTA ───────────────────────────────────────────────── */}
+        <div style={{
+          marginTop: 40, borderRadius: 24, padding: "28px 24px",
+          background: "linear-gradient(135deg, rgba(6,32,20,0.85) 0%, rgba(10,20,16,0.95) 100%)",
+          border: "1px solid rgba(52,211,153,0.25)",
+          display: "flex", alignItems: "center", justifyContent: "space-between", gap: 20, flexWrap: "wrap",
+        }}>
+          <div>
+            <h3 style={{ margin: "0 0 6px", fontSize: 18, fontWeight: 900, color: "#fff" }}>
+              <Sparkles size={16} color="#34d399" style={{ marginRight: 8, verticalAlign: "middle" }} />
+              Also explore: Community Products
+            </h3>
+            <p style={{ margin: 0, fontSize: 13, color: "rgba(255,255,255,0.5)" }}>
+              Forest honey reserves, traditional medicine registries, cultural beadwork NFTs, and more.
+            </p>
+          </div>
+          <Link href="/products" style={{
+            display: "inline-flex", alignItems: "center", gap: 8,
+            padding: "12px 20px", borderRadius: 14,
+            background: "linear-gradient(135deg, #10b981, #059669)",
+            color: "#fff", fontSize: 13, fontWeight: 800, textDecoration: "none",
+          }}>
+            View All Products <ChevronRight size={16} />
+          </Link>
+        </div>
+
       </div>
 
       {showModal && <WalletConnectModal onClose={() => setShowModal(false)} />}
+
+      <style>{`
+        @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+      `}</style>
     </main>
   );
 }

@@ -5,10 +5,11 @@ import {
   Bot, Send, ChevronLeft, Loader2, RefreshCw,
   Wrench, ChevronRight, X, Database,
   Coins, BarChart3, ShieldCheck, Vote, Gift, Leaf,
-  BookOpen, TrendingUp,
+  BookOpen, TrendingUp, Volume2, VolumeX,
 } from 'lucide-react';
 import Link from 'next/link';
 import AgentProposalCard, { AgentProposal } from '@/components/AgentProposalCard';
+import VoiceMicButton from '@/components/VoiceMicButton';
 import { ECOSYSTEM_TOKENS } from '@/lib/tokens';
 import { VAULT_ADDRESSES } from '@/lib/addresses';
 import { formatChat } from '@/lib/formatChat';
@@ -117,11 +118,24 @@ export default function AIPage() {
   const [toolsOpen,   setToolsOpen]  = useState(false);
   const [activeGroup, setActiveGroup]= useState(TOOLS[0].group);
   const [online,      setOnline]     = useState<boolean | null>(null);
+  const [voiceOn,     setVoiceOn]    = useState(false);
 
   const bottomRef = useRef<HTMLDivElement>(null);
   const inputRef  = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => { bottomRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [msgs]);
+
+  const speak = (text: string) => {
+    if (typeof window === 'undefined' || !window.speechSynthesis) return;
+    window.speechSynthesis.cancel();
+    const clean = text.replace(/\*\*(.*?)\*\*/g, '$1').replace(/`(.*?)`/g, '$1').replace(/[#_*~]/g, '');
+    const utt = new SpeechSynthesisUtterance(clean);
+    const voices = window.speechSynthesis.getVoices();
+    const v = voices.find(vox => vox.lang.startsWith('en')) || voices[0];
+    if (v) utt.voice = v;
+    utt.rate = 1.05;
+    window.speechSynthesis.speak(utt);
+  };
 
   const checkHealth = useCallback(async () => {
     try {
@@ -163,7 +177,12 @@ export default function AIPage() {
               full += evt.token;
               setMsgs(prev => { const c = [...prev]; c[c.length-1] = { ...c[c.length-1], text: full }; return c; });
             }
-            if (evt.done) setMsgs(prev => { const c = [...prev]; c[c.length-1] = { ...c[c.length-1], sources: evt.sources ?? 0 }; return c; });
+            if (evt.done) {
+              setMsgs(prev => { const c = [...prev]; c[c.length-1] = { ...c[c.length-1], sources: evt.sources ?? 0 }; return c; });
+              if (voiceOn && full) {
+                speak(full);
+              }
+            }
           } catch { /* skip */ }
         }
       }
@@ -228,12 +247,33 @@ export default function AIPage() {
           </p>
         </div>
 
+        {/* Voice TTS output toggle */}
+        <button
+          onClick={() => {
+            if (voiceOn && typeof window !== 'undefined' && window.speechSynthesis) {
+              window.speechSynthesis.cancel();
+            }
+            setVoiceOn(v => !v);
+          }}
+          title={voiceOn ? 'Disable voice speech output' : 'Enable voice speech output'}
+          style={{
+            display: 'flex', alignItems: 'center', gap: 5, padding: '5px 9px', borderRadius: 8, cursor: 'pointer',
+            background: voiceOn ? 'rgba(16,185,129,0.20)' : 'rgba(255,255,255,0.04)',
+            border: `1px solid ${voiceOn ? 'rgba(16,185,129,0.45)' : 'rgba(255,255,255,0.08)'}`,
+            color: voiceOn ? '#34d399' : 'rgba(255,255,255,0.35)', fontSize: 10, fontWeight: 800, flexShrink: 0,
+            transition: 'all 0.18s',
+          }}
+        >
+          {voiceOn ? <Volume2 size={12} color="#34d399" /> : <VolumeX size={12} />}
+          <span>{voiceOn ? 'VOICE ON' : 'VOICE OFF'}</span>
+        </button>
+
         {/* RAG toggle */}
         <button onClick={() => setRag(v => !v)} style={{
           display: 'flex', alignItems: 'center', gap: 5, padding: '5px 10px', borderRadius: 8, cursor: 'pointer',
           background: rag ? 'rgba(16,185,129,0.14)' : 'rgba(255,255,255,0.04)',
           border: `1px solid ${rag ? 'rgba(16,185,129,0.38)' : 'rgba(255,255,255,0.08)'}`,
-          color: rag ? '#ff6b6b' : 'rgba(255,255,255,0.35)', fontSize: 10, fontWeight: 800, flexShrink: 0,
+          color: rag ? '#34d399' : 'rgba(255,255,255,0.35)', fontSize: 10, fontWeight: 800, flexShrink: 0,
           transition: 'all 0.18s',
         }}>
           <Database size={11} /> RAG {rag ? 'ON' : 'OFF'}
@@ -406,6 +446,16 @@ export default function AIPage() {
                 e.target.style.boxShadow = 'none';
               }}
             />
+            <VoiceMicButton
+              onCommand={(cmd) => {
+                setInput(cmd);
+                send(cmd);
+              }}
+              disabled={loading}
+              size="md"
+              showVoiceToggle={false}
+            />
+
             <button
               onClick={() => send()}
               disabled={!input.trim() || loading}
