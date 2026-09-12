@@ -51,11 +51,11 @@ const VAULT_CONFIG: Record<string, { apyBps: number }> = {
 };
 
 // ─── Bootstrap viem clients ───────────────────────────────────────────────────
-const { viem }     = await network.create();
+const { viem, networkName: hardhatNetworkName } = await network.create();
 const publicClient = await viem.getPublicClient();
 const [deployer]   = await viem.getWalletClients();
 
-const networkName = publicClient.chain?.name ?? network.name;
+const networkName = publicClient.chain?.name ?? hardhatNetworkName;
 const chainId     = publicClient.chain?.id   ?? 0;
 const explorer    = chainId === 43113 ? "https://testnet.snowtrace.io" : "https://snowtrace.io";
 
@@ -66,7 +66,7 @@ console.log(`Deployer : ${deployer.account.address}`);
 const balance = await publicClient.getBalance({ address: deployer.account.address });
 console.log(`Balance  : ${formatEther(balance)} AVAX`);
 
-if (network.name === "fuji" && balance < parseEther("0.2")) {
+if (hardhatNetworkName === "fuji" && balance < parseEther("0.2")) {
   throw new Error(
     `Low AVAX balance (${formatEther(balance)}). ` +
     "You need at least 0.2 AVAX to deploy 6 vaults + AMM + pools. " +

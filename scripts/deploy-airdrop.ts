@@ -33,7 +33,7 @@ if (!existsSync(tokenAddrFile)) {
 }
 
 // ─── Bootstrap viem clients ───────────────────────────────────────────────────
-const { viem } = await network.create();
+const { viem, networkName: hardhatNetworkName } = await network.create();
 const publicClient = await viem.getPublicClient();
 const [deployer] = await viem.getWalletClients();
 
@@ -44,7 +44,7 @@ console.log("──────────────────────�
 console.log(`Deployer : ${deployer.account.address}`);
 const balance = await publicClient.getBalance({ address: deployer.account.address });
 console.log(`Balance  : ${formatEther(balance)} AVAX`);
-if (network.name === "fuji" && balance < parseEther("0.1")) {
+if (hardhatNetworkName === "fuji" && balance < parseEther("0.1")) {
   throw new Error(`Low AVAX balance (${formatEther(balance)}). Top up at https://faucet.avax.network`);
 }
 console.log("─────────────────────────────────────────\n");
@@ -63,7 +63,7 @@ console.log(`    ${explorer}/address/${vault.address}`);
 
 // ─── Write output files ───────────────────────────────────────────────────────
 const payload = {
-  network: publicClient.chain?.name ?? network.name,
+  network: publicClient.chain?.name ?? hardhatNetworkName,
   chainId,
   deployedAt: new Date().toISOString(),
   deployer: deployer.account.address,
