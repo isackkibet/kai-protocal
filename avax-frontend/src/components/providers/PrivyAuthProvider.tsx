@@ -73,6 +73,7 @@ function PrivyAuthContextProvider({ children }: { children: React.ReactNode }) {
   const [syncState, setSyncState] = useState<PrivyAuthValue['syncState']>('idle');
   const [error, setError] = useState<string | null>(null);
   const haveSynced = useRef(false);
+  const syncAttempts = useRef(0);
 
   // The embedded Avalanche wallet (first ethereum wallet on Fuji from Privy).
   const wallet = useMemo(
@@ -93,8 +94,30 @@ function PrivyAuthContextProvider({ children }: { children: React.ReactNode }) {
   const email = user?.email?.address ?? null;
   const name = user?.google?.name ?? user?.email?.address ?? null;
 
+  // Always-current snapshot of identity/wallet state, read from a ref rather
+  // than closed-over variables. Without this, signInWithGoogle/signInWithEmail
+  // call syncToBackend() through a closure captured *before* login started —
+  // address is still null in that closure no matter how long you wait, so the
+  // sync call always failed with "missing-identity" even when login itself
+  // succeeded and the wallet was created moments later.
+  const stateRef = useRef({ privyUserId, email, name, address: null as Address | null });
+  useEffect(() => {
+    stateRef.current = { privyUserId, email, name, address };
+  }, [privyUserId, email, name, address]);
+
   const builtLogin = useCallback(() => login({ loginMethods: ['google'] }), [login]);
   const builtEmailLogin = useCallback(() => login({ loginMethods: ['email'] }), [login]);
+
+  // Polls the always-current ref for a wallet address instead of a fixed
+  // sleep, so a slow-to-provision wallet doesn't race the sync call.
+  const waitForAddress = useCallback(async (timeoutMs = 6000, intervalMs = 200) => {
+    const deadline = Date.now() + timeoutMs;
+    while (Date.now() < deadline) {
+      if (stateRef.current.address) return stateRef.current.address;
+      await new Promise((r) => setTimeout(r, intervalMs));
+    }
+    return stateRef.current.address;
+  }, []);
 
   // Log the page the user was on before starting login, so that if Privy uses
   // its redirect-based OAuth flow (browser popup blocked, embedded/mobile
@@ -179,7 +202,8 @@ function PrivyAuthContextProvider({ children }: { children: React.ReactNode }) {
    * bonus (handoff between PRD 1 and PRD 2). Idempotent.
    */
   const syncToBackend = useCallback(async (): Promise<PrivyAuthSyncResult> => {
-    if (!privyUserId || !email || !address) {
+    const s = stateRef.current;
+    if (!s.privyUserId || !s.email || !s.address) {
       return { ok: false, reason: 'missing-identity', isNew: false };
     }
     setSyncState('linking');
@@ -193,7 +217,7 @@ function PrivyAuthContextProvider({ children }: { children: React.ReactNode }) {
       const res = await fetch('/api/kai-bar/onboard', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ privyUserId, email, name, address }),
+        body: JSON.stringify({ privyUserId: s.privyUserId, email: s.email, name: s.name, address: s.address }),
       });
       const data = await res.json();
       if (!res.ok) {
@@ -210,7 +234,7 @@ function PrivyAuthContextProvider({ children }: { children: React.ReactNode }) {
       setError('Could not reach our servers. Please try again.');
       return { ok: false, reason: 'network', isNew: false };
     }
-  }, [privyUserId, email, name, address, getAccessToken]);
+  }, [getAccessToken]);
 
   /**
    * One-shot "Continue with Google": logs in, then links the account to the
@@ -222,9 +246,16 @@ function PrivyAuthContextProvider({ children }: { children: React.ReactNode }) {
     try {
       rememberPostLoginPath();
       await builtLogin();
-      // Allow Privy state (user + wallet) to hydrate before syncing.
-      await new Promise((r) => setTimeout(r, 400));
-      const result = await syncToBackend();
+      // Wait for the embedded wallet to actually exist rather than sleeping a
+      // fixed amount of time — provisioning speed varies.
+      await waitForAddress();
+      let result = await syncToBackend();
+      // The wallet can take a beat longer than our poll window on a slow
+      // network; retry once before surfacing an error to the user.
+      if (!result.ok && result.reason === 'missing-identity') {
+        await new Promise((r) => setTimeout(r, 1000));
+        result = await syncToBackend();
+      }
       return result;
     } catch (e: unknown) {
       const rawMsg = typeof e === 'object' && e !== null && 'message' in e
@@ -237,7 +268,7 @@ function PrivyAuthContextProvider({ children }: { children: React.ReactNode }) {
       setError(rawMsg || 'Google sign-in failed. Please try again.');
       return { ok: false, reason: rawMsg || 'login-failed', isNew: false };
     }
-  }, [authenticated, builtLogin, syncToBackend]);
+  }, [authenticated, builtLogin, waitForAddress, syncToBackend]);
 
   /**
    * "Continue with Email": opens Privy's email OTP flow, then links the
@@ -249,8 +280,12 @@ function PrivyAuthContextProvider({ children }: { children: React.ReactNode }) {
     try {
       rememberPostLoginPath();
       await builtEmailLogin();
-      await new Promise((r) => setTimeout(r, 400));
-      const result = await syncToBackend();
+      await waitForAddress();
+      let result = await syncToBackend();
+      if (!result.ok && result.reason === 'missing-identity') {
+        await new Promise((r) => setTimeout(r, 1000));
+        result = await syncToBackend();
+      }
       return result;
     } catch (e: unknown) {
       const rawMsg = typeof e === 'object' && e !== null && 'message' in e
@@ -263,7 +298,7 @@ function PrivyAuthContextProvider({ children }: { children: React.ReactNode }) {
       setError(rawMsg || 'Email sign-in failed. Please try again.');
       return { ok: false, reason: rawMsg || 'login-failed', isNew: false };
     }
-  }, [authenticated, builtEmailLogin, syncToBackend]);
+  }, [authenticated, builtEmailLogin, waitForAddress, syncToBackend]);
 
   const loginFn = login;
 
