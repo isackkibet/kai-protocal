@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { useConnect, useAccount, useDisconnect, type Connector } from 'wagmi';
 import { X, LogOut, RefreshCw, Wallet, Shield, Leaf, Mail } from 'lucide-react';
 import { usePrivyAuth } from '@/lib/privy-auth';
@@ -139,6 +140,7 @@ function KaiWalletTile() {
 }
 
 export default function WalletConnectModal({ onClose }: WalletConnectModalProps) {
+  const router = useRouter();
   const { connectors, connect, status, error, reset } = useConnect();
   const { address, isConnected, connector: activeConnector } = useAccount();
   const { disconnect } = useDisconnect();
@@ -183,6 +185,8 @@ export default function WalletConnectModal({ onClose }: WalletConnectModalProps)
           ? 'Email sign-in is not configured yet.'
           : String(result.reason ?? 'Email sign-in failed. Please try again.'),
       );
+    } else if (result.ok) {
+      router.push('/wallet');
     }
   };
 
@@ -197,6 +201,8 @@ export default function WalletConnectModal({ onClose }: WalletConnectModalProps)
           ? 'Google sign-in is not configured yet.'
           : String(result.reason ?? 'Google sign-in failed. Please try again.'),
       );
+    } else if (result.ok) {
+      router.push('/wallet');
     }
   };
 
