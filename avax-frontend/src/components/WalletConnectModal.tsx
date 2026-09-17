@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { useConnect, useAccount, useDisconnect, type Connector } from 'wagmi';
 import { X, LogOut, RefreshCw, Wallet, Shield, Leaf, Mail } from 'lucide-react';
@@ -144,12 +144,13 @@ export default function WalletConnectModal({ onClose }: WalletConnectModalProps)
   const { connectors, connect, status, error, reset } = useConnect();
   const { address, isConnected, connector: activeConnector } = useAccount();
   const { disconnect } = useDisconnect();
-  const { authenticated: privyAuthenticated, signInWithGoogle, signInWithEmail } = usePrivyAuth();
+  const { authenticated: privyAuthenticated, address: privyAddress, signInWithGoogle, signInWithEmail, logout: privyLogout } = usePrivyAuth();
   const [connectingId, setConnectingId] = useState<string | null>(null);
   const [googleLoading, setGoogleLoading] = useState(false);
   const [googleError, setGoogleError] = useState<string | null>(null);
   const [emailLoading, setEmailLoading] = useState(false);
   const [emailError, setEmailError] = useState<string | null>(null);
+  const prevPrivyAuth = useRef(privyAuthenticated);
 
   useEffect(() => {
     if (isConnected) {
@@ -158,8 +159,14 @@ export default function WalletConnectModal({ onClose }: WalletConnectModalProps)
     }
   }, [isConnected, onClose]);
 
+  // Only auto-close the modal when a login completes *while it is open*
+  // (transition false → true). A returning, already-authenticated user must
+  // not be silently bounced back to the page — the modal shows their account
+  // instead, so they can get to /wallet.
   useEffect(() => {
-    if (privyAuthenticated) {
+    const wasAuthenticated = prevPrivyAuth.current;
+    prevPrivyAuth.current = privyAuthenticated;
+    if (!wasAuthenticated && privyAuthenticated) {
       const t = setTimeout(onClose, 900);
       return () => clearTimeout(t);
     }
@@ -276,6 +283,40 @@ export default function WalletConnectModal({ onClose }: WalletConnectModalProps)
               border: 'none', cursor: 'pointer', color: '#f87171', fontSize: 12, fontWeight: 600,
             }}>
               <LogOut size={14} /> Disconnect
+            </button>
+          </div>
+        ) : privyAuthenticated && privyAddress ? (
+          /* ── Privy connected state ── */
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '8px 0 4px', gap: 12 }}>
+            <div style={{
+              width: 60, height: 60, borderRadius: '50%',
+              background: 'rgba(52,211,153,0.12)', border: '2px solid #34d399',
+              display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 28,
+            }}>✓</div>
+            <div style={{ textAlign: 'center' }}>
+              <p style={{ fontSize: 14, fontWeight: 700, color: '#f0fdf4', margin: '0 0 4px' }}>Signed in via Kainovari</p>
+              <p style={{
+                fontSize: 12, fontFamily: 'monospace', color: '#34d399',
+                background: 'rgba(52,211,153,0.1)', padding: '4px 12px', borderRadius: 8,
+                border: '1px solid rgba(52,211,153,0.2)', margin: '0 0 4px',
+              }}>
+                {privyAddress.slice(0, 6)}…{privyAddress.slice(-4)}
+              </p>
+              <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)', margin: 0 }}>Embedded Avalanche wallet</p>
+            </div>
+            <button onClick={() => { router.push('/wallet'); onClose(); }} style={{
+              display: 'flex', alignItems: 'center', gap: 6, marginTop: 4,
+              padding: '10px 22px', borderRadius: 12, border: 'none', cursor: 'pointer',
+              background: 'linear-gradient(135deg,#10b981,#047857)', color: '#fff',
+              fontSize: 13, fontWeight: 800,
+            }}>
+              <Wallet size={15} /> View Wallet
+            </button>
+            <button onClick={privyLogout} style={{
+              display: 'flex', alignItems: 'center', gap: 6, background: 'transparent',
+              border: 'none', cursor: 'pointer', color: '#f87171', fontSize: 12, fontWeight: 600,
+            }}>
+              <LogOut size={14} /> Sign out
             </button>
           </div>
         ) : (
