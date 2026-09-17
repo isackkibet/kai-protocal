@@ -303,13 +303,18 @@ function PrivyAuthContextProvider({ children }: { children: React.ReactNode }) {
   const loginFn = login;
 
   // Auto-sync once the user is authenticated and a wallet is ready, so a
-  // returning user's account + welcome bonus are always attached.
+  // returning user's account + welcome bonus are always attached. Only locks
+  // out further attempts on success — a transient failure (network blip,
+  // cold-start race) gets a couple of retries instead of being stuck until
+  // the user logs out and back in.
   useEffect(() => {
-    if (ready && authenticated && address && !haveSynced.current) {
-      haveSynced.current = true;
-      syncToBackend();
-    }
-  }, [ready, authenticated, address, syncToBackend]);
+    if (!ready || !authenticated || !address || haveSynced.current) return;
+    if (syncAttempts.current >= 3) return;
+    syncAttempts.current += 1;
+    syncToBackend().then((result) => {
+      if (result.ok) haveSynced.current = true;
+    });
+  }, [ready, authenticated, address, syncToBackend, syncState]);
 
   const value = useMemo<PrivyAuthValue>(
     () => ({
