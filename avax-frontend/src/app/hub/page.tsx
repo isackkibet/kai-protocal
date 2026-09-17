@@ -258,6 +258,7 @@ function TipModal({ post, onClose, onPaid, onNeedPayout }: {
   const [status, setStatus] = useState<'idle' | 'paying' | 'awaiting' | 'success' | 'error'>('idle');
   const [msg, setMsg]       = useState('');
   const [needPayout, setNeedPayout] = useState(false);
+  const { getAccessToken } = usePrivyAuth();
 
   const handlePay = async () => {
     const amt = Math.round(Number(amount));
@@ -289,7 +290,7 @@ function TipModal({ post, onClose, onPaid, onNeedPayout }: {
             clearInterval(id);
             const pdRes = await fetch('/api/hub/tip/payout', {
               method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
+              headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${(await getAccessToken()) ?? ''}` },
               body: JSON.stringify({ reference: data.reference }),
             }).catch(() => null);
             const pd = pdRes ? await pdRes.json() : null;

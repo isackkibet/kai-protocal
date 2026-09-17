@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import dynamic from 'next/dynamic';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useAccount, useBalance, useReadContracts } from 'wagmi';
+import { useBalance, useReadContracts } from 'wagmi';
 import { formatUnits } from 'viem';
 import { useKaivaxStore } from '@/store/useKaivaxStore';
 import { useAIChatStore } from '@/store/useAIChatStore';
@@ -14,6 +14,7 @@ import { ECOSYSTEM_TOKENS, TICKER_TOKENS } from '@/lib/tokens';
 import { ERC20_ABI } from '@/lib/erc20abi';
 import { formatChat } from '@/lib/formatChat';
 import { usePrivyAuth } from '@/lib/privy-auth';
+import { useActiveAccount } from '@/hooks/useActiveAccount';
 import {
   Trees, Store, Users, FlaskConical, ScanLine,
   Droplets, ImageIcon, Lock, Globe, LayoutGrid, Gift,
@@ -79,7 +80,7 @@ const ESTIMATED_USD_RATES: Record<string, number> = {
 
 export default function Home() {
   const router = useRouter();
-  const { address, isConnected } = useAccount();
+  const { address, isConnected } = useActiveAccount();
   const { authenticated: privyAuthenticated, address: privyAddress } = usePrivyAuth();
   const mounted = useSyncExternalStore(() => () => {}, () => true, () => false);
   const connected = mounted && isConnected;

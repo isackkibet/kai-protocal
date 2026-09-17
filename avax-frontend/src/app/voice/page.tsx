@@ -11,10 +11,11 @@ import {
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { formatChat } from '@/lib/formatChat';
-import { useAccount, useWriteContract, useSwitchChain } from 'wagmi';
+import { useAccount, useWriteContract, useSwitchChain, useSignMessage } from 'wagmi';
 import { avalancheFuji } from 'wagmi/chains';
 import { parseUnits } from 'viem';
 import { ERC20_ABI } from '@/lib/erc20abi';
+import { buildOwnershipChallenge } from '@/lib/wallet-signature';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -152,6 +153,7 @@ export default function VoiceAgentPage() {
   const { address: walletAddress } = useAccount();
   const { switchChainAsync } = useSwitchChain();
   const { writeContractAsync } = useWriteContract();
+  const { signMessageAsync } = useSignMessage();
 
   const [messages, setMessages] = useState<Msg[]>([{ role: 'ai', text: WELCOME }]);
   const [micState, setMicState] = useState<MicState>('idle');
@@ -286,6 +288,15 @@ export default function VoiceAgentPage() {
 
   // ─── Intent Router: voice command → specific action plan ─────────────────
 
+  // Signs a short-lived ownership challenge for the connected wallet, used to
+  // authorize server actions (e.g. M-Pesa STK) that must not be anonymous.
+  const signOwnership = useCallback(async (): Promise<{ wallet: string; signature: string; timestamp: number } | null> => {
+    if (!walletAddress) return null;
+    const timestamp = Date.now();
+    const signature = await signMessageAsync({ message: buildOwnershipChallenge(walletAddress, timestamp) });
+    return { wallet: walletAddress, signature, timestamp };
+  }, [walletAddress, signMessageAsync]);
+
   const runCommand = async (text: string) => {
     if (!text) return;
     loadingRef.current = true;
@@ -325,6 +336,9 @@ export default function VoiceAgentPage() {
         const purpose = pd.purpose || 'KAI DeFi Service';
         setStkStatus(`Sending M-Pesa STK push for KSh ${amountKes}…`);
         try {
+          // Prove wallet ownership so the server won't accept anonymous STK
+          // spam. Sign a short-lived challenge (same scheme as profile writes).
+          const ownership = await signOwnership();
           const r = await fetch('/api/mpesa/stk', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -333,6 +347,7 @@ export default function VoiceAgentPage() {
               nftId: 'voice-intent',
               nftName: purpose,
               priceYbob: amountKes / USD_PER_KES,
+              ...(ownership ?? {}),
             }),
           });
           const d = await r.json().catch(() => ({}));

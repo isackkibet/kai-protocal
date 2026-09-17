@@ -19,11 +19,21 @@
 import { NextResponse } from "next/server";
 import { initiateTransfer } from "@/lib/paystack";
 import { prisma } from "@/lib/prisma";
+import { verifyPrivyUserId } from "@/lib/privy-server";
 
 export const dynamic = "force-dynamic";
 
 export async function POST(request: Request) {
   try {
+    // This triggers a real Paystack transfer to a creator — never let an
+    // anonymous caller fire it (or probe arbitrary references). A vaid
+    // Privy session is required; the payout idempotency guard below
+    // (payoutStatus === "paid") prevents replaying a paid tip.
+    const caller = await verifyPrivyUserId(request.headers.get("authorization"));
+    if (!caller) {
+      return NextResponse.json({ error: "Could not verify your session. Please sign in again." }, { status: 401 });
+    }
+
     const body = await request.json().catch(() => ({}));
     const { reference } = body as { reference?: string };
 
