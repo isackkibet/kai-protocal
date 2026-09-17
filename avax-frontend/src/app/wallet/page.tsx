@@ -8,7 +8,7 @@ import { formatUnits, type Address } from 'viem';
 import {
   Wallet, Copy, RefreshCw, Send, QrCode, ArrowDownToLine,
   ChevronRight, CheckCircle2, Loader2, ImageIcon, ShieldCheck,
-  Info, ExternalLink, ArrowUpRight, Mountain,
+  Info, ExternalLink, ArrowUpRight, Mountain, ListChecks,
 } from 'lucide-react';
 import { usePrivyAuth } from '@/lib/privy-auth';
 import { useNFTs } from '@/hooks/useNFTs';
@@ -449,6 +449,31 @@ export default function WalletDashboard() {
               <div style={{ flex: 1 }}>
                 <p style={{ fontSize: 14, fontWeight: 800, margin: '0 0 2px', color: 'rgba(255,255,255,0.92)', ...Rs }}>Kai Bar Rewards</p>
                 <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.5)', margin: 0 }}>Earn points, invite friends, track your airdrop eligibility.</p>
+              </div>
+              <ChevronRight size={17} color="rgba(255,255,255,0.3)" />
+            </div>
+          </Link>
+        </motion.div>
+
+        {/* Link to Waitlist */}
+        <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
+          style={{ marginTop: 10 }}>
+          <Link href="/waitlist" style={{ textDecoration: 'none' }}>
+            <div className="hover-shine" style={{
+              display: 'flex', alignItems: 'center', gap: 14,
+              padding: '15px 18px', borderRadius: 16,
+              background: 'linear-gradient(110deg, rgba(16,185,129,0.1), rgba(6,6,14,0.6))',
+              boxShadow: '0 0 0 0.5px rgba(16,185,129,0.2) inset',
+            }}>
+              <div style={{
+                width: 44, height: 44, borderRadius: 13, flexShrink: 0,
+                background: 'rgba(16,185,129,0.14)', display: 'flex', alignItems: 'center', justifyContent: 'center',
+              }}>
+                <ListChecks size={22} color="#34d399" />
+              </div>
+              <div style={{ flex: 1 }}>
+                <p style={{ fontSize: 14, fontWeight: 800, margin: '0 0 2px', color: 'rgba(255,255,255,0.92)', ...Rs }}>KAI Nuvari Waitlist</p>
+                <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.5)', margin: 0 }}>Your account, wallet, points & airdrop status at a glance.</p>
               </div>
               <ChevronRight size={17} color="rgba(255,255,255,0.3)" />
             </div>

@@ -73,6 +73,9 @@ model KaiUser {
   referralCode String?   @unique
   /// Set to REVIEW / BLOCKED by anti-abuse tooling (PRD 2 §13).
   status     KaiUserStatus @default(NORMAL)
+  /// Last successful daily-check-in claim (date-scoped, not a one-time flag —
+  /// KAI Nuvari PRD §3: "a user must not claim the same daily reward twice").
+  lastCheckInAt DateTime?
   activities Activity[]
   authUser   User?       @relation(fields: [authUserId], references: [id])
   wallets    KaiWallet[]
@@ -81,6 +84,7 @@ model KaiUser {
   airdropEligibility AirdropEligibility?
   sentReferrals   Referral[] @relation("Referrer")
   receivedReferrals Referral[] @relation("Referred")
+  forestMembership  ForestMember?
 
   @@map("kai_users")
 }
@@ -341,6 +345,10 @@ model CommunityForest {
   patrols        PatrolLog[]
   govProposals   GovProposal[]
   forestProducts ForestProduct[]
+  species          TreeSpecies[]
+  plantingRecords  PlantingRecord[]
+  survivalRecords  SurvivalRecord[]
+  nurseryEntries   NurseryInventoryEntry[]
 
   @@map("community_forests")
 }
@@ -354,9 +362,17 @@ model ForestMember {
   phoneNumber String?
   joinedAt    DateTime        @default(now())
   isActive    Boolean         @default(true)
+  /// Links this CFA membership to a real KAI Nuvari account so conservation
+  /// activity they submit can be traced back to a Privy/points identity
+  /// (KAI Nuvari PRD §7: USER → CFA Membership → Conservation Data).
+  kaiUserId   String?         @unique
 
   forest      CommunityForest  @relation(fields: [forestId], references: [id], onDelete: Cascade)
+  kaiUser     KaiUser?         @relation(fields: [kaiUserId], references: [id])
   patrols     PatrolLog[]
+  plantingRecords   PlantingRecord[]
+  survivalRecords   SurvivalRecord[]
+  nurseryEntries    NurseryInventoryEntry[]
 
   @@index([forestId])
   @@map("forest_members")
@@ -462,6 +478,106 @@ enum ProposalStatus {
   PASSED
   FAILED
   EXPIRED
+}
+
+// ── 1b. TREE NURSERY / CONSERVATION DATA (KAI Nuvari PRD §5, §6) ─
+// Distinct from the patrol/governance model above: this tracks the actual
+// nursery operation — species stock, planting events, survival follow-ups,
+// and day-to-day inventory movement — for CFAs whose first activity on the
+// platform is running a tree nursery.
+
+/// A tree species stocked by a CFA's nursery (PRD §5 "Tree species").
+model TreeSpecies {
+  id                String   @id @default(cuid())
+  forestId          String
+  name              String
+  quantityAvailable Int      @default(0)
+  quantityPlanted   Int      @default(0)
+  quantityForSale   Int      @default(0)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  forest            CommunityForest @relation(fields: [forestId], references: [id], onDelete: Cascade)
+  plantingRecords   PlantingRecord[]
+  survivalRecords   SurvivalRecord[]
+  nurseryEntries    NurseryInventoryEntry[]
+
+  @@index([forestId])
+  @@map("tree_species")
+}
+
+/// A planting event — species, quantity, date, CFA, and who submitted it
+/// (PRD §5 "Planting").
+model PlantingRecord {
+  id             String   @id @default(cuid())
+  forestId       String
+  speciesId      String
+  numberPlanted  Int
+  plantedAt      DateTime @default(now())
+  activity       String?
+  submittedById  String?
+  submittedName  String?
+  /// Set once the linked submitter has been credited Kai Bar points for this
+  /// record, so a record can never award points twice (PRD §7).
+  pointsAwarded  Boolean  @default(false)
+  createdAt      DateTime @default(now())
+
+  forest         CommunityForest @relation(fields: [forestId], references: [id], onDelete: Cascade)
+  species        TreeSpecies     @relation(fields: [speciesId], references: [id])
+  submittedBy    ForestMember?   @relation(fields: [submittedById], references: [id])
+
+  @@index([forestId])
+  @@index([speciesId])
+  @@map("planting_records")
+}
+
+/// A survival follow-up against an earlier planting (PRD §5 "Survival").
+model SurvivalRecord {
+  id               String   @id @default(cuid())
+  forestId         String
+  speciesId        String
+  numberPlanted    Int
+  numberSurviving  Int
+  survivalRate     Float
+  observedAt       DateTime @default(now())
+  submittedById    String?
+  pointsAwarded    Boolean  @default(false)
+  createdAt        DateTime @default(now())
+
+  forest           CommunityForest @relation(fields: [forestId], references: [id], onDelete: Cascade)
+  species          TreeSpecies     @relation(fields: [speciesId], references: [id])
+  submittedBy      ForestMember?   @relation(fields: [submittedById], references: [id])
+
+  @@index([forestId])
+  @@index([speciesId])
+  @@map("survival_records")
+}
+
+/// Day-to-day nursery stock movement — ordered / planted / sold
+/// (PRD §5 "Nursery inventory").
+model NurseryInventoryEntry {
+  id           String               @id @default(cuid())
+  forestId     String
+  speciesId    String?
+  activityType NurseryActivityType
+  quantity     Int
+  note         String?
+  submittedById String?
+  occurredAt   DateTime             @default(now())
+  createdAt    DateTime             @default(now())
+
+  forest       CommunityForest @relation(fields: [forestId], references: [id], onDelete: Cascade)
+  species      TreeSpecies?    @relation(fields: [speciesId], references: [id])
+  submittedBy  ForestMember?   @relation(fields: [submittedById], references: [id])
+
+  @@index([forestId])
+  @@map("nursery_inventory_entries")
+}
+
+enum NurseryActivityType {
+  ORDERED
+  PLANTED
+  SOLD
 }
 
 // ── 2. MSME INTELLIGENT LEDGER ───────────────────────────────────

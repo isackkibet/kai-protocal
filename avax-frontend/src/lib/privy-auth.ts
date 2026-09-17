@@ -42,6 +42,8 @@ export interface PrivyAuthValue {
   sendToken: (params: { tokenAddress: Address; to: Address; amount: bigint }) => Promise<string | { hash: Address }>;
   claimAirdrop: (params: { vault: Address; amount: bigint; proof: `0x${string}`[] }) => Promise<string | { hash: Address }>;
   syncToBackend: () => Promise<PrivyAuthSyncResult>;
+  /** Sign up / sign in with email (KAI Nuvari PRD §1) — Privy handles the OTP flow. */
+  signInWithEmail: () => Promise<PrivyAuthSyncResult>;
   /** Raw Privy access token — attach as `Authorization: Bearer <token>` on any
    *  API call that must verify the caller's identity server-side (PRD 1 §12). */
   getAccessToken: () => Promise<string | null>;
@@ -69,6 +71,7 @@ export function usePrivyAuth(): PrivyAuthValue {
       wallet: null,
       client: null,
       signInWithGoogle: async () => ({ ok: false, reason: 'privy-not-configured' }),
+      signInWithEmail: async () => ({ ok: false, reason: 'privy-not-configured' }),
       login: async () => {},
       logout: () => {},
       createWallet: async () => {},

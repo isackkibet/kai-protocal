@@ -10,6 +10,7 @@ import {
 import { usePrivyAuth } from '@/lib/privy-auth';
 import { useKaiBar } from '@/hooks/useKaiBar';
 import { AirdropClaimCard } from '@/components/AirdropClaimCard';
+import DailyCheckInCard from '@/components/DailyCheckInCard';
 
 const Rs: React.CSSProperties = { textShadow: '0 1px 4px rgba(0,0,0,0.88)' };
 const W: React.CSSProperties = { width: '100%', maxWidth: 1080, margin: '0 auto', padding: '0 40px' };
@@ -27,8 +28,15 @@ const TASK_ICON: Record<string, React.ComponentType<{ size: number; color: strin
 const NEXT_MILESTONE = 15000;
 
 export default function KaiBarDashboard() {
-  const { authenticated, ready, address, signInWithGoogle, getAccessToken } = usePrivyAuth();
-  const { privyUserId, kaiBar, tasks, referralCode, referralStats, airdrop, entries, loading, reload } = useKaiBar();
+  const { authenticated, ready, address, signInWithGoogle, signInWithEmail, getAccessToken } = usePrivyAuth();
+  const {
+    privyUserId, kaiBar, tasks, referralCode, referralStats, airdrop, entries, loading, reload,
+    checkin, claimingCheckin, claimDailyCheckin,
+  } = useKaiBar();
+
+  // DAILY_CHECKIN has its own dedicated card + /api/kai-bar/checkin route
+  // (repeatable per day) — keep it out of the generic one-time task list.
+  const visibleTasks = tasks.filter(t => t.taskType !== 'DAILY_CHECKIN');
 
   const [copied, setCopied] = useState(false);
   const [completing, setCompleting] = useState<string | null>(null);
@@ -76,15 +84,24 @@ export default function KaiBarDashboard() {
             <span style={{ color: '#fbbf24' }}>Kai</span> Bar
           </h1>
           <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.6)', margin: '8px 0 24px', ...Rs }}>
-            Sign in with Google to start earning points toward future rewards.
+            Sign in to start earning points toward future rewards.
           </p>
-          <motion.button whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }} onClick={signInWithGoogle} style={{
-            padding: '13px 26px', borderRadius: 14, border: 'none', cursor: 'pointer',
-            background: 'linear-gradient(135deg,#f59e0b,#b45309)', color: '#fff',
-            boxShadow: '0 6px 26px rgba(245,158,11,0.4)', fontSize: 14, fontWeight: 800,
-          }}>
-            Continue with Google
-          </motion.button>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10, maxWidth: 260, margin: '0 auto' }}>
+            <motion.button whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }} onClick={signInWithEmail} style={{
+              padding: '13px 26px', borderRadius: 14, border: 'none', cursor: 'pointer',
+              background: 'linear-gradient(135deg,#f59e0b,#b45309)', color: '#fff',
+              boxShadow: '0 6px 26px rgba(245,158,11,0.4)', fontSize: 14, fontWeight: 800,
+            }}>
+              Continue with Email
+            </motion.button>
+            <motion.button whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }} onClick={signInWithGoogle} style={{
+              padding: '13px 26px', borderRadius: 14, border: '1px solid rgba(255,255,255,0.14)', cursor: 'pointer',
+              background: 'rgba(255,255,255,0.05)', color: '#fff',
+              fontSize: 14, fontWeight: 800,
+            }}>
+              Continue with Google
+            </motion.button>
+          </div>
         </div>
       </main>
     );
@@ -208,6 +225,19 @@ export default function KaiBarDashboard() {
           )}
         </motion.div>
 
+        {/* Daily sign-in */}
+        <DailyCheckInCard
+          claimedToday={checkin.claimedToday}
+          points={checkin.points}
+          claiming={claimingCheckin}
+          onClaim={async () => {
+            const res = await claimDailyCheckin();
+            if (res.ok) setToast(`+${res.earned} Kai Bar earned!`);
+            else if (res.error) setToast(res.error);
+            setTimeout(() => setToast(null), 3000);
+          }}
+        />
+
         {/* Tasks */}
         <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
           className="glass-elevated" style={{
@@ -219,7 +249,7 @@ export default function KaiBarDashboard() {
             Earn Kai Bar
           </p>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-            {tasks.map(t => {
+            {visibleTasks.map(t => {
               const Icon = TASK_ICON[t.taskType] ?? Gift;
               return (
                 <div key={t.id} style={{
