@@ -41,6 +41,7 @@ export default function WaitlistPage() {
   const { kaiBar, airdrop, loading } = useKaiBar();
   const [emailLoading, setEmailLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
+  const [signInError, setSignInError] = useState<string | null>(null);
 
   if (!ready) {
     return <main style={{ minHeight: '100dvh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Loader2 className="animate-spin" size={26} color="#10b981" /></main>;
@@ -67,7 +68,15 @@ export default function WaitlistPage() {
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10, maxWidth: 260, margin: '0 auto' }}>
             <motion.button whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
               disabled={emailLoading}
-              onClick={async () => { setEmailLoading(true); await signInWithEmail(); setEmailLoading(false); }}
+              onClick={async () => {
+                setSignInError(null);
+                setEmailLoading(true);
+                const res = await signInWithEmail();
+                setEmailLoading(false);
+                if (!res.ok && res.reason !== 'login-cancelled') {
+                  setSignInError(res.reason === 'privy-not-configured' ? 'Email sign-in is not configured yet.' : String(res.reason ?? 'Email sign-in failed. Please try again.'));
+                }
+              }}
               style={{
                 padding: '13px 26px', borderRadius: 14, border: 'none', cursor: 'pointer',
                 background: 'linear-gradient(135deg,#10b981,#047857)', color: '#fff',
@@ -78,13 +87,24 @@ export default function WaitlistPage() {
             </motion.button>
             <motion.button whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
               disabled={googleLoading}
-              onClick={async () => { setGoogleLoading(true); await signInWithGoogle(); setGoogleLoading(false); }}
+              onClick={async () => {
+                setSignInError(null);
+                setGoogleLoading(true);
+                const res = await signInWithGoogle();
+                setGoogleLoading(false);
+                if (!res.ok && res.reason !== 'login-cancelled') {
+                  setSignInError(res.reason === 'privy-not-configured' ? 'Google sign-in is not configured yet.' : String(res.reason ?? 'Google sign-in failed. Please try again.'));
+                }
+              }}
               style={{
                 padding: '13px 26px', borderRadius: 14, border: '1px solid rgba(255,255,255,0.14)', cursor: 'pointer',
                 background: 'rgba(255,255,255,0.05)', color: '#fff', fontSize: 14, fontWeight: 800,
               }}>
               Continue with Google
             </motion.button>
+            {signInError && (
+              <p style={{ fontSize: 11, color: '#f87171', margin: '4px 0 0' }}>{signInError}</p>
+            )}
           </div>
         </div>
       </main>

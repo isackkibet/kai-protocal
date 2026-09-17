@@ -198,14 +198,15 @@ function PrivyAuthContextProvider({ children }: { children: React.ReactNode }) {
       const result = await syncToBackend();
       return result;
     } catch (e: unknown) {
-      const msg = typeof e === 'object' && e !== null && 'message' in e
-        ? String((e as { message: unknown }).message).toLowerCase()
+      const rawMsg = typeof e === 'object' && e !== null && 'message' in e
+        ? String((e as { message: unknown }).message)
         : '';
+      const msg = rawMsg.toLowerCase();
       if (msg.includes('cancelled') || msg.includes('rejected') || msg.includes('closed')) {
         return { ok: false, reason: 'login-cancelled', isNew: false };
       }
-      setError('Google sign-in failed. Please try again.');
-      return { ok: false, reason: 'login-failed', isNew: false };
+      setError(rawMsg || 'Google sign-in failed. Please try again.');
+      return { ok: false, reason: rawMsg || 'login-failed', isNew: false };
     }
   }, [builtLogin, syncToBackend]);
 
@@ -221,14 +222,15 @@ function PrivyAuthContextProvider({ children }: { children: React.ReactNode }) {
       const result = await syncToBackend();
       return result;
     } catch (e: unknown) {
-      const msg = typeof e === 'object' && e !== null && 'message' in e
-        ? String((e as { message: unknown }).message).toLowerCase()
+      const rawMsg = typeof e === 'object' && e !== null && 'message' in e
+        ? String((e as { message: unknown }).message)
         : '';
+      const msg = rawMsg.toLowerCase();
       if (msg.includes('cancelled') || msg.includes('rejected') || msg.includes('closed')) {
         return { ok: false, reason: 'login-cancelled', isNew: false };
       }
-      setError('Email sign-in failed. Please try again.');
-      return { ok: false, reason: 'login-failed', isNew: false };
+      setError(rawMsg || 'Email sign-in failed. Please try again.');
+      return { ok: false, reason: rawMsg || 'login-failed', isNew: false };
     }
   }, [builtEmailLogin, syncToBackend]);
 
