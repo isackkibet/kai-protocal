@@ -582,6 +582,12 @@ body {
   0%,100% { opacity: 0.40; }
   50%     { opacity: 1;    }
 }
+/* Ripple-out pulse — used by mic-listening rings and live indicator dots */
+@keyframes pulse {
+  0%   { opacity: 0.75; transform: scale(1);    }
+  70%  { opacity: 0;    transform: scale(1.35); }
+  100% { opacity: 0;    transform: scale(1.35); }
+}
 
 @keyframes spin      { to { transform: rotate(360deg); } }
 @keyframes spin-slow { to { transform: rotate(360deg); } }
