@@ -41,8 +41,8 @@ export function PrivyAuthProvider({ children }: { children: React.ReactNode }) {
     <PrivyProvider
       appId={appId}
       config={{
-        loginMethods: ['google'],
-        loginMethodsAndOrder: { primary: ['google'] },
+        loginMethods: ['email', 'google'],
+        loginMethodsAndOrder: { primary: ['email', 'google'] },
         appearance: {
           theme: 'dark',
           accentColor: '#10b981',
@@ -92,6 +92,7 @@ function PrivyAuthContextProvider({ children }: { children: React.ReactNode }) {
   const name = user?.google?.name ?? user?.email?.address ?? null;
 
   const builtLogin = useCallback(() => login({ loginMethods: ['google'] }), [login]);
+  const builtEmailLogin = useCallback(() => login({ loginMethods: ['email'] }), [login]);
 
   /**
    * Sends an ERC-20 transfer through the Privy embedded wallet. All signing
@@ -206,6 +207,27 @@ function PrivyAuthContextProvider({ children }: { children: React.ReactNode }) {
     }
   }, [builtLogin, syncToBackend]);
 
+  /**
+   * "Continue with Email": opens Privy's email OTP flow, then links the
+   * account to the backend exactly like Google (KAI Nuvari PRD §1 — this is
+   * the primary signup path; Google remains a secondary option).
+   */
+  const signInWithEmail = useCallback(async (): Promise<PrivyAuthSyncResult> => {
+    try {
+      await builtEmailLogin();
+      await new Promise((r) => setTimeout(r, 400));
+      const result = await syncToBackend();
+      return result;
+    } catch (e: any) {
+      const msg = String(e?.message ?? '').toLowerCase();
+      if (msg.includes('cancelled') || msg.includes('rejected') || msg.includes('closed')) {
+        return { ok: false, reason: 'login-cancelled', isNew: false };
+      }
+      setError('Email sign-in failed. Please try again.');
+      return { ok: false, reason: 'login-failed', isNew: false };
+    }
+  }, [builtEmailLogin, syncToBackend]);
+
   const loginFn = login;
 
   // Auto-sync once the user is authenticated and a wallet is ready, so a
@@ -231,6 +253,7 @@ function PrivyAuthContextProvider({ children }: { children: React.ReactNode }) {
       wallet,
       client: null,
       signInWithGoogle,
+      signInWithEmail,
       login: loginFn,
       logout: async () => {
         haveSynced.current = false;
@@ -254,7 +277,7 @@ function PrivyAuthContextProvider({ children }: { children: React.ReactNode }) {
     }),
     [
       ready, walletsReady, authenticated, user, privyUserId, email, name, address,
-      wallet, signInWithGoogle, loginFn, logout, createWallet, sendToken,
+      wallet, signInWithGoogle, signInWithEmail, loginFn, logout, createWallet, sendToken,
       claimAirdrop, syncToBackend, getAccessToken, syncState, error,
     ],
   );

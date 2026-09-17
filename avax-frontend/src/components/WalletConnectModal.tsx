@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useConnect, useAccount, useDisconnect, type Connector } from 'wagmi';
-import { X, LogOut, RefreshCw, Wallet, Shield, Leaf } from 'lucide-react';
+import { X, LogOut, RefreshCw, Wallet, Shield, Leaf, Mail } from 'lucide-react';
 import { usePrivyAuth } from '@/lib/privy-auth';
 
 interface WalletConnectModalProps {
@@ -38,7 +38,40 @@ function getWalletMeta(connector: Connector) {
   };
 }
 
-// ── Continue with Google (Privy embedded wallet) — primary sign-in option ───
+// ── Continue with Email (Privy embedded wallet) — primary sign-in option ────
+function EmailTile({ onClick, loading }: { onClick: () => void; loading: boolean }) {
+  return (
+    <button
+      onClick={onClick}
+      disabled={loading}
+      style={{
+        display: 'flex', alignItems: 'center', gap: 14,
+        padding: '14px 16px', borderRadius: 14, textAlign: 'left',
+        border: '1px solid rgba(34,197,94,0.3)', background: 'rgba(34,197,94,0.06)',
+        cursor: loading ? 'not-allowed' : 'pointer', opacity: loading ? 0.6 : 1,
+        transition: 'all 0.2s', width: '100%',
+      }}>
+      <div style={{
+        width: 48, height: 48, borderRadius: 12, background: 'rgba(34,197,94,0.15)',
+        display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+      }}>
+        <Mail size={22} color="#22c55e" />
+      </div>
+      <div style={{ flex: 1 }}>
+        <p style={{ fontSize: 14, fontWeight: 800, color: '#f0fdf4', margin: '0 0 2px' }}>Continue with Email</p>
+        <p style={{ fontSize: 11, color: 'rgba(240,253,244,0.5)', margin: 0 }}>
+          We&apos;ll send a one-time code - no password needed
+        </p>
+      </div>
+      {loading
+        ? <RefreshCw size={16} color="#22c55e" style={{ animation: 'spin 1s linear infinite' }} />
+        : <span style={{ color: 'rgba(255,255,255,0.3)', fontSize: 18 }}>›</span>
+      }
+    </button>
+  );
+}
+
+// ── Continue with Google (Privy embedded wallet) — secondary sign-in option ─
 function GoogleTile({ onClick, loading }: { onClick: () => void; loading: boolean }) {
   return (
     <button
@@ -109,10 +142,12 @@ export default function WalletConnectModal({ onClose }: WalletConnectModalProps)
   const { connectors, connect, status, error, reset } = useConnect();
   const { address, isConnected, connector: activeConnector } = useAccount();
   const { disconnect } = useDisconnect();
-  const { authenticated: googleAuthenticated, signInWithGoogle } = usePrivyAuth();
+  const { authenticated: privyAuthenticated, signInWithGoogle, signInWithEmail } = usePrivyAuth();
   const [connectingId, setConnectingId] = useState<string | null>(null);
   const [googleLoading, setGoogleLoading] = useState(false);
   const [googleError, setGoogleError] = useState<string | null>(null);
+  const [emailLoading, setEmailLoading] = useState(false);
+  const [emailError, setEmailError] = useState<string | null>(null);
 
   useEffect(() => {
     if (isConnected) {
@@ -122,11 +157,11 @@ export default function WalletConnectModal({ onClose }: WalletConnectModalProps)
   }, [isConnected, onClose]);
 
   useEffect(() => {
-    if (googleAuthenticated) {
+    if (privyAuthenticated) {
       const t = setTimeout(onClose, 900);
       return () => clearTimeout(t);
     }
-  }, [googleAuthenticated, onClose]);
+  }, [privyAuthenticated, onClose]);
 
   useEffect(() => {
     if (status !== 'pending') setConnectingId(null);
@@ -135,6 +170,20 @@ export default function WalletConnectModal({ onClose }: WalletConnectModalProps)
   const handleConnect = (connector: Connector) => {
     setConnectingId(connector.id);
     connect({ connector }, { onError: () => setConnectingId(null) });
+  };
+
+  const handleEmailSignIn = async () => {
+    setEmailLoading(true);
+    setEmailError(null);
+    const result = await signInWithEmail();
+    setEmailLoading(false);
+    if (!result.ok && result.reason !== 'login-cancelled') {
+      setEmailError(
+        result.reason === 'privy-not-configured'
+          ? 'Email sign-in is not configured yet.'
+          : 'Email sign-in failed. Please try again.',
+      );
+    }
   };
 
   const handleGoogleSignIn = async () => {
@@ -226,6 +275,12 @@ export default function WalletConnectModal({ onClose }: WalletConnectModalProps)
         ) : (
           /* ── Connector list ── */
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+            <EmailTile onClick={handleEmailSignIn} loading={emailLoading} />
+
+            {emailError && (
+              <p style={{ fontSize: 11, color: '#f87171', textAlign: 'center', margin: 0 }}>{emailError}</p>
+            )}
+
             <GoogleTile onClick={handleGoogleSignIn} loading={googleLoading} />
 
             {googleError && (

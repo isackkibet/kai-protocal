@@ -45,6 +45,12 @@ export async function POST(req: Request) {
     if (!task || !task.active) {
       return NextResponse.json({ error: 'Task not available' }, { status: 404 });
     }
+    if (task.taskType === 'DAILY_CHECKIN') {
+      // Repeatable-by-day reward — TaskCompletion's unique(userId, taskId)
+      // guard below is a permanent one-time flag, which would forever block
+      // this task after the first claim. Use /api/kai-bar/checkin instead.
+      return NextResponse.json({ error: 'Use /api/kai-bar/checkin for daily sign-in' }, { status: 400 });
+    }
 
     // ── repeat guard ──
     const existing = await prisma.taskCompletion.findUnique({

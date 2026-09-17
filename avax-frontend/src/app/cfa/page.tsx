@@ -8,6 +8,7 @@ import {
   AlertTriangle, CheckCircle, Activity, Coins, RefreshCw,
   ChevronRight, Zap,
 } from 'lucide-react';
+import NurseryTab from '@/components/cfa/NurseryTab';
 
 // ── Types ─────────────────────────────────────────────────────────
 interface CFAData {
@@ -82,7 +83,7 @@ function MiniBar({ data, colorA, colorB }: { data: { month: string; trees: numbe
 export default function CFAPage() {
   const [data, setData]       = useState<CFAData | null>(null);
   const [loading, setLoading] = useState(true);
-  const [tab, setTab]         = useState<'overview' | 'members' | 'patrol' | 'products' | 'gov'>('overview');
+  const [tab, setTab]         = useState<'overview' | 'nursery' | 'members' | 'patrol' | 'products' | 'gov'>('overview');
 
   const load = async () => {
     setLoading(true);
@@ -163,7 +164,7 @@ export default function CFAPage() {
 
         {/* Tabs */}
         <div style={{ display: 'flex', gap: 4, overflowX: 'auto', scrollbarWidth: 'none', paddingBottom: 1 }}>
-          {(['overview','members','patrol','products','gov'] as const).map(t => (
+          {(['overview','nursery','members','patrol','products','gov'] as const).map(t => (
             <button key={t} onClick={() => setTab(t)} style={{
               flexShrink: 0, padding: '7px 14px', borderRadius: '10px 10px 0 0', cursor: 'pointer', border: 'none',
               background: tab === t ? 'rgba(16,185,129,0.14)' : 'rgba(255,255,255,0.03)',
@@ -244,6 +245,9 @@ export default function CFAPage() {
             </section>
           </div>
         )}
+
+        {/* ── NURSERY (tree species, planting, survival, inventory) ── */}
+        {tab === 'nursery' && <NurseryTab />}
 
         {/* ── MEMBERS ── */}
         {tab === 'members' && (
