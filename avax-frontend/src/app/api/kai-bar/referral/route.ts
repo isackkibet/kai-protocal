@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getPrisma } from '@/lib/db';
+import { verifyPrivyUserId } from '@/lib/privy-server';
 
 /**
  * /api/kai-bar/referral  —  GET + POST
@@ -9,6 +10,10 @@ import { getPrisma } from '@/lib/db';
  * POST — applies a referral code brought at signup. The referral is recorded
  *         as PENDING; Kai Bar is only credited once the referred user completes
  *         a meaningful milestone (PRD 2 §7 anti-fraud).
+ *
+ * Both verify identity from the bearer token — otherwise anyone could read
+ * another user's referral stats, or apply a code as someone else and mint
+ * Kai Bar into an account that isn't theirs.
  */
 
 const SHORT_CODE_LEN = 2 + 4;
@@ -35,9 +40,10 @@ async function resolveUser(prisma: any, privyUserId: string) {
 }
 
 export async function GET(req: Request) {
-  const { searchParams } = new URL(req.url);
-  const privyUserId = searchParams.get('privyUserId')?.trim();
-  if (!privyUserId) return NextResponse.json({ error: 'privyUserId required' }, { status: 400 });
+  const privyUserId = await verifyPrivyUserId(req.headers.get('authorization'));
+  if (!privyUserId) {
+    return NextResponse.json({ error: 'Could not verify your session. Please sign in again.' }, { status: 401 });
+  }
 
   const prisma = await getPrisma();
   if (!prisma) return NextResponse.json({ code: null, stats: { direct: 0, active: 0, networkSize: 0 }, db: false });
@@ -91,10 +97,14 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
   }
 
-  const privyUserId = String(body.privyUserId ?? '').trim();
+  const privyUserId = await verifyPrivyUserId(req.headers.get('authorization'));
+  if (!privyUserId) {
+    return NextResponse.json({ error: 'Could not verify your session. Please sign in again.' }, { status: 401 });
+  }
+
   const code = String(body.code ?? '').trim().toUpperCase();
-  if (!privyUserId || !code) {
-    return NextResponse.json({ error: 'privyUserId and code required' }, { status: 400 });
+  if (!code) {
+    return NextResponse.json({ error: 'code required' }, { status: 400 });
   }
 
   const prisma = await getPrisma();
