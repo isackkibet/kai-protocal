@@ -44,6 +44,13 @@ HARD RULES:
 
 AVAILABLE TOOLS: ${functionDeclarations().map((t) => t.name).join(', ')}`;
 
+const TERSE_SUFFIX = `
+
+TERSE MODE (voice command channel): This is a speech interface, not a chat window.
+- If the user issued an ACTION command, produce the matching plan and reply with ONE short confirmation sentence (e.g. "Prepared a transfer of 10 NVR. Approve in your wallet to sign.").
+- If the user asked a QUESTION, answer in AT MOST two short sentences. No bullet lists, no markdown headings, no follow-up questions.
+- Never ramble, never give background essays, never repeat the question.`;
+
 interface GeminiPart {
   text?: string;
   functionCall?: { name: string; args: Record<string, unknown> };
@@ -99,7 +106,7 @@ function audit(entry: Record<string, unknown>) {
   appendFile(AUDIT_FILE, `${line}\n`).catch(() => {});
 }
 
-async function callGemini(contents: GeminiContent[]) {
+async function callGemini(contents: GeminiContent[], terse = false) {
   const res = await fetch(GEMINI_URL, {
     method: 'POST',
     headers: {
@@ -107,10 +114,10 @@ async function callGemini(contents: GeminiContent[]) {
       'x-goog-api-key': GEMINI_KEY,
     },
     body: JSON.stringify({
-      system_instruction: { parts: [{ text: SYSTEM_PROMPT }] },
+      system_instruction: { parts: [{ text: terse ? SYSTEM_PROMPT + TERSE_SUFFIX : SYSTEM_PROMPT }] },
       contents,
       tools: [{ functionDeclarations: functionDeclarations() }],
-      generationConfig: { temperature: 0.3, maxOutputTokens: 2048 },
+      generationConfig: { temperature: terse ? 0.2 : 0.3, maxOutputTokens: terse ? 512 : 2048 },
     }),
     signal: AbortSignal.timeout(60_000),
   });
@@ -170,7 +177,7 @@ export async function POST(req: Request) {
     );
   }
 
-  let body: { message?: string; wallet?: string };
+  let body: { message?: string; wallet?: string; terse?: boolean };
   try {
     body = await req.json();
   } catch {
@@ -182,6 +189,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: 'message is required' }, { status: 400 });
   }
 
+  const terse = body.terse === true;
   const wallet = (body.wallet || '').trim();
   const initials = wallet ? `\n\nThe user's connected wallet address is ${wallet}. Use it with get_wallet_balance when relevant.` : '';
 
@@ -198,7 +206,7 @@ export async function POST(req: Request) {
 
   try {
     for (let i = 0; i < 4; i++) {
-      const data = await callGemini(contents);
+      const data = await callGemini(contents, terse);
       const candidate = data.candidates?.[0];
       const parts = candidate?.content?.parts ?? [];
 
