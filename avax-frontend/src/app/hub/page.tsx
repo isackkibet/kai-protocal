@@ -9,6 +9,7 @@ import {
   Search, RefreshCw, ChevronRight, Zap,
   Leaf, TrendingUp, Eye,
 } from 'lucide-react';
+import { usePrivyAuth } from '@/lib/privy-auth';
 
 // ── Types ──────────────────────────────────────────────────────────────────
 type ContentType = 'ARTICLE' | 'FIELD_JOURNAL' | 'AUDIO_PODCAST' | 'MARKET_NEWS' | 'EDUCATIONAL_GUIDE';
@@ -470,6 +471,7 @@ function TipModal({ post, onClose, onPaid, onNeedPayout }: {
 
 // ── Payout account modal ────────────────────────────────────────────────────
 function PayoutModal({ initialCreator, onClose }: { initialCreator: string; onClose: () => void }) {
+  const { authenticated, signInWithEmail, getAccessToken } = usePrivyAuth();
   const [name, setName]       = useState(initialCreator);
   const [type, setType]       = useState<'mobile_money' | 'kepss'>('mobile_money');
   const [bankAccounts, setBankAccounts] = useState<{ name: string; code: string }[]>([]);
@@ -499,9 +501,19 @@ function PayoutModal({ initialCreator, onClose }: { initialCreator: string; onCl
     setStatus('saving');
     setMsg('Registering payout account with Paystack...');
     try {
+      if (!authenticated) {
+        setMsg('Sign in first, then register your payout account...');
+        await signInWithEmail();
+      }
+      const token = await getAccessToken();
+      if (!token) {
+        setStatus('error');
+        setMsg('Please sign in to register a payout account.');
+        return;
+      }
       const res = await fetch('/api/hub/payout/register', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
         body: JSON.stringify({ name: name.trim(), payoutType: type, accountNumber: account, bankCode, accountName: name.trim() }),
       });
       const data = await res.json();

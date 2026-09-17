@@ -22,12 +22,24 @@
 import { NextResponse } from "next/server";
 import { createRecipient } from "@/lib/paystack";
 import { prisma } from "@/lib/prisma";
+import { verifyPrivyUserId } from "@/lib/privy-server";
 
 export const dynamic = "force-dynamic";
 
 const TYPES = ["mobile_money", "kepss"] as const;
 
 export async function POST(request: Request) {
+  // CreatorPayout has no owner link yet (keyed only by `name`), so this can't
+  // fully stop a signed-in user from re-registering a payout destination for
+  // a creator name that isn't theirs — that needs an ownership column on
+  // CreatorPayout (pending a DB migration). Requiring a verified Privy
+  // session at least closes off fully anonymous, zero-friction abuse from
+  // the public form.
+  const privyUserId = await verifyPrivyUserId(request.headers.get("authorization"));
+  if (!privyUserId) {
+    return NextResponse.json({ error: "Please sign in to register a payout account." }, { status: 401 });
+  }
+
   try {
     const body = await request.json();
     const { name, payoutType, accountNumber, bankCode, accountName } = body as {
