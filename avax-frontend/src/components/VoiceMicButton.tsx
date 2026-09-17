@@ -82,7 +82,7 @@ export default function VoiceMicButton({
                   borderRadius: '50%',
                   background: isListening ? '#34d399' : '#10b981',
                   boxShadow: isListening ? '0 0 8px #34d399' : 'none',
-                  animation: isListening ? 'pulse 1s infinite' : 'none',
+                  animation: isListening ? 'pulse-dot 1s ease-in-out infinite' : 'none',
                 }}
               />
               <span style={{ fontSize: 10, fontWeight: 800, color: '#34d399', textTransform: 'uppercase', letterSpacing: 0.5 }}>
@@ -124,6 +124,8 @@ export default function VoiceMicButton({
         onClick={toggleListening}
         disabled={disabled}
         title={isListening ? 'Stop listening' : 'Speak with KAI Agent'}
+        aria-label={isListening ? 'Stop listening' : 'Speak with KAI Agent'}
+        aria-pressed={isListening}
         style={{
           width: buttonSize,
           height: buttonSize,
@@ -184,6 +186,8 @@ export default function VoiceMicButton({
           type="button"
           onClick={() => setSpeechEnabled(!speechEnabled)}
           title={speechEnabled ? 'Agent voice reply is ON' : 'Agent voice reply is OFF'}
+          aria-label={speechEnabled ? 'Turn off agent voice reply' : 'Turn on agent voice reply'}
+          aria-pressed={speechEnabled}
           style={{
             width: buttonSize * 0.72,
             height: buttonSize * 0.72,
