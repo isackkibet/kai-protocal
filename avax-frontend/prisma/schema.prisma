@@ -14,10 +14,13 @@ model KaiUser {
   name       String
   email      String      @unique
   phone      String?
-  /// Optional unique handle a user picks on first login (post-signup step).
-  username    String?    @unique
-  /// Display name shown in the UI; falls back to `name` when unset.
-  displayName String?
+  // username/displayName were added here but the matching DB migration
+  // (adds the columns, drops the dead NextAuth tables) is still pending —
+  // see the migration SQL saved in this session. Deploying with these
+  // declared while the columns don't exist yet made Prisma's default
+  // select-all fetch every KaiUser query in the app: onboard, checkin,
+  // tasks, referral, airdrop, ledger, CFA join/planting/survival, SDG.
+  // Reverted to stop that outage; re-add once the migration has run.
   createdAt  DateTime    @default(now())
   updatedAt  DateTime    @updatedAt
   /// Privy user ID — the sole identity link, verified server-side on every request.
