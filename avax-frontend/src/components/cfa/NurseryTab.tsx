@@ -109,7 +109,12 @@ export default function NurseryTab() {
     }
   }, [authenticated, getAccessToken]);
 
+  // Fetch-on-mount: loads nursery summary on mount.
+  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => { load(); }, [load]);
+  // Fetch-on-mount: loads membership status for the signed-in user once ready.
+  // getAccessToken awaits Privy auth, so setState happens after an async boundary.
+  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => { loadMembership(); }, [loadMembership]);
 
   const joinCfa = async () => {

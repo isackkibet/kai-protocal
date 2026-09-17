@@ -62,7 +62,7 @@ export async function POST(req: Request) {
     ]);
 
     return NextResponse.json({ ok: true, earned: points, entry: ledger.id });
-  } catch (e: any) {
+  } catch (e: unknown) {
     console.error('[kai-bar/checkin] failed', e);
     return NextResponse.json({ error: 'Failed to claim daily reward' }, { status: 500 });
   }

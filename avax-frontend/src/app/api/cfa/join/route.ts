@@ -51,7 +51,7 @@ export async function POST(req: Request) {
     });
 
     return NextResponse.json({ ok: true, member, isNew: true });
-  } catch (e: any) {
+  } catch (e: unknown) {
     console.error('[cfa/join] failed', e);
     return NextResponse.json({ error: 'Failed to join CFA' }, { status: 500 });
   }

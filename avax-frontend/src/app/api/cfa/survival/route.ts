@@ -30,7 +30,7 @@ export async function GET() {
 }
 
 export async function POST(req: Request) {
-  let body: any = {};
+  let body: Record<string, unknown> = {};
   try {
     body = await req.json();
   } catch {
@@ -40,7 +40,7 @@ export async function POST(req: Request) {
   const speciesId = String(body.speciesId ?? '').trim();
   const numberPlanted = Math.max(0, Number(body.numberPlanted) || 0);
   const numberSurviving = Math.max(0, Number(body.numberSurviving) || 0);
-  const observedAt = body.observedAt ? new Date(body.observedAt) : new Date();
+  const observedAt = body.observedAt ? new Date(String(body.observedAt)) : new Date();
 
   if (!speciesId || numberPlanted <= 0) {
     return NextResponse.json({ error: 'speciesId and a positive numberPlanted are required' }, { status: 400 });
@@ -98,7 +98,7 @@ export async function POST(req: Request) {
     }
 
     return NextResponse.json({ ok: true, record, pointsEarned });
-  } catch (e: any) {
+  } catch (e: unknown) {
     console.error('[cfa/survival] failed', e);
     return NextResponse.json({ error: 'Failed to record survival check' }, { status: 500 });
   }
