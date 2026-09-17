@@ -57,12 +57,16 @@ export function useKaiBar() {
     if (!privyUserId) return;
     setLoading(true);
     try {
+      const token = await getAccessToken();
+      if (!token) return;
+      const authHeaders = { Authorization: `Bearer ${token}` };
+
       const [ledgerRes, tasksRes, referralRes, airdropRes, checkinRes] = await Promise.allSettled([
-        fetch(`/api/kai-bar/ledger?privyUserId=${encodeURIComponent(privyUserId)}`),
-        fetch(`/api/kai-bar/tasks?privyUserId=${encodeURIComponent(privyUserId)}`),
-        fetch(`/api/kai-bar/referral?privyUserId=${encodeURIComponent(privyUserId)}`),
-        fetch(`/api/kai-bar/airdrop?privyUserId=${encodeURIComponent(privyUserId)}`),
-        fetch(`/api/kai-bar/checkin?privyUserId=${encodeURIComponent(privyUserId)}`),
+        fetch('/api/kai-bar/ledger', { headers: authHeaders }),
+        fetch('/api/kai-bar/tasks', { headers: authHeaders }),
+        fetch('/api/kai-bar/referral', { headers: authHeaders }),
+        fetch('/api/kai-bar/airdrop', { headers: authHeaders }),
+        fetch('/api/kai-bar/checkin', { headers: authHeaders }),
       ]);
 
       if (ledgerRes.status === 'fulfilled') {
@@ -98,7 +102,7 @@ export function useKaiBar() {
     } finally {
       setLoading(false);
     }
-  }, [privyUserId]);
+  }, [privyUserId, getAccessToken]);
 
   const claimDailyCheckin = useCallback(async (): Promise<{ ok: boolean; earned?: number; error?: string }> => {
     setClaimingCheckin(true);
