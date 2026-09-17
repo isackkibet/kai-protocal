@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { ListChecks, Mail, Wallet, Trophy, Gift, Loader2, CheckCircle2, Clock, ChevronRight, ArrowLeft } from 'lucide-react';
@@ -43,7 +43,16 @@ export default function WaitlistPage() {
   const [googleLoading, setGoogleLoading] = useState(false);
   const [signInError, setSignInError] = useState<string | null>(null);
 
-  if (!ready) {
+  // `ready` (Privy SDK + embedded wallet init) has no hard timeout of its own —
+  // without this, a slow/stuck Privy init spins this page forever instead of
+  // falling through to the sign-in screen.
+  const [timedOut, setTimedOut] = useState(false);
+  useEffect(() => {
+    const t = setTimeout(() => setTimedOut(true), 1800);
+    return () => clearTimeout(t);
+  }, []);
+
+  if (!ready && !timedOut) {
     return <main style={{ minHeight: '100dvh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Loader2 className="animate-spin" size={26} color="#10b981" /></main>;
   }
 
