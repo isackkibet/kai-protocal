@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { Bot, ChevronLeft, Mic, MicOff, Volume2, VolumeX, ShieldCheck, Loader2, Send as SendIcon, Wallet } from 'lucide-react';
+import { Bot, ChevronLeft, Mic, MicOff, Volume2, VolumeX, ShieldCheck, Loader2, Send as SendIcon, Wallet, Repeat, Sparkles } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { formatChat } from '@/lib/formatChat';
 import {
@@ -25,8 +25,10 @@ interface Msg {
   plans?: Plan[];
 }
 
+type MicState = 'idle' | 'listening' | 'thinking' | 'speaking';
+
 const WELCOME =
-  "Hey, I'm KAI Voice Agent. Talk to me or type. I can read your Avalanche balances, compare APYs, check conservation NFTs, quote x402 payments, and prepare swap, M-Pesa, NFT and on-chain escrow plans. You approve every financial action in your wallet — I never move money without you signing.";
+  "Hey, I'm KAI Voice Agent. Tap the mic and ask me anything — \"What is KAI?\", my balance, APYs, escrow, or to build a payment plan. I'll answer you out loud, then open the mic again for your next question.";
 
 // Must match the server-side default in lib/mpesa.ts's MPESA_KES_PER_USD — this
 // client constant only exists to pre-convert into /api/mpesa/stk's `priceYbob`
@@ -34,35 +36,81 @@ const WELCOME =
 // server rate is ever overridden via env, this will silently drift out of sync.
 const USD_PER_KES = 130;
 
+const SILENCE_MS = 1400;
+const REOPEN_MS = 700;
+
+const QUICK_ASKS = [
+  'What is KAI?',
+  'What is the NVR token?',
+  'Explain yBOB stablecoin',
+  'What APYs are available?',
+];
+
+const STATUS_TEXT: Record<MicState, string> = {
+  idle: 'Tap the mic and ask your question…',
+  listening: 'Listening… speak now.',
+  thinking: 'Thinking…',
+  speaking: 'Answering you out loud… mic reopens after.',
+};
+
 export default function VoiceAgentPage() {
   const router = useRouter();
   const [messages, setMessages] = useState<Msg[]>([{ role: 'ai', text: WELCOME }]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
-  const [listening, setListening] = useState(false);
+  const [micState, setMicState] = useState<MicState>('idle');
+  const [speaking, setSpeaking] = useState(false);
   const [interim, setInterim] = useState('');
   const [speakOn, setSpeakOn] = useState(true);
+  const [autoReopen, setAutoReopen] = useState(true);
   const [wallet, setWallet] = useState('');
   const [micSupported, setMicSupported] = useState(true);
   const [stkStatus, setStkStatus] = useState<string | null>(null);
 
   const endRef = useRef<HTMLDivElement>(null);
-  const recRef = useRef<{ recognize: () => void; abort: () => void } | null>(null);
+  const recRef = useRef<{ recognize: () => void; stop: () => void } | null>(null);
   const interimRef = useRef('');
   const listeningRef = useRef(false);
+  const speakingRef = useRef(false);
+  const loadingRef = useRef(false);
+  const autoReopenRef = useRef(true);
+  const silenceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const micStateRef = useRef<MicState>('idle');
 
   useEffect(() => {
     endRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, loading, interim]);
 
+  useEffect(() => {
+    autoReopenRef.current = autoReopen;
+  }, [autoReopen]);
+
   const speak = useCallback(
-    (text: string) => {
-      if (!speakOn || typeof window === 'undefined' || !window.speechSynthesis) return;
+    (text: string, onEnd?: () => void) => {
+      if (!speakOn || typeof window === 'undefined' || !window.speechSynthesis) {
+        onEnd?.();
+        return;
+      }
       window.speechSynthesis.cancel();
       const clean = text.replace(/\*\*(.*?)\*\*/g, '$1').replace(/`(.*?)`/g, '$1');
       const utt = new SpeechSynthesisUtterance(clean);
-      const v = window.speechSynthesis.getVoices().find((v) => v.lang.startsWith('en'));
+      const v = window.speechSynthesis.getVoices().find((vv) => vv.lang.startsWith('en'));
       if (v) utt.voice = v;
+      utt.onstart = () => {
+        speakingRef.current = true;
+        setSpeaking(true);
+        setMicState('speaking');
+      };
+      utt.onend = () => {
+        speakingRef.current = false;
+        setSpeaking(false);
+        onEnd?.();
+      };
+      utt.onerror = () => {
+        speakingRef.current = false;
+        setSpeaking(false);
+        onEnd?.();
+      };
       window.speechSynthesis.speak(utt);
     },
     [speakOn],
@@ -106,6 +154,7 @@ export default function VoiceAgentPage() {
     rec.continuous = true;
     rec.interimResults = true;
     rec.lang = 'en-US';
+    rec.maxAlternatives = 1;
     rec.onresult = (e: any) => {
       let transcript = '';
       for (let i = e.resultIndex; i < e.results.length; i++) {
@@ -113,52 +162,82 @@ export default function VoiceAgentPage() {
       }
       interimRef.current = transcript;
       setInterim(transcript);
+      // Auto-send after the speaker goes quiet.
+      if (silenceTimerRef.current) clearTimeout(silenceTimerRef.current);
+      silenceTimerRef.current = setTimeout(() => {
+        stopAndSend();
+      }, SILENCE_MS);
     };
     rec.onend = () => {
       listeningRef.current = false;
-      setListening(false);
+      if (micStateRef.current === 'listening') setMicState('idle');
     };
     rec.onerror = (ev: any) => {
       listeningRef.current = false;
-      setListening(false);
       const code = ev?.error;
       if (code === 'not-allowed' || code === 'service-not-allowed') {
         setStkStatus('Microphone permission denied — allow mic access in your browser and tap the mic again.');
-      } else if (code === 'no-speech' || code === 'aborted') {
+      } else if (code === 'no-speech') {
         setInterim('');
         interimRef.current = '';
       }
+      if (micStateRef.current === 'listening') setMicState('idle');
     };
-    recRef.current = {
-      recognize: () => {
-        if (listeningRef.current) return;
-        interimRef.current = '';
-        setInterim('');
-        listeningRef.current = true;
-        setListening(true);
-        try {
-          rec.start();
-        } catch {
-          listeningRef.current = false;
-          setListening(false);
-          setStkStatus('Could not start the microphone. Check browser permission and try again.');
-        }
-      },
-      abort: () => {
-        if (!listeningRef.current) return;
-        listeningRef.current = false;
+
+    const stopAndSend = () => {
+      if (silenceTimerRef.current) clearTimeout(silenceTimerRef.current);
+      if (!listeningRef.current) return;
+      listeningRef.current = false;
+      try {
         rec.stop();
-        setListening(false);
-      },
+      } catch {
+        /* noop */
+      }
+      setListeningOff();
+      const said = interimRef.current.trim();
+      interimRef.current = '';
+      setInterim('');
+      if (said && !loadingRef.current && !speakingRef.current) {
+        send(said);
+      }
     };
+
+    const setListeningOff = () => {
+      if (micStateRef.current === 'listening') setMicState('idle');
+    };
+
+    const recognize = () => {
+      if (speakingRef.current || loadingRef.current) return;
+      if (listeningRef.current) return;
+      interimRef.current = '';
+      setInterim('');
+      listeningRef.current = true;
+      setMicState('listening');
+      try {
+        rec.start();
+      } catch {
+        listeningRef.current = false;
+        if (micStateRef.current === 'listening') setMicState('idle');
+        setStkStatus('Could not start the microphone. Check browser permission and try again.');
+      }
+    };
+
+    recRef.current = { recognize, stop: stopAndSend };
     return () => {
+      if (silenceTimerRef.current) clearTimeout(silenceTimerRef.current);
       try {
         rec.abort();
       } catch {
         /* noop */
       }
     };
+
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  useEffect(() => {
+    micStateRef.current = micState;
+  }, [micState]);
 
   const moveToAppRoute = (path: string) => router.push(path);
 
@@ -188,7 +267,6 @@ export default function VoiceAgentPage() {
       return;
     }
     if (action === 'swap') {
-      // send_swap — funds MUST come from this exact signed flow (never the agent).
       if (!wallet) {
         const acct = await connectWallet();
         if (!acct) { setStkStatus('Connect a wallet first to sign the swap.'); return; }
@@ -211,7 +289,6 @@ export default function VoiceAgentPage() {
       return;
     }
     if (action === 'escrow_create') {
-      // create_escrow — approve yBOB + deposit into KaiEscrow after human approval.
       if (!wallet) {
         const acct = await connectWallet();
         if (!acct) { setStkStatus('Connect a wallet first to lock escrow funds.'); return; }
@@ -230,7 +307,6 @@ export default function VoiceAgentPage() {
       return;
     }
     if (action === 'escrow_release') {
-      // request_escrow_release — agent cannot release unilaterally; human signs.
       if (!wallet) {
         const acct = await connectWallet();
         if (!acct) { setStkStatus('Connect a wallet first to approve escrow release.'); return; }
@@ -251,12 +327,23 @@ export default function VoiceAgentPage() {
     setStkStatus(`Approved plan: ${action} (link signed through wallet when available).`);
   };
 
+  const reopenMic = useCallback(() => {
+    if (!autoReopenRef.current) return;
+    setTimeout(() => {
+      if (!speakingRef.current && !loadingRef.current && !listeningRef.current) {
+        recRef.current?.recognize();
+      }
+    }, REOPEN_MS);
+  }, []);
+
   const send = async (text?: string) => {
     const msg = (text ?? input).trim();
-    if (!msg || loading) return;
+    if (!msg) return;
     setInput('');
     setMessages((p) => [...p, { role: 'user', text: msg }, { role: 'ai', text: '' }]);
+    loadingRef.current = true;
     setLoading(true);
+    setMicState('thinking');
     setStkStatus(null);
 
     let account = wallet;
@@ -302,7 +389,6 @@ export default function VoiceAgentPage() {
           }
           if (typeof json.token === 'string') {
             aiText += json.token;
-            // Append to the live AI placeholder bubble pushed at the start of send().
             setMessages((p) => {
               const idx = p.length - 1;
               if (p[idx]?.role !== 'ai') return p;
@@ -314,6 +400,13 @@ export default function VoiceAgentPage() {
         }
       }
 
+      const finish = () => {
+        loadingRef.current = false;
+        setLoading(false);
+        setInterim('');
+        if (!autoReopenRef.current) setMicState('idle');
+      };
+
       if (aiText) {
         setMessages((p) => {
           const idx = p.length - 1;
@@ -322,7 +415,8 @@ export default function VoiceAgentPage() {
           clone[idx] = { ...clone[idx], text: aiText, plans };
           return clone;
         });
-        speak(aiText);
+        finish();
+        speak(aiText, reopenMic);
       } else if (plans.length) {
         setMessages((p) => {
           const idx = p.length - 1;
@@ -332,10 +426,12 @@ export default function VoiceAgentPage() {
           clone[idx] = { ...clone[idx], text, plans };
           return clone;
         });
-        speak('Please review the plan and approve or reject it.');
+        finish();
+        speak('Please review the plan and approve or reject it.', reopenMic);
       } else {
-        // Neither text nor a plan came back — drop the empty placeholder bubble.
         setMessages((p) => (p[p.length - 1]?.role === 'ai' && !p[p.length - 1].text ? p.slice(0, -1) : p));
+        finish();
+        reopenMic();
       }
     } catch {
       const text = '**Voice Agent error.** If money is involved, nothing was sent. Try again.';
@@ -346,21 +442,38 @@ export default function VoiceAgentPage() {
         clone[idx] = { ...clone[idx], text };
         return clone;
       });
-    } finally {
+      loadingRef.current = false;
       setLoading(false);
       setInterim('');
+      if (!autoReopenRef.current) setMicState('idle');
+      reopenMic();
     }
   };
 
   const toggleMic = () => {
-    if (listening || listeningRef.current) {
-      recRef.current?.abort();
-      const said = interimRef.current.trim() || interim.trim();
-      if (said) send(said);
+    if (speakingRef.current || loadingRef.current) return; // don't interrupt the AI
+    if (listeningRef.current) {
+      recRef.current?.stop();
     } else {
       recRef.current?.recognize();
     }
   };
+
+  const micBtnColor =
+    micState === 'listening'
+      ? 'linear-gradient(135deg, #f43f5e, #be123c)'
+      : micState === 'thinking' || micState === 'speaking'
+        ? 'rgba(255,255,255,0.10)'
+        : 'linear-gradient(135deg, #34d399, #10b981, #047857)';
+
+  const micBtnGlow =
+    micState === 'listening'
+      ? '0 0 34px rgba(244,63,94,0.6)'
+      : micState === 'speaking'
+        ? '0 0 26px rgba(6,182,212,0.45)'
+        : '0 0 24px rgba(16,185,129,0.5)';
+
+  const micDisabled = micState === 'thinking' || micState === 'speaking';
 
   return (
     <div style={{
@@ -379,11 +492,13 @@ export default function VoiceAgentPage() {
           <div style={{ width: 42, height: 42, borderRadius: '50%', background: 'linear-gradient(135deg, #10b981, #064e3b)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 0 22px rgba(16,185,129,0.55)' }}>
             <Bot size={20} color="#fff" />
           </div>
-          {listening && <span style={{ position: 'absolute', inset: -3, borderRadius: '50%', border: '1.5px solid #f43f5e', animation: 'glow-pulse 1.2s ease-in-out infinite' }} />}
+          {micState === 'listening' && <span style={{ position: 'absolute', inset: -3, borderRadius: '50%', border: '1.5px solid #f43f5e', animation: 'glow-pulse 1.2s ease-in-out infinite' }} />}
         </div>
         <div style={{ flex: 1 }}>
-          <p style={{ fontSize: 15, fontWeight: 900, color: '#fff', margin: 0 }}>KAI Voice Agent</p>
-          <p style={{ fontSize: 10, color: '#10b981', margin: 0, fontWeight: 700 }}>{listening ? '● Listening…' : (loading ? '● Processing' : '● Neural orchestrator · Gemini')}</p>
+          <p style={{ fontSize: 15, fontWeight: 900, color: '#fff', margin: 0 }}>KAI Open Mic</p>
+          <p style={{ fontSize: 10, color: micState === 'speaking' ? '#22d3ee' : '#10b981', margin: 0, fontWeight: 700 }}>
+            {micState === 'listening' ? '● Listening…' : (micState === 'speaking' ? '● Answering…' : (loading ? '● Processing' : '● Open mic Q&A · Gemini'))}
+          </p>
         </div>
         <button onClick={() => setSpeakOn((v) => !v)} title="Voice replies" style={{
           width: 36, height: 36, borderRadius: 10, border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
@@ -405,8 +520,21 @@ export default function VoiceAgentPage() {
         <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.35)' }}>Agent never signs. You approve in MetaMask/Core.</span>
       </div>
 
+      {/* Quick asks */}
+      <div style={{ position: 'relative', zIndex: 9, padding: '4px 16px 6px', display: 'flex', gap: 7, overflowX: 'auto', scrollbarWidth: 'none' }}>
+        {QUICK_ASKS.map((q) => (
+          <button key={q} onClick={() => { recRef.current?.stop(); send(q); }} disabled={loading} style={{
+            flexShrink: 0, padding: '6px 12px', borderRadius: 20, border: '1px solid rgba(16,185,129,0.25)', cursor: 'pointer',
+            background: 'rgba(16,185,129,0.08)', color: 'rgba(255,255,255,0.85)', fontSize: 11, fontWeight: 600,
+            display: 'flex', alignItems: 'center', gap: 5,
+          }}>
+            <Sparkles size={11} color="#10b981" /> {q}
+          </button>
+        ))}
+      </div>
+
       {/* Messages */}
-      <main style={{ flex: 1, overflowY: 'auto', position: 'relative', zIndex: 8, padding: '10px 16px', display: 'flex', flexDirection: 'column', gap: 8, scrollbarWidth: 'thin' }}>
+      <main style={{ flex: 1, overflowY: 'auto', position: 'relative', zIndex: 8, padding: '8px 16px', display: 'flex', flexDirection: 'column', gap: 8, scrollbarWidth: 'thin' }}>
         {messages.map((m, i) => (
           <motion.div key={i} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} style={{ display: 'flex', flexDirection: m.role === 'user' ? 'row-reverse' : 'row', gap: 8, alignItems: 'flex-end' }}>
             <div style={{
@@ -420,9 +548,9 @@ export default function VoiceAgentPage() {
           </motion.div>
         ))}
 
-        {interim && (
+        {interim && micState === 'listening' && (
           <div style={{ alignSelf: 'flex-start', padding: '9px 14px', borderRadius: 18, background: 'rgba(244,63,94,0.12)', color: 'rgba(255,255,255,0.75)', fontSize: 13, fontStyle: 'italic' }}>
-            {interim}
+            🎙️ {interim}
           </div>
         )}
 
@@ -445,7 +573,6 @@ export default function VoiceAgentPage() {
           </motion.div>
         )}
 
-        {/* Approval cards */}
         {messages.map((m, i) =>
           (m.plans || []).map((plan, pi) => (
             <motion.div key={`approve-${i}-${pi}`} initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} style={{
@@ -485,31 +612,47 @@ export default function VoiceAgentPage() {
         <div ref={endRef} style={{ height: 4 }} />
       </main>
 
+      {/* Open Mic dock */}
+      <div style={{ position: 'relative', zIndex: 10, padding: '10px 16px 6px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8 }}>
+        <motion.button whileTap={{ scale: 0.9 }} onClick={toggleMic} disabled={micDisabled || !micSupported}
+          title={!micSupported ? 'Mic not supported in this browser' : (micState === 'listening' ? 'Stop & send' : 'Open mic')}
+          style={{
+            width: 68, height: 68, borderRadius: '50%', border: micState === 'listening' ? '2px solid #fff' : 'none',
+            flexShrink: 0, cursor: micDisabled || !micSupported ? 'not-allowed' : 'pointer',
+            background: micBtnColor,
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            boxShadow: micBtnGlow, transition: 'all 0.2s',
+          }}>
+          {micState === 'thinking' ? <Loader2 size={26} color="#fff" style={{ animation: 'spin 0.9s linear infinite' }} />
+            : micState === 'listening' ? <MicOff size={26} color="#fff" />
+              : <Mic size={26} color={micState === 'speaking' ? 'rgba(255,255,255,0.4)' : '#fff'} />}
+        </motion.button>
+
+        <p style={{ margin: 0, fontSize: 12, color: micState === 'listening' ? '#fca5a5' : (micState === 'speaking' ? '#67e8f9' : 'rgba(255,255,255,0.6)'), fontWeight: 600 }}>
+          {STATUS_TEXT[micState]}
+        </p>
+
+        <label style={{ display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer', fontSize: 11, color: 'rgba(255,255,255,0.5)' }}>
+          <Repeat size={12} color={autoReopen ? '#10b981' : 'rgba(255,255,255,0.35)'} />
+          <span>Auto-reopen mic after answer</span>
+          <input type="checkbox" checked={autoReopen} onChange={(e) => setAutoReopen(e.target.checked)} style={{ accentColor: '#10b981', width: 14, height: 14, cursor: 'pointer' }} />
+        </label>
+      </div>
+
       {/* Input bar */}
       <footer style={{ position: 'relative', zIndex: 10, padding: '10px 14px', paddingBottom: 'max(12px, env(safe-area-inset-bottom))',
         background: 'linear-gradient(0deg, rgba(6,6,8,0.96) 0%, rgba(6,6,8,0.7) 100%)', backdropFilter: 'blur(20px)', borderTop: '1px solid rgba(255,255,255,0.05)' }}>
-        <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-          <motion.button whileTap={{ scale: 0.9 }} onClick={toggleMic} disabled={!micSupported}
-            title={!micSupported ? 'Mic not supported in this browser' : (listening ? 'Stop & send' : 'Tap to talk')} style={{
-              width: 52, height: 52, borderRadius: '50%', border: 'none', flexShrink: 0, cursor: micSupported ? 'pointer' : 'not-allowed',
-              background: listening ? 'linear-gradient(135deg, #f43f5e, #be123c)' : 'linear-gradient(135deg, #34d399, #10b981, #047857)',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              boxShadow: listening ? '0 0 24px rgba(244,63,94,0.55)' : '0 0 20px rgba(16,185,129,0.5)',
-            }}>
-            {listening ? <MicOff size={20} color="#fff" /> : <Mic size={20} color="#fff" />}
+        <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 8, background: 'rgba(255,255,255,0.07)', borderRadius: 24, padding: '6px 6px 6px 14px' }}>
+          <textarea rows={1} value={input} onChange={(e) => setInput(e.target.value)}
+            onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); recRef.current?.stop(); send(); } }}
+            placeholder={micSupported ? 'Or type a question…' : 'Ask your question…'}
+            style={{ flex: 1, background: 'transparent', border: 'none', outline: 'none', color: '#fff', fontSize: 14, resize: 'none', fontFamily: 'inherit', minHeight: 26, padding: '4px 0' }} />
+          <motion.button whileTap={{ scale: 0.9 }} onClick={() => { recRef.current?.stop(); send(); }} disabled={!input.trim() || loading} style={{
+            width: 38, height: 38, borderRadius: '50%', border: 'none', flexShrink: 0, cursor: input.trim() && !loading ? 'pointer' : 'not-allowed',
+            background: input.trim() && !loading ? 'linear-gradient(135deg, #34d399, #047857)' : 'rgba(255,255,255,0.08)',
+          }}>
+            <SendIcon size={16} color={input.trim() && !loading ? '#fff' : 'rgba(255,255,255,0.25)'} />
           </motion.button>
-          <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 8, background: 'rgba(255,255,255,0.07)', borderRadius: 24, padding: '6px 6px 6px 14px' }}>
-            <textarea rows={1} value={input} onChange={(e) => setInput(e.target.value)}
-              onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); } }}
-              placeholder={micSupported ? 'Tap the mic, or type…' : 'Type your request…'}
-              style={{ flex: 1, background: 'transparent', border: 'none', outline: 'none', color: '#fff', fontSize: 14, resize: 'none', fontFamily: 'inherit', minHeight: 26, padding: '4px 0' }} />
-            <motion.button whileTap={{ scale: 0.9 }} onClick={() => send()} disabled={!input.trim() || loading} style={{
-              width: 38, height: 38, borderRadius: '50%', border: 'none', flexShrink: 0, cursor: input.trim() && !loading ? 'pointer' : 'not-allowed',
-              background: input.trim() && !loading ? 'linear-gradient(135deg, #34d399, #047857)' : 'rgba(255,255,255,0.08)',
-            }}>
-              <SendIcon size={16} color={input.trim() && !loading ? '#fff' : 'rgba(255,255,255,0.25)'} />
-            </motion.button>
-          </div>
         </div>
         {!micSupported && <p style={{ fontSize: 10, color: 'rgba(255,255,255,0.4)', textAlign: 'center', marginTop: 6 }}>Voice input needs Chrome/Edge. Typing works everywhere.</p>}
       </footer>
