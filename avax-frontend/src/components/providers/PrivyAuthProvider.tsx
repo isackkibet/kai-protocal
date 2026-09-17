@@ -12,6 +12,8 @@ import {
 import { ERC20_ABI } from '@/lib/erc20abi';
 import { AIRDROP_ABI } from '@/lib/airdropAbi';
 
+const POST_LOGIN_REDIRECT_KEY = 'privy:post-login-redirect';
+
 /**
  * PrivyAuthProvider — Google login → embedded Avalanche C-Chain wallet (PRD 1).
  *
@@ -93,6 +95,31 @@ function PrivyAuthContextProvider({ children }: { children: React.ReactNode }) {
 
   const builtLogin = useCallback(() => login({ loginMethods: ['google'] }), [login]);
   const builtEmailLogin = useCallback(() => login({ loginMethods: ['email'] }), [login]);
+
+  // Log the page the user was on before starting login, so that if Privy uses
+  // its redirect-based OAuth flow (browser popup blocked, embedded/mobile
+  // webview) the Google callback — which lands on the app root, the registered
+  // redirect URI — can send the user back where they came from.
+  const rememberPostLoginPath = () => {
+    if (typeof window === 'undefined') return;
+    const current = window.location.pathname + window.location.search + window.location.hash;
+    if (current && current !== '/') window.sessionStorage.setItem(POST_LOGIN_REDIRECT_KEY, current);
+  };
+
+  // If a redirect-flow login dropped us on the app root instead of the page the
+  // user started from, send them on to their intended destination. Popup flow
+  // leaves the URL untouched (saved path === current path), so this is a no-op.
+  // The key is always cleared on read, so this never fires twice.
+  useEffect(() => {
+    if (!ready || !authenticated || typeof window === 'undefined') return;
+    const target = window.sessionStorage.getItem(POST_LOGIN_REDIRECT_KEY);
+    if (!target) return;
+    window.sessionStorage.removeItem(POST_LOGIN_REDIRECT_KEY);
+    const current = window.location.pathname + window.location.search + window.location.hash;
+    if (current === '/' && target !== current && target.startsWith('/')) {
+      window.location.replace(target);
+    }
+  }, [ready, authenticated]);
 
   /**
    * Sends an ERC-20 transfer through the Privy embedded wallet. All signing
@@ -192,6 +219,7 @@ function PrivyAuthContextProvider({ children }: { children: React.ReactNode }) {
    */
   const signInWithGoogle = useCallback(async (): Promise<PrivyAuthSyncResult> => {
     try {
+      rememberPostLoginPath();
       await builtLogin();
       // Allow Privy state (user + wallet) to hydrate before syncing.
       await new Promise((r) => setTimeout(r, 400));
@@ -217,6 +245,7 @@ function PrivyAuthContextProvider({ children }: { children: React.ReactNode }) {
    */
   const signInWithEmail = useCallback(async (): Promise<PrivyAuthSyncResult> => {
     try {
+      rememberPostLoginPath();
       await builtEmailLogin();
       await new Promise((r) => setTimeout(r, 400));
       const result = await syncToBackend();
