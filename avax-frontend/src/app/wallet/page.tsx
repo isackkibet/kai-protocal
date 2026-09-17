@@ -14,10 +14,11 @@ import { usePrivyAuth } from '@/lib/privy-auth';
 import { useNFTs } from '@/hooks/useNFTs';
 import { ECOSYSTEM_TOKENS, AVAX_CONFIG, FUJI_EXPLORER, formatTokenAmount } from '@/lib/tokens';
 import { ERC20_ABI } from '@/lib/erc20abi';
+import RealisticQR from '@/components/ui/RealisticQR';
 
 /* ── shared styles ── */
 const Rs: React.CSSProperties = { textShadow: '0 1px 4px rgba(0,0,0,0.88)' };
-const W: React.CSSProperties = { width: '100%', maxWidth: 1080, margin: '0 auto', padding: '0 40px' };
+const W: React.CSSProperties = { width: '100%', maxWidth: 1360, margin: '0 auto', padding: '0 40px' };
 
 function shortAddr(a: string | { hash: string }) {
   const s = typeof a === 'string' ? a : a.hash;
@@ -161,18 +162,47 @@ export default function WalletDashboard() {
     );
   }
 
+  const totalBalance = avaxAmt + Object.values(tokenBals).reduce((a, b) => a + b, 0);
+  const assetRows = [
+    { s: 'AVAX', name: 'Avalanche', emoji: '🔺', amt: avaxAmt, c: AVAX_CONFIG.color, d: true },
+    ...ECOSYSTEM_TOKENS.map(t => ({ s: t.symbol, name: t.name, emoji: t.emoji, amt: tokenBals[t.symbol] ?? 0, c: t.color, d: !!t.address })),
+  ];
+
+  const selectAssetForSend = (symbol: string) => {
+    const match = ECOSYSTEM_TOKENS.find(t => t.symbol === symbol && t.address);
+    if (match?.address) setToken(match.address);
+    setTab('send');
+  };
+
   return (
     <main style={{ minHeight: '100dvh', color: '#fff', fontFamily: 'var(--font-sans)', position: 'relative', paddingBottom: 80 }}>
+      <style>{`
+        .wallet-dash-grid { display: flex; flex-direction: column; gap: 16px; }
+        .wallet-dash-side { display: flex; flex-direction: column; gap: 14px; }
+        .wallet-asset-row { transition: background 0.15s ease; cursor: pointer; }
+        .wallet-asset-row:hover { background: rgba(255,255,255,0.05) !important; }
+        @media (min-width: 1000px) {
+          .wallet-dash-grid { display: grid; grid-template-columns: minmax(0, 1.65fr) minmax(300px, 1fr); align-items: start; gap: 20px; }
+        }
+      `}</style>
       <div style={{ ...W, paddingTop: 28, position: 'relative', zIndex: 5 }}>
         {/* Header */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 18 }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 18, flexWrap: 'wrap', gap: 10 }}>
           <div>
             <p style={{ fontSize: 10, fontWeight: 700, letterSpacing: 1.4, textTransform: 'uppercase', color: 'rgba(255,255,255,0.48)', margin: 0 }}>Kainovari Wallet</p>
             <h1 style={{ fontSize: 26, fontWeight: 900, margin: '4px 0 0', letterSpacing: -0.5, ...Rs }}>
               Hello, <span style={{ color: '#34d399' }}>{name?.split(' ')[0] || 'Member'}</span>
             </h1>
           </div>
-          <div style={{ display: 'flex', gap: 8 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <div style={{
+              display: 'flex', alignItems: 'center', gap: 8, padding: '7px 12px', borderRadius: 10,
+              background: 'rgba(16,185,129,0.08)', boxShadow: '0 0 0 1px rgba(16,185,129,0.22) inset',
+            }}>
+              <Mountain size={14} color="rgba(255,255,255,0.8)" strokeWidth={1.7} />
+              <span style={{ fontSize: 12, fontWeight: 700, color: 'rgba(255,255,255,0.85)' }}>Fuji Testnet</span>
+              <span className="badge badge-live" style={{ fontSize: 10 }}>● Live</span>
+            </div>
             <motion.button whileTap={{ scale: 0.93 }} onClick={handleRefresh} style={iconBtn}>
               <RefreshCw size={16} style={{ animation: refreshing ? 'spin 1s linear infinite' : 'none' }} />
             </motion.button>
@@ -185,322 +215,317 @@ export default function WalletDashboard() {
         {syncState === 'linking' && <p style={{ fontSize: 12, color: '#34d399', margin: '0 0 12px' }}>Linking your account…</p>}
         {authError && <p style={{ fontSize: 12, color: '#f87171', margin: '0 0 12px' }}>{authError}</p>}
 
-        {/* Network banner */}
-        <div className="glass hover-shine" style={{
-          padding: '12px 18px', borderRadius: 14, marginBottom: 14,
-          background: 'rgba(16,185,129,0.08)', backdropFilter: 'blur(14px)',
-          boxShadow: '0 0 0 1px rgba(16,185,129,0.22) inset',
-          display: 'flex', alignItems: 'center', gap: 12,
-        }}>
-          <Mountain size={20} color="rgba(255,255,255,0.85)" strokeWidth={1.7}/>
-          <div style={{ flex: 1 }}>
-            <p style={{ fontSize: 13, fontWeight: 800, margin: 0, ...Rs }}>Avalanche C-Chain <span style={{ color: 'rgba(255,255,255,0.5)', fontWeight: 500 }}>· Fuji Testnet</span></p>
-            <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.5)', margin: '2px 0 0' }}>Embedded wallet · Non-custodial</p>
-          </div>
-          <span className="badge badge-live">● Live</span>
-        </div>
+        <div className="wallet-dash-grid">
+          {/* ── MAIN COLUMN ── */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 16, minWidth: 0 }}>
 
-        {/* Address card */}
-        <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
-          style={{ marginBottom: 14 }}>
-          <div className="glass-elevated" style={{
-            borderRadius: 18, padding: '16px 20px',
-            background: 'linear-gradient(145deg,rgba(10,20,16,0.8),rgba(6,6,14,0.72))',
-            boxShadow: '0 0 0 0.5px rgba(16,185,129,0.2) inset, 0 10px 36px rgba(0,0,0,0.42)',
-          }}>
-            <p style={{ fontSize: 9, fontWeight: 700, letterSpacing: 1.2, textTransform: 'uppercase', color: 'rgba(255,255,255,0.4)', margin: '0 0 8px' }}>Your Avalanche Address</p>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 6 }}>
-              <code style={{ flex: 1, fontSize: 15, fontFamily: 'monospace', color: '#d1fae5', ...Rs }}>{address}</code>
-              <motion.button whileTap={{ scale: 0.92 }} onClick={copyAddress} style={{
-                padding: '8px 12px', borderRadius: 10, border: 'none', cursor: 'pointer',
-                background: copied ? 'rgba(52,211,153,0.16)' : 'rgba(255,255,255,0.06)',
-                color: copied ? '#34d399' : 'rgba(255,255,255,0.55)', fontSize: 12, fontWeight: 700,
-                display: 'flex', alignItems: 'center', gap: 5, transition: 'all 0.2s',
+            {/* Hero: balance + address + quick actions */}
+            <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
+              className="glass-elevated"
+              style={{ borderRadius: 20, padding: '24px 26px', position: 'relative', overflow: 'hidden',
+                background: 'linear-gradient(145deg,rgba(10,24,18,0.82),rgba(6,6,14,0.78))',
+                boxShadow: '0 1px 0 rgba(255,255,255,0.09) inset, 0 0 0 0.5px rgba(16,185,129,0.22) inset, 0 20px 60px rgba(0,0,0,0.5)',
               }}>
-                {copied ? <CheckCircle2 size={14} /> : <Copy size={14} />} {copied ? 'Copied' : 'Copy'}
-              </motion.button>
-              <motion.button whileTap={{ scale: 0.92 }} onClick={() => setShowQr(s => !s)} style={{
-                padding: '8px 11px', borderRadius: 10, border: 'none', cursor: 'pointer',
-                background: 'rgba(255,255,255,0.06)', color: 'rgba(255,255,255,0.55)', fontSize: 12, fontWeight: 700,
-              }}>
-                <QrCode size={14} />
-              </motion.button>
-            </div>
-            <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)', margin: 0 }}>
-              Receive AVAX, ERC-20 tokens and NFTs to this address.
-            </p>
-          </div>
-        </motion.div>
-
-        {showQr && (
-          <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }}
-            style={{ marginBottom: 14 }}>
-            <div style={{
-              borderRadius: 16, padding: '14px 14px 10px', textAlign: 'center',
-              background: '#fff', display: 'inline-block', width: '100%', maxWidth: 220,
-              boxShadow: '0 10px 40px rgba(0,0,0,0.5)',
-            }}>
-              {/* Deterministic placeholder QR rendered as a grid generated from the address hash */}
-              <GridQR address={address} />
-              <p style={{ fontSize: 10, color: '#0f172a', margin: '8px 0 2px', fontWeight: 700, wordBreak: 'break-all' }}>{address.slice(0, 18)}…</p>
-            </div>
-          </motion.div>
-        )}
-
-        {/* Balances */}
-        <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
-          className="glass-elevated"
-          style={{ borderRadius: 18, padding: '20px 22px 16px', marginBottom: 14,
-            background: 'linear-gradient(145deg,rgba(10,20,16,0.78),rgba(6,6,14,0.72))',
-            boxShadow: '0 1px 0 rgba(255,255,255,0.09) inset, 0 0 0 0.5px rgba(16,185,129,0.18) inset, 0 16px 50px rgba(0,0,0,0.5)',
-          }}>
-          <div style={{ display: 'flex', alignItems: 'baseline', gap: 10, marginBottom: 4 }}>
-            <span style={{ fontSize: 9, fontWeight: 700, letterSpacing: 1.2, textTransform: 'uppercase', color: 'rgba(255,255,255,0.4)' }}>
-              Est. Balance
-            </span>
-            <span style={{ fontSize: 30, fontWeight: 900, letterSpacing: -1.5, ...Rs }}>
-              {formatTokenAmount(avaxAmt + Object.values(tokenBals).reduce((a, b) => a + b, 0))}
-            </span>
-          </div>
-          <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)', margin: '0 0 14px' }}>Estimate is placeholder-based until a price oracle is wired up.</p>
-
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))', gap: 8 }}>
-            {[{ s: 'AVAX', amt: avaxAmt, c: AVAX_CONFIG.color, d: true }, ...ECOSYSTEM_TOKENS.map(t => ({ s: t.symbol, amt: tokenBals[t.symbol] ?? 0, c: t.color, d: !!t.address }))].map(b => (
-              <div key={b.s} style={{
-                borderRadius: 12, padding: '10px 12px',
-                background: `linear-gradient(145deg,${b.c}12,rgba(6,6,10,0.55))`,
-                boxShadow: `0 0 0 0.5px ${b.c}25 inset`,
-              }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <span style={{ fontSize: 11, fontWeight: 800, color: 'rgba(255,255,255,0.85)' }}>{b.s}</span>
-                  {!b.d && <span style={{ fontSize: 7, color: 'rgba(255,255,255,0.25)', fontWeight: 700 }}>SOON</span>}
+              <div style={{ position: 'absolute', top: -70, right: -60, width: 260, height: 260, borderRadius: '50%', background: 'radial-gradient(circle,rgba(16,185,129,0.16) 0%,transparent 70%)', pointerEvents: 'none' }} />
+              <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'flex-start', gap: 16, position: 'relative' }}>
+                <div>
+                  <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: 1.2, textTransform: 'uppercase', color: 'rgba(255,255,255,0.45)' }}>Est. Balance</span>
+                  <div style={{ fontSize: 42, fontWeight: 900, letterSpacing: -1.6, margin: '4px 0 0', ...Rs }}>{formatTokenAmount(totalBalance)}</div>
+                  <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.38)', margin: '4px 0 0' }}>Estimate is placeholder-based until a price oracle is wired up.</p>
                 </div>
-                <p style={{ fontSize: 16, fontWeight: 800, color: b.c, margin: '4px 0 0', textShadow: `0 0 10px ${b.c}60` }}>
-                  {formatTokenAmount(b.amt)}
-                </p>
+                <div style={{ display: 'flex', gap: 8, flexShrink: 0 }}>
+                  <motion.button whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.96 }} onClick={() => setTab('receive')} style={{
+                    padding: '10px 18px', borderRadius: 12, border: '1px solid rgba(255,255,255,0.14)', cursor: 'pointer',
+                    background: tab === 'receive' ? 'rgba(16,185,129,0.16)' : 'rgba(255,255,255,0.05)',
+                    color: tab === 'receive' ? '#34d399' : 'rgba(255,255,255,0.8)',
+                    fontSize: 13, fontWeight: 800, display: 'flex', alignItems: 'center', gap: 7,
+                  }}>
+                    <ArrowDownToLine size={15} /> Receive
+                  </motion.button>
+                  <motion.button whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.96 }} onClick={() => setTab('send')} style={{
+                    padding: '10px 18px', borderRadius: 12, cursor: 'pointer', border: 'none',
+                    background: tab === 'send' ? 'linear-gradient(135deg,#10b981,#047857)' : 'rgba(255,255,255,0.05)',
+                    color: '#fff', boxShadow: tab === 'send' ? '0 6px 20px rgba(16,185,129,0.35)' : 'none',
+                    fontSize: 13, fontWeight: 800, display: 'flex', alignItems: 'center', gap: 7,
+                  }}>
+                    <Send size={15} /> Send
+                  </motion.button>
+                </div>
               </div>
-            ))}
-          </div>
-        </motion.div>
 
-        {/* Send / Receive */}
-        <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
-          className="glass-elevated"
-          style={{ borderRadius: 18, overflow: 'hidden', marginBottom: 14,
-            background: 'rgba(6,6,14,0.72)', backdropFilter: 'blur(24px)',
-            boxShadow: '0 0 0 0.5px rgba(16,185,129,0.2) inset, 0 12px 40px rgba(0,0,0,0.48)',
-          }}>
-          <div style={{ display: 'flex', padding: '10px 14px', gap: 8, borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
-            {(['receive', 'send'] as const).map(t => (
-              <button key={t} onClick={() => setTab(t)} style={{
-                padding: '8px 18px', borderRadius: 10, border: 'none', cursor: 'pointer',
-                background: tab === t ? 'rgba(16,185,129,0.16)' : 'transparent',
-                color: tab === t ? '#34d399' : 'rgba(255,255,255,0.5)',
-                boxShadow: tab === t ? '0 0 0 1px rgba(52,211,153,0.35) inset' : 'none',
-                fontSize: 13, fontWeight: 800, display: 'flex', alignItems: 'center', gap: 7,
+              <div style={{
+                display: 'flex', alignItems: 'center', gap: 10, marginTop: 20, padding: '12px 14px',
+                borderRadius: 12, background: 'rgba(255,255,255,0.04)', boxShadow: '0 0 0 0.5px rgba(255,255,255,0.08) inset',
+                position: 'relative',
               }}>
-                {t === 'receive' ? <ArrowDownToLine size={15} /> : <Send size={15} />}
-                {t === 'receive' ? 'Receive' : 'Send'}
-              </button>
-            ))}
-          </div>
+                <code style={{ flex: 1, fontSize: 13, fontFamily: 'monospace', color: '#d1fae5', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{address}</code>
+                <motion.button whileTap={{ scale: 0.92 }} onClick={copyAddress} style={{
+                  padding: '7px 12px', borderRadius: 9, border: 'none', cursor: 'pointer', flexShrink: 0,
+                  background: copied ? 'rgba(52,211,153,0.16)' : 'rgba(255,255,255,0.06)',
+                  color: copied ? '#34d399' : 'rgba(255,255,255,0.55)', fontSize: 12, fontWeight: 700,
+                  display: 'flex', alignItems: 'center', gap: 5, transition: 'all 0.2s',
+                }}>
+                  {copied ? <CheckCircle2 size={13} /> : <Copy size={13} />} {copied ? 'Copied' : 'Copy'}
+                </motion.button>
+                <motion.button whileTap={{ scale: 0.92 }} onClick={() => setShowQr(s => !s)} style={{
+                  padding: '7px 10px', borderRadius: 9, border: 'none', cursor: 'pointer', flexShrink: 0,
+                  background: showQr ? 'rgba(16,185,129,0.16)' : 'rgba(255,255,255,0.06)', color: showQr ? '#34d399' : 'rgba(255,255,255,0.55)',
+                }}>
+                  <QrCode size={13} />
+                </motion.button>
+              </div>
 
-          {tab === 'receive' ? (
-            <div style={{ padding: '22px 24px', textAlign: 'center' }}>
-              <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.7)', margin: '0 0 14px' }}>
-                Share your address to receive AVAX, ERC-20 tokens, or NFTs.
+              <AnimatePresence>
+                {showQr && (
+                  <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} style={{ overflow: 'hidden' }}>
+                    <div style={{
+                      marginTop: 14, borderRadius: 16, padding: '14px 14px 10px', textAlign: 'center',
+                      background: '#fff', width: 200,
+                      boxShadow: '0 10px 40px rgba(0,0,0,0.5)',
+                    }}>
+                      <RealisticQR value={address} size={164} fg="#0f172a" bg="#ffffff" />
+                      <p style={{ fontSize: 10, color: '#0f172a', margin: '8px 0 2px', fontWeight: 700, wordBreak: 'break-all' }}>{address.slice(0, 18)}…</p>
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </motion.div>
+
+            {/* Assets list */}
+            <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
+              className="glass-elevated"
+              style={{ borderRadius: 18, padding: '8px 0 10px',
+                background: 'rgba(6,6,14,0.72)', backdropFilter: 'blur(22px)',
+                boxShadow: '0 0 0 0.5px rgba(16,185,129,0.2) inset, 0 12px 40px rgba(0,0,0,0.48)',
+              }}>
+              <p style={{ fontSize: 10, fontWeight: 700, letterSpacing: 1.2, textTransform: 'uppercase', color: 'rgba(255,255,255,0.5)', margin: '10px 18px 6px' }}>
+                Assets
               </p>
-              <div style={{ display: 'flex', justifyContent: 'center', gap: 10 }}>
-                <motion.button whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.96 }} onClick={copyAddress} style={{
-                  padding: '11px 22px', borderRadius: 12, cursor: 'pointer', border: 'none',
-                  background: 'linear-gradient(135deg,#10b981,#047857)', color: '#fff',
-                  fontSize: 14, fontWeight: 800, display: 'flex', alignItems: 'center', gap: 8,
-                  boxShadow: '0 6px 22px rgba(16,185,129,0.35)',
+              {assetRows.map(b => (
+                <div key={b.s} className="wallet-asset-row" onClick={() => b.d && selectAssetForSend(b.s)} style={{
+                  display: 'flex', alignItems: 'center', gap: 12, padding: '11px 18px',
                 }}>
-                  <Copy size={16} /> {copied ? 'Copied!' : 'Copy Address'}
-                </motion.button>
-                <motion.button whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.96 }} onClick={() => setShowQr(true)} style={{
-                  padding: '11px 22px', borderRadius: 12, cursor: 'pointer', border: 'none',
-                  background: 'rgba(255,255,255,0.07)', color: 'rgba(255,255,255,0.8)',
-                  fontSize: 14, fontWeight: 800, display: 'flex', alignItems: 'center', gap: 8,
-                  boxShadow: '0 0 0 1px rgba(255,255,255,0.1) inset',
-                }}>
-                  <QrCode size={16} /> Show QR
-                </motion.button>
-              </div>
-            </div>
-          ) : (
-            <div style={{ padding: '20px 24px' }}>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 10 }}>
-                <div>
-                  <label style={{ fontSize: 9, fontWeight: 800, letterSpacing: 1, textTransform: 'uppercase', color: 'rgba(255,255,255,0.4)', display: 'block', marginBottom: 5 }}>Asset</label>
-                  <select value={token ?? ''} onChange={e => setToken(e.target.value as Address)} style={selectStyle}>
-                    {ECOSYSTEM_TOKENS.filter((t): t is typeof t & { address: `0x${string}` } => !!t.address).map(t => (
-                      <option key={t.symbol} value={t.address}>{t.symbol} ({formatTokenAmount(tokenBals[t.symbol] ?? 0)} bal.)</option>
-                    ))}
-                  </select>
+                  <div style={{
+                    width: 36, height: 36, borderRadius: 10, flexShrink: 0, fontSize: 16,
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    background: `linear-gradient(145deg,${b.c}22,rgba(6,6,10,0.6))`,
+                    boxShadow: `0 0 0 0.5px ${b.c}35 inset`,
+                  }}>{b.emoji}</div>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                      <span style={{ fontSize: 13, fontWeight: 800, color: 'rgba(255,255,255,0.92)' }}>{b.s}</span>
+                      {!b.d && <span style={{ fontSize: 8, color: 'rgba(255,255,255,0.3)', fontWeight: 700, padding: '1px 6px', borderRadius: 5, background: 'rgba(255,255,255,0.06)' }}>SOON</span>}
+                    </div>
+                    <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)', margin: '1px 0 0' }}>{b.name}</p>
+                  </div>
+                  <p style={{ fontSize: 15, fontWeight: 800, color: b.c, margin: 0, textShadow: `0 0 10px ${b.c}50`, flexShrink: 0 }}>
+                    {formatTokenAmount(b.amt)}
+                  </p>
+                  {b.d && <ChevronRight size={15} color="rgba(255,255,255,0.25)" style={{ flexShrink: 0 }} />}
                 </div>
-                <div>
-                  <label style={{ fontSize: 9, fontWeight: 800, letterSpacing: 1, textTransform: 'uppercase', color: 'rgba(255,255,255,0.4)', display: 'block', marginBottom: 5 }}>Amount</label>
-                  <input value={amount} onChange={e => setAmount(e.target.value)} placeholder="0.0" inputMode="decimal" style={inputStyle} />
-                </div>
-              </div>
-              <div style={{ marginBottom: 14 }}>
-                <label style={{ fontSize: 9, fontWeight: 800, letterSpacing: 1, textTransform: 'uppercase', color: 'rgba(255,255,255,0.4)', display: 'block', marginBottom: 5 }}>Recipient</label>
-                <input value={recipient} onChange={e => setRecipient(e.target.value)} placeholder="0x…" style={inputStyle} />
+              ))}
+            </motion.div>
+
+            {/* Send / Receive panel */}
+            <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
+              className="glass-elevated"
+              style={{ borderRadius: 18, overflow: 'hidden',
+                background: 'rgba(6,6,14,0.72)', backdropFilter: 'blur(24px)',
+                boxShadow: '0 0 0 0.5px rgba(16,185,129,0.2) inset, 0 12px 40px rgba(0,0,0,0.48)',
+              }}>
+              <div style={{ display: 'flex', padding: '10px 14px', gap: 8, borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+                {(['receive', 'send'] as const).map(t => (
+                  <button key={t} onClick={() => setTab(t)} style={{
+                    padding: '8px 18px', borderRadius: 10, border: 'none', cursor: 'pointer',
+                    background: tab === t ? 'rgba(16,185,129,0.16)' : 'transparent',
+                    color: tab === t ? '#34d399' : 'rgba(255,255,255,0.5)',
+                    boxShadow: tab === t ? '0 0 0 1px rgba(52,211,153,0.35) inset' : 'none',
+                    fontSize: 13, fontWeight: 800, display: 'flex', alignItems: 'center', gap: 7,
+                  }}>
+                    {t === 'receive' ? <ArrowDownToLine size={15} /> : <Send size={15} />}
+                    {t === 'receive' ? 'Receive' : 'Send'}
+                  </button>
+                ))}
               </div>
 
-              {sendMsg && (
-                <div style={{
-                  padding: '10px 14px', borderRadius: 10, marginBottom: 12, fontSize: 13, lineHeight: 1.5,
-                  background: sendState === 'success' ? 'rgba(52,211,153,0.1)' : 'rgba(248,113,113,0.1)',
-                  color: sendState === 'success' ? '#6ee7b7' : '#fca5a5',
-                  boxShadow: `0 0 0 1px ${sendState === 'success' ? 'rgba(52,211,153,0.3)' : 'rgba(248,113,113,0.3)'} inset`,
-                }}>{sendMsg}</div>
+              {tab === 'receive' ? (
+                <div style={{ padding: '22px 24px', textAlign: 'center' }}>
+                  <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.7)', margin: '0 0 14px' }}>
+                    Share your address to receive AVAX, ERC-20 tokens, or NFTs.
+                  </p>
+                  <div style={{ display: 'flex', justifyContent: 'center', gap: 10, flexWrap: 'wrap' }}>
+                    <motion.button whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.96 }} onClick={copyAddress} style={{
+                      padding: '11px 22px', borderRadius: 12, cursor: 'pointer', border: 'none',
+                      background: 'linear-gradient(135deg,#10b981,#047857)', color: '#fff',
+                      fontSize: 14, fontWeight: 800, display: 'flex', alignItems: 'center', gap: 8,
+                      boxShadow: '0 6px 22px rgba(16,185,129,0.35)',
+                    }}>
+                      <Copy size={16} /> {copied ? 'Copied!' : 'Copy Address'}
+                    </motion.button>
+                    <motion.button whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.96 }} onClick={() => setShowQr(true)} style={{
+                      padding: '11px 22px', borderRadius: 12, cursor: 'pointer', border: 'none',
+                      background: 'rgba(255,255,255,0.07)', color: 'rgba(255,255,255,0.8)',
+                      fontSize: 14, fontWeight: 800, display: 'flex', alignItems: 'center', gap: 8,
+                      boxShadow: '0 0 0 1px rgba(255,255,255,0.1) inset',
+                    }}>
+                      <QrCode size={16} /> Show QR
+                    </motion.button>
+                  </div>
+                </div>
+              ) : (
+                <div style={{ padding: '20px 24px' }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 10 }}>
+                    <div>
+                      <label style={{ fontSize: 9, fontWeight: 800, letterSpacing: 1, textTransform: 'uppercase', color: 'rgba(255,255,255,0.4)', display: 'block', marginBottom: 5 }}>Asset</label>
+                      <select value={token ?? ''} onChange={e => setToken(e.target.value as Address)} style={selectStyle}>
+                        {ECOSYSTEM_TOKENS.filter((t): t is typeof t & { address: `0x${string}` } => !!t.address).map(t => (
+                          <option key={t.symbol} value={t.address}>{t.symbol} ({formatTokenAmount(tokenBals[t.symbol] ?? 0)} bal.)</option>
+                        ))}
+                      </select>
+                    </div>
+                    <div>
+                      <label style={{ fontSize: 9, fontWeight: 800, letterSpacing: 1, textTransform: 'uppercase', color: 'rgba(255,255,255,0.4)', display: 'block', marginBottom: 5 }}>Amount</label>
+                      <input value={amount} onChange={e => setAmount(e.target.value)} placeholder="0.0" inputMode="decimal" style={inputStyle} />
+                    </div>
+                  </div>
+                  <div style={{ marginBottom: 14 }}>
+                    <label style={{ fontSize: 9, fontWeight: 800, letterSpacing: 1, textTransform: 'uppercase', color: 'rgba(255,255,255,0.4)', display: 'block', marginBottom: 5 }}>Recipient</label>
+                    <input value={recipient} onChange={e => setRecipient(e.target.value)} placeholder="0x…" style={inputStyle} />
+                  </div>
+
+                  {sendMsg && (
+                    <div style={{
+                      padding: '10px 14px', borderRadius: 10, marginBottom: 12, fontSize: 13, lineHeight: 1.5,
+                      background: sendState === 'success' ? 'rgba(52,211,153,0.1)' : 'rgba(248,113,113,0.1)',
+                      color: sendState === 'success' ? '#6ee7b7' : '#fca5a5',
+                      boxShadow: `0 0 0 1px ${sendState === 'success' ? 'rgba(52,211,153,0.3)' : 'rgba(248,113,113,0.3)'} inset`,
+                    }}>{sendMsg}</div>
+                  )}
+
+                  <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.97 }} onClick={doSend}
+                    disabled={sendState === 'sending'}
+                    style={{
+                      width: '100%', padding: '12px 0', borderRadius: 12, cursor: sendState === 'sending' ? 'not-allowed' : 'pointer',
+                      border: 'none', color: '#fff',
+                      background: sendState === 'sending' ? 'rgba(16,185,129,0.4)' : 'linear-gradient(135deg,#10b981,#047857)',
+                      boxShadow: '0 6px 22px rgba(16,185,129,0.35)', fontSize: 14, fontWeight: 800,
+                      display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+                    }}>
+                    {sendState === 'sending' ? <><Loader2 size={16} className="animate-spin" /> Sending…</> : <><Send size={16} /> Send</>}
+                  </motion.button>
+                  <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.35)', margin: '10px 0 0', textAlign: 'center' }}>
+                    Signing is handled securely by Privy. You may be asked to approve the transaction.
+                  </p>
+                </div>
               )}
-
-              <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.97 }} onClick={doSend}
-                disabled={sendState === 'sending'}
-                style={{
-                  width: '100%', padding: '12px 0', borderRadius: 12, cursor: sendState === 'sending' ? 'not-allowed' : 'pointer',
-                  border: 'none', color: '#fff',
-                  background: sendState === 'sending' ? 'rgba(16,185,129,0.4)' : 'linear-gradient(135deg,#10b981,#047857)',
-                  boxShadow: '0 6px 22px rgba(16,185,129,0.35)', fontSize: 14, fontWeight: 800,
-                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
-                }}>
-                {sendState === 'sending' ? <><Loader2 size={16} className="animate-spin" /> Sending…</> : <><Send size={16} /> Send</>}
-              </motion.button>
-              <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.35)', margin: '10px 0 0', textAlign: 'center' }}>
-                Signing is handled securely by Privy. You may be asked to approve the transaction.
-              </p>
-            </div>
-          )}
-        </motion.div>
-
-        {/* NFTs */}
-        <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
-          className="glass-elevated"
-          style={{ borderRadius: 18, padding: '18px 20px',
-            background: 'rgba(6,6,14,0.72)', backdropFilter: 'blur(22px)',
-            boxShadow: '0 0 0 0.5px rgba(16,185,129,0.2) inset, 0 12px 40px rgba(0,0,0,0.48)',
-          }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
-            <p style={{ fontSize: 10, fontWeight: 700, letterSpacing: 1.2, textTransform: 'uppercase', color: 'rgba(255,255,255,0.5)', margin: 0 }}>
-              Your NFTs
-            </p>
-            <span className="badge badge-live">{nfts.length}</span>
+            </motion.div>
           </div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))', gap: 10 }}>
-            {nfts.map(n => (
-              <div key={`${n.contract}-${n.tokenId}`} style={{
-                borderRadius: 14, overflow: 'hidden',
-                background: 'rgba(255,255,255,0.04)',
-                boxShadow: '0 0 0 0.5px rgba(168,85,247,0.2) inset',
+
+          {/* ── SIDEBAR ── */}
+          <div className="wallet-dash-side">
+            {/* NFTs */}
+            <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
+              className="glass-elevated"
+              style={{ borderRadius: 18, padding: '18px 20px',
+                background: 'rgba(6,6,14,0.72)', backdropFilter: 'blur(22px)',
+                boxShadow: '0 0 0 0.5px rgba(16,185,129,0.2) inset, 0 12px 40px rgba(0,0,0,0.48)',
               }}>
-                <div style={{
-                  height: 110, display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  background: n.image ? `center/cover no-repeat url("${n.image}")` : 'linear-gradient(135deg,rgba(168,85,247,0.2),rgba(6,6,14,0.9))',
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
+                <p style={{ fontSize: 10, fontWeight: 700, letterSpacing: 1.2, textTransform: 'uppercase', color: 'rgba(255,255,255,0.5)', margin: 0 }}>
+                  Your NFTs
+                </p>
+                <span className="badge badge-live">{nfts.length}</span>
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 10 }}>
+                {nfts.map(n => (
+                  <div key={`${n.contract}-${n.tokenId}`} style={{
+                    borderRadius: 14, overflow: 'hidden',
+                    background: 'rgba(255,255,255,0.04)',
+                    boxShadow: '0 0 0 0.5px rgba(168,85,247,0.2) inset',
+                  }}>
+                    <div style={{
+                      height: 90, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      background: n.image ? `center/cover no-repeat url("${n.image}")` : 'linear-gradient(135deg,rgba(168,85,247,0.2),rgba(6,6,14,0.9))',
+                    }}>
+                      {!n.image && <ImageIcon size={26} color="rgba(192,132,252,0.5)" />}
+                    </div>
+                    <div style={{ padding: '8px 10px' }}>
+                      <p style={{ fontSize: 12, fontWeight: 800, margin: 0, color: '#fff', ...Rs, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{n.name}</p>
+                      <p style={{ fontSize: 10, color: 'rgba(255,255,255,0.45)', margin: '2px 0 0' }}>#{n.tokenId}</p>
+                    </div>
+                  </div>
+                ))}
+                {nfts.length === 0 && !nftsLoading && (
+                  <div style={{ gridColumn: '1 / -1', padding: '18px', textAlign: 'center', color: 'rgba(255,255,255,0.4)', fontSize: 12 }}>
+                    {nftSource === 'none' || nftSource === 'error'
+                      ? 'No NFTs detected yet on this address.'
+                      : 'No NFTs in your wallet yet.'}
+                  </div>
+                )}
+                {nftsLoading && (
+                  <div style={{ gridColumn: '1 / -1', padding: '18px', textAlign: 'center', color: 'rgba(255,255,255,0.4)', fontSize: 12 }}>
+                    <Loader2 className="animate-spin" size={18} color="#a78bfa" style={{ verticalAlign: 'middle', marginRight: 6 }} />
+                    Detecting NFTs…
+                  </div>
+                )}
+              </div>
+              {nfts.length > 0 && (
+                <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.35)', margin: '12px 0 0' }}>
+                  Detected via {nftSource === 'fetchFromReservoir' ? 'Reservoir' : nftSource === 'fetchFromSimpleHash' ? 'SimpleHash' : nftSource === 'fetchFromLogs' ? 'event log scan' : 'on-chain lookup'}.
+                </p>
+              )}
+            </motion.div>
+
+            {/* Quick links */}
+            <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}>
+              <Link href="/kai-bar" style={{ textDecoration: 'none' }}>
+                <div className="hover-shine" style={{
+                  display: 'flex', alignItems: 'center', gap: 14,
+                  padding: '15px 18px', borderRadius: 16,
+                  background: 'linear-gradient(110deg, rgba(245,158,11,0.1), rgba(6,6,14,0.6))',
+                  boxShadow: '0 0 0 0.5px rgba(245,158,11,0.2) inset',
                 }}>
-                  {!n.image && <ImageIcon size={30} color="rgba(192,132,252,0.5)" />}
+                  <div style={{
+                    width: 40, height: 40, borderRadius: 12, flexShrink: 0,
+                    background: 'rgba(245,158,11,0.14)', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  }}>
+                    <ShieldCheck size={20} color="#fbbf24" />
+                  </div>
+                  <div style={{ flex: 1 }}>
+                    <p style={{ fontSize: 13, fontWeight: 800, margin: '0 0 2px', color: 'rgba(255,255,255,0.92)', ...Rs }}>Kai Bar Rewards</p>
+                    <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.5)', margin: 0 }}>Points, referrals, airdrop.</p>
+                  </div>
+                  <ChevronRight size={16} color="rgba(255,255,255,0.3)" />
                 </div>
-                <div style={{ padding: '10px 12px' }}>
-                  <p style={{ fontSize: 13, fontWeight: 800, margin: 0, color: '#fff', ...Rs }}>{n.name}</p>
-                  <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.45)', margin: '3px 0 0' }}>{n.collection} · #{n.tokenId}</p>
+              </Link>
+            </motion.div>
+
+            <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}>
+              <Link href="/waitlist" style={{ textDecoration: 'none' }}>
+                <div className="hover-shine" style={{
+                  display: 'flex', alignItems: 'center', gap: 14,
+                  padding: '15px 18px', borderRadius: 16,
+                  background: 'linear-gradient(110deg, rgba(16,185,129,0.1), rgba(6,6,14,0.6))',
+                  boxShadow: '0 0 0 0.5px rgba(16,185,129,0.2) inset',
+                }}>
+                  <div style={{
+                    width: 40, height: 40, borderRadius: 12, flexShrink: 0,
+                    background: 'rgba(16,185,129,0.14)', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  }}>
+                    <ListChecks size={20} color="#34d399" />
+                  </div>
+                  <div style={{ flex: 1 }}>
+                    <p style={{ fontSize: 13, fontWeight: 800, margin: '0 0 2px', color: 'rgba(255,255,255,0.92)', ...Rs }}>KAI Nuvari Waitlist</p>
+                    <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.5)', margin: 0 }}>Account, wallet & points status.</p>
+                  </div>
+                  <ChevronRight size={16} color="rgba(255,255,255,0.3)" />
                 </div>
-              </div>
-            ))}
-            {nfts.length === 0 && !nftsLoading && (
-              <div style={{ gridColumn: '1 / -1', padding: '18px', textAlign: 'center', color: 'rgba(255,255,255,0.4)', fontSize: 12 }}>
-                {nftSource === 'none' || nftSource === 'error'
-                  ? 'No NFTs detected yet on this address.'
-                  : 'No NFTs in your wallet yet.'}
-              </div>
-            )}
-            {nftsLoading && (
-              <div style={{ gridColumn: '1 / -1', padding: '18px', textAlign: 'center', color: 'rgba(255,255,255,0.4)', fontSize: 12 }}>
-                <Loader2 className="animate-spin" size={18} color="#a78bfa" style={{ verticalAlign: 'middle', marginRight: 6 }} />
-                Detecting NFTs…
-              </div>
-            )}
+              </Link>
+            </motion.div>
           </div>
-          {nfts.length > 0 && (
-            <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.35)', margin: '12px 0 0' }}>
-              Detected on-chain via {nftSource === 'fetchFromReservoir' ? 'Reservoir' : nftSource === 'fetchFromSimpleHash' ? 'SimpleHash' : nftSource === 'fetchFromLogs' ? 'event log scan' : 'on-chain lookup'}.
-            </p>
-          )}
-        </motion.div>
-
-        {/* Link to Kai Bar */}
-        <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
-          style={{ marginTop: 16 }}>
-          <Link href="/kai-bar" style={{ textDecoration: 'none' }}>
-            <div className="hover-shine" style={{
-              display: 'flex', alignItems: 'center', gap: 14,
-              padding: '15px 18px', borderRadius: 16,
-              background: 'linear-gradient(110deg, rgba(245,158,11,0.1), rgba(6,6,14,0.6))',
-              boxShadow: '0 0 0 0.5px rgba(245,158,11,0.2) inset',
-            }}>
-              <div style={{
-                width: 44, height: 44, borderRadius: 13, flexShrink: 0,
-                background: 'rgba(245,158,11,0.14)', display: 'flex', alignItems: 'center', justifyContent: 'center',
-              }}>
-                <ShieldCheck size={22} color="#fbbf24" />
-              </div>
-              <div style={{ flex: 1 }}>
-                <p style={{ fontSize: 14, fontWeight: 800, margin: '0 0 2px', color: 'rgba(255,255,255,0.92)', ...Rs }}>Kai Bar Rewards</p>
-                <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.5)', margin: 0 }}>Earn points, invite friends, track your airdrop eligibility.</p>
-              </div>
-              <ChevronRight size={17} color="rgba(255,255,255,0.3)" />
-            </div>
-          </Link>
-        </motion.div>
-
-        {/* Link to Waitlist */}
-        <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
-          style={{ marginTop: 10 }}>
-          <Link href="/waitlist" style={{ textDecoration: 'none' }}>
-            <div className="hover-shine" style={{
-              display: 'flex', alignItems: 'center', gap: 14,
-              padding: '15px 18px', borderRadius: 16,
-              background: 'linear-gradient(110deg, rgba(16,185,129,0.1), rgba(6,6,14,0.6))',
-              boxShadow: '0 0 0 0.5px rgba(16,185,129,0.2) inset',
-            }}>
-              <div style={{
-                width: 44, height: 44, borderRadius: 13, flexShrink: 0,
-                background: 'rgba(16,185,129,0.14)', display: 'flex', alignItems: 'center', justifyContent: 'center',
-              }}>
-                <ListChecks size={22} color="#34d399" />
-              </div>
-              <div style={{ flex: 1 }}>
-                <p style={{ fontSize: 14, fontWeight: 800, margin: '0 0 2px', color: 'rgba(255,255,255,0.92)', ...Rs }}>KAI Nuvari Waitlist</p>
-                <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.5)', margin: 0 }}>Your account, wallet, points & airdrop status at a glance.</p>
-              </div>
-              <ChevronRight size={17} color="rgba(255,255,255,0.3)" />
-            </div>
-          </Link>
-        </motion.div>
+        </div>
       </div>
     </main>
-  );
-}
-
-/* deterministic pseudo-QR so nobody ships a broken library import */
-function GridQR({ address }: { address: string }) {
-  const cells = 21;
-  const grid = useMemo(() => {
-    let seed = 0;
-    for (let i = 0; i < address.length; i++) seed = (seed * 31 + address.charCodeAt(i)) >>> 0;
-    const rand = () => { seed ^= seed << 13; seed ^= seed >>> 17; seed ^= seed << 5; return (seed >>> 0) / 4294967296; };
-    const g: boolean[] = [];
-    for (let i = 0; i < cells * cells; i++) g.push(rand() > 0.62);
-    return g;
-  }, [address]);
-  return (
-    <div style={{ display: 'grid', gridTemplateColumns: `repeat(${cells}, 1fr)`, gap: 1, margin: '0 auto', width: '100%' }}>
-      {grid.map((on, i) => (
-        <div key={i} style={{ width: '100%', paddingTop: '100%', background: on ? '#0f172a' : '#fff', borderRadius: 1 }} />
-      ))}
-    </div>
   );
 }
 
