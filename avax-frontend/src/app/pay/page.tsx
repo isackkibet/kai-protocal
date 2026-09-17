@@ -140,6 +140,9 @@ function QRScanner({ onScan, onClose }: { onScan: (v: string) => void; onClose: 
             qrbox: { width: 240, height: 240 },
             rememberLastUsedCamera: true,
             aspectRatio: 1,
+            // Prefer the rear camera on phones; without this the front camera
+            // opens by default and users have to point the screen at the code.
+            videoConstraints: { facingMode: { ideal: "environment" } },
           },
           false,
         );
