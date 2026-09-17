@@ -14,7 +14,7 @@ import { verifyPrivyUserId } from '@/lib/privy-server';
  * request body — otherwise anyone could complete tasks on another account.
  */
 export async function POST(req: Request) {
-  let body: any = {};
+  let body: Record<string, unknown> = {};
   try {
     body = await req.json();
   } catch {
@@ -83,7 +83,7 @@ export async function POST(req: Request) {
     ]);
 
     return NextResponse.json({ ok: true, earned: task.rewardAmount, entry: ledger.id });
-  } catch (e: any) {
+  } catch (e: unknown) {
     console.error('[kai-bar/tasks/complete] failed', e);
     return NextResponse.json({ error: 'Failed to complete task' }, { status: 500 });
   }

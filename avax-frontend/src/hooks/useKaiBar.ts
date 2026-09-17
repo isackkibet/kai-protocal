@@ -120,7 +120,11 @@ export function useKaiBar() {
     }
   }, [getAccessToken, load]);
 
+  // Fetch-on-mount: loads the user's ledger, tasks, referral and check-in state
+  // once Privy auth is ready. The fetches below resolve asynchronously, so the
+  // setState calls happen after an await boundary rather than synchronously.
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     if (ready && authenticated && privyUserId) load();
   }, [ready, authenticated, privyUserId, load]);
 

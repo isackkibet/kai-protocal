@@ -24,7 +24,7 @@ export async function GET() {
 }
 
 export async function POST(req: Request) {
-  let body: any = {};
+  let body: Record<string, unknown> = {};
   try {
     body = await req.json();
   } catch {
@@ -49,7 +49,7 @@ export async function POST(req: Request) {
       data: { forestId: forest.id, name, quantityAvailable, quantityPlanted, quantityForSale },
     });
     return NextResponse.json({ ok: true, species });
-  } catch (e: any) {
+  } catch (e: unknown) {
     console.error('[cfa/species] failed', e);
     return NextResponse.json({ error: 'Failed to add species' }, { status: 500 });
   }

@@ -32,7 +32,7 @@ export async function GET() {
 }
 
 export async function POST(req: Request) {
-  let body: any = {};
+  let body: Record<string, unknown> = {};
   try {
     body = await req.json();
   } catch {
@@ -43,7 +43,7 @@ export async function POST(req: Request) {
   const numberPlanted = Math.max(0, Number(body.numberPlanted) || 0);
   const activity = body.activity ? String(body.activity).trim() : null;
   const submittedName = body.submittedName ? String(body.submittedName).trim() : null;
-  const plantedAt = body.plantedAt ? new Date(body.plantedAt) : new Date();
+  const plantedAt = body.plantedAt ? new Date(String(body.plantedAt)) : new Date();
 
   if (!speciesId || numberPlanted <= 0) {
     return NextResponse.json({ error: 'speciesId and a positive numberPlanted are required' }, { status: 400 });
@@ -103,7 +103,7 @@ export async function POST(req: Request) {
     }
 
     return NextResponse.json({ ok: true, record, pointsEarned });
-  } catch (e: any) {
+  } catch (e: unknown) {
     console.error('[cfa/planting] failed', e);
     return NextResponse.json({ error: 'Failed to record planting' }, { status: 500 });
   }

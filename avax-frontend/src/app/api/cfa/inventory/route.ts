@@ -31,7 +31,7 @@ export async function GET() {
 const VALID_TYPES = new Set(['ORDERED', 'PLANTED', 'SOLD']);
 
 export async function POST(req: Request) {
-  let body: any = {};
+  let body: Record<string, unknown> = {};
   try {
     body = await req.json();
   } catch {
@@ -96,7 +96,7 @@ export async function POST(req: Request) {
     }
 
     return NextResponse.json({ ok: true, entry });
-  } catch (e: any) {
+  } catch (e: unknown) {
     console.error('[cfa/inventory] failed', e);
     return NextResponse.json({ error: 'Failed to record inventory activity' }, { status: 500 });
   }

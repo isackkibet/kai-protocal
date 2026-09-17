@@ -177,7 +177,7 @@ function PrivyAuthContextProvider({ children }: { children: React.ReactNode }) {
       setSyncState('linked');
       setError(null);
       return { ok: true, isNew: data.isNew, kaiBar: data.kaiBar, userId: data.userId };
-    } catch (e: any) {
+    } catch (e: unknown) {
       console.error('[privy-auth] syncToBackend failed', e);
       setSyncState('error');
       setError('Could not reach our servers. Please try again.');
@@ -197,8 +197,10 @@ function PrivyAuthContextProvider({ children }: { children: React.ReactNode }) {
       await new Promise((r) => setTimeout(r, 400));
       const result = await syncToBackend();
       return result;
-    } catch (e: any) {
-      const msg = String(e?.message ?? '').toLowerCase();
+    } catch (e: unknown) {
+      const msg = typeof e === 'object' && e !== null && 'message' in e
+        ? String((e as { message: unknown }).message).toLowerCase()
+        : '';
       if (msg.includes('cancelled') || msg.includes('rejected') || msg.includes('closed')) {
         return { ok: false, reason: 'login-cancelled', isNew: false };
       }
@@ -218,8 +220,10 @@ function PrivyAuthContextProvider({ children }: { children: React.ReactNode }) {
       await new Promise((r) => setTimeout(r, 400));
       const result = await syncToBackend();
       return result;
-    } catch (e: any) {
-      const msg = String(e?.message ?? '').toLowerCase();
+    } catch (e: unknown) {
+      const msg = typeof e === 'object' && e !== null && 'message' in e
+        ? String((e as { message: unknown }).message).toLowerCase()
+        : '';
       if (msg.includes('cancelled') || msg.includes('rejected') || msg.includes('closed')) {
         return { ok: false, reason: 'login-cancelled', isNew: false };
       }
