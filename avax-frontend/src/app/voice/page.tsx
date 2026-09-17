@@ -121,8 +121,8 @@ export default function VoiceAgentPage() {
   const autoReopenRef = useRef(true);
   const micStateRef = useRef<MicState>('idle');
   const silenceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const micSupportedRef = useRef(true);
   const runCommandRef = useRef<(text: string) => Promise<void>>(() => Promise.resolve());
+  const [micSupported, setMicSupported] = useState(true);
 
   useEffect(() => {
     endRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -164,9 +164,8 @@ export default function VoiceAgentPage() {
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
-    const Win = window as any;
-    const SR = Win.SpeechRecognition || Win.webkitSpeechRecognition;
-    if (!SR) { setMicSupported(false); return; }
+    const SR = window.SpeechRecognition || (window as unknown as { webkitSpeechRecognition: typeof SpeechRecognition }).webkitSpeechRecognition;
+    if (!SR) { micSupportedRef.current = false; return; }
 
     const rec = new SR();
     rec.continuous = false;
@@ -174,7 +173,7 @@ export default function VoiceAgentPage() {
     rec.lang = 'en-US';
     rec.maxAlternatives = 1;
 
-    rec.onresult = (e: any) => {
+    rec.onresult = (e: SpeechRecognitionEvent) => {
       let transcript = '';
       for (let i = e.resultIndex; i < e.results.length; i++) {
         transcript += e.results[i][0].transcript;
@@ -193,7 +192,7 @@ export default function VoiceAgentPage() {
       setMicState((prev) => (prev === 'listening' ? 'idle' : prev));
     };
 
-    rec.onerror = (ev: any) => {
+    rec.onerror = (ev: SpeechRecognitionErrorEvent) => {
       listeningRef.current = false;
       if (micStateRef.current === 'listening') setMicState('idle');
       const code = ev?.error;
@@ -211,7 +210,7 @@ export default function VoiceAgentPage() {
       const said = interimRef.current.trim();
       interimRef.current = '';
       if (said && !loadingRef.current && !speakingRef.current) {
-        runCommand(said);
+        runCommandRef.current(said);
       }
     };
 
