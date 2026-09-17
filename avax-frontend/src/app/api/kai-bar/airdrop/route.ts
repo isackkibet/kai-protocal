@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getPrisma } from '@/lib/db';
 import { AIRDROP_VAULT_ADDRESS } from '@/lib/addresses';
+import { verifyPrivyUserId } from '@/lib/privy-server';
 
 /**
  * /api/kai-bar/airdrop  —  GET
@@ -12,12 +13,14 @@ import { AIRDROP_VAULT_ADDRESS } from '@/lib/addresses';
  *   activityScore     — number of distinct earning events
  *
  * A user is "eligible" once they hold a positive balance and have not been
- * flagged by anti-abuse.
+ * flagged by anti-abuse. Identity comes from the verified bearer token —
+ * never a caller-supplied query param.
  */
 export async function GET(req: Request) {
-  const { searchParams } = new URL(req.url);
-  const privyUserId = searchParams.get('privyUserId')?.trim();
-  if (!privyUserId) return NextResponse.json({ error: 'privyUserId required' }, { status: 400 });
+  const privyUserId = await verifyPrivyUserId(req.headers.get('authorization'));
+  if (!privyUserId) {
+    return NextResponse.json({ error: 'Could not verify your session. Please sign in again.' }, { status: 401 });
+  }
 
   const prisma = await getPrisma();
   if (!prisma) return NextResponse.json({ eligible: false, db: false });

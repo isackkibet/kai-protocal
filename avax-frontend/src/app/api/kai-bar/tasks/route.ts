@@ -1,15 +1,19 @@
 import { NextResponse } from 'next/server';
 import { getPrisma } from '@/lib/db';
+import { verifyPrivyUserId } from '@/lib/privy-server';
 
 /**
  * /api/kai-bar/tasks  —  GET
  *
  * Lists active reward tasks (PRD 2 §9) plus which ones the requesting user
  * has already completed (marked with a check in the dashboard).
+ *
+ * The task catalog itself is public, but "completed" is per-user — identity
+ * comes from the verified bearer token when present. No token just means an
+ * anonymous view where nothing shows as completed.
  */
 export async function GET(req: Request) {
-  const { searchParams } = new URL(req.url);
-  const privyUserId = searchParams.get('privyUserId')?.trim();
+  const privyUserId = await verifyPrivyUserId(req.headers.get('authorization'));
   const prisma = await getPrisma();
   if (!prisma) return NextResponse.json({ tasks: [], db: false });
 

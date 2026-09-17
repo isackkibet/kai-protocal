@@ -18,8 +18,7 @@ function isSameCalendarDay(a: Date, b: Date) {
  * every calendar day instead of being claimable only once ever.
  */
 export async function GET(req: Request) {
-  const { searchParams } = new URL(req.url);
-  const privyUserId = searchParams.get('privyUserId')?.trim();
+  const privyUserId = await verifyPrivyUserId(req.headers.get('authorization'));
   const prisma = await getPrisma();
   if (!prisma || !privyUserId) return NextResponse.json({ claimedToday: false, points: DEFAULT_DAILY_POINTS });
 
