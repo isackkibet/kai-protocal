@@ -21,10 +21,18 @@
 
 import { NextResponse } from "next/server";
 import { b2cSend } from "@/lib/mpesa";
+import { isAuthorizedAdmin } from "@/lib/admin-auth";
 
 export const dynamic = "force-dynamic";
 
 export async function POST(request: Request) {
+  // This sends real money out of the business M-Pesa float to an arbitrary
+  // phone number — it must never be reachable by an anonymous caller, or by
+  // an ordinary signed-in user acting on their own behalf.
+  if (!isAuthorizedAdmin(request)) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
   try {
     const body = await request.json();
     const { phone, amountKes, occasion, remarks } = body as {
