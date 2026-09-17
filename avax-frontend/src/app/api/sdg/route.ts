@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getPrisma } from '@/lib/db';
+import { verifyPrivyUserId } from '@/lib/privy-server';
 
 export interface SDGGoalStat {
   sdgNumber: number;
@@ -267,30 +268,35 @@ export async function POST(req: NextRequest) {
     });
     inMemorySDGLedger[userWalletKey].totalPoints += actionDef.points;
 
-    // Also attempt to write to Prisma KaiBarLedger if configured
+    // Crediting the real, persistent Kai Bar ledger requires a verified
+    // identity — this feeds airdrop eligibility, so it must not be mintable
+    // by an anonymous caller supplying an arbitrary wallet. Also capped to
+    // once per action per user (referenceId = actionDef.id) so it can't be
+    // farmed by repeat POSTs.
     try {
+      const privyUserId = await verifyPrivyUserId(req.headers.get('authorization'));
       const prisma = await getPrisma();
-      if (wallet && prisma) {
-        const kaiUser = await prisma.kaiUser.findFirst({
-          where: {
-            wallets: { some: { address: { equals: wallet, mode: 'insensitive' } } },
-          },
-        });
-
+      if (privyUserId && prisma) {
+        const kaiUser = await prisma.kaiUser.findUnique({ where: { privyUserId } });
         if (kaiUser) {
-          await prisma.kaiBarLedger.create({
-            data: {
-              userId: kaiUser.id,
-              type: 'COMMUNITY_ACTIVITY',
-              amount: actionDef.points,
-              description: `SDG ${actionDef.sdgNumber}: ${actionDef.title}`,
-              referenceId: actionDef.id,
-            },
+          const already = await prisma.kaiBarLedger.findFirst({
+            where: { userId: kaiUser.id, type: 'COMMUNITY_ACTIVITY', referenceId: actionDef.id },
           });
+          if (!already) {
+            await prisma.kaiBarLedger.create({
+              data: {
+                userId: kaiUser.id,
+                type: 'COMMUNITY_ACTIVITY',
+                amount: actionDef.points,
+                description: `SDG ${actionDef.sdgNumber}: ${actionDef.title}`,
+                referenceId: actionDef.id,
+              },
+            });
+          }
         }
       }
     } catch {
-      // Non-blocking fallback
+      // Non-blocking fallback — the in-memory demo ledger below still updates.
     }
 
     const updatedPoints = inMemorySDGLedger[userWalletKey].totalPoints;

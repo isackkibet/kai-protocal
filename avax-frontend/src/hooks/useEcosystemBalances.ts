@@ -1,15 +1,16 @@
 'use client';
 
 import { useEffect } from 'react';
-import { useAccount, useBalance, useReadContracts } from 'wagmi';
+import { useBalance, useReadContracts } from 'wagmi';
 import { avalancheFuji } from 'wagmi/chains';
 import { formatUnits } from 'viem';
 import { ECOSYSTEM_TOKENS } from '@/lib/tokens';
 import { ERC20_ABI } from '@/lib/erc20abi';
 import { useKaivaxStore } from '@/store/useKaivaxStore';
+import { useActiveAccount } from '@/hooks/useActiveAccount';
 
 export function useEcosystemBalances() {
-  const { address, isConnected, chainId } = useAccount();
+  const { address, isConnected, chainId } = useActiveAccount();
   const setAvaxBalance = useKaivaxStore(s => s.setAvaxBalance);
   const setAllBalances = useKaivaxStore(s => s.setAllBalances);
 

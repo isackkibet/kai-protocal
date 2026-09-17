@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { useAccount } from 'wagmi';
+import { usePrivyAuth } from '@/lib/privy-auth';
 import { SDGGoalStat, SDGActionDefinition } from '@/app/api/sdg/route';
 
 export interface SDGImpactState {
@@ -21,6 +22,7 @@ export interface SDGImpactState {
 
 export function useSDGImpact(): SDGImpactState {
   const { address } = useAccount();
+  const { getAccessToken } = usePrivyAuth();
   const [totalPoints, setTotalPoints] = useState(225);
   const [tier, setTier] = useState('Seedling Explorer');
   const [badge, setBadge] = useState('🌱');
@@ -61,9 +63,12 @@ export function useSDGImpact(): SDGImpactState {
 
   const logAction = async (actionId: string): Promise<boolean> => {
     try {
+      const token = await getAccessToken();
+      const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+      if (token) headers.Authorization = `Bearer ${token}`;
       const res = await fetch('/api/sdg', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers,
         body: JSON.stringify({ wallet: address || '0x_anonymous', actionId }),
       });
 

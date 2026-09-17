@@ -17,18 +17,41 @@
 
 import { NextResponse } from "next/server";
 import { stkPush, usdToKes } from "@/lib/mpesa";
+import { verifyPrivyUserId } from "@/lib/privy-server";
+import { verifyWalletOwnership } from "@/lib/wallet-signature";
 
 export const dynamic = "force-dynamic";
 
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { phone, nftId, nftName, priceYbob } = body as {
+    const { phone, nftId, nftName, priceYbob, wallet, signature, timestamp } = body as {
       phone:     string;
       nftId:     string;
       nftName:   string;
       priceYbob: number;
+      wallet?:    string;
+      signature?: string;
+      timestamp?: number;
     };
+
+    // An STK push bills the buyer and consumes the business shortcode, so the
+    // caller must prove they own an account/wallet — anonymous requests could
+    // otherwise spam arbitrary phone numbers with payment prompts.
+    // Accept either a Privy session (Google/email login) or a signed
+    // wallet-ownership challenge (MetaMask/Core / voice agent).
+    const privyUser = await verifyPrivyUserId(request.headers.get("authorization"));
+    const ownsWallet = await verifyWalletOwnership(
+      String(wallet ?? "").toLowerCase(),
+      String(signature ?? ""),
+      Number(timestamp),
+    );
+    if (!privyUser && !ownsWallet) {
+      return NextResponse.json(
+        { error: "Could not verify your session. Please sign in again." },
+        { status: 401 },
+      );
+    }
 
     if (!phone || !nftId || !priceYbob) {
       return NextResponse.json(

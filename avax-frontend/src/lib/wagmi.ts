@@ -1,22 +1,18 @@
 import { http, createConfig } from 'wagmi';
-import type { CreateConnectorFn } from '@wagmi/core';
 import { avalancheFuji, avalanche } from 'wagmi/chains';
 import { injected } from 'wagmi/connectors';
-import { kaiPrivateKeyConnector } from './kai-private-key-connector';
 
 const fujiRpc = process.env.NEXT_PUBLIC_AVAX_RPC_URL || 'https://api.avax-test.network/ext/bc/C/rpc';
 
-const kaiPrivateKey = process.env.NEXT_PUBLIC_KAI_PRIVATE_KEY?.trim();
-const kaiConnectors: CreateConnectorFn[] = kaiPrivateKey
-  ? ([kaiPrivateKeyConnector({
-      privateKey: `0x${kaiPrivateKey.replace(/^0x/, '')}`,
-    })] as CreateConnectorFn[])
-  : [];
+// A wallet connector built from NEXT_PUBLIC_KAI_PRIVATE_KEY used to live here.
+// Any NEXT_PUBLIC_ variable is inlined into the client bundle in plaintext —
+// that shipped a real signing key to every visitor's browser. Removed
+// entirely; embedded wallets are Privy's job (see PrivyAuthProvider), never
+// a raw key in client code.
 
 export const config = createConfig({
   chains: [avalancheFuji, avalanche],
   connectors: [
-    ...kaiConnectors,
     injected({
       target: 'metaMask',
     }),
