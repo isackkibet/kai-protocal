@@ -1,7 +1,8 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { useAccount, useDisconnect } from 'wagmi';
+import { useAccount, useDisconnect, useSignMessage } from 'wagmi';
+import { buildOwnershipChallenge } from '@/lib/wallet-signature';
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
@@ -132,6 +133,7 @@ function FormRow({ label, children }:{ label:string; children:React.ReactNode })
 export default function ProfilePage() {
   const { address, isConnected } = useAccount();
   const { disconnect } = useDisconnect();
+  const { signMessageAsync } = useSignMessage();
   const [profile, setProfile] = useState<Profile>({ ...EMPTY });
   const [saved,   setSaved]   = useState(false);
   const [saving,  setSaving]  = useState(false);
