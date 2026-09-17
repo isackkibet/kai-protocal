@@ -131,6 +131,13 @@ export default function VoiceAgentPage() {
   useEffect(() => { autoReopenRef.current = autoReopen; }, [autoReopen]);
   useEffect(() => { micStateRef.current = micState; }, [micState]);
 
+  // One-time mic support check (avoids setState-in-effect lint)
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const SR = window.SpeechRecognition || (window as unknown as { webkitSpeechRecognition: unknown }).webkitSpeechRecognition;
+    if (!SR) setMicSupported(false);
+  }, []);
+
   // ─── Speech Synthesis (short confirmations only) ──────────────────────────
 
   const speak = useCallback(
@@ -165,7 +172,7 @@ export default function VoiceAgentPage() {
   useEffect(() => {
     if (typeof window === 'undefined') return;
     const SR = window.SpeechRecognition || (window as unknown as { webkitSpeechRecognition: typeof SpeechRecognition }).webkitSpeechRecognition;
-    if (!SR) { micSupportedRef.current = false; return; }
+    if (!SR) return;
 
     const rec = new SR();
     rec.continuous = false;
@@ -219,7 +226,6 @@ export default function VoiceAgentPage() {
       interimRef.current = '';
       listeningRef.current = true;
       setMicState('listening');
-      recCounterRef.current += 1;
       try { rec.start(); } catch {
         listeningRef.current = false;
         setMicState('idle');
