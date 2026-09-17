@@ -11,7 +11,7 @@ import {
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { formatChat } from '@/lib/formatChat';
-import { useAccount, useWriteContract, useSwitchChain, usePublicClient } from 'wagmi';
+import { useAccount, useWriteContract, useSwitchChain } from 'wagmi';
 import { avalancheFuji } from 'wagmi/chains';
 import { parseUnits } from 'viem';
 import { ERC20_ABI } from '@/lib/erc20abi';
@@ -38,6 +38,25 @@ interface IntentResult {
   proposal?: IntentProposal;
   navigationPath?: string;
   paymentData?: { amountKes: number; phone?: string; purpose?: string };
+}
+
+interface SseFrame {
+  token?: string;
+  done?: boolean;
+  plan?: Record<string, string> & {
+    action?: string;
+    approvalNote?: string;
+    amountToken?: string | number;
+    amount?: string | number;
+    fromAmount?: string | number;
+    token?: string;
+    toToken?: string;
+    tokenSymbol?: string;
+    tokenAddress?: `0x${string}`;
+    targetContract?: `0x${string}`;
+    recipientAddress?: `0x${string}`;
+    projectedApy?: string;
+  };
 }
 
 interface Msg {
@@ -75,6 +94,37 @@ const STATUS: Record<MicState, string> = {
 };
 
 const USD_PER_KES = 130;
+
+// ─── Web Speech API minimal types (not in lib.dom for some TS versions) ──────
+interface SpeechRecognitionLike {
+  continuous: boolean;
+  interimResults: boolean;
+  lang: string;
+  maxAlternatives: number;
+  onresult: ((e: SpeechRecognitionResultLike) => void) | null;
+  onend: (() => void) | null;
+  onerror: ((ev: SpeechRecognitionErrorLike) => void) | null;
+  start: () => void;
+  stop: () => void;
+  abort: () => void;
+}
+
+interface SpeechRecognitionResultLike {
+  resultIndex: number;
+  results: ArrayLike<{ [i: number]: { transcript: string } }>;
+}
+
+interface SpeechRecognitionErrorLike {
+  error?: string;
+}
+
+type SpeechRecognitionConstructor = new () => SpeechRecognitionLike;
+
+function getSpeechRecognition(): SpeechRecognitionConstructor | null {
+  if (typeof window === 'undefined') return null;
+  const w = window as unknown as { SpeechRecognition?: SpeechRecognitionConstructor; webkitSpeechRecognition?: SpeechRecognitionConstructor };
+  return w.SpeechRecognition || w.webkitSpeechRecognition || null;
+}
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -122,7 +172,7 @@ export default function VoiceAgentPage() {
   const micStateRef = useRef<MicState>('idle');
   const silenceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const runCommandRef = useRef<(text: string) => Promise<void>>(() => Promise.resolve());
-  const [micSupported, setMicSupported] = useState(true);
+  const [micSupported] = useState(() => getSpeechRecognition() !== null);
 
   useEffect(() => {
     endRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -130,13 +180,6 @@ export default function VoiceAgentPage() {
 
   useEffect(() => { autoReopenRef.current = autoReopen; }, [autoReopen]);
   useEffect(() => { micStateRef.current = micState; }, [micState]);
-
-  // One-time mic support check (avoids setState-in-effect lint)
-  useEffect(() => {
-    if (typeof window === 'undefined') return;
-    const SR = window.SpeechRecognition || (window as unknown as { webkitSpeechRecognition: unknown }).webkitSpeechRecognition;
-    if (!SR) setMicSupported(false);
-  }, []);
 
   // ─── Speech Synthesis (short confirmations only) ──────────────────────────
 
@@ -171,16 +214,16 @@ export default function VoiceAgentPage() {
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
-    const SR = window.SpeechRecognition || (window as unknown as { webkitSpeechRecognition: typeof SpeechRecognition }).webkitSpeechRecognition;
+    const SR = getSpeechRecognition();
     if (!SR) return;
 
-    const rec = new SR();
+    const rec: SpeechRecognitionLike = new SR();
     rec.continuous = false;
     rec.interimResults = true;
     rec.lang = 'en-US';
     rec.maxAlternatives = 1;
 
-    rec.onresult = (e: SpeechRecognitionEvent) => {
+    rec.onresult = (e: SpeechRecognitionResultLike) => {
       let transcript = '';
       for (let i = e.resultIndex; i < e.results.length; i++) {
         transcript += e.results[i][0].transcript;
@@ -199,7 +242,7 @@ export default function VoiceAgentPage() {
       setMicState((prev) => (prev === 'listening' ? 'idle' : prev));
     };
 
-    rec.onerror = (ev: SpeechRecognitionErrorEvent) => {
+    rec.onerror = (ev: SpeechRecognitionErrorLike) => {
       listeningRef.current = false;
       if (micStateRef.current === 'listening') setMicState('idle');
       const code = ev?.error;
@@ -239,7 +282,6 @@ export default function VoiceAgentPage() {
       if (silenceTimerRef.current) clearTimeout(silenceTimerRef.current);
       try { rec.abort(); } catch {}
     };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // ─── Intent Router: voice command → specific action plan ─────────────────
@@ -362,7 +404,7 @@ export default function VoiceAgentPage() {
       const reader = res.body.getReader();
       const dec = new TextDecoder();
       let buf = '';
-      let aiText = '';
+      const tokens: string[] = [];
       let finalSpoken = intentSpokenReply || '';
 
       while (true) {
@@ -379,29 +421,31 @@ export default function VoiceAgentPage() {
             else if (line.startsWith('data:')) data += line.slice(5).trim();
           }
           if (!data) continue;
-          let json: any;
-          try { json = JSON.parse(data); } catch { continue; }
+          let frameJson: SseFrame;
+          try { frameJson = JSON.parse(data); } catch { continue; }
 
           // If the agent produced a plan (swap, escrow, etc.), emit it
-          if (event === 'approval' && json.plan) {
-            const intentType = json.plan.action === 'swap' ? 'STAKE' : 'TRANSFER';
+          if (event === 'approval' && frameJson.plan) {
+            const plan = frameJson.plan;
+            const intentType = plan.action === 'swap' ? 'STAKE' : 'TRANSFER';
+            const aiText = tokens.join('');
             const proposal: IntentResult = {
               intentType,
               spokenReply: `Plan ready. Approve in the card below.`,
-              displayText: Object.entries(json.plan)
+              displayText: Object.entries(plan)
                 .filter(([k]) => !['name', 'requiresHumanApproval', 'approvalNote'].includes(k))
                 .map(([k, v]) => `${k}: ${typeof v === 'object' ? JSON.stringify(v) : v}`)
                 .join(' · '),
               proposal: {
                 agentName: 'KAI Agent',
                 actionType: intentType,
-                title: json.plan.action || 'Plan',
-                description: json.plan.approvalNote || 'Review and approve to execute.',
-                amount: String(json.plan.amountToken || json.plan.amount || json.plan.fromAmount || ''),
-                tokenSymbol: json.plan.token || json.plan.toToken || json.plan.tokenSymbol || '',
-                tokenAddress: json.plan.tokenAddress || json.plan.targetContract,
-                recipientAddress: json.plan.recipientAddress,
-                projectedApy: json.plan.projectedApy,
+                title: plan.action || 'Plan',
+                description: plan.approvalNote || 'Review and approve to execute.',
+                amount: String(plan.amountToken || plan.amount || plan.fromAmount || ''),
+                tokenSymbol: plan.token || plan.toToken || plan.tokenSymbol || '',
+                tokenAddress: plan.tokenAddress || plan.targetContract,
+                recipientAddress: plan.recipientAddress,
+                projectedApy: plan.projectedApy,
               },
             };
             setMessages((p) => {
@@ -419,14 +463,15 @@ export default function VoiceAgentPage() {
             return;
           }
 
-          if (typeof json.token === 'string') {
-            aiText += json.token;
-            finalSpoken = aiText;
+          if (typeof frameJson.token === 'string') {
+            tokens.push(frameJson.token);
+            const text = tokens.join('');
+            finalSpoken = text;
             setMessages((p) => {
               const clone = [...p];
               const lastIdx = clone.length - 1;
               if (clone[lastIdx]?.streaming) {
-                clone[lastIdx] = { ...clone[lastIdx], text: aiText };
+                clone[lastIdx] = { ...clone[lastIdx], text };
               }
               return clone;
             });
@@ -434,6 +479,7 @@ export default function VoiceAgentPage() {
         }
       }
 
+      const aiText = tokens.join('');
       // Done streaming
       setMessages((p) => {
         const clone = [...p];
@@ -465,6 +511,11 @@ export default function VoiceAgentPage() {
     setMicState((prev) => (prev === 'thinking' || prev === 'speaking' ? prev : autoReopen ? 'idle' : 'idle'));
     if (!autoReopenRef.current) setMicState('idle');
   };
+
+  // Keep ref pointing at the latest command handler for the recognizer.
+  useEffect(() => {
+    runCommandRef.current = runCommand;
+  });
 
   // ─── Proposal Execution (wagmi on-chain) ────────────────────────────────
 
