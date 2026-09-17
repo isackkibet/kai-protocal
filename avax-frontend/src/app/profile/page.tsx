@@ -144,11 +144,13 @@ export default function ProfilePage() {
 
   const load = useCallback(async (addr:string) => {
     try {
-      const r = await fetch(`/api/profile?wallet=${addr}`);
+      const timestamp = Date.now();
+      const signature = await signMessageAsync({ message: buildOwnershipChallenge(addr, timestamp) });
+      const r = await fetch(`/api/profile?wallet=${addr}&signature=${encodeURIComponent(signature)}&timestamp=${timestamp}`);
       const { profile:p } = await r.json();
       setProfile(p ? { ...EMPTY, ...p } : { ...EMPTY, walletAddress:addr });
     } catch { setProfile({ ...EMPTY, walletAddress:addr }); }
-  }, []);
+  }, [signMessageAsync]);
 
   useEffect(() => { if (address) load(address); }, [address, load]);
 
@@ -159,9 +161,11 @@ export default function ProfilePage() {
     if (!address) { setToast('Connect wallet first'); return; }
     setSaving(true);
     try {
+      const timestamp = Date.now();
+      const signature = await signMessageAsync({ message: buildOwnershipChallenge(address, timestamp) });
       const r = await fetch('/api/profile', {
         method:'POST', headers:{'Content-Type':'application/json'},
-        body:JSON.stringify({ ...profile, walletAddress:address }),
+        body:JSON.stringify({ ...profile, walletAddress:address, signature, timestamp }),
       });
       if (r.ok) {
         setSaved(true); setToast('Profile saved'); setEditing(false);
