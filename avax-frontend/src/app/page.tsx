@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef, useSyncExternalStore } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import dynamic from 'next/dynamic';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAccount, useBalance, useReadContracts } from 'wagmi';
@@ -12,6 +13,7 @@ const WalletConnectModal = dynamic(() => import('@/components/WalletConnectModal
 import { ECOSYSTEM_TOKENS, TICKER_TOKENS } from '@/lib/tokens';
 import { ERC20_ABI } from '@/lib/erc20abi';
 import { formatChat } from '@/lib/formatChat';
+import { usePrivyAuth } from '@/lib/privy-auth';
 import {
   Trees, Store, Users, FlaskConical, ScanLine,
   Droplets, ImageIcon, Lock, Globe, LayoutGrid, Gift,
@@ -76,7 +78,9 @@ const ESTIMATED_USD_RATES: Record<string, number> = {
 };
 
 export default function Home() {
+  const router = useRouter();
   const { address, isConnected } = useAccount();
+  const { authenticated: privyAuthenticated, address: privyAddress } = usePrivyAuth();
   const mounted = useSyncExternalStore(() => () => {}, () => true, () => false);
   const connected = mounted && isConnected;
   const { data: avaxBal, refetch: refetchAvax } = useBalance({ address });
@@ -203,7 +207,10 @@ export default function Home() {
             A DeFi ecosystem on Avalanche C-Chain with six tokens, yield vaults, liquidity pools, and DAO governance.
           </p>
 
-          <motion.button whileTap={{ scale:0.98 }} onClick={() => setShowModal(true)}
+          <motion.button whileTap={{ scale:0.98 }} onClick={() => {
+            if (privyAuthenticated) { router.push('/wallet'); return; }
+            setShowModal(true);
+          }}
             style={{
               marginTop:24, display:'inline-flex', alignItems:'center', justifyContent:'center', gap:10,
               padding:'13px 28px', borderRadius:12, cursor:'pointer', border:'none',
@@ -211,8 +218,12 @@ export default function Home() {
               fontSize:15, fontWeight:800, color:'#04140f',
             }}>
             <Link2 size={16}/>
-            {connected ? `Connected: ${address?.slice(0,6)}…${address?.slice(-4)}` : 'Connect Wallet'}
-            {connected && <span style={{ width:8, height:8, borderRadius:'50%', background:'#04140f' }} />}
+            {connected
+              ? `Connected: ${address?.slice(0,6)}…${address?.slice(-4)}`
+              : privyAuthenticated && privyAddress
+                ? `Your Wallet: ${privyAddress.slice(0,6)}…${privyAddress.slice(-4)}`
+                : 'Connect Wallet'}
+            {(connected || privyAuthenticated) && <span style={{ width:8, height:8, borderRadius:'50%', background:'#04140f' }} />}
           </motion.button>
 
           <p style={{ marginTop:16, fontSize:12, color:'var(--home-muted)' }}>
@@ -238,10 +249,10 @@ export default function Home() {
                 </div>
                 <div>
                   <p style={{ fontSize:17, fontWeight:800, margin:0, color:'#fff' }}>
-                    {connected ? (displayName || 'KAI Member') : 'Not connected'}
+                    {connected || privyAuthenticated ? (displayName || 'KAI Member') : 'Not connected'}
                   </p>
                   <p style={{ fontSize:14, color:'rgba(232,242,238,0.75)', margin:'2px 0 0', lineHeight:1.5 }}>
-                    {connected
+                    {connected || privyAuthenticated
                       ? "You're an active KAI Nuvari member on Avalanche Fuji, based in Kenya."
                       : 'Connect a wallet to see your profile.'}
                   </p>

@@ -218,6 +218,7 @@ function PrivyAuthContextProvider({ children }: { children: React.ReactNode }) {
    * pages.
    */
   const signInWithGoogle = useCallback(async (): Promise<PrivyAuthSyncResult> => {
+    if (authenticated) return { ok: true, reason: 'already-authenticated', isNew: false };
     try {
       rememberPostLoginPath();
       await builtLogin();
@@ -236,7 +237,7 @@ function PrivyAuthContextProvider({ children }: { children: React.ReactNode }) {
       setError(rawMsg || 'Google sign-in failed. Please try again.');
       return { ok: false, reason: rawMsg || 'login-failed', isNew: false };
     }
-  }, [builtLogin, syncToBackend]);
+  }, [authenticated, builtLogin, syncToBackend]);
 
   /**
    * "Continue with Email": opens Privy's email OTP flow, then links the
@@ -244,6 +245,7 @@ function PrivyAuthContextProvider({ children }: { children: React.ReactNode }) {
    * the primary signup path; Google remains a secondary option).
    */
   const signInWithEmail = useCallback(async (): Promise<PrivyAuthSyncResult> => {
+    if (authenticated) return { ok: true, reason: 'already-authenticated', isNew: false };
     try {
       rememberPostLoginPath();
       await builtEmailLogin();
@@ -261,7 +263,7 @@ function PrivyAuthContextProvider({ children }: { children: React.ReactNode }) {
       setError(rawMsg || 'Email sign-in failed. Please try again.');
       return { ok: false, reason: rawMsg || 'login-failed', isNew: false };
     }
-  }, [builtEmailLogin, syncToBackend]);
+  }, [authenticated, builtEmailLogin, syncToBackend]);
 
   const loginFn = login;
 
