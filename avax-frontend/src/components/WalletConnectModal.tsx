@@ -181,7 +181,7 @@ export default function WalletConnectModal({ onClose }: WalletConnectModalProps)
       setEmailError(
         result.reason === 'privy-not-configured'
           ? 'Email sign-in is not configured yet.'
-          : 'Email sign-in failed. Please try again.',
+          : String(result.reason ?? 'Email sign-in failed. Please try again.'),
       );
     }
   };
@@ -195,7 +195,7 @@ export default function WalletConnectModal({ onClose }: WalletConnectModalProps)
       setGoogleError(
         result.reason === 'privy-not-configured'
           ? 'Google sign-in is not configured yet.'
-          : 'Google sign-in failed. Please try again.',
+          : String(result.reason ?? 'Google sign-in failed. Please try again.'),
       );
     }
   };

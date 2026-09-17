@@ -41,6 +41,9 @@ export default function KaiBarDashboard() {
   const [copied, setCopied] = useState(false);
   const [completing, setCompleting] = useState<string | null>(null);
   const [toast, setToast] = useState<string | null>(null);
+  const [signInError, setSignInError] = useState<string | null>(null);
+  const [emailSigningIn, setEmailSigningIn] = useState(false);
+  const [googleSigningIn, setGoogleSigningIn] = useState(false);
 
   const progress = Math.min((kaiBar / NEXT_MILESTONE) * 100, 100);
   const remaining = Math.max(NEXT_MILESTONE - kaiBar, 0);
@@ -87,20 +90,43 @@ export default function KaiBarDashboard() {
             Sign in to start earning points toward future rewards.
           </p>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10, maxWidth: 260, margin: '0 auto' }}>
-            <motion.button whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }} onClick={signInWithEmail} style={{
-              padding: '13px 26px', borderRadius: 14, border: 'none', cursor: 'pointer',
-              background: 'linear-gradient(135deg,#f59e0b,#b45309)', color: '#fff',
-              boxShadow: '0 6px 26px rgba(245,158,11,0.4)', fontSize: 14, fontWeight: 800,
-            }}>
-              Continue with Email
+            <motion.button whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }} disabled={emailSigningIn}
+              onClick={async () => {
+                setSignInError(null);
+                setEmailSigningIn(true);
+                const res = await signInWithEmail();
+                setEmailSigningIn(false);
+                if (!res.ok && res.reason !== 'login-cancelled') {
+                  setSignInError(res.reason === 'privy-not-configured' ? 'Email sign-in is not configured yet.' : String(res.reason ?? 'Email sign-in failed. Please try again.'));
+                }
+              }}
+              style={{
+                padding: '13px 26px', borderRadius: 14, border: 'none', cursor: 'pointer',
+                background: 'linear-gradient(135deg,#f59e0b,#b45309)', color: '#fff',
+                boxShadow: '0 6px 26px rgba(245,158,11,0.4)', fontSize: 14, fontWeight: 800,
+              }}>
+              {emailSigningIn ? 'Signing in…' : 'Continue with Email'}
             </motion.button>
-            <motion.button whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }} onClick={signInWithGoogle} style={{
-              padding: '13px 26px', borderRadius: 14, border: '1px solid rgba(255,255,255,0.14)', cursor: 'pointer',
-              background: 'rgba(255,255,255,0.05)', color: '#fff',
-              fontSize: 14, fontWeight: 800,
-            }}>
-              Continue with Google
+            <motion.button whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }} disabled={googleSigningIn}
+              onClick={async () => {
+                setSignInError(null);
+                setGoogleSigningIn(true);
+                const res = await signInWithGoogle();
+                setGoogleSigningIn(false);
+                if (!res.ok && res.reason !== 'login-cancelled') {
+                  setSignInError(res.reason === 'privy-not-configured' ? 'Google sign-in is not configured yet.' : String(res.reason ?? 'Google sign-in failed. Please try again.'));
+                }
+              }}
+              style={{
+                padding: '13px 26px', borderRadius: 14, border: '1px solid rgba(255,255,255,0.14)', cursor: 'pointer',
+                background: 'rgba(255,255,255,0.05)', color: '#fff',
+                fontSize: 14, fontWeight: 800,
+              }}>
+              {googleSigningIn ? 'Signing in…' : 'Continue with Google'}
             </motion.button>
+            {signInError && (
+              <p style={{ fontSize: 11, color: '#f87171', margin: '4px 0 0' }}>{signInError}</p>
+            )}
           </div>
         </div>
       </main>
