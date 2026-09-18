@@ -19,11 +19,16 @@ export async function GET(req: Request) {
   const prisma = await getPrisma();
   if (!prisma) return NextResponse.json({ member: null });
 
-  const user = await prisma.kaiUser.findUnique({ where: { privyUserId } });
-  if (!user) return NextResponse.json({ member: null });
+  try {
+    const user = await prisma.kaiUser.findUnique({ where: { privyUserId } });
+    if (!user) return NextResponse.json({ member: null });
 
-  const member = await prisma.forestMember.findUnique({ where: { kaiUserId: user.id } });
-  return NextResponse.json({ member });
+    const member = await prisma.forestMember.findUnique({ where: { kaiUserId: user.id } });
+    return NextResponse.json({ member });
+  } catch (e) {
+    console.error('[cfa/join] database unavailable', e);
+    return NextResponse.json({ member: null });
+  }
 }
 
 export async function POST(req: Request) {
@@ -35,13 +40,13 @@ export async function POST(req: Request) {
   const prisma = await getPrisma();
   if (!prisma) return NextResponse.json({ error: 'database unavailable' }, { status: 503 });
 
-  const user = await prisma.kaiUser.findUnique({ where: { privyUserId }, include: { wallets: true } });
-  if (!user) return NextResponse.json({ error: 'User not found' }, { status: 404 });
-
-  const forest = await getOrCreateDefaultForest();
-  if (!forest) return NextResponse.json({ error: 'database unavailable' }, { status: 503 });
-
   try {
+    const user = await prisma.kaiUser.findUnique({ where: { privyUserId }, include: { wallets: true } });
+    if (!user) return NextResponse.json({ error: 'User not found' }, { status: 404 });
+
+    const forest = await getOrCreateDefaultForest();
+    if (!forest) return NextResponse.json({ error: 'database unavailable' }, { status: 503 });
+
     const existing = await prisma.forestMember.findUnique({ where: { kaiUserId: user.id } });
     if (existing) return NextResponse.json({ ok: true, member: existing, isNew: false });
 

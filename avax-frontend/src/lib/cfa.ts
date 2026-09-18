@@ -10,17 +10,22 @@ export async function getOrCreateDefaultForest() {
   const prisma = await getPrisma();
   if (!prisma) return null;
 
-  const existing = await prisma.communityForest.findFirst({ orderBy: { createdAt: 'asc' } });
-  if (existing) return existing;
+  try {
+    const existing = await prisma.communityForest.findFirst({ orderBy: { createdAt: 'asc' } });
+    if (existing) return existing;
 
-  return prisma.communityForest.create({
-    data: {
-      name: 'KAI Nuvari Community Forest',
-      did: 'did:kai:default-cfa',
-      locationRegion: 'Unspecified',
-      establishedAt: new Date(),
-    },
-  });
+    return prisma.communityForest.create({
+      data: {
+        name: 'KAI Nuvari Community Forest',
+        did: 'did:kai:default-cfa',
+        locationRegion: 'Unspecified',
+        establishedAt: new Date(),
+      },
+    });
+  } catch (e) {
+    console.error('[cfa] database unavailable', e);
+    return null;
+  }
 }
 
 /**
@@ -34,8 +39,13 @@ export async function getMemberForPrivyUser(privyUserId: string | null) {
   const prisma = await getPrisma();
   if (!prisma) return null;
 
-  const user = await prisma.kaiUser.findUnique({ where: { privyUserId } });
-  if (!user) return null;
+  try {
+    const user = await prisma.kaiUser.findUnique({ where: { privyUserId } });
+    if (!user) return null;
 
-  return prisma.forestMember.findUnique({ where: { kaiUserId: user.id } });
+    return prisma.forestMember.findUnique({ where: { kaiUserId: user.id } });
+  } catch (e) {
+    console.error('[cfa] database unavailable', e);
+    return null;
+  }
 }

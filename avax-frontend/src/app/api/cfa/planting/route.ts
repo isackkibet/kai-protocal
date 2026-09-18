@@ -21,14 +21,19 @@ export async function GET() {
   const forest = await getOrCreateDefaultForest();
   if (!forest) return NextResponse.json({ records: [], db: false });
 
-  const records = await prisma.plantingRecord.findMany({
-    where: { forestId: forest.id },
-    orderBy: { plantedAt: 'desc' },
-    take: 50,
-    include: { species: { select: { name: true } }, submittedBy: { select: { name: true } } },
-  });
+  try {
+    const records = await prisma.plantingRecord.findMany({
+      where: { forestId: forest.id },
+      orderBy: { plantedAt: 'desc' },
+      take: 50,
+      include: { species: { select: { name: true } }, submittedBy: { select: { name: true } } },
+    });
 
-  return NextResponse.json({ records });
+    return NextResponse.json({ records });
+  } catch (e) {
+    console.error('[cfa/planting] database unavailable', e);
+    return NextResponse.json({ records: [], db: false });
+  }
 }
 
 export async function POST(req: Request) {

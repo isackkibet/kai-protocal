@@ -13,7 +13,7 @@ export async function GET() {
       establishedAt: '2021-03-15',
       totalHectares: 1240,
       carbonCredits: 8420,
-      treasuryWallet: VAULT_ADDRESSES.NVR ?? '0xCB6198228E27f2200C9093024fB31527E0a3B7c0',
+      treasuryWallet: VAULT_ADDRESSES.avax ?? VAULT_ADDRESSES.NVR ?? '0xCB6198228E27f2200C9093024fB31527E0a3B7c0',
     },
     stats: {
       totalMembers: 347,

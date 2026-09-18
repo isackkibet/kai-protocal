@@ -52,7 +52,9 @@ export const TOKENS: Record<string, Hex> = Object.fromEntries(
 export const AMM_ADDRESS = isAddr(f.amm?.address) ? f.amm.address! : null;
 
 export const VAULT_ADDRESSES: Record<string, Hex> = Object.fromEntries(
-  Object.entries(f.vaults ?? {}).filter(([, v]) => isAddr(v?.address)),
+  Object.entries(f.vaults ?? {})
+    .filter(([, v]) => isAddr(v?.address))
+    .map(([k, v]) => [k, v!.address!]),
 ) as Record<string, Hex>;
 
 export const REGISTRY_ADDRESS = isAddr(a.contracts?.KaiAgentRegistry?.address)
