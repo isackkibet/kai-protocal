@@ -45,7 +45,7 @@ export default function DailyCheckInCard({ claimedToday, points, claiming, onCla
       <div style={{ flex: 1, minWidth: 0 }}>
         <p style={{ fontSize: 14, fontWeight: 800, margin: 0, color: '#fff' }}>Today&apos;s Reward</p>
         <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.5)', margin: '2px 0 0' }}>
-          {claimedToday ? 'Claimed — come back tomorrow' : `Sign in daily to earn +${points} Kai Bar`}
+          {claimedToday ? 'Claimed. Come back tomorrow.' : `Sign in daily to earn +${points} Kai Bar`}
         </p>
       </div>
       {claimedToday ? (

@@ -164,8 +164,8 @@ export default function WalletDashboard() {
 
   const totalBalance = avaxAmt + Object.values(tokenBals).reduce((a, b) => a + b, 0);
   const assetRows = [
-    { s: 'AVAX', name: 'Avalanche', emoji: '🔺', amt: avaxAmt, c: AVAX_CONFIG.color, d: true },
-    ...ECOSYSTEM_TOKENS.map(t => ({ s: t.symbol, name: t.name, emoji: t.emoji, amt: tokenBals[t.symbol] ?? 0, c: t.color, d: !!t.address })),
+    { s: 'AVAX', name: 'Avalanche', amt: avaxAmt, c: AVAX_CONFIG.color, d: true },
+    ...ECOSYSTEM_TOKENS.map(t => ({ s: t.symbol, name: t.name, amt: tokenBals[t.symbol] ?? 0, c: t.color, d: !!t.address })),
   ];
 
   const selectAssetForSend = (symbol: string) => {
@@ -306,11 +306,11 @@ export default function WalletDashboard() {
                   display: 'flex', alignItems: 'center', gap: 12, padding: '11px 18px',
                 }}>
                   <div style={{
-                    width: 36, height: 36, borderRadius: 10, flexShrink: 0, fontSize: 16,
+                    width: 36, height: 36, borderRadius: 10, flexShrink: 0, fontSize: 13, fontWeight: 800,
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    background: `linear-gradient(145deg,${b.c}22,rgba(6,6,10,0.6))`,
+                    background: `${b.c}1a`, color: b.c,
                     boxShadow: `0 0 0 0.5px ${b.c}35 inset`,
-                  }}>{b.emoji}</div>
+                  }}>{b.s.slice(0, 2)}</div>
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                       <span style={{ fontSize: 13, fontWeight: 800, color: 'rgba(255,255,255,0.92)' }}>{b.s}</span>

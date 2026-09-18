@@ -148,12 +148,12 @@ export default function NurseryTab() {
         showToast(d.error ?? 'Something went wrong');
         return false;
       }
-      showToast(d.pointsEarned ? `Saved — +${d.pointsEarned} Kai Bar earned!` : 'Saved');
+      showToast(d.pointsEarned ? `Saved. +${d.pointsEarned} Kai Bar earned!` : 'Saved');
       setModal(null);
       await load();
       return true;
     } catch {
-      showToast('Network error — please try again');
+      showToast('Network error. Please try again.');
       return false;
     } finally {
       setSubmitting(false);
@@ -198,7 +198,7 @@ export default function NurseryTab() {
           background: 'rgba(52,211,153,0.06)', border: '1px solid rgba(52,211,153,0.2)', marginBottom: 16,
         }}>
           <CheckCircle2 size={15} color="#34d399" />
-          <p style={{ fontSize: 11, color: '#6ee7b7', margin: 0, fontWeight: 700 }}>You&apos;re a CFA member — your submissions earn Kai Bar points.</p>
+          <p style={{ fontSize: 11, color: '#6ee7b7', margin: 0, fontWeight: 700 }}>You&apos;re a CFA member. Your submissions earn Kai Bar points.</p>
         </div>
       )}
 
@@ -460,7 +460,7 @@ function InventoryForm({ species, submitting, onSubmit }: { species: Species[]; 
       {species.length > 0 && (
         <Field label="Species (optional)">
           <select value={speciesId} onChange={(e) => setSpeciesId(e.target.value)} style={inputStyle}>
-            <option value="">— Unspecified —</option>
+            <option value="">(unspecified)</option>
             {species.map((sp) => <option key={sp.id} value={sp.id}>{sp.name}</option>)}
           </select>
         </Field>
