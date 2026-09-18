@@ -13,7 +13,7 @@ import { AirdropClaimCard } from '@/components/AirdropClaimCard';
 import DailyCheckInCard from '@/components/DailyCheckInCard';
 
 const Rs: React.CSSProperties = { textShadow: '0 1px 4px rgba(0,0,0,0.88)' };
-const W: React.CSSProperties = { width: '100%', maxWidth: 1080, margin: '0 auto', padding: '0 40px' };
+const W: React.CSSProperties = { width: '100%', maxWidth: 1320, margin: '0 auto', padding: '0 40px' };
 
 const TASK_ICON: Record<string, React.ComponentType<{ size: number; color: string }>> = {
   SIGNUP: Gift,
@@ -135,6 +135,12 @@ export default function KaiBarDashboard() {
 
   return (
     <main style={{ minHeight: '100dvh', color: '#fff', fontFamily: 'var(--font-sans)', position: 'relative', paddingBottom: 80 }}>
+      <style>{`
+        .kb-dash-grid { display: flex; flex-direction: column; gap: 16px; }
+        @media (min-width: 1000px) {
+          .kb-dash-grid { display: grid; grid-template-columns: minmax(0, 1.6fr) minmax(300px, 1fr); align-items: start; gap: 20px; }
+        }
+      `}</style>
       <div style={{ ...W, paddingTop: 28, position: 'relative', zIndex: 5 }}>
         {/* Header */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
@@ -151,6 +157,8 @@ export default function KaiBarDashboard() {
           }}>{loading ? 'Refreshing…' : 'Refresh'}</button>
         </div>
 
+        <div className="kb-dash-grid">
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 14, minWidth: 0 }}>
         {/* Balance hero */}
         <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
           className="glass-elevated" style={{
