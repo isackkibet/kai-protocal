@@ -272,7 +272,7 @@ body {
 
 /* Plain text link — used on the home page instead of pill/glass buttons */
 .text-link {
-  color: var(--green-bright);
+  color: var(--home-accent);
   text-decoration: none;
   cursor: pointer;
 }
@@ -508,8 +508,7 @@ body {
 
 /* ══ TICKER ══════════════════════════════════════════════════ */
 .ticker-wrap {
-  background: rgba(4,4,8,0.70);
-  backdrop-filter: blur(16px);
+  background: #0B1C14;
   overflow: hidden;
   position: relative;
 }
@@ -518,7 +517,7 @@ body {
   position: absolute;
   inset: 0;
   background: linear-gradient(90deg,
-    rgba(4,4,8,1) 0%, transparent 9%, transparent 91%, rgba(4,4,8,1) 100%);
+    #0B1C14 0%, transparent 9%, transparent 91%, #0B1C14 100%);
   pointer-events: none;
   z-index: 2;
 }
@@ -761,31 +760,18 @@ body {
 .celebrate-pop { animation: celebrate-pop 0.45s cubic-bezier(.34,1.56,.64,1) both; }
 
 /* ══════════════════════════════════════════════════════════════
-   KAI HOME PAGE — v3: sections over boxes
-   Groups are separated by generous space plus a single hairline at the
-   boundary. No card shells — hierarchy comes from type (big value, small
-   muted label) and a shared column grid. One surface is kept: the wallet
-   address control, which is a real interactive unit.
+   KAI HOME PAGE — v4: same editorial system as /hub
+   Solid pine background (no photo), one gold accent, serif display type
+   for values/headlines, mono for small-caps labels. Sections separated by
+   space + a single hairline, no card shells anywhere — including the
+   wallet address row, which is now a plain inline control like /hub's
+   search field rather than a bordered box.
    ══════════════════════════════════════════════════════════════ */
 :root {
-  --home-accent: #14b87d;
-  --home-text:   #e8f2ee;
-  --home-muted:  #7e9a90;
-  --home-line:   rgba(255,255,255,0.08);
-}
-
-/* Photo demoted to a dim, saturated-down backdrop behind a dark base,
-   so the layout — not the picture — carries the page. */
-.home-bg-base  { position: fixed; inset: 0; z-index: 0; background: #06120e; }
-.home-bg-photo {
-  position: fixed; inset: 0; z-index: 0;
-  background: url('/kai-background.jpg') center 20% / cover no-repeat;
-  opacity: 0.18;
-  filter: saturate(0.7);
-}
-.home-bg-fade {
-  position: fixed; inset: 0; z-index: 0;
-  background: linear-gradient(180deg, #06120e 0%, rgba(6,18,14,0.55) 40%, #06120e 100%);
+  --home-accent: #C89B3C;
+  --home-text:   #F6F2E7;
+  --home-muted:  #9BA396;
+  --home-line:   rgba(200,155,60,0.14);
 }
 
 .home-container { width: 100%; max-width: 1120px; margin-inline: auto; padding-inline: 24px; box-sizing: border-box; }
@@ -823,21 +809,13 @@ body {
   .home-stat:nth-child(3) { border-left: none; }
 }
 .home-stat-value {
-  font-size: 18px; font-weight: 800; color: var(--home-text);
+  font-family: 'Fraunces', serif; font-size: 19px; font-weight: 600; color: var(--home-text);
   letter-spacing: -0.3px; white-space: nowrap;
 }
 .home-stat-label {
-  font-size: 10px; font-weight: 600;
+  font-family: 'IBM Plex Mono', monospace; font-size: 10px; font-weight: 600;
+  letter-spacing: 0.6px; text-transform: uppercase;
   color: var(--home-muted); margin-top: 6px;
-}
-
-/* The one surface that earns a box: the address + copy/refresh control. */
-.home-wallet {
-  display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
-  background: rgba(255,255,255,0.04);
-  border: 1px solid var(--home-line);
-  border-radius: 12px;
-  padding: 10px 12px;
 }
 
 /* Dashboard + quick-action rows — flat link lists, hairline rows only.
