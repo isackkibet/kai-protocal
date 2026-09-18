@@ -806,11 +806,13 @@ body {
   .home-aside { order: 2; position: sticky; top: 24px; display: flex; flex-direction: column; gap: 32px; }
 }
 
-/* Shared "one accent, neutral until hover" treatment for dashboard rows
-   and quick-action cards — icons carry colour only when a row/card is live. */
+/* Shared "one accent, neutral until hover" treatment for dashboard and
+   quick-action rows — icons carry colour only when a row is live. Both use
+   the same flat, borderless row style: a website's link list, not an app
+   launcher's grid of icon tiles. */
 .action-icon { color: var(--home-muted); transition: color 0.15s ease; }
 .dash-row:hover .action-icon,
-.qa-card:hover  .action-icon { color: var(--home-accent); }
+.qa-row:hover   .action-icon { color: var(--home-accent); }
 
 .dash-row {
   display: flex; align-items: center; gap: 16px; padding: 16px 0;
@@ -819,17 +821,17 @@ body {
 .dash-row:last-child { border-bottom: none; }
 .dash-row:hover .dash-open { color: var(--home-accent); }
 
-/* Quick Actions — bordered mini-cards, one neutral accent, colour only on hover. */
-.qa-card {
-  display: flex; flex-direction: column; align-items: center; gap: 8px;
-  padding: 16px 8px; border: 1px solid var(--home-line); border-radius: 12px;
-  text-decoration: none; background: transparent; cursor: pointer; width: 100%;
-  transition: border-color 0.15s ease, background 0.15s ease;
+/* Quick Actions — a two-column link list on desktop, one column on mobile;
+   each entry is a plain row (icon, label, no border/fill of its own). */
+.qa-row {
+  display: flex; align-items: center; gap: 12px; padding: 13px 0;
+  text-decoration: none; border-bottom: 1px solid var(--home-line);
+  background: transparent; cursor: pointer; width: 100%; text-align: left;
+  border-left: none; border-right: none; border-top: none;
 }
-.qa-card:hover { border-color: rgba(20,184,125,0.45); background: rgba(20,184,125,0.07); }
-.qa-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
+.qa-list { display: grid; grid-template-columns: 1fr; }
 @media (min-width: 640px) {
-  .qa-grid { grid-template-columns: repeat(5, 1fr); }
+  .qa-list { grid-template-columns: 1fr 1fr; column-gap: 32px; }
 }
 
 /* ══════════════════════════════════════════════════════════════
