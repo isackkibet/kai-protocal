@@ -209,69 +209,6 @@ export default function KaiBarDashboard() {
           </div>
         </motion.div>
 
-        {/* Referral card */}
-        <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
-          className="glass-elevated" style={{
-            borderRadius: 18, padding: '18px 20px', marginBottom: 14, overflow: 'hidden', position: 'relative',
-            background: 'linear-gradient(145deg,rgba(10,20,16,0.8),rgba(6,6,14,0.72))',
-            boxShadow: '0 0 0 0.5px rgba(16,185,129,0.2) inset, 0 10px 36px rgba(0,0,0,0.42)',
-          }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
-            <div style={{ width: 40, height: 40, borderRadius: 12, background: 'rgba(16,185,129,0.13)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <Users size={20} color="#34d399" />
-            </div>
-            <div style={{ flex: 1 }}>
-              <p style={{ fontSize: 14, fontWeight: 800, margin: 0, ...Rs }}>Invite friends</p>
-              <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.5)', margin: 0 }}>+500 Kai Bar per direct referral · +50 for second-level</p>
-            </div>
-          </div>
-          {referralCode ? (
-            <>
-              <div style={{ display: 'flex', gap: 8, marginBottom: 12 }}>
-                <code style={{
-                  flex: 1, fontSize: 17, fontWeight: 800, letterSpacing: 1, fontFamily: 'monospace',
-                  background: 'rgba(16,185,129,0.08)', borderRadius: 10, padding: '11px 14px',
-                  color: '#34d399', boxShadow: '0 0 0 1px rgba(52,211,153,0.25) inset',
-                }}>{referralCode}</code>
-                <motion.button whileTap={{ scale: 0.93 }} onClick={copyCode} style={{
-                  padding: '0 16px', borderRadius: 10, border: 'none', cursor: 'pointer',
-                  background: 'rgba(16,185,129,0.14)', color: '#34d399', fontSize: 13, fontWeight: 800,
-                  display: 'flex', alignItems: 'center', gap: 6,
-                }}>
-                  {copied ? <CheckCircle2 size={15} /> : <Copy size={15} />} {copied ? 'Copied' : 'Copy'}
-                </motion.button>
-              </div>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 8 }}>
-                {[
-                  { label: 'Direct', v: referralStats.direct },
-                  { label: 'Active', v: referralStats.active },
-                  { label: 'Network', v: referralStats.networkSize },
-                ].map(s => (
-                  <div key={s.label} style={{ textAlign: 'center', background: 'rgba(255,255,255,0.04)', borderRadius: 10, padding: '9px 6px' }}>
-                    <p style={{ fontSize: 16, fontWeight: 900, color: '#34d399', margin: 0 }}>{s.v}</p>
-                    <p style={{ fontSize: 9, fontWeight: 700, letterSpacing: 0.6, textTransform: 'uppercase', color: 'rgba(255,255,255,0.4)', margin: '2px 0 0' }}>{s.label}</p>
-                  </div>
-                ))}
-              </div>
-            </>
-          ) : (
-            <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.45)', margin: 0 }}>Complete signing up to get your referral code.</p>
-          )}
-        </motion.div>
-
-        {/* Daily sign-in */}
-        <DailyCheckInCard
-          claimedToday={checkin.claimedToday}
-          points={checkin.points}
-          claiming={claimingCheckin}
-          onClaim={async () => {
-            const res = await claimDailyCheckin();
-            if (res.ok) setToast(`+${res.earned} Kai Bar earned!`);
-            else if (res.error) setToast(res.error);
-            setTimeout(() => setToast(null), 3000);
-          }}
-        />
-
         {/* Tasks */}
         <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
           className="glass-elevated" style={{
@@ -342,6 +279,101 @@ export default function KaiBarDashboard() {
           </div>
         </motion.div>
 
+        {/* Recent ledger */}
+        <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
+          className="glass" style={{
+            borderRadius: 16, padding: '16px 20px', marginTop: 14,
+            background: 'rgba(8,8,16,0.6)', backdropFilter: 'blur(16px)',
+            boxShadow: '0 0 0 0.5px rgba(255,255,255,0.08) inset',
+          }}>
+          <p style={{ fontSize: 10, fontWeight: 700, letterSpacing: 1.2, textTransform: 'uppercase', color: 'rgba(255,255,255,0.5)', margin: '0 0 10px' }}>
+            Activity ledger
+          </p>
+          {entries.length === 0 ? (
+            <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.4)', margin: 0 }}>No activity yet.</p>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 7 }}>
+              {entries.slice(0, 6).map(e => (
+                <div key={e.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 10px', borderRadius: 10, background: 'rgba(255,255,255,0.03)' }}>
+                  <span style={{ fontSize: 15, fontWeight: 900, color: e.amount > 0 ? '#34d399' : '#f87171', minWidth: 52 }}>
+                    {e.amount > 0 ? '+' : ''}{e.amount}
+                  </span>
+                  <span style={{ flex: 1, fontSize: 12, color: 'rgba(255,255,255,0.75)' }}>{e.description}</span>
+                  <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.35)', fontFamily: 'monospace' }}>
+                    {new Date(e.createdAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
+                  </span>
+                </div>
+              ))}
+            </div>
+          )}
+        </motion.div>
+        </div>
+
+        {/* ── SIDEBAR ── */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 14, minWidth: 0 }}>
+        {/* Daily sign-in */}
+        <DailyCheckInCard
+          claimedToday={checkin.claimedToday}
+          points={checkin.points}
+          claiming={claimingCheckin}
+          onClaim={async () => {
+            const res = await claimDailyCheckin();
+            if (res.ok) setToast(`+${res.earned} Kai Bar earned!`);
+            else if (res.error) setToast(res.error);
+            setTimeout(() => setToast(null), 3000);
+          }}
+        />
+
+        {/* Referral card */}
+        <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
+          className="glass-elevated" style={{
+            borderRadius: 18, padding: '18px 20px', overflow: 'hidden', position: 'relative',
+            background: 'linear-gradient(145deg,rgba(10,20,16,0.8),rgba(6,6,14,0.72))',
+            boxShadow: '0 0 0 0.5px rgba(16,185,129,0.2) inset, 0 10px 36px rgba(0,0,0,0.42)',
+          }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
+            <div style={{ width: 40, height: 40, borderRadius: 12, background: 'rgba(16,185,129,0.13)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <Users size={20} color="#34d399" />
+            </div>
+            <div style={{ flex: 1 }}>
+              <p style={{ fontSize: 14, fontWeight: 800, margin: 0, ...Rs }}>Invite friends</p>
+              <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.5)', margin: 0 }}>+500 Kai Bar per direct referral · +50 for second-level</p>
+            </div>
+          </div>
+          {referralCode ? (
+            <>
+              <div style={{ display: 'flex', gap: 8, marginBottom: 12 }}>
+                <code style={{
+                  flex: 1, fontSize: 17, fontWeight: 800, letterSpacing: 1, fontFamily: 'monospace',
+                  background: 'rgba(16,185,129,0.08)', borderRadius: 10, padding: '11px 14px',
+                  color: '#34d399', boxShadow: '0 0 0 1px rgba(52,211,153,0.25) inset',
+                }}>{referralCode}</code>
+                <motion.button whileTap={{ scale: 0.93 }} onClick={copyCode} style={{
+                  padding: '0 16px', borderRadius: 10, border: 'none', cursor: 'pointer',
+                  background: 'rgba(16,185,129,0.14)', color: '#34d399', fontSize: 13, fontWeight: 800,
+                  display: 'flex', alignItems: 'center', gap: 6,
+                }}>
+                  {copied ? <CheckCircle2 size={15} /> : <Copy size={15} />} {copied ? 'Copied' : 'Copy'}
+                </motion.button>
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 8 }}>
+                {[
+                  { label: 'Direct', v: referralStats.direct },
+                  { label: 'Active', v: referralStats.active },
+                  { label: 'Network', v: referralStats.networkSize },
+                ].map(s => (
+                  <div key={s.label} style={{ textAlign: 'center', background: 'rgba(255,255,255,0.04)', borderRadius: 10, padding: '9px 6px' }}>
+                    <p style={{ fontSize: 16, fontWeight: 900, color: '#34d399', margin: 0 }}>{s.v}</p>
+                    <p style={{ fontSize: 9, fontWeight: 700, letterSpacing: 0.6, textTransform: 'uppercase', color: 'rgba(255,255,255,0.4)', margin: '2px 0 0' }}>{s.label}</p>
+                  </div>
+                ))}
+              </div>
+            </>
+          ) : (
+            <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.45)', margin: 0 }}>Complete signing up to get your referral code.</p>
+          )}
+        </motion.div>
+
         {/* Airdrop eligibility */}
         <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
           className="glass-elevated" style={{
@@ -379,35 +411,8 @@ export default function KaiBarDashboard() {
           </p>
           <AirdropClaimCard eligible={airdrop?.eligible ?? false} amount={airdrop?.contributionScore ?? 0} />
         </motion.div>
-
-        {/* Recent ledger */}
-        <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
-          className="glass" style={{
-            borderRadius: 16, padding: '16px 20px', marginTop: 14,
-            background: 'rgba(8,8,16,0.6)', backdropFilter: 'blur(16px)',
-            boxShadow: '0 0 0 0.5px rgba(255,255,255,0.08) inset',
-          }}>
-          <p style={{ fontSize: 10, fontWeight: 700, letterSpacing: 1.2, textTransform: 'uppercase', color: 'rgba(255,255,255,0.5)', margin: '0 0 10px' }}>
-            Activity ledger
-          </p>
-          {entries.length === 0 ? (
-            <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.4)', margin: 0 }}>No activity yet.</p>
-          ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 7 }}>
-              {entries.slice(0, 6).map(e => (
-                <div key={e.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 10px', borderRadius: 10, background: 'rgba(255,255,255,0.03)' }}>
-                  <span style={{ fontSize: 15, fontWeight: 900, color: e.amount > 0 ? '#34d399' : '#f87171', minWidth: 52 }}>
-                    {e.amount > 0 ? '+' : ''}{e.amount}
-                  </span>
-                  <span style={{ flex: 1, fontSize: 12, color: 'rgba(255,255,255,0.75)' }}>{e.description}</span>
-                  <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.35)', fontFamily: 'monospace' }}>
-                    {new Date(e.createdAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
-                  </span>
-                </div>
-              ))}
-            </div>
-          )}
-        </motion.div>
+        </div>
+        </div>
 
         {toast && <div style={{
           position: 'fixed', bottom: 96, left: '50%', transform: 'translateX(-50%)', zIndex: 50,
