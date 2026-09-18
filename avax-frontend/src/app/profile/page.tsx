@@ -197,6 +197,20 @@ export default function ProfilePage() {
 
   return (
     <main style={{ minHeight:'100dvh', color:'#fff', fontFamily:'var(--font-sans)', paddingBottom:100, position:'relative' }}>
+      <style>{`
+        @media (max-width: 760px) {
+          .profile-container { padding: 0 16px !important; }
+          .profile-hero-row { flex-direction: column !important; align-items: center !important; text-align: center !important; gap: 16px !important; }
+          .profile-hero-row > div:nth-child(2) { padding-bottom: 0 !important; }
+          .profile-main-grid { grid-template-columns: 1fr !important; gap: 20px !important; }
+          .profile-tabnav-buttons { flex-direction: row !important; overflow-x: auto; -webkit-overflow-scrolling: touch; padding-bottom: 4px; }
+          .profile-tabnav-buttons > button { flex-shrink: 0; }
+          .profile-2col, .profile-3col, .profile-4col { grid-template-columns: 1fr 1fr !important; gap: 16px !important; }
+        }
+        @media (max-width: 480px) {
+          .profile-2col, .profile-3col, .profile-4col { grid-template-columns: 1fr !important; }
+        }
+      `}</style>
 
       {/* strong dark overlay so text is ALWAYS readable over bg image */}
       <div aria-hidden style={{ position:'fixed', inset:0, background:'rgba(4,4,10,0.72)', zIndex:0, pointerEvents:'none' }}/>
@@ -339,8 +353,9 @@ export default function ProfilePage() {
         ═══════════════════════════════════════ */}
         <div className="profile-main-grid" style={{ marginTop:32, display:'grid', gridTemplateColumns:'240px 1fr', gap:36 }}>
 
-          {/* LEFT: vertical tab nav (becomes a horizontal scroll row on mobile) */}
+          {/* LEFT: vertical tab nav (button row scrolls horizontally on mobile) */}
           <div className="profile-tabnav" style={{ display:'flex', flexDirection:'column', gap:6 }}>
+          <div className="profile-tabnav-buttons" style={{ display:'flex', flexDirection:'column', gap:6 }}>
             {TABS.map((t,i) => (
               <motion.button key={t.id}
                 initial={{ opacity:0, x:-14 }} animate={{ opacity:1, x:0 }} transition={{ delay:0.14+i*0.05 }}
@@ -362,6 +377,7 @@ export default function ProfilePage() {
                 {tab===t.id && <span style={{ marginLeft:'auto', width:8, height:8, borderRadius:'50%', background:t.color, boxShadow:`0 0 10px ${t.color}` }}/>}
               </motion.button>
             ))}
+          </div>
 
             {/* wallet */}
             <div style={{ marginTop:28, paddingTop:20, borderTop:'1px solid rgba(255,255,255,0.08)' }}>
