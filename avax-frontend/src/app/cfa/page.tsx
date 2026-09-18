@@ -110,8 +110,16 @@ export default function CFAPage() {
   return (
     <main style={{ minHeight: '100dvh', background: 'radial-gradient(ellipse 80% 50% at 10% -5%, rgba(16,185,129,0.12) 0%, transparent 60%), radial-gradient(ellipse 60% 40% at 90% 100%, rgba(34,197,94,0.06) 0%, transparent 55%)', color: '#f8f8fa', paddingBottom: 96, fontFamily: 'var(--font-sans)' }}>
 
+      <style>{`
+        .cfa-kpi-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 9px; margin-bottom: 16px; }
+        @media (min-width: 900px) {
+          .cfa-kpi-grid { grid-template-columns: repeat(6, 1fr); }
+        }
+      `}</style>
+
       {/* ── HERO HEADER ── */}
       <div style={{ padding: '22px 18px 0', background: 'linear-gradient(180deg, rgba(16,185,129,0.09) 0%, transparent 100%)', borderBottom: '1px solid rgba(16,185,129,0.14)' }}>
+        <div style={{ maxWidth: 1200, margin: '0 auto' }}>
         {/* back + title */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 18 }}>
           <Link href="/" style={{ width: 36, height: 36, borderRadius: '50%', background: 'rgba(16,185,129,0.10)', border: '1px solid rgba(16,185,129,0.28)', display: 'flex', alignItems: 'center', justifyContent: 'center', textDecoration: 'none', flexShrink: 0 }}>
@@ -153,7 +161,7 @@ export default function CFAPage() {
         </div>
 
         {/* 6 KPI cards */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 9, marginBottom: 16 }}>
+        <div className="cfa-kpi-grid">
           <KPICard icon={<Users size={18} color="#10b981" strokeWidth={1.8} />}    value={d.stats.totalMembers.toLocaleString()}              label="Members"      color="#10b981" />
           <KPICard icon={<Trees size={18} color="#22c55e" strokeWidth={1.8} />}    value={(d.stats.treesPlanted/1000).toFixed(1)+'K'}          label="Trees"        color="#22c55e" />
           <KPICard icon={<Leaf size={18} color="#a855f7" strokeWidth={1.8} />}     value={d.stats.carbonCreditsEarned.toLocaleString()}       label="Carbon Cr."   color="#a855f7" />
@@ -175,10 +183,12 @@ export default function CFAPage() {
             }}>{t === 'gov' ? 'DAO' : t === 'patrol' ? 'Patrols' : t.charAt(0).toUpperCase() + t.slice(1)}</button>
           ))}
         </div>
+        </div>
       </div>
 
       {/* ── TAB CONTENT ── */}
       <div style={{ padding: '18px 18px 0' }}>
+        <div style={{ maxWidth: 1200, margin: '0 auto' }}>
 
         {/* ── OVERVIEW ── */}
         {tab === 'overview' && (
@@ -459,6 +469,7 @@ export default function CFAPage() {
             </div>
           </div>
         )}
+        </div>
       </div>
     </main>
   );

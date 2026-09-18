@@ -8,7 +8,7 @@ import { usePrivyAuth } from '@/lib/privy-auth';
 import { useKaiBar } from '@/hooks/useKaiBar';
 
 const Rs: React.CSSProperties = { textShadow: '0 1px 4px rgba(0,0,0,0.88)' };
-const W: React.CSSProperties = { width: '100%', maxWidth: 560, margin: '0 auto', padding: '0 20px' };
+const W: React.CSSProperties = { width: '100%', maxWidth: 760, margin: '0 auto', padding: '0 20px' };
 
 function Row({ icon, label, value, valueColor, mono }: { icon: React.ReactNode; label: string; value: string; valueColor?: string; mono?: boolean }) {
   return (
@@ -132,6 +132,12 @@ export default function WaitlistPage() {
           </h1>
         </div>
 
+        <style>{`
+          @media (min-width: 620px) {
+            .waitlist-status-grid { grid-template-columns: 1fr 1fr 1fr !important; }
+            .waitlist-links-grid { grid-template-columns: 1fr 1fr !important; }
+          }
+        `}</style>
         <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
           className="glass-elevated" style={{
             borderRadius: 20, padding: '18px 18px', marginBottom: 16,
@@ -146,54 +152,58 @@ export default function WaitlistPage() {
             value={address ? `${address.slice(0, 6)}…${address.slice(-4)}` : 'Provisioning…'}
             mono
           />
-          <Row
-            icon={walletStatus === 'active' ? <CheckCircle2 size={16} color="#34d399" /> : <Clock size={16} color="#fbbf24" />}
-            label="Wallet Status"
-            value={walletStatus === 'active' ? 'Active on Avalanche' : 'Provisioning'}
-            valueColor={walletStatus === 'active' ? '#34d399' : '#fbbf24'}
-          />
-          <Row
-            icon={<Trophy size={16} color="#fbbf24" />}
-            label="Current Points"
-            value={loading ? '…' : kaiBar.toLocaleString()}
-            valueColor="#fbbf24"
-          />
-          <Row
-            icon={<Gift size={16} color={airdrop?.eligible ? '#34d399' : 'rgba(255,255,255,0.5)'} />}
-            label="Airdrop Status"
-            value={airdrop?.eligible ? 'Eligible' : 'In Progress'}
-            valueColor={airdrop?.eligible ? '#34d399' : undefined}
-          />
+          <div className="waitlist-status-grid" style={{ display: 'grid', gridTemplateColumns: '1fr', gap: 10 }}>
+            <Row
+              icon={walletStatus === 'active' ? <CheckCircle2 size={16} color="#34d399" /> : <Clock size={16} color="#fbbf24" />}
+              label="Wallet Status"
+              value={walletStatus === 'active' ? 'Active on Avalanche' : 'Provisioning'}
+              valueColor={walletStatus === 'active' ? '#34d399' : '#fbbf24'}
+            />
+            <Row
+              icon={<Trophy size={16} color="#fbbf24" />}
+              label="Current Points"
+              value={loading ? '…' : kaiBar.toLocaleString()}
+              valueColor="#fbbf24"
+            />
+            <Row
+              icon={<Gift size={16} color={airdrop?.eligible ? '#34d399' : 'rgba(255,255,255,0.5)'} />}
+              label="Airdrop Status"
+              value={airdrop?.eligible ? 'Eligible' : 'In Progress'}
+              valueColor={airdrop?.eligible ? '#34d399' : undefined}
+            />
+          </div>
         </motion.div>
 
-        <Link href="/kai-bar" style={{ textDecoration: 'none' }}>
-          <div className="hover-shine" style={{
-            display: 'flex', alignItems: 'center', gap: 12, padding: '14px 18px',
-            borderRadius: 16, background: 'rgba(255,255,255,0.03)',
-            boxShadow: '0 0 0 0.5px rgba(255,255,255,0.08) inset', marginBottom: 10,
-          }}>
-            <Trophy size={18} color="rgba(251,191,36,0.7)" />
-            <div style={{ flex: 1 }}>
-              <p style={{ fontSize: 13, fontWeight: 800, margin: 0, color: 'rgba(255,255,255,0.85)' }}>Earn more points</p>
-              <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)', margin: 0 }}>Daily sign-in, referrals & tasks</p>
+        <div className="waitlist-links-grid" style={{ display: 'grid', gridTemplateColumns: '1fr', gap: 10 }}>
+          <Link href="/kai-bar" style={{ textDecoration: 'none' }}>
+            <div className="hover-shine" style={{
+              display: 'flex', alignItems: 'center', gap: 12, padding: '14px 18px', height: '100%',
+              borderRadius: 16, background: 'rgba(255,255,255,0.03)',
+              boxShadow: '0 0 0 0.5px rgba(255,255,255,0.08) inset',
+            }}>
+              <Trophy size={18} color="rgba(251,191,36,0.7)" />
+              <div style={{ flex: 1 }}>
+                <p style={{ fontSize: 13, fontWeight: 800, margin: 0, color: 'rgba(255,255,255,0.85)' }}>Earn more points</p>
+                <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)', margin: 0 }}>Daily sign-in, referrals & tasks</p>
+              </div>
+              <ChevronRight size={16} color="rgba(255,255,255,0.3)" />
             </div>
-            <ChevronRight size={16} color="rgba(255,255,255,0.3)" />
-          </div>
-        </Link>
+          </Link>
 
-        <Link href="/wallet" style={{ textDecoration: 'none' }}>
-          <div className="hover-shine" style={{
-            display: 'flex', alignItems: 'center', gap: 12, padding: '14px 18px',
-            borderRadius: 16, background: 'rgba(255,255,255,0.03)',
-            boxShadow: '0 0 0 0.5px rgba(255,255,255,0.08) inset',
-          }}>
-            <ArrowLeft size={18} color="rgba(255,255,255,0.4)" />
-            <div style={{ flex: 1 }}>
-              <p style={{ fontSize: 13, fontWeight: 800, margin: 0, color: 'rgba(255,255,255,0.85)' }}>Back to Wallet</p>
+          <Link href="/wallet" style={{ textDecoration: 'none' }}>
+            <div className="hover-shine" style={{
+              display: 'flex', alignItems: 'center', gap: 12, padding: '14px 18px', height: '100%',
+              borderRadius: 16, background: 'rgba(255,255,255,0.03)',
+              boxShadow: '0 0 0 0.5px rgba(255,255,255,0.08) inset',
+            }}>
+              <ArrowLeft size={18} color="rgba(255,255,255,0.4)" />
+              <div style={{ flex: 1 }}>
+                <p style={{ fontSize: 13, fontWeight: 800, margin: 0, color: 'rgba(255,255,255,0.85)' }}>Back to Wallet</p>
+              </div>
+              <ChevronRight size={16} color="rgba(255,255,255,0.3)" />
             </div>
-            <ChevronRight size={16} color="rgba(255,255,255,0.3)" />
-          </div>
-        </Link>
+          </Link>
+        </div>
       </div>
     </main>
   );
