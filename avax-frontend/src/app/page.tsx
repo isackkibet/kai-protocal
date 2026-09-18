@@ -415,26 +415,26 @@ export default function Home() {
               </div>
             </div>
 
-            {/* QUICK ACTIONS */}
+            {/* QUICK ACTIONS — a link list, not a grid of icon tiles */}
             <div id="actions"
               style={{ marginTop:32, scrollMarginTop:70 }}>
               <p style={label}>Quick actions</p>
-              <div className="qa-grid">
+              <div className="qa-list">
                 {QUICK.map((a) => {
                   const Icon = a.icon;
                   const isAgent = a.href === '/ai';
                   const content = (
                     <>
-                      <Icon size={22} className="action-icon" strokeWidth={1.6}/>
-                      <span style={{ fontSize:12, fontWeight:600, color:'rgba(255,255,255,0.85)', textAlign:'center', lineHeight:1.2 }}>
+                      <Icon size={18} className="action-icon" strokeWidth={1.6}/>
+                      <span style={{ fontSize:14, fontWeight:600, color:'rgba(255,255,255,0.85)' }}>
                         {a.name}
                       </span>
                     </>
                   );
                   return isAgent ? (
-                    <button key={a.name} onClick={openAIChat} className="qa-card">{content}</button>
+                    <button key={a.name} onClick={openAIChat} className="qa-row">{content}</button>
                   ) : (
-                    <Link key={a.name} href={a.href} className="qa-card">{content}</Link>
+                    <Link key={a.name} href={a.href} className="qa-row">{content}</Link>
                   );
                 })}
               </div>
