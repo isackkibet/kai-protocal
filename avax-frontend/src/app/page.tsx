@@ -18,8 +18,8 @@ import { useActiveAccount } from '@/hooks/useActiveAccount';
 import {
   Trees, Store, Users, FlaskConical, ScanLine,
   Droplets, ImageIcon, Lock, Globe, LayoutGrid, Gift,
-  Bot, Copy, RefreshCw, ChevronRight, TrendingUp,
-  ShieldCheck, Coins, Wallet,
+  Bot, Copy, RefreshCw, TrendingUp,
+  ShieldCheck, Coins,
   CircleDollarSign, BarChart3, Activity, Zap,
   Mountain, Link2, Mic,
 } from 'lucide-react';
@@ -33,7 +33,6 @@ const HL = {
 
 /* Sentence-case, low-emphasis eyebrow label — replaces tracked-out ALL CAPS. */
 const label: React.CSSProperties = { fontSize: 12, color: 'var(--home-muted)', letterSpacing: 0, textTransform: 'none', fontWeight: 600, margin: '0 0 8px' };
-const sectionDivider = '1px solid rgba(255,255,255,0.10)';
 
 const QUICK = [
   { name: 'Voice Agent', href: '/voice',     icon: Mic },
@@ -227,9 +226,8 @@ export default function Home() {
             {(connected || privyAuthenticated) && <span style={{ width:8, height:8, borderRadius:'50%', background:'#04140f' }} />}
           </motion.button>
 
-          <p style={{ marginTop:16, fontSize:12, color:'var(--home-muted)' }}>
-            Avalanche C-Chain · MetaMask and Core Wallet supported
-          </p>
+          <p style={{ marginTop:18, fontSize:13, fontWeight:700, color:'var(--home-muted)' }}>Avalanche C-Chain</p>
+          <p style={{ marginTop:2, fontSize:12, color:'var(--home-muted)', opacity:0.75 }}>MetaMask and Core Wallet supported</p>
         </div>
 
         {/* TWO-COLUMN LAYOUT — wallet/profile + agent on the right (sticky on
@@ -238,8 +236,8 @@ export default function Home() {
 
           <div className="home-aside">
             {/* PROFILE */}
-            <div className="home-panel">
-              <div style={{ display:'flex', alignItems:'center', gap:14, marginBottom:16 }}>
+            <section className="home-section" aria-label="Profile">
+              <div style={{ display:'flex', alignItems:'center', gap:14, marginBottom:20 }}>
                 <div style={{ position:'relative', flexShrink:0 }}>
                   <div style={{
                     width:52, height:52, borderRadius:'50%', border:'2px solid var(--home-accent)',
@@ -258,29 +256,28 @@ export default function Home() {
                       : 'Connect a wallet to see your profile.'}
                   </p>
                   {connected && !profile && (
-                    <Link href="/profile" className="text-link" style={{ fontSize:12 }}>Complete your profile →</Link>
+                    <Link href="/profile" className="text-link" style={{ fontSize:12 }}>Complete your profile</Link>
                   )}
                 </div>
               </div>
 
-              <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:10, paddingTop:16, borderTop: sectionDivider }}>
+              <div className="home-stats">
                 {[
-                  { l:'Est. value', v: connected ? (balancesLoading ? '…' : `$${totalUsd.toFixed(2)}`) : '$0.00', color:'#34d399', icon:Wallet },
-                  { l:'Network',   v:'Fuji',   color:null,      icon:Mountain },
-                  { l:'Tokens',    v:connected ? (balancesLoading ? '…' : String(activeTokenCount)) : '0', color:null, icon:Coins },
-                  { l:'Status',    v:connected ? 'Active' : 'Idle', color:connected ? '#34d399' : null, icon:Zap },
+                  { l:'Est. value', v: connected ? (balancesLoading ? '…' : `$${totalUsd.toFixed(2)}`) : '$0.00', color:'#34d399' },
+                  { l:'Network',   v:'Fuji',   color:null },
+                  { l:'Tokens',    v:connected ? (balancesLoading ? '…' : String(activeTokenCount)) : '0', color:null },
+                  { l:'Status',    v:connected ? 'Active' : 'Idle', color:connected ? '#34d399' : null },
                 ].map(s => (
-                  <div key={s.l} style={{ textAlign:'center' }}>
-                    <s.icon size={16} color={s.color ?? 'var(--home-muted)'} strokeWidth={1.8} style={{ display:'block', margin:'0 auto 6px' }}/>
-                    <p style={{ fontSize:17, fontWeight:800, color:s.color ?? '#fff', margin:'0 0 2px' }}>{s.v}</p>
-                    <p style={{ fontSize:10, color:'var(--home-muted)', margin:0 }}>{s.l}</p>
+                  <div key={s.l} className="home-stat">
+                    <p className="home-stat-value" style={{ color: s.color ?? undefined }}>{s.v}</p>
+                    <p className="home-stat-label">{s.l}</p>
                   </div>
                 ))}
               </div>
-            </div>
+            </section>
 
             {/* KAI AGENT */}
-            <div className="home-panel" id="agent"
+            <section className="home-section" id="agent"
               style={{ scrollMarginTop:70 }}>
               <div style={{ display:'flex', alignItems:'center', gap:10, marginBottom:6 }}>
                 <Bot size={20} color="#34d399" />
@@ -290,22 +287,19 @@ export default function Home() {
               </div>
               <p style={{ fontSize:14, color:'rgba(232,242,238,0.75)', margin:'0 0 6px', lineHeight:1.6 }}>
                 Live and ready to help, powered by Qwen3 RAG. Best for quick questions.{' '}
-                <button onClick={openAIChat} className="text-link" style={{ background:'none', border:'none', cursor:'pointer', padding:0, font:'inherit', fontSize:'inherit' }}>Open the full chat →</button>
+                <button onClick={openAIChat} className="text-link" style={{ background:'none', border:'none', cursor:'pointer', padding:0, font:'inherit', fontSize:'inherit' }}>Open the full chat</button>
               </p>
-              <p style={{ fontSize:13, color:'rgba(232,242,238,0.55)', margin:'0 0 14px', lineHeight:1.6 }}>
+              <p style={{ fontSize:13, color:'rgba(232,242,238,0.55)', margin:'0 0 16px', lineHeight:1.6 }}>
                 Need to check balances or make a swap by talking? Try the{' '}
-                <Link href="/voice" className="text-link">Voice Agent →</Link>
+                <Link href="/voice" className="text-link">Voice Agent</Link>
               </p>
 
               <p style={label}>Quick ask</p>
-              <p style={{ fontSize:13, lineHeight:2, marginBottom:14 }}>
-                {['What tokens does KAI have?','Best yield now?','How to get started?','Pool rates?'].map((q,i,arr) => (
-                  <span key={q}>
-                    <button onClick={() => setAgentQ(q)} style={{ background:'none', border:'none', cursor:'pointer', padding:0, font:'inherit', fontWeight:600, color: agentQ===q ? '#34d399' : 'rgba(255,255,255,0.65)' }}>{q}</button>
-                    {i < arr.length-1 && <span style={{ color:'rgba(255,255,255,0.25)' }}> · </span>}
-                  </span>
+              <div style={{ display:'flex', flexWrap:'wrap', gap:'6px 22px', marginBottom:16 }}>
+                {['What tokens does KAI have?','Best yield now?','How to get started?','Pool rates?'].map(q => (
+                  <button key={q} onClick={() => setAgentQ(q)} style={{ background:'none', border:'none', cursor:'pointer', padding:0, font:'inherit', fontSize:13, fontWeight:600, textAlign:'left', color: agentQ===q ? '#34d399' : 'rgba(255,255,255,0.65)' }}>{q}</button>
                 ))}
-              </p>
+              </div>
 
               <div style={{ display:'flex', gap:9, marginBottom: agentA ? 16 : 0 }}>
                 <textarea ref={agentRef} value={agentQ}
@@ -335,12 +329,12 @@ export default function Home() {
                   </motion.div>
                 )}
               </AnimatePresence>
-            </div>
+            </section>
           </div>
 
           <div className="home-main">
             {/* PORTFOLIO */}
-            <div className="home-panel">
+            <section className="home-section" aria-label="Portfolio">
               <p style={label}>Estimated portfolio value</p>
               {balancesLoading ? (
                 <p style={{ fontSize:14, color:'var(--home-muted)', marginBottom:16 }}>Loading…</p>
@@ -372,26 +366,26 @@ export default function Home() {
                       })}
                     </div>
                   </div>
-                  <p style={{ fontSize:12, color:'var(--home-muted)', display:'flex', flexWrap:'wrap', alignItems:'center', gap:14 }}>
-                    <span style={{ fontFamily:'monospace' }}>{address}</span>
+                  <div className="home-wallet" style={{ marginTop:4 }}>
+                    <span style={{ fontFamily:'monospace', fontSize:12, color:'var(--home-muted)', wordBreak:'break-all' }}>{address}</span>
                     <button onClick={copyAddress} style={{ padding:'6px 12px', borderRadius:8, border:'none', cursor:'pointer', background:copied?'var(--home-accent)':'rgba(255,255,255,0.10)', color:copied?'#04140f':'rgba(255,255,255,0.75)', fontSize:11, fontWeight:700, display:'flex', alignItems:'center', gap:4 }}>
                       {copied?'✓ Copied':(<><Copy size={12}/> Copy</>)}
                     </button>
                     <button onClick={handleRefresh} style={{ padding:'6px 12px', borderRadius:8, border:'none', cursor:'pointer', background:'rgba(255,255,255,0.10)', color:'rgba(255,255,255,0.75)', fontSize:11, fontWeight:700, display:'flex', alignItems:'center', gap:4 }}>
                       <RefreshCw size={12} style={{ animation:refreshing?'spin 1s linear infinite':'none' }} /> Refresh
                     </button>
-                  </p>
+                  </div>
                 </>
               ) : (
                 <button onClick={() => setShowModal(true)} className="text-link" style={{ background:'none', border:'none', cursor:'pointer', padding:0, font:'inherit', fontSize:14 }}>
-                  Connect a wallet to see your balances →
+                  Connect a wallet to see your balances
                 </button>
               )}
-            </div>
+            </section>
 
             {/* DASHBOARDS */}
-            <div className="home-panel" id="dashboards"
-              style={{ marginTop:32, scrollMarginTop:70 }}>
+            <section className="home-section" id="dashboards"
+              style={{ scrollMarginTop:70 }}>
               <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:4 }}>
                 <p style={{ ...label, margin:0 }}>Dashboards</p>
                 <span style={{ fontSize:12, fontWeight:700, color:'#34d399' }}>● 3 active</span>
@@ -403,21 +397,19 @@ export default function Home() {
                     <Link key={d.id} href={d.href} className="dash-row">
                       <Icon size={22} className="action-icon" strokeWidth={1.6} style={{ flexShrink:0 }}/>
                       <div style={{ flex:1 }}>
-                        <p style={{ fontSize:15, fontWeight:800, margin:'0 0 3px', color:'rgba(255,255,255,0.95)' }}>{d.hl} <span style={{ fontWeight:600, color:'var(--home-muted)', fontSize:13 }}>· {d.label}</span></p>
-                        <p style={{ fontSize:12, color:'var(--home-muted)', margin:0 }}>{d.sub}</p>
+                        <p className="dash-title" style={{ fontSize:15, fontWeight:800, margin:'0 0 2px', color:'rgba(255,255,255,0.95)', transition:'color 0.15s ease' }}>{d.hl}</p>
+                        <p style={{ fontSize:12, color:'var(--home-muted)', margin:'0 0 2px' }}>{d.label}</p>
+                        <p style={{ fontSize:11, color:'rgba(255,255,255,0.40)', margin:0 }}>{d.sub}</p>
                       </div>
-                      <span className="dash-open" style={{ fontSize:12, fontWeight:700, color:'var(--home-muted)', display:'flex', alignItems:'center', gap:4, flexShrink:0, transition:'color 0.15s ease' }}>
-                        Open <ChevronRight size={13}/>
-                      </span>
                     </Link>
                   );
                 })}
               </div>
-            </div>
+            </section>
 
             {/* QUICK ACTIONS — a link list, not a grid of icon tiles */}
-            <div id="actions"
-              style={{ marginTop:32, scrollMarginTop:70 }}>
+            <section className="home-section" id="actions"
+              style={{ scrollMarginTop:70 }}>
               <p style={label}>Quick actions</p>
               <div className="qa-list">
                 {QUICK.map((a) => {
@@ -438,7 +430,7 @@ export default function Home() {
                   );
                 })}
               </div>
-            </div>
+            </section>
           </div>
         </div>
       </div>
