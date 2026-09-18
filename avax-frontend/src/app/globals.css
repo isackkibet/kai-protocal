@@ -761,7 +761,11 @@ body {
 .celebrate-pop { animation: celebrate-pop 0.45s cubic-bezier(.34,1.56,.64,1) both; }
 
 /* ══════════════════════════════════════════════════════════════
-   KAI HOME PAGE — v2: real surfaces, one accent, two-column desktop
+   KAI HOME PAGE — v3: sections over boxes
+   Groups are separated by generous space plus a single hairline at the
+   boundary. No card shells — hierarchy comes from type (big value, small
+   muted label) and a shared column grid. One surface is kept: the wallet
+   address control, which is a real interactive unit.
    ══════════════════════════════════════════════════════════════ */
 :root {
   --home-accent: #14b87d;
@@ -771,7 +775,7 @@ body {
 }
 
 /* Photo demoted to a dim, saturated-down backdrop behind a dark base,
-   so panels — not the picture — carry the page. */
+   so the layout — not the picture — carries the page. */
 .home-bg-base  { position: fixed; inset: 0; z-index: 0; background: #06120e; }
 .home-bg-photo {
   position: fixed; inset: 0; z-index: 0;
@@ -786,53 +790,84 @@ body {
 
 .home-container { width: 100%; max-width: 1120px; margin-inline: auto; padding-inline: 24px; box-sizing: border-box; }
 
-/* A real surface: soft fill, thin border, blur, consistent padding/radius. */
-.home-panel {
-  background: rgba(12,30,24,0.72);
-  backdrop-filter: blur(14px);
-  -webkit-backdrop-filter: blur(14px);
-  border: 1px solid var(--home-line);
-  border-radius: 14px;
-  padding: 24px;
-}
-
 /* Two-column split on desktop — content left, sticky wallet/agent rail right.
    Below 1024px it's a single column; the bottom nav is the only navigation
    at every width, so there's no second in-page tab bar competing with it. */
-.home-grid { display: grid; grid-template-columns: 1fr; gap: 32px; }
+.home-grid { display: grid; grid-template-columns: 1fr; gap: 44px; }
 @media (min-width: 1024px) {
-  .home-grid  { grid-template-columns: 65fr 35fr; align-items: start; }
+  .home-grid  { grid-template-columns: 64fr 36fr; align-items: start; gap: 64px; }
   .home-main  { order: 1; }
-  .home-aside { order: 2; position: sticky; top: 24px; display: flex; flex-direction: column; gap: 32px; }
+  .home-aside { order: 2; position: sticky; top: 24px; }
 }
 
-/* Shared "one accent, neutral until hover" treatment for dashboard and
-   quick-action rows — icons carry colour only when a row is live. Both use
-   the same flat, borderless row style: a website's link list, not an app
-   launcher's grid of icon tiles. */
+/* Group boundary: 3-4× breathing room plus a single hairline — space does
+   the grouping, the 1px line only marks where one group ends. No box. */
+.home-section + .home-section {
+  margin-top: 56px;
+  padding-top: 40px;
+  border-top: 1px solid var(--home-line);
+}
+@media (max-width: 1023px) {
+  .home-section + .home-section { margin-top: 44px; padding-top: 36px; }
+}
+
+/* Shared stat row (profile + portfolio): values aligned on a grid, hairlines
+   between cells. No shells. */
+.home-stats { display: grid; grid-template-columns: repeat(4, 1fr); }
+@media (max-width: 639px) {
+  .home-stats { grid-template-columns: repeat(2, 1fr); row-gap: 22px; }
+}
+.home-stat { text-align: center; padding: 0 10px; min-width: 0; }
+.home-stat + .home-stat { border-left: 1px solid var(--home-line); }
+@media (max-width: 639px) {
+  .home-stat:nth-child(3) { border-left: none; }
+}
+.home-stat-value {
+  font-size: 18px; font-weight: 800; color: var(--home-text);
+  letter-spacing: -0.3px; white-space: nowrap;
+}
+.home-stat-label {
+  font-size: 10px; font-weight: 600;
+  color: var(--home-muted); margin-top: 6px;
+}
+
+/* The one surface that earns a box: the address + copy/refresh control. */
+.home-wallet {
+  display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid var(--home-line);
+  border-radius: 12px;
+  padding: 10px 12px;
+}
+
+/* Dashboard + quick-action rows — flat link lists, hairline rows only.
+   Icons carry colour when a row is live; the action itself is conveyed by
+   the row's hover state, not an arrow glyph. */
 .action-icon { color: var(--home-muted); transition: color 0.15s ease; }
 .dash-row:hover .action-icon,
 .qa-row:hover   .action-icon { color: var(--home-accent); }
 
 .dash-row {
-  display: flex; align-items: center; gap: 16px; padding: 16px 0;
+  display: flex; align-items: center; gap: 16px; padding: 18px 0;
   text-decoration: none; border-bottom: 1px solid var(--home-line);
 }
 .dash-row:last-child { border-bottom: none; }
-.dash-row:hover .dash-open { color: var(--home-accent); }
+.dash-row:hover .dash-title { color: var(--home-accent); }
 
 /* Quick Actions — a two-column link list on desktop, one column on mobile;
-   each entry is a plain row (icon, label, no border/fill of its own). */
+   each entry is a plain row (icon, label, no fill of its own). */
+.qa-list { display: grid; grid-template-columns: 1fr; }
+@media (min-width: 640px) {
+  .qa-list { grid-template-columns: 1fr 1fr; column-gap: 40px; }
+}
 .qa-row {
-  display: flex; align-items: center; gap: 12px; padding: 13px 0;
+  display: flex; align-items: center; gap: 12px; padding: 14px 0;
   text-decoration: none; border-bottom: 1px solid var(--home-line);
   background: transparent; cursor: pointer; width: 100%; text-align: left;
   border-left: none; border-right: none; border-top: none;
 }
-.qa-list { display: grid; grid-template-columns: 1fr; }
-@media (min-width: 640px) {
-  .qa-list { grid-template-columns: 1fr 1fr; column-gap: 32px; }
-}
+.qa-list > .qa-row:last-child,
+.qa-list > .qa-row:nth-last-child(2):not(:nth-child(odd)) { border-bottom: none; }
 
 /* ══════════════════════════════════════════════════════════════
    MINE / AIRDROP PAGE — flat, one accent (Avalanche red)
