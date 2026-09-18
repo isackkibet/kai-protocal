@@ -18,21 +18,34 @@ import { useActiveAccount } from '@/hooks/useActiveAccount';
 import {
   Trees, Store, Users, FlaskConical, ScanLine,
   Droplets, ImageIcon, Lock, Globe, LayoutGrid, Gift,
-  Bot, Copy, RefreshCw, TrendingUp,
-  ShieldCheck, Coins,
-  CircleDollarSign, BarChart3, Activity, Zap,
+  Bot, Copy, RefreshCw,
+  ShieldCheck, CircleDollarSign,
   Mountain, Link2, Mic,
 } from 'lucide-react';
 
-/* text-shadow so words stay readable over the (now dimmed) background photo */
-const R:  React.CSSProperties = { textShadow: '0 1px 6px rgba(0,0,0,0.60)' };
+/* Same editorial system as /hub: solid pine background, one gold accent,
+   serif display type for values/headlines, mono for small-caps labels. */
+const C = {
+  bg:        '#0B1C14',
+  pineDeep:  '#0A2A20',
+  pineLight: '#2D5A3D',
+  gold:      '#C89B3C',
+  goldLight: '#E4C878',
+  paper:     '#F6F2E7',
+  paperDim:  '#EFE9D9',
+  ink:       '#1B1A14',
+  inkLight:  '#9BA396',
+  hairline:  'rgba(200,155,60,0.14)',
+};
+const MONO  = { fontFamily: "'IBM Plex Mono', monospace" } as const;
+const SERIF = { fontFamily: "'Fraunces', serif" } as const;
 
 const HL = {
-  green: { color: '#34d399', fontWeight: 700 } as React.CSSProperties,
+  green: { color: C.goldLight, fontWeight: 700 } as React.CSSProperties,
 };
 
-/* Sentence-case, low-emphasis eyebrow label — replaces tracked-out ALL CAPS. */
-const label: React.CSSProperties = { fontSize: 12, color: 'var(--home-muted)', letterSpacing: 0, textTransform: 'none', fontWeight: 600, margin: '0 0 8px' };
+/* Small-caps mono eyebrow label, matching /hub's section labels. */
+const label: React.CSSProperties = { ...MONO, fontSize: 10, letterSpacing: 1.4, textTransform: 'uppercase', color: C.goldLight, fontWeight: 600, margin: '0 0 10px' };
 
 const QUICK = [
   { name: 'Voice Agent', href: '/voice',     icon: Mic },
@@ -65,11 +78,6 @@ function buildCalls(addr: `0x${string}` | undefined) {
     args: [addr],
   }));
 }
-
-const TOKEN_ICON: Record<string, React.ComponentType<{ size:number; color:string; strokeWidth:number }>> = {
-  AVAX: Activity, NVR: Zap, yBOB: CircleDollarSign,
-  YTOKEN: TrendingUp, YGOLD: BarChart3, GAMI: Coins, CENTS: CircleDollarSign,
-};
 
 /* No price oracle is wired up yet — these are manually maintained estimates,
    not a live feed. Keep the UI label ("Estimated portfolio value") honest about that. */
@@ -147,8 +155,8 @@ export default function Home() {
 
   const avaxAmt = avaxBal ? Number(formatUnits(avaxBal.value, avaxBal.decimals)) : 0;
   const allTokens = [
-    { symbol:'AVAX', value:avaxAmt, color:'#10b981', deployed:true },
-    ...ECOSYSTEM_TOKENS.map(t => ({ symbol:t.symbol, value:tokenBals[t.symbol.toLowerCase()]??0, color:t.color, deployed:!!t.address })),
+    { symbol:'AVAX', value:avaxAmt, deployed:true },
+    ...ECOSYSTEM_TOKENS.map(t => ({ symbol:t.symbol, value:tokenBals[t.symbol.toLowerCase()]??0, deployed:!!t.address })),
   ];
   const totalUsd = avaxAmt*ESTIMATED_USD_RATES.avax
     + (tokenBals.ybob??0)*ESTIMATED_USD_RATES.ybob
@@ -173,20 +181,20 @@ export default function Home() {
   };
 
   return (
-    <main style={{ minHeight:'100dvh', color:'#fff', fontFamily:'var(--font-sans)', position:'relative', paddingBottom:80 }}>
-      {/* Photo demoted behind a dark base + fade — panels carry the page now */}
-      <div className="home-bg-base" aria-hidden />
-      <div className="home-bg-photo" aria-hidden />
-      <div className="home-bg-fade" aria-hidden />
+    <main style={{ minHeight:'100dvh', background:C.bg, color:C.paper, fontFamily:"'IBM Plex Sans', var(--font-sans)", position:'relative', paddingBottom:80 }}>
+      {/* kaiweb fonts — same family as /hub */}
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300..700;1,9..144,300..700&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&display=swap');
+      `}</style>
 
       {/* TICKER */}
-      <div className="ticker-wrap" style={{ padding:'6px 0', position:'relative', zIndex:5 }}>
+      <div className="ticker-wrap" style={{ padding:'6px 0', position:'relative', zIndex:5, borderBottom:`1px solid ${C.hairline}` }}>
         <div className="ticker-track" style={{ display:'inline-flex', gap:36, paddingLeft:20, whiteSpace:'nowrap' }}>
           {[...TICKER_TOKENS,...TICKER_TOKENS,...TICKER_TOKENS].map((t,i) => (
-            <span key={i} style={{ fontSize:11, fontWeight:600 }}>
-              <span style={{ color:'rgba(255,255,255,0.40)' }}>{t.s} </span>
-              <span style={{ color:'rgba(255,255,255,0.85)', fontWeight:700 }}>{t.p} </span>
-              <span style={{ color:'#34d399', fontWeight:800 }}>{t.c}</span>
+            <span key={i} style={{ ...MONO, fontSize:11, fontWeight:500 }}>
+              <span style={{ color:C.inkLight }}>{t.s} </span>
+              <span style={{ color:C.paperDim, fontWeight:600 }}>{t.p} </span>
+              <span style={{ color:C.goldLight, fontWeight:700 }}>{t.c}</span>
             </span>
           ))}
         </div>
@@ -199,11 +207,11 @@ export default function Home() {
 
         {/* HERO */}
         <div style={{ paddingTop:48, textAlign:'center', position:'relative', zIndex:5 }}>
-          <Mountain size={36} color="#6ee7b7" strokeWidth={1.6} style={{ marginBottom:12 }}/>
-          <h1 style={{ fontSize:34, fontWeight:900, margin:'0 0 8px', letterSpacing:'-1px', ...R }}>
-            <span style={HL.green}>KAI</span> <span style={{ color:'#fff' }}>Nuvari</span>
+          <Mountain size={32} color={C.goldLight} strokeWidth={1.5} style={{ marginBottom:14 }}/>
+          <h1 style={{ ...SERIF, fontSize:38, fontWeight:600, margin:'0 0 10px', letterSpacing:'-0.5px' }}>
+            <span style={HL.green}>KAI</span> <span style={{ color:C.paper }}>Nuvari</span>
           </h1>
-          <p style={{ fontSize:17, color:'rgba(232,242,238,0.78)', margin:0, maxWidth:520, marginInline:'auto', lineHeight:1.6 }}>
+          <p style={{ fontSize:16, color:C.inkLight, margin:0, maxWidth:520, marginInline:'auto', lineHeight:1.65 }}>
             A DeFi ecosystem on Avalanche C-Chain with six tokens, yield vaults, liquidity pools, and DAO governance.
           </p>
 
@@ -212,10 +220,10 @@ export default function Home() {
             setShowModal(true);
           }}
             style={{
-              marginTop:24, display:'inline-flex', alignItems:'center', justifyContent:'center', gap:10,
-              padding:'13px 28px', borderRadius:12, cursor:'pointer', border:'none',
-              background:'var(--home-accent)',
-              fontSize:15, fontWeight:800, color:'#04140f',
+              marginTop:26, display:'inline-flex', alignItems:'center', justifyContent:'center', gap:10,
+              padding:'13px 28px', borderRadius:10, cursor:'pointer', border:'none',
+              background:C.gold,
+              fontSize:14, fontWeight:700, color:C.ink, fontFamily:'inherit',
             }}>
             <Link2 size={16}/>
             {connected
@@ -223,11 +231,11 @@ export default function Home() {
               : privyAuthenticated && privyAddress
                 ? `Your Wallet: ${privyAddress.slice(0,6)}…${privyAddress.slice(-4)}`
                 : 'Connect Wallet'}
-            {(connected || privyAuthenticated) && <span style={{ width:8, height:8, borderRadius:'50%', background:'#04140f' }} />}
+            {(connected || privyAuthenticated) && <span style={{ width:8, height:8, borderRadius:'50%', background:C.ink }} />}
           </motion.button>
 
-          <p style={{ marginTop:18, fontSize:13, fontWeight:700, color:'var(--home-muted)' }}>Avalanche C-Chain</p>
-          <p style={{ marginTop:2, fontSize:12, color:'var(--home-muted)', opacity:0.75 }}>MetaMask and Core Wallet supported</p>
+          <p style={{ marginTop:18, ...MONO, fontSize:11, letterSpacing:1, textTransform:'uppercase', color:C.inkLight }}>Avalanche C-Chain</p>
+          <p style={{ marginTop:4, fontSize:12, color:C.inkLight, opacity:0.8 }}>MetaMask and Core Wallet supported</p>
         </div>
 
         {/* TWO-COLUMN LAYOUT — wallet/profile + agent on the right (sticky on
@@ -240,17 +248,17 @@ export default function Home() {
               <div style={{ display:'flex', alignItems:'center', gap:14, marginBottom:20 }}>
                 <div style={{ position:'relative', flexShrink:0 }}>
                   <div style={{
-                    width:52, height:52, borderRadius:'50%', border:'2px solid var(--home-accent)',
+                    width:52, height:52, borderRadius:'50%', background:C.gold,
                     display:'flex', alignItems:'center', justifyContent:'center',
-                    fontSize:20, fontWeight:900, color:'#6ee7b7',
+                    ...SERIF, fontSize:20, fontWeight:600, color:C.ink,
                   }}>{(displayName || 'K').charAt(0).toUpperCase()}</div>
-                  <span style={{ position:'absolute', bottom:1, right:0, width:11, height:11, borderRadius:'50%', background:'#22c55e', border:'2px solid #0c1e18' }} />
+                  <span style={{ position:'absolute', bottom:1, right:0, width:11, height:11, borderRadius:'50%', background:C.pineLight, border:`2px solid ${C.bg}` }} />
                 </div>
                 <div>
-                  <p style={{ fontSize:17, fontWeight:800, margin:0, color:'#fff' }}>
+                  <p style={{ ...SERIF, fontSize:18, fontWeight:600, margin:0, color:C.paper }}>
                     {connected || privyAuthenticated ? (displayName || 'KAI Member') : 'Not connected'}
                   </p>
-                  <p style={{ fontSize:14, color:'rgba(232,242,238,0.75)', margin:'2px 0 0', lineHeight:1.5 }}>
+                  <p style={{ fontSize:14, color:C.inkLight, margin:'3px 0 0', lineHeight:1.5 }}>
                     {connected || privyAuthenticated
                       ? "You're an active KAI Nuvari member on Avalanche Fuji, based in Kenya."
                       : 'Connect a wallet to see your profile.'}
@@ -263,13 +271,13 @@ export default function Home() {
 
               <div className="home-stats">
                 {[
-                  { l:'Est. value', v: connected ? (balancesLoading ? '…' : `$${totalUsd.toFixed(2)}`) : '$0.00', color:'#34d399' },
+                  { l:'Est. value', v: connected ? (balancesLoading ? '…' : `$${totalUsd.toFixed(2)}`) : '$0.00', color:C.goldLight },
                   { l:'Network',   v:'Fuji',   color:null },
                   { l:'Tokens',    v:connected ? (balancesLoading ? '…' : String(activeTokenCount)) : '0', color:null },
-                  { l:'Status',    v:connected ? 'Active' : 'Idle', color:connected ? '#34d399' : null },
+                  { l:'Status',    v:connected ? 'Active' : 'Idle', color:connected ? C.goldLight : null },
                 ].map(s => (
                   <div key={s.l} className="home-stat">
-                    <p className="home-stat-value" style={{ color: s.color ?? undefined }}>{s.v}</p>
+                    <p className="home-stat-value" style={{ color: s.color ?? C.paper }}>{s.v}</p>
                     <p className="home-stat-label">{s.l}</p>
                   </div>
                 ))}
@@ -279,43 +287,43 @@ export default function Home() {
             {/* KAI AGENT */}
             <section className="home-section" id="agent"
               style={{ scrollMarginTop:70 }}>
-              <div style={{ display:'flex', alignItems:'center', gap:10, marginBottom:6 }}>
-                <Bot size={20} color="#34d399" />
-                <p style={{ fontSize:17, fontWeight:800, margin:0, color:'#fff' }}>
+              <div style={{ display:'flex', alignItems:'center', gap:10, marginBottom:8 }}>
+                <Bot size={18} color={C.goldLight} />
+                <p style={{ ...SERIF, fontSize:18, fontWeight:600, margin:0, color:C.paper }}>
                   <span style={HL.green}>KAI</span> Intelligence
                 </p>
               </div>
-              <p style={{ fontSize:14, color:'rgba(232,242,238,0.75)', margin:'0 0 6px', lineHeight:1.6 }}>
+              <p style={{ fontSize:14, color:C.inkLight, margin:'0 0 6px', lineHeight:1.6 }}>
                 Live and ready to help, powered by Qwen3 RAG. Best for quick questions.{' '}
                 <button onClick={openAIChat} className="text-link" style={{ background:'none', border:'none', cursor:'pointer', padding:0, font:'inherit', fontSize:'inherit' }}>Open the full chat</button>
               </p>
-              <p style={{ fontSize:13, color:'rgba(232,242,238,0.55)', margin:'0 0 16px', lineHeight:1.6 }}>
+              <p style={{ fontSize:13, color:C.inkLight, opacity:0.85, margin:'0 0 18px', lineHeight:1.6 }}>
                 Need to check balances or make a swap by talking? Try the{' '}
                 <Link href="/voice" className="text-link">Voice Agent</Link>
               </p>
 
               <p style={label}>Quick ask</p>
-              <div style={{ display:'flex', flexWrap:'wrap', gap:'6px 22px', marginBottom:16 }}>
+              <div style={{ display:'flex', flexWrap:'wrap', gap:'6px 22px', marginBottom:18 }}>
                 {['What tokens does KAI have?','Best yield now?','How to get started?','Pool rates?'].map(q => (
-                  <button key={q} onClick={() => setAgentQ(q)} style={{ background:'none', border:'none', cursor:'pointer', padding:0, font:'inherit', fontSize:13, fontWeight:600, textAlign:'left', color: agentQ===q ? '#34d399' : 'rgba(255,255,255,0.65)' }}>{q}</button>
+                  <button key={q} onClick={() => setAgentQ(q)} style={{ background:'none', border:'none', cursor:'pointer', padding:0, font:'inherit', fontSize:13, fontWeight:600, textAlign:'left', color: agentQ===q ? C.goldLight : C.inkLight }}>{q}</button>
                 ))}
               </div>
 
-              <div style={{ display:'flex', gap:9, marginBottom: agentA ? 16 : 0 }}>
+              <div style={{ display:'flex', gap:9, marginBottom: agentA ? 16 : 0, alignItems:'flex-end' }}>
                 <textarea ref={agentRef} value={agentQ}
                   onChange={e => setAgentQ(e.target.value)}
                   onKeyDown={e => e.key==='Enter' && !e.shiftKey && (e.preventDefault(), askAgent())}
                   placeholder="Ask KAI anything…" rows={2}
-                  style={{ flex:1, background:'rgba(255,255,255,0.04)', border:'1px solid rgba(255,255,255,0.16)', borderRadius:10, padding:'10px 13px', fontSize:13, color:'#fff', outline:'none', fontFamily:'inherit', resize:'none', lineHeight:1.5, caretColor:'#34d399' }}
-                  onFocus={e => (e.target.style.borderColor='rgba(52,211,153,0.65)')}
-                  onBlur={e  => (e.target.style.borderColor='rgba(255,255,255,0.16)')}
+                  style={{ flex:1, background:'none', border:'none', borderBottom:`1px solid ${C.hairline}`, borderRadius:0, padding:'8px 2px', fontSize:13, color:C.paper, outline:'none', fontFamily:'inherit', resize:'none', lineHeight:1.5, caretColor:C.goldLight, transition:'border-color 0.15s ease' }}
+                  onFocus={e => (e.target.style.borderColor=C.gold)}
+                  onBlur={e  => (e.target.style.borderColor=C.hairline)}
                 />
                 <button onClick={askAgent} disabled={agentBusy||!agentQ.trim()} style={{
-                  padding:'0 18px', borderRadius:10, alignSelf:'flex-end', flexShrink:0, border:'none', height:44,
-                  background:agentQ.trim()&&!agentBusy?'var(--home-accent)':'rgba(255,255,255,0.08)',
-                  color:agentQ.trim()&&!agentBusy?'#04140f':'rgba(255,255,255,0.30)',
+                  padding:'0 18px', borderRadius:8, flexShrink:0, border:'none', height:38,
+                  background:agentQ.trim()&&!agentBusy?C.gold:'transparent',
+                  color:agentQ.trim()&&!agentBusy?C.ink:C.inkLight,
                   cursor:agentQ.trim()?'pointer':'not-allowed',
-                  fontSize:13, fontWeight:700,
+                  fontSize:13, fontWeight:700, fontFamily:'inherit',
                 }}>
                   {agentBusy ? 'Asking…' : 'Send'}
                 </button>
@@ -324,7 +332,7 @@ export default function Home() {
               <AnimatePresence>
                 {agentA && (
                   <motion.div initial={{ opacity:0, height:0 }} animate={{ opacity:1, height:'auto' }} exit={{ opacity:0, height:0 }}
-                    style={{ paddingLeft:14, borderLeft:'2px solid #34d399', fontSize:13, color:'rgba(255,255,255,0.85)', lineHeight:1.65, maxHeight:200, overflowY:'auto' }}>
+                    style={{ paddingLeft:14, borderLeft:`2px solid ${C.gold}`, fontSize:13, color:C.paperDim, lineHeight:1.65, maxHeight:200, overflowY:'auto' }}>
                     <span dangerouslySetInnerHTML={{ __html:formatChat(agentA) }} />
                   </motion.div>
                 )}
@@ -337,10 +345,10 @@ export default function Home() {
             <section className="home-section" aria-label="Portfolio">
               <p style={label}>Estimated portfolio value</p>
               {balancesLoading ? (
-                <p style={{ fontSize:14, color:'var(--home-muted)', marginBottom:16 }}>Loading…</p>
+                <p style={{ fontSize:14, color:C.inkLight, marginBottom:16 }}>Loading…</p>
               ) : (
-                <div style={{ display:'flex', alignItems:'baseline', gap:12, marginBottom:20 }}>
-                  <span style={{ fontSize:48, fontWeight:900, letterSpacing:-2, color:connected?'#fff':'rgba(255,255,255,0.25)', lineHeight:1 }}>
+                <div style={{ display:'flex', alignItems:'baseline', gap:12, marginBottom:22 }}>
+                  <span style={{ ...SERIF, fontSize:44, fontWeight:600, letterSpacing:'-1px', color:connected?C.paper:C.inkLight, lineHeight:1 }}>
                     ${connected ? totalUsd.toFixed(2) : '0.00'}
                   </span>
                   {connected && totalUsd>0 && <span style={{ fontSize:13, ...HL.green }}>+0.00%</span>}
@@ -349,29 +357,28 @@ export default function Home() {
 
               {connected ? (
                 <>
-                  <div style={{ overflowX:'auto', scrollbarWidth:'none', marginBottom:18 }}>
-                    <div style={{ display:'flex', gap:24, minWidth:'max-content' }}>
-                      {balancesLoading ? <p style={{ fontSize:13, color:'rgba(255,255,255,0.40)' }}>Loading balances…</p> : allTokens.map(b => {
-                        const Icon = TOKEN_ICON[b.symbol] || Coins;
+                  <div style={{ overflowX:'auto', scrollbarWidth:'none', marginBottom:20 }}>
+                    <div style={{ display:'flex', gap:26, minWidth:'max-content' }}>
+                      {balancesLoading ? <p style={{ fontSize:13, color:C.inkLight }}>Loading balances…</p> : allTokens.map(b => {
+                        const tint = b.symbol === 'AVAX' ? C.goldLight : C.paperDim;
                         return (
                           <div key={b.symbol} style={{ textAlign:'center' }}>
-                            <span style={{ display:'block', margin:'0 auto 4px' }}><Icon size={16} color={b.color} strokeWidth={1.8} /></span>
-                            <p style={{ fontSize:9, color:'var(--home-muted)', margin:'0 0 2px', fontWeight:700 }}>{b.symbol}</p>
-                            <p style={{ fontSize:13, fontWeight:800, color:b.color, margin:0 }}>
+                            <p style={{ ...MONO, fontSize:9, letterSpacing:0.5, textTransform:'uppercase', color:C.inkLight, margin:'0 0 4px', fontWeight:600 }}>{b.symbol}</p>
+                            <p style={{ ...SERIF, fontSize:16, fontWeight:600, color:tint, margin:0 }}>
                               {b.value>=1000?`${(b.value/1000).toFixed(1)}K`:b.value>=0.001?b.value.toFixed(3):'0.000'}
                             </p>
-                            {!b.deployed && <p style={{ fontSize:8, color:'rgba(255,255,255,0.30)', fontWeight:700, margin:'2px 0 0' }}>Coming soon</p>}
+                            {!b.deployed && <p style={{ fontSize:8, color:C.inkLight, opacity:0.7, fontWeight:600, margin:'3px 0 0' }}>Coming soon</p>}
                           </div>
                         );
                       })}
                     </div>
                   </div>
-                  <div className="home-wallet" style={{ marginTop:4 }}>
-                    <span style={{ fontFamily:'monospace', fontSize:12, color:'var(--home-muted)', wordBreak:'break-all' }}>{address}</span>
-                    <button onClick={copyAddress} style={{ padding:'6px 12px', borderRadius:8, border:'none', cursor:'pointer', background:copied?'var(--home-accent)':'rgba(255,255,255,0.10)', color:copied?'#04140f':'rgba(255,255,255,0.75)', fontSize:11, fontWeight:700, display:'flex', alignItems:'center', gap:4 }}>
-                      {copied?'✓ Copied':(<><Copy size={12}/> Copy</>)}
+                  <div style={{ display:'flex', alignItems:'center', gap:14, flexWrap:'wrap', paddingTop:16, borderTop:`1px solid ${C.hairline}` }}>
+                    <span style={{ ...MONO, fontSize:12, color:C.inkLight, wordBreak:'break-all' }}>{address}</span>
+                    <button onClick={copyAddress} style={{ background:'none', border:'none', cursor:'pointer', color:copied?C.goldLight:C.inkLight, fontSize:12, fontWeight:600, display:'flex', alignItems:'center', gap:4, padding:0 }}>
+                      {copied?'Copied':(<><Copy size={12}/> Copy</>)}
                     </button>
-                    <button onClick={handleRefresh} style={{ padding:'6px 12px', borderRadius:8, border:'none', cursor:'pointer', background:'rgba(255,255,255,0.10)', color:'rgba(255,255,255,0.75)', fontSize:11, fontWeight:700, display:'flex', alignItems:'center', gap:4 }}>
+                    <button onClick={handleRefresh} style={{ background:'none', border:'none', cursor:'pointer', color:C.inkLight, fontSize:12, fontWeight:600, display:'flex', alignItems:'center', gap:4, padding:0 }}>
                       <RefreshCw size={12} style={{ animation:refreshing?'spin 1s linear infinite':'none' }} /> Refresh
                     </button>
                   </div>
@@ -386,20 +393,20 @@ export default function Home() {
             {/* DASHBOARDS */}
             <section className="home-section" id="dashboards"
               style={{ scrollMarginTop:70 }}>
-              <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:4 }}>
+              <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:6 }}>
                 <p style={{ ...label, margin:0 }}>Dashboards</p>
-                <span style={{ fontSize:12, fontWeight:700, color:'#34d399' }}>● 3 active</span>
+                <span style={{ ...MONO, fontSize:11, fontWeight:600, color:C.goldLight }}>● 3 active</span>
               </div>
               <div>
                 {DASHBOARDS.map((d) => {
                   const Icon = d.icon;
                   return (
                     <Link key={d.id} href={d.href} className="dash-row">
-                      <Icon size={22} className="action-icon" strokeWidth={1.6} style={{ flexShrink:0 }}/>
+                      <Icon size={20} className="action-icon" strokeWidth={1.6} style={{ flexShrink:0 }}/>
                       <div style={{ flex:1 }}>
-                        <p className="dash-title" style={{ fontSize:15, fontWeight:800, margin:'0 0 2px', color:'rgba(255,255,255,0.95)', transition:'color 0.15s ease' }}>{d.hl}</p>
-                        <p style={{ fontSize:12, color:'var(--home-muted)', margin:'0 0 2px' }}>{d.label}</p>
-                        <p style={{ fontSize:11, color:'rgba(255,255,255,0.40)', margin:0 }}>{d.sub}</p>
+                        <p className="dash-title" style={{ ...SERIF, fontSize:17, fontWeight:600, margin:'0 0 2px', color:C.paper, transition:'color 0.15s ease' }}>{d.hl}</p>
+                        <p style={{ fontSize:12, color:C.inkLight, margin:'0 0 2px' }}>{d.label}</p>
+                        <p style={{ fontSize:11, color:C.inkLight, opacity:0.75, margin:0 }}>{d.sub}</p>
                       </div>
                     </Link>
                   );
@@ -418,7 +425,7 @@ export default function Home() {
                   const content = (
                     <>
                       <Icon size={18} className="action-icon" strokeWidth={1.6}/>
-                      <span style={{ fontSize:14, fontWeight:600, color:'rgba(255,255,255,0.85)' }}>
+                      <span style={{ fontSize:14, fontWeight:600, color:C.paperDim }}>
                         {a.name}
                       </span>
                     </>
