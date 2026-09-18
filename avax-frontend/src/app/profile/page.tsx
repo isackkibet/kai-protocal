@@ -220,8 +220,8 @@ export default function ProfilePage() {
       {/* ═══════════════════════════════════════
           IDENTITY HERO — avatar + name
       ═══════════════════════════════════════ */}
-      <div style={{ maxWidth:1280, margin:'0 auto', padding:'0 48px', position:'relative', zIndex:6 }}>
-        <div style={{ marginTop:-80, display:'flex', alignItems:'flex-end', gap:32 }}>
+      <div className="profile-container" style={{ maxWidth:1280, margin:'0 auto', padding:'0 48px', position:'relative', zIndex:6 }}>
+        <div className="profile-hero-row" style={{ marginTop:-80, display:'flex', alignItems:'flex-end', gap:32 }}>
 
           {/* Avatar */}
           <motion.div initial={{ opacity:0, scale:0.85 }} animate={{ opacity:1, scale:1 }} transition={{ delay:0.06 }}
@@ -337,10 +337,10 @@ export default function ProfilePage() {
         {/* ═══════════════════════════════════════
             MAIN BODY: sidebar nav + form
         ═══════════════════════════════════════ */}
-        <div style={{ marginTop:32, display:'grid', gridTemplateColumns:'240px 1fr', gap:36 }}>
+        <div className="profile-main-grid" style={{ marginTop:32, display:'grid', gridTemplateColumns:'240px 1fr', gap:36 }}>
 
-          {/* LEFT: vertical tab nav */}
-          <div style={{ display:'flex', flexDirection:'column', gap:6 }}>
+          {/* LEFT: vertical tab nav (becomes a horizontal scroll row on mobile) */}
+          <div className="profile-tabnav" style={{ display:'flex', flexDirection:'column', gap:6 }}>
             {TABS.map((t,i) => (
               <motion.button key={t.id}
                 initial={{ opacity:0, x:-14 }} animate={{ opacity:1, x:0 }} transition={{ delay:0.14+i*0.05 }}
@@ -453,7 +453,7 @@ export default function ProfilePage() {
 
                 {/* ── PERSONAL ── */}
                 {tab==='personal' && (
-                  <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:'32px 48px' }}>
+                  <div className="profile-2col" style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:'32px 48px' }}>
                     <div style={{ gridColumn:'1/-1' }}>
                       <FormRow label="Display Name *">
                         <KInput value={profile.displayName} onChange={set('displayName')} placeholder="e.g. Grace Wangari" big/>
@@ -489,7 +489,7 @@ export default function ProfilePage() {
 
                 {/* ── CFA ── */}
                 {tab==='cfa' && (
-                  <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:'32px 48px' }}>
+                  <div className="profile-2col" style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:'32px 48px' }}>
                     <div style={{ gridColumn:'1/-1' }}>
                       <FormRow label="CFA Group Name *">
                         <KInput value={profile.cfaGroup} onChange={set('cfaGroup')} placeholder="e.g. Mau Forest Guardians Group A" big/>
@@ -511,7 +511,7 @@ export default function ProfilePage() {
                       <p style={{ fontSize:13, fontWeight:700, letterSpacing:1.0, textTransform:'uppercase', color:'rgba(255,255,255,0.40)', margin:'0 0 18px', ...Rs }}>
                         Linked <span style={G}>Forest Products</span>
                       </p>
-                      <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:16 }}>
+                      <div className="profile-4col" style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:16 }}>
                         {[
                           { name:'Honey Reserve', apy:'14.0%', color:'#f59e0b' },
                           { name:'Med. Herbs',    apy:'16.0%', color:'#22c55e' },
@@ -531,7 +531,7 @@ export default function ProfilePage() {
 
                 {/* ── SME ── */}
                 {tab==='sme' && (
-                  <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:'32px 48px' }}>
+                  <div className="profile-2col" style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:'32px 48px' }}>
                     <div style={{ gridColumn:'1/-1' }}>
                       <FormRow label="Business Name *">
                         <KInput value={profile.businessName} onChange={set('businessName')} placeholder="e.g. Kipkelion Farm Supplies" big/>
@@ -557,7 +557,7 @@ export default function ProfilePage() {
                       <p style={{ fontSize:13, fontWeight:700, letterSpacing:1.0, textTransform:'uppercase', color:'rgba(255,255,255,0.40)', margin:'0 0 18px', ...Rs }}>
                         Available <span style={{color:'#60a5fa',fontWeight:700}}>Financial Products</span>
                       </p>
-                      <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:16 }}>
+                      <div className="profile-3col" style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:16 }}>
                         {[
                           { name:'Working Capital Loan', rate:'8% p.a.',  color:'#22c55e' },
                           { name:'Inventory Finance',    rate:'6% p.a.',  color:'#3b82f6' },
@@ -576,7 +576,7 @@ export default function ProfilePage() {
 
                 {/* ── CHAMA ── */}
                 {tab==='chama' && (
-                  <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:'32px 48px' }}>
+                  <div className="profile-2col" style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:'32px 48px' }}>
                     <div style={{ gridColumn:'1/-1' }}>
                       <FormRow label="Chama / SACCO Name *">
                         <KInput value={profile.chamaName} onChange={set('chamaName')} placeholder="e.g. Mwanzo Mpya Women Savings Chama" big/>
@@ -597,7 +597,7 @@ export default function ProfilePage() {
                       <p style={{ fontSize:13, fontWeight:700, letterSpacing:1.0, textTransform:'uppercase', color:'rgba(255,255,255,0.40)', margin:'0 0 18px', ...Rs }}>
                         Vault <span style={PU}>Strategies</span>
                       </p>
-                      <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:16 }}>
+                      <div className="profile-3col" style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:16 }}>
                         {[
                           { name:'Conservative KES', apy:'12%', risk:'Very Low', color:'#22c55e' },
                           { name:'Balanced yBOB',    apy:'18%', risk:'Low',      color:'#3b82f6' },
@@ -622,7 +622,7 @@ export default function ProfilePage() {
                       <p style={{ fontSize:13, fontWeight:700, letterSpacing:1.0, textTransform:'uppercase', color:'rgba(255,255,255,0.40)', margin:'0 0 18px', ...Rs }}>
                         Risk <span style={AM}>Tolerance</span>
                       </p>
-                      <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:16 }}>
+                      <div className="profile-3col" style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:16 }}>
                         {RISK_LEVELS.map(r => (
                           <motion.button key={r.v} whileHover={{ y:-4 }} whileTap={{ scale:0.97 }}
                             onClick={()=>set('riskTolerance')(r.v)}
