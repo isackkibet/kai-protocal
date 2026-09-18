@@ -15,12 +15,17 @@ export async function GET() {
   const forest = await getOrCreateDefaultForest();
   if (!forest) return NextResponse.json({ species: [], db: false });
 
-  const species = await prisma.treeSpecies.findMany({
-    where: { forestId: forest.id },
-    orderBy: { name: 'asc' },
-  });
+  try {
+    const species = await prisma.treeSpecies.findMany({
+      where: { forestId: forest.id },
+      orderBy: { name: 'asc' },
+    });
 
-  return NextResponse.json({ species });
+    return NextResponse.json({ species });
+  } catch (e) {
+    console.error('[cfa/species] database unavailable', e);
+    return NextResponse.json({ species: [], db: false });
+  }
 }
 
 export async function POST(req: Request) {

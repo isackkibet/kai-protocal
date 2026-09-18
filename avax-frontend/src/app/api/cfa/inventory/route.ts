@@ -18,14 +18,19 @@ export async function GET() {
   const forest = await getOrCreateDefaultForest();
   if (!forest) return NextResponse.json({ entries: [], db: false });
 
-  const entries = await prisma.nurseryInventoryEntry.findMany({
-    where: { forestId: forest.id },
-    orderBy: { occurredAt: 'desc' },
-    take: 50,
-    include: { species: { select: { name: true } } },
-  });
+  try {
+    const entries = await prisma.nurseryInventoryEntry.findMany({
+      where: { forestId: forest.id },
+      orderBy: { occurredAt: 'desc' },
+      take: 50,
+      include: { species: { select: { name: true } } },
+    });
 
-  return NextResponse.json({ entries });
+    return NextResponse.json({ entries });
+  } catch (e) {
+    console.error('[cfa/inventory] database unavailable', e);
+    return NextResponse.json({ entries: [], db: false });
+  }
 }
 
 const VALID_TYPES = new Set(['ORDERED', 'PLANTED', 'SOLD']);

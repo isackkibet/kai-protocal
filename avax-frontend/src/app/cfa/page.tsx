@@ -9,6 +9,7 @@ import {
   ChevronRight, Zap,
 } from 'lucide-react';
 import NurseryTab from '@/components/cfa/NurseryTab';
+import TreasuryTab from '@/components/cfa/TreasuryTab';
 
 // ── Types ─────────────────────────────────────────────────────────
 interface CFAData {
@@ -83,16 +84,20 @@ function MiniBar({ data, colorA, colorB }: { data: { month: string; trees: numbe
 export default function CFAPage() {
   const [data, setData]       = useState<CFAData | null>(null);
   const [loading, setLoading] = useState(true);
-  const [tab, setTab]         = useState<'overview' | 'nursery' | 'members' | 'patrol' | 'products' | 'gov'>('overview');
+  const [tab, setTab]         = useState<'overview' | 'nursery' | 'members' | 'patrol' | 'products' | 'gov' | 'treasury'>('overview');
 
   const load = async () => {
     setLoading(true);
     try {
       const r = await fetch('/api/cfa/stats');
+      if (!r.ok) throw new Error(`stats ${r.status}`);
       setData(await r.json());
     } catch { /* offline — data stays null */ }
     finally { setLoading(false); }
   };
+  // Fetch-on-mount: loads CFA stats once. load() awaits an async fetch, so the
+  // setState inside it fires after the effect body resolves.
+  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => { load(); }, []);
 
   if (loading) return (
@@ -104,7 +109,23 @@ export default function CFAPage() {
     </div>
   );
 
-  const d = data!;
+  if (!data) return (
+    <div style={{ minHeight: '100dvh', display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: 16, padding: 24, textAlign: 'center' }}>
+      <div style={{ width: 52, height: 52, borderRadius: '50%', background: 'linear-gradient(135deg,rgba(245,158,11,0.25),rgba(10,10,12,0.9))', border: '1px solid rgba(245,158,11,0.35)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <AlertTriangle size={26} color="#fbbf24" />
+      </div>
+      <p style={{ color: '#f8f8fa', fontSize: 15, fontWeight: 800, margin: 0 }}>Treasury dashboard could not load</p>
+      <p style={{ color: 'rgba(248,248,250,0.45)', fontSize: 12, margin: 0, maxWidth: 320, lineHeight: 1.6 }}>
+        We couldn&apos;t reach the community forest data. Your funds are safe — please try again.
+      </p>
+      <button onClick={load} style={{ marginTop: 6, padding: '11px 22px', borderRadius: 12, border: 'none', cursor: 'pointer', background: 'linear-gradient(135deg,#10b981,#047857)', color: '#fff', fontSize: 13, fontWeight: 800 }}>
+        Try again
+      </button>
+    </div>
+  );
+
+  const d = data;
+  const treasuryWallet = typeof d.forest.treasuryWallet === 'string' ? d.forest.treasuryWallet : '';
   const totalVotes = (p: typeof d.proposals[0]) => p.votesFor + p.votesAgainst;
 
   return (
@@ -152,7 +173,9 @@ export default function CFAPage() {
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '5px 10px', borderRadius: 8, background: 'rgba(34,197,94,0.07)', border: '1px solid rgba(34,197,94,0.18)', flexShrink: 0 }}>
             <Coins size={10} color="#4ade80" />
-            <span style={{ fontSize: 9, fontWeight: 700, color: '#4ade80', fontFamily: 'monospace' }}>{d.forest.treasuryWallet.slice(0, 18)}…</span>
+            <span style={{ fontSize: 9, fontWeight: 700, color: '#4ade80', fontFamily: 'monospace' }}>
+              {treasuryWallet ? `${treasuryWallet.slice(0, 18)}…` : 'Treasury not linked'}
+            </span>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '5px 10px', borderRadius: 8, background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', flexShrink: 0 }}>
             <Clock size={10} color="rgba(248,248,250,0.38)" />
@@ -172,7 +195,7 @@ export default function CFAPage() {
 
         {/* Tabs */}
         <div style={{ display: 'flex', gap: 4, overflowX: 'auto', scrollbarWidth: 'none', paddingBottom: 1 }}>
-          {(['overview','nursery','members','patrol','products','gov'] as const).map(t => (
+          {(['overview','nursery','members','patrol','products','treasury','gov'] as const).map(t => (
             <button key={t} onClick={() => setTab(t)} style={{
               flexShrink: 0, padding: '7px 14px', borderRadius: '10px 10px 0 0', cursor: 'pointer', border: 'none',
               background: tab === t ? 'rgba(16,185,129,0.14)' : 'rgba(255,255,255,0.03)',
@@ -258,6 +281,9 @@ export default function CFAPage() {
 
         {/* ── NURSERY (tree species, planting, survival, inventory) ── */}
         {tab === 'nursery' && <NurseryTab />}
+
+        {/* ── TREASURY (responsible treasury & governance) ── */}
+        {tab === 'treasury' && <TreasuryTab />}
 
         {/* ── MEMBERS ── */}
         {tab === 'members' && (

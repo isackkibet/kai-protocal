@@ -17,7 +17,8 @@ export async function GET() {
   const forest = await getOrCreateDefaultForest();
   if (!forest) return NextResponse.json({ db: false });
 
-  const [species, survivalRecords, inventoryEntries, plantingRecords] = await Promise.all([
+  try {
+    const [species, survivalRecords, inventoryEntries, plantingRecords] = await Promise.all([
     prisma.treeSpecies.findMany({ where: { forestId: forest.id } }),
     prisma.survivalRecord.findMany({ where: { forestId: forest.id }, select: { survivalRate: true } }),
     prisma.nurseryInventoryEntry.findMany({
@@ -78,4 +79,8 @@ export async function GET() {
       quantityForSale: sp.quantityForSale,
     })),
   });
+  } catch (e) {
+    console.error('[cfa/nursery/summary] database unavailable', e);
+    return NextResponse.json({ db: false });
+  }
 }
