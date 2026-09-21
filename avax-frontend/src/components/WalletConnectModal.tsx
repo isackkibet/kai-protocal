@@ -277,22 +277,22 @@ export default function WalletConnectModal({ onClose }: WalletConnectModalProps)
               );
             })}
 
-            <OptionRow icon={<KaiIcon />} label="KAI Wallet" description="Native KAI identity, DID, x402 payments"
+            <OptionRow icon={<KaiIcon />} label="KAI Wallet" description={<><Hi>Native KAI identity</Hi>, DID, x402 payments</>}
               disabled
-              trailing={<span style={{ ...MONO, fontSize: 9, fontWeight: 700, color: C.goldLight, letterSpacing: 0.8 }}>SOON</span>} />
+              trailing={<span style={{ ...MONO, fontSize: 10, fontWeight: 700, color: C.goldLight, letterSpacing: 0.8 }}>SOON</span>} />
 
             {error && (
-              <div style={{ marginTop: 14, paddingLeft: 14, borderLeft: `2px solid ${C.red}` }}>
-                <p style={{ fontWeight: 700, fontSize: 12, color: C.red, margin: '0 0 4px' }}>Connection error</p>
-                <p style={{ fontSize: 12, color: C.inkLight, margin: '0 0 6px' }}>{error.message}</p>
-                <button onClick={reset} style={{ background: 'none', border: 'none', cursor: 'pointer', color: C.goldLight, fontSize: 11, fontWeight: 700, fontFamily: 'inherit', padding: 0 }}>
+              <div style={{ marginTop: 16, paddingLeft: 14, borderLeft: `2px solid ${C.red}` }}>
+                <p style={{ fontWeight: 700, fontSize: 13, color: C.red, margin: '0 0 4px' }}>Connection error</p>
+                <p style={{ fontSize: 13, color: C.inkLight, margin: '0 0 6px' }}>{error.message}</p>
+                <button onClick={reset} style={{ background: 'none', border: 'none', cursor: 'pointer', color: C.goldLight, fontSize: 12, fontWeight: 700, fontFamily: 'inherit', padding: 0 }}>
                   Reset and retry →
                 </button>
               </div>
             )}
 
-            <p style={{ fontSize: 10.5, textAlign: 'center', color: C.inkLight, lineHeight: 1.5, marginTop: 18 }}>
-              Set your wallet network to <strong style={{ color: C.paperDim }}>Avalanche C-Chain</strong> or <strong style={{ color: C.paperDim }}>Fuji Testnet</strong>
+            <p style={{ fontSize: 12, textAlign: 'center', color: C.inkLight, lineHeight: 1.5, marginTop: 22 }}>
+              Set your wallet network to <Hi>Avalanche C-Chain</Hi> or <Hi>Fuji Testnet</Hi>
             </p>
           </div>
         )}
@@ -305,7 +305,7 @@ export default function WalletConnectModal({ onClose }: WalletConnectModalProps)
 
 function GoogleIcon() {
   return (
-    <svg width="19" height="19" viewBox="0 0 48 48">
+    <svg width="24" height="24" viewBox="0 0 48 48">
       <path fill="#FFC107" d="M43.6 20.1H42V20H24v8h11.3C33.7 32.7 29.2 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.9 1.2 8 3l5.7-5.7C34.7 6.1 29.6 4 24 4 13 4 4 13 4 24s9 20 20 20 20-9 20-20c0-1.3-.1-2.6-.4-3.9z"/>
       <path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.7 15.1 19 12 24 12c3.1 0 5.9 1.2 8 3l5.7-5.7C34.7 6.1 29.6 4 24 4 16.3 4 9.7 8.3 6.3 14.7z"/>
       <path fill="#4CAF50" d="M24 44c5.2 0 10-2.2 13.4-5.7l-6.2-5.2C29.2 34.5 26.7 36 24 36c-5.2 0-9.7-3.3-11.3-8l-6.5 5C9.5 39.6 16.2 44 24 44z"/>
@@ -316,7 +316,7 @@ function GoogleIcon() {
 
 function MetaMaskIcon() {
   return (
-    <svg width="20" height="20" viewBox="0 0 318 318" fill="none">
+    <svg width="24" height="24" viewBox="0 0 318 318" fill="none">
       <path d="M274.1 35.5l-99.7 73.9 18.4-43.6 81.3-30.3z" fill="#E2761B" stroke="#E2761B" strokeLinecap="round" strokeLinejoin="round"/>
       <path d="M44.4 35.5l98.9 74.5-17.6-44.2L44.4 35.5z" fill="#E4761B" stroke="#E4761B" strokeLinecap="round" strokeLinejoin="round"/>
       <path d="M238.3 206.8l-26.5 40.6 56.7 15.6 16.3-55.3-46.5-.9z" fill="#E4761B" stroke="#E4761B"/>
@@ -331,7 +331,7 @@ function MetaMaskIcon() {
 
 function CoreIcon() {
   return (
-    <svg width="20" height="20" viewBox="0 0 40 40" fill="none">
+    <svg width="24" height="24" viewBox="0 0 40 40" fill="none">
       <circle cx="20" cy="20" r="18" fill="#1A1A2E" stroke="#3B99FC" strokeWidth="1.5"/>
       <path d="M20 8 L30 14 L30 26 L20 32 L10 26 L10 14 Z" stroke="#3B99FC" strokeWidth="1.8" fill="none"/>
       <path d="M20 13 L26 16.5 L26 23.5 L20 27 L14 23.5 L14 16.5 Z" fill="#3B99FC" opacity="0.6"/>
@@ -342,7 +342,7 @@ function CoreIcon() {
 
 function KaiIcon() {
   return (
-    <svg width="20" height="20" viewBox="0 0 40 40" fill="none">
+    <svg width="24" height="24" viewBox="0 0 40 40" fill="none">
       <path d="M20 4 L36 12 L36 28 L20 36 L4 28 L4 12 Z" fill="none" stroke="#C89B3C" strokeWidth="1.5"/>
       <path d="M14 14 L20 20 L14 26" stroke="#E4C878" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"/>
       <path d="M22 14 L26 20 L22 26" stroke="#C89B3C" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"/>
