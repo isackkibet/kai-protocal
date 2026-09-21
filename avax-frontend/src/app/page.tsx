@@ -315,7 +315,10 @@ export default function Home() {
 
               <p style={label}>Quick ask</p>
               <div style={{ display:'flex', flexWrap:'wrap', gap:'6px 22px', marginBottom:18 }}>
-                {['What tokens does KAI have?','Best yield now?','How to get started?','Pool rates?'].map(q => (
+                {(connected
+                  ? ["What's my portfolio worth?", 'Best yield for me?', 'What tokens does KAI have?', 'How to get started?']
+                  : ['What tokens does KAI have?','Best yield now?','How to get started?','Pool rates?']
+                ).map(q => (
                   <button key={q} onClick={() => setAgentQ(q)} style={{ background:'none', border:'none', cursor:'pointer', padding:0, font:'inherit', fontSize:13, fontWeight:600, textAlign:'left', color: agentQ===q ? C.goldLight : C.inkLight }}>{q}</button>
                 ))}
               </div>

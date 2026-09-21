@@ -102,7 +102,7 @@ body {
       rgba(16,185,129,0.16) 0%,
       transparent 70%
     ),
-    url('/kai-background.jpg');
+    url('/images/kai-background.jpg');
   background-size:   cover, cover, cover;
   background-position: center 20%, center 20%, center 20%;
   background-repeat:   no-repeat;
