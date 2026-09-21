@@ -830,8 +830,8 @@ body {
 .dash-row:hover .action-icon { color: var(--home-accent); }
 
 .dash-row {
-  display: flex; align-items: center; gap: 16px; padding: 18px 0;
-  text-decoration: none; border-bottom: 1px solid var(--home-line);
+  display: flex; align-items: center; gap: 14px; padding: 14px 0;
+  text-decoration: none; border-bottom: 1px solid rgba(200,155,60,0.28);
 }
 .dash-row:last-child { border-bottom: none; }
 .dash-row:hover .dash-title { color: var(--home-accent); }
