@@ -422,7 +422,7 @@ export default function Home() {
                 {agentA && (
                   <motion.div initial={{ opacity:0, height:0 }} animate={{ opacity:1, height:'auto' }} exit={{ opacity:0, height:0 }}
                     style={{ paddingLeft:14, borderLeft:`2px solid ${C.gold}`, fontSize:13, color:C.paperDim, lineHeight:1.65, maxHeight:200, overflowY:'auto' }}>
-                    <span dangerouslySetInnerHTML={{ __html:formatChat(agentA) }} />
+                    <div dangerouslySetInnerHTML={{ __html:formatChat(agentA) }} />
                   </motion.div>
                 )}
               </AnimatePresence>
