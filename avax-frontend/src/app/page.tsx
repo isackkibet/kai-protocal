@@ -493,7 +493,7 @@ export default function Home() {
                   return (
                     <Link key={d.id} href={d.href} className="dash-row">
                       <Icon size={16} className="action-icon" strokeWidth={1.6} style={{ flexShrink:0 }}/>
-                      <p style={{ fontSize:14, lineHeight:1.6, margin:0 }}>
+                      <p style={{ flex:1, minWidth:0, fontSize:14, lineHeight:1.6, margin:0 }}>
                         <span className="dash-title" style={{ ...SERIF, fontWeight:700, color:C.paper, transition:'color 0.15s ease' }}>{d.hl}:</span>{' '}
                         <span style={{ color:C.inkLight }}>the {d.label} for {d.sub.charAt(0).toLowerCase() + d.sub.slice(1)}.</span>
                       </p>
@@ -503,33 +503,27 @@ export default function Home() {
               </div>
             </motion.section>
 
-            {/* QUICK ACTIONS — grouped eyebrow titles over tile grids */}
+            {/* QUICK ACTIONS — its own section: one horizontal scroll strip,
+                not stacked groups mixed in with everything else. */}
             <motion.section className="home-section" id="actions"
               style={{ scrollMarginTop:70 }} {...reveal}>
               <SectionHeader icon={LayoutGrid} eyebrow="Quick actions" />
-              <div>
-                {QUICK_GROUPS.map(g => (
-                  <div key={g.title} className="qa-group">
-                    <p className="qa-group-title">{g.title}</p>
-                    <div className="qa-grid">
-                      {g.items.map((a) => {
-                        const Icon = a.icon;
-                        const isAgent = a.href === '/ai';
-                        const content = (
-                          <>
-                            <Icon size={18} className="qa-tile-icon" strokeWidth={1.6}/>
-                            <span className="qa-tile-label">{a.name}</span>
-                          </>
-                        );
-                        return isAgent ? (
-                          <button key={a.name} onClick={openAIChat} className="qa-tile">{content}</button>
-                        ) : (
-                          <Link key={a.name} href={a.href} className="qa-tile">{content}</Link>
-                        );
-                      })}
-                    </div>
-                  </div>
-                ))}
+              <div className="qa-scroll">
+                {QUICK_GROUPS.flatMap(g => g.items).map((a) => {
+                  const Icon = a.icon;
+                  const isAgent = a.href === '/ai';
+                  const content = (
+                    <>
+                      <Icon size={18} className="qa-tile-icon" strokeWidth={1.6}/>
+                      <span className="qa-tile-label">{a.name}</span>
+                    </>
+                  );
+                  return isAgent ? (
+                    <button key={a.name} onClick={openAIChat} className="qa-tile">{content}</button>
+                  ) : (
+                    <Link key={a.name} href={a.href} className="qa-tile">{content}</Link>
+                  );
+                })}
               </div>
             </motion.section>
           </div>
