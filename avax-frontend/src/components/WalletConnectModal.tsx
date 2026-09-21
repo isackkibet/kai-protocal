@@ -151,9 +151,17 @@ export default function WalletConnectModal({ onClose }: WalletConnectModalProps)
   const [emailLoading, setEmailLoading] = useState(false);
   const [emailError, setEmailError] = useState<string | null>(null);
   const prevPrivyAuth = useRef(privyAuthenticated);
+  const prevConnected = useRef(isConnected);
 
+  // Only auto-close on a fresh connect (transition false → true), same as
+  // the Privy effect below. Without this guard, opening the modal while
+  // already connected — e.g. to hit Disconnect — re-fires this on mount
+  // since isConnected is already true, and the modal vanishes ~900ms later
+  // before the user can click anything.
   useEffect(() => {
-    if (isConnected) {
+    const wasConnected = prevConnected.current;
+    prevConnected.current = isConnected;
+    if (!wasConnected && isConnected) {
       const t = setTimeout(onClose, 900);
       return () => clearTimeout(t);
     }
