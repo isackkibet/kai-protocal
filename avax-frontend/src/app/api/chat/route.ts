@@ -63,6 +63,59 @@ function kaiKnowledgeFallback(message: string): string {
   return `**KAI Agent** - I'm your DeFi guide for the KAI Nuvari ecosystem on Avalanche.\n\nHere's what I can help you with:\n- **Tokens** - NVR, yBOB, YTOKEN, YGOLD, GAMI, CENTS\n- **Vaults** - Yield strategies from 7.5% to 22% APY\n- **Pools** - AMM liquidity and swap rates\n- **Governance** - DAO proposals and voting\n- **Payments** - M-Pesa KES ↔ yBOB on-ramp\n- **Conservation NFTs** - Forest-backed digital assets\n\nTry asking: *"What are the KAI vault APYs?"* or *"How do I add liquidity?"*`;
 }
 
+// ── Wallet context: lets the home page pass the connected wallet's real
+// balances so the agent can answer "what's my portfolio worth" etc. with
+// actual numbers instead of a generic answer. ──────────────────────────────
+interface WalletContext {
+  connected?: boolean;
+  address?: string;
+  network?: string;
+  totalUsd?: number;
+  balances?: { symbol: string; value: number }[];
+}
+
+const VAULT_APY: Record<string, number> = { NVR: 15.2, YBOB: 7.5, YTOKEN: 14.8, YGOLD: 12.4, GAMI: 22.0, CENTS: 6.5 };
+
+function contextSummary(context?: WalletContext): string {
+  if (!context?.connected) return '';
+  const bals = (context.balances ?? []).filter(b => b.value > 0);
+  const balLine = bals.length
+    ? bals.map(b => `${b.symbol}: ${b.value}`).join(', ')
+    : 'no token balances yet';
+  return `\n\nThe user's wallet is currently connected on ${context.network ?? 'Fuji'} (address ${context.address ?? 'unknown'}). Estimated portfolio value: $${(context.totalUsd ?? 0).toFixed(2)}. Balances: ${balLine}. Use these real figures when the question is about "my" balance, portfolio, or yield — don't invent numbers.`;
+}
+
+/** Deterministic answer for "my portfolio / balance / yield" questions, built
+ * straight from the wallet context — bypasses the LLM so figures can't drift
+ * or be hallucinated. Returns null when the question isn't personal or no
+ * wallet is connected, so callers fall through to the normal RAG/LLM path. */
+function personalAnswer(message: string, context?: WalletContext): string | null {
+  if (!context?.connected) return null;
+  const q = message.toLowerCase();
+  const isPersonal = /\b(my|i have|i've got|i own|portfolio|holdings|how much (do )?i|worth)\b/.test(q);
+  if (!isPersonal) return null;
+
+  const bals = (context.balances ?? []).filter(b => b.value > 0);
+  const wantsYield = /yield|apy|best (rate|return)|earn/.test(q);
+
+  if (wantsYield) {
+    if (!bals.length) {
+      return `**Best yield for you right now**\n\nYour wallet is connected but holds no ecosystem tokens yet, so there's nothing to deposit into a vault. Pick up some yBOB or NVR first, then check back — highest APY currently is **kvGAMI at 22%**.`;
+    }
+    const ranked = bals
+      .map(b => ({ ...b, apy: VAULT_APY[b.symbol.toUpperCase()] ?? 0 }))
+      .filter(b => b.apy > 0)
+      .sort((a, b) => b.apy - a.apy);
+    const lines = ranked.map(b => `- **${b.symbol}** (${b.value}): kv${b.symbol.toUpperCase()} vault at **${b.apy}% APY**`).join('\n');
+    return `**Best yield for your holdings**\n\n${lines || 'None of your current holdings have a matching vault yet.'}\n\nHighest match: **${ranked[0]?.symbol ?? 'n/a'}** at ${ranked[0]?.apy ?? 0}% APY. Deposit from /vaults.`;
+  }
+
+  const balLines = bals.length
+    ? bals.map(b => `- **${b.symbol}**: ${b.value}`).join('\n')
+    : '- No token balances yet — your wallet is connected but empty on ' + (context.network ?? 'Fuji') + ' testnet.';
+  return `**Your KAI Portfolio** (${context.network ?? 'Fuji'})\n\nEstimated value: **$${(context.totalUsd ?? 0).toFixed(2)}**\n\n${balLines}\n\nWallet: \`${context.address ?? ''}\`\n\nAsk "best yield for me" to see where these could earn.`;
+}
+
 /** Stream a plain string as SSE events (token by token) */
 function streamText(text: string): Response {
   const { readable, writable } = new TransformStream();
@@ -103,7 +156,7 @@ You help users with:
 Keep answers concise, professional, and friendly. Use bullet points where helpful.`;
 
 /** Stream from Google Gemini API via SSE */
-async function streamGemini(message: string): Promise<Response | null> {
+async function streamGemini(message: string, context?: WalletContext): Promise<Response | null> {
   if (!GEMINI_KEY) return null;
   try {
     const res = await fetch(
@@ -118,7 +171,7 @@ async function streamGemini(message: string): Promise<Response | null> {
           contents: [
             {
               role: 'user',
-              parts: [{ text: `${SYSTEM_PROMPT}\n\nUser Question: ${message}` }],
+              parts: [{ text: `${SYSTEM_PROMPT}${contextSummary(context)}\n\nUser Question: ${message}` }],
             },
           ],
           generationConfig: {
@@ -182,7 +235,7 @@ async function streamGemini(message: string): Promise<Response | null> {
 }
 
 /** Non-streaming direct call to Google Gemini */
-async function callGemini(message: string): Promise<string | null> {
+async function callGemini(message: string, context?: WalletContext): Promise<string | null> {
   if (!GEMINI_KEY) return null;
   try {
     const res = await fetch(
@@ -197,7 +250,7 @@ async function callGemini(message: string): Promise<string | null> {
           contents: [
             {
               role: 'user',
-              parts: [{ text: `${SYSTEM_PROMPT}\n\nUser Question: ${message}` }],
+              parts: [{ text: `${SYSTEM_PROMPT}${contextSummary(context)}\n\nUser Question: ${message}` }],
             },
           ],
           generationConfig: {
@@ -222,10 +275,20 @@ async function callGemini(message: string): Promise<string | null> {
 // When stream=false → calls /chat or direct LLM for a JSON response
 export async function POST(req: Request) {
   try {
-    const { message, rag = true, stream = true } = await req.json();
+    const { message, rag = true, stream = true, context } = await req.json();
 
     if (!message) {
       return NextResponse.json({ error: 'Message is required' }, { status: 400 });
+    }
+
+    // Personal questions ("what's my portfolio worth", "best yield for me")
+    // are answered straight from the wallet context the home page sends —
+    // no LLM round-trip, so the numbers are always the real balances.
+    const direct = personalAnswer(message, context);
+    if (direct) {
+      return stream
+        ? streamText(direct)
+        : NextResponse.json({ text: direct, agent: 'KAI Agent', rag_used: false, sources_count: 0 });
     }
 
     // ── Streaming path ─────────────────────────────────────────────────────────
@@ -235,7 +298,7 @@ export async function POST(req: Request) {
         const ragRes = await fetch(`${RAG_API_URL}/stream`, {
           method:  'POST',
           headers: { 'Content-Type': 'application/json' },
-          body:    JSON.stringify({ message, rag }),
+          body:    JSON.stringify({ message, rag, context }),
         });
 
         if (ragRes.ok && ragRes.body) {
@@ -254,7 +317,7 @@ export async function POST(req: Request) {
 
       // 2. Try Google Gemini API streaming directly
       if (GEMINI_KEY) {
-        const geminiStream = await streamGemini(message);
+        const geminiStream = await streamGemini(message, context);
         if (geminiStream) return geminiStream;
       }
 
@@ -270,7 +333,7 @@ export async function POST(req: Request) {
             body: JSON.stringify({
               model:   GROQ_MODEL,
               messages: [
-                { role: 'system', content: SYSTEM_PROMPT },
+                { role: 'system', content: SYSTEM_PROMPT + contextSummary(context) },
                 { role: 'user', content: message },
               ],
               stream:  true,
@@ -346,7 +409,7 @@ export async function POST(req: Request) {
           const ragRes = await fetch(`${RAG_API_URL}/chat`, {
             method:  'POST',
             headers: { 'Content-Type': 'application/json' },
-            body:    JSON.stringify({ message, rag: true }),
+            body:    JSON.stringify({ message, rag: true, context }),
             signal:  AbortSignal.timeout(5_000),
           });
           if (ragRes.ok) {
@@ -365,7 +428,7 @@ export async function POST(req: Request) {
 
       // Try Google Gemini
       if (GEMINI_KEY) {
-        const geminiText = await callGemini(message);
+        const geminiText = await callGemini(message, context);
         if (geminiText) {
           return NextResponse.json({
             text:          geminiText,
@@ -387,7 +450,7 @@ export async function POST(req: Request) {
           body: JSON.stringify({
             model:   GROQ_MODEL,
             messages: [
-              { role: 'system', content: SYSTEM_PROMPT },
+              { role: 'system', content: SYSTEM_PROMPT + contextSummary(context) },
               { role: 'user', content: message },
             ],
             stream:  false,
