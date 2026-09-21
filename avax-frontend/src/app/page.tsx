@@ -262,7 +262,7 @@ export default function Home() {
           padding: '80px 0 56px',
           boxSizing: 'border-box',
           backgroundImage:
-            `linear-gradient(180deg, rgba(11,28,20,0.15) 0%, rgba(11,28,20,0.65) 55%, #0A2A20 100%),` +
+            `linear-gradient(180deg, rgba(11,28,20,0.15) 0%, rgba(11,28,20,0.75) 60%, ${C.bg} 88%, ${C.bg} 100%),` +
             `linear-gradient(90deg, rgba(11,28,20,0.97) 0%, rgba(11,28,20,0.80) 32%, rgba(11,28,20,0.32) 64%, rgba(11,28,20,0.10) 100%),` +
             'url("/images/home-hero.jpg")',
           backgroundSize: 'cover', backgroundPosition: 'center 30%',
