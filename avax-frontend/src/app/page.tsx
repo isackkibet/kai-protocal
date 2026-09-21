@@ -101,6 +101,10 @@ const QUICK_GROUPS = [
   },
 ];
 
+/* All quick actions flattened into one grid, so they sit together in a
+   single spot — no group boxes stretching tiles wide. */
+const QUICK_ACTIONS = QUICK_GROUPS.flatMap(g => g.items);
+
 function buildCalls(addr: `0x${string}` | undefined) {
   if (!addr) return [];
   return ECOSYSTEM_TOKENS.filter(t => t.address).map(t => ({
@@ -334,28 +338,21 @@ export default function Home() {
           )}
         </motion.section>
 
-        {/* SECTION 3 — QUICK ACTIONS, arranged in groups so all 13 are
-            visible at once and easy to scan. */}
+        {/* SECTION 3 — QUICK ACTIONS, a single compact grid so all 13 are
+            visible at once and arranged in one place. */}
         <motion.section className="home-section" id="actions"
           style={{ scrollMarginTop:70 }} {...reveal}>
           <SectionHeader icon={LayoutGrid} eyebrow="Quick actions" badge="● 13 apps" />
-          <div className="qa-groups">
-            {QUICK_GROUPS.map(g => (
-              <div key={g.title} className="qa-group">
-                <p className="qa-group-title">{g.title}</p>
-                <div className="qa-grid">
-                  {g.items.map(a => {
-                    const Icon = a.icon;
-                    return (
-                      <Link key={a.name} href={a.href} className="qa-tile">
-                        <Icon size={18} className="qa-tile-icon" strokeWidth={1.6}/>
-                        <span className="qa-tile-label">{a.name}</span>
-                      </Link>
-                    );
-                  })}
-                </div>
-              </div>
-            ))}
+          <div className="qa-wrap">
+            {QUICK_ACTIONS.map(a => {
+              const Icon = a.icon;
+              return (
+                <Link key={a.name} href={a.href} className="qa-tile">
+                  <Icon size={18} className="qa-tile-icon" strokeWidth={1.6}/>
+                  <span className="qa-tile-label">{a.name}</span>
+                </Link>
+              );
+            })}
           </div>
         </motion.section>
       </div>

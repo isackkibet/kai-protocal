@@ -843,17 +843,10 @@ body {
 }
 .dash-row:hover .dash-title { color: var(--home-accent); }
 
-/* Quick Actions — its own section, arranged in labelled groups with each
-   action as a compact tile, all 13 visible at once. */
-.qa-groups { display: flex; flex-direction: column; gap: 26px; }
-.qa-group-title {
-  margin: 0 0 12px;
-  font-family: var(--font-plex-mono, 'IBM Plex Mono'), monospace;
-  font-size: 10px; letter-spacing: 1.4px; text-transform: uppercase;
-  color: var(--home-muted); font-weight: 600;
-}
-.qa-grid {
-  display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+/* Quick Actions — a single compact grid in one place; every action visible
+   at once, tiles stay small instead of stretching into big boxes. */
+.qa-wrap {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
   gap: 10px;
 }
 .qa-tile {
