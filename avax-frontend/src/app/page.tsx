@@ -20,7 +20,8 @@ import {
   Droplets, ImageIcon, Lock, Globe, LayoutGrid, Gift,
   Bot, Copy, RefreshCw,
   ShieldCheck, CircleDollarSign,
-  Link2, Mic,
+  Link2, Mic, Wallet, UserRound,
+  type LucideIcon,
 } from 'lucide-react';
 
 /* Same editorial system as /hub: solid pine background, one gold accent,
@@ -48,6 +49,31 @@ const HL = {
 
 /* Small-caps mono eyebrow label, matching /hub's section labels. */
 const label: React.CSSProperties = { ...MONO, fontSize: 10, letterSpacing: 1.4, textTransform: 'uppercase', color: C.goldLight, fontWeight: 600, margin: '0 0 10px' };
+
+/* Every section opens the same way — icon + eyebrow label, optional status
+   badge on the right — so the page reads as clearly split sections instead
+   of one long scroll, the same clarity the hero's Connect Wallet button has. */
+function SectionHeader({ icon: Icon, eyebrow, badge }: { icon: LucideIcon; eyebrow: string; badge?: string }) {
+  return (
+    <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:18 }}>
+      <div style={{ display:'flex', alignItems:'center', gap:9 }}>
+        <Icon size={14} color={C.goldLight} strokeWidth={2} />
+        <p style={{ ...label, margin:0 }}>{eyebrow}</p>
+      </div>
+      {badge && <span style={{ ...MONO, fontSize:11, fontWeight:600, color:C.goldLight }}>{badge}</span>}
+    </div>
+  );
+}
+
+/* Fade + rise as each section enters the viewport — the "interesting
+   scroll" the flat editorial layout otherwise lacks. Fires once, so
+   scrolling back up doesn't replay it. */
+const reveal = {
+  initial: { opacity: 0, y: 18 },
+  whileInView: { opacity: 1, y: 0 },
+  viewport: { once: true, margin: '-80px' },
+  transition: { duration: 0.5, ease: [0.22, 1, 0.36, 1] },
+} as const;
 
 const QUICK = [
   { name: 'Voice Agent', href: '/voice',     icon: Mic },
@@ -275,7 +301,8 @@ export default function Home() {
 
           <div className="home-aside">
             {/* PROFILE */}
-            <section className="home-section" aria-label="Profile">
+            <motion.section className="home-section" aria-label="Profile" {...reveal}>
+              <SectionHeader icon={UserRound} eyebrow="Profile" />
               <div style={{ display:'flex', alignItems:'center', gap:14, marginBottom:20 }}>
                 <div style={{ position:'relative', flexShrink:0 }}>
                   <div style={{
@@ -313,17 +340,15 @@ export default function Home() {
                   </div>
                 ))}
               </div>
-            </section>
+            </motion.section>
 
             {/* KAI AGENT */}
-            <section className="home-section" id="agent"
-              style={{ scrollMarginTop:70 }}>
-              <div style={{ display:'flex', alignItems:'center', gap:10, marginBottom:8 }}>
-                <Bot size={18} color={C.goldLight} />
-                <p style={{ ...SERIF, fontSize:18, fontWeight:600, margin:0, color:C.paper }}>
-                  <span style={HL.green}>KAI</span> Intelligence
-                </p>
-              </div>
+            <motion.section className="home-section" id="agent"
+              style={{ scrollMarginTop:70 }} {...reveal}>
+              <SectionHeader icon={Bot} eyebrow="Intelligence" />
+              <p style={{ ...SERIF, fontSize:18, fontWeight:600, margin:'0 0 8px', color:C.paper }}>
+                <span style={HL.green}>KAI</span> Agent
+              </p>
               <p style={{ fontSize:14, color:C.inkLight, margin:'0 0 6px', lineHeight:1.6 }}>
                 Live and ready to help, powered by Qwen3 RAG. Best for quick questions.{' '}
                 <button onClick={openAIChat} className="text-link" style={{ background:'none', border:'none', cursor:'pointer', padding:0, font:'inherit', fontSize:'inherit' }}>Open the full chat</button>
@@ -371,13 +396,14 @@ export default function Home() {
                   </motion.div>
                 )}
               </AnimatePresence>
-            </section>
+            </motion.section>
           </div>
 
           <div className="home-main">
             {/* PORTFOLIO */}
-            <section className="home-section" aria-label="Portfolio">
-              <p style={label}>Estimated portfolio value</p>
+            <motion.section className="home-section" aria-label="Portfolio" {...reveal}>
+              <SectionHeader icon={Wallet} eyebrow="Portfolio" />
+              <p style={{ fontSize:13, color:C.inkLight, margin:'0 0 4px', lineHeight:1.5 }}>Estimated value across your connected wallet</p>
               {balancesLoading ? (
                 <p style={{ fontSize:14, color:C.inkLight, marginBottom:16 }}>Loading…</p>
               ) : (
@@ -424,15 +450,13 @@ export default function Home() {
                   Connect a wallet to see your balances
                 </button>
               )}
-            </section>
+            </motion.section>
 
-            {/* DASHBOARDS */}
-            <section className="home-section" id="dashboards"
-              style={{ scrollMarginTop:70 }}>
-              <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:6 }}>
-                <p style={{ ...label, margin:0 }}>Dashboards</p>
-                <span style={{ ...MONO, fontSize:11, fontWeight:600, color:C.goldLight }}>● 3 active</span>
-              </div>
+            {/* COMMUNITY — CFA, SME and Saving Group are KAI's community programs */}
+            <motion.section className="home-section" id="community"
+              style={{ scrollMarginTop:70 }} {...reveal}>
+              <SectionHeader icon={Users} eyebrow="Community" badge="● 3 active" />
+              <p style={{ fontSize:13, color:C.inkLight, margin:'-10px 0 16px', lineHeight:1.5 }}>Programs run by and for the KAI community</p>
               <div>
                 {DASHBOARDS.map((d) => {
                   const Icon = d.icon;
@@ -448,12 +472,12 @@ export default function Home() {
                   );
                 })}
               </div>
-            </section>
+            </motion.section>
 
             {/* QUICK ACTIONS — a link list, not a grid of icon tiles */}
-            <section className="home-section" id="actions"
-              style={{ scrollMarginTop:70 }}>
-              <p style={label}>Quick actions</p>
+            <motion.section className="home-section" id="actions"
+              style={{ scrollMarginTop:70 }} {...reveal}>
+              <SectionHeader icon={LayoutGrid} eyebrow="Quick actions" />
               <div className="qa-list">
                 {QUICK.map((a) => {
                   const Icon = a.icon;
@@ -471,7 +495,7 @@ export default function Home() {
                   );
                 })}
               </div>
-            </section>
+            </motion.section>
           </div>
         </div>
       </div>
