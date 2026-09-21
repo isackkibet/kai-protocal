@@ -245,16 +245,23 @@ export default function Home() {
       <div className="home-container" style={{ position:'relative', zIndex:5 }}>
 
         {/* HERO — full-screen photo, dark fade left→right so the copy reads.
-            Colors are the original KAI palette only; the photo is a mask */}
+            Colors are the original KAI palette only; the photo is a mask.
+            The source photo is a tall 9:16 shot, so a short wide strip only
+            ever showed a thin sliver of it under `cover`; a responsive
+            min-height (tall on phones, capped on desktop) lets the forest
+            actually read instead of getting cropped to a line. */}
         <div style={{
           width: '100vw', marginLeft: '50%', transform: 'translateX(-50%)',
           position: 'relative', zIndex: 5,
-          padding: '88px 0 100px',
+          minHeight: 'clamp(480px, 78vh, 720px)',
+          display: 'flex', alignItems: 'center',
+          padding: '100px 0',
+          boxSizing: 'border-box',
           backgroundImage:
             `linear-gradient(180deg, rgba(11,28,20,0.15) 0%, rgba(11,28,20,0.65) 55%, ${C.bg} 100%),` +
             `linear-gradient(90deg, rgba(11,28,20,0.97) 0%, rgba(11,28,20,0.80) 32%, rgba(11,28,20,0.32) 64%, rgba(11,28,20,0.10) 100%),` +
             'url("/images/home-hero.jpg")',
-          backgroundSize: 'cover', backgroundPosition: 'center',
+          backgroundSize: 'cover', backgroundPosition: 'center 30%',
           textAlign: 'left',
           borderBottom: `1px solid ${C.hairline}`,
         }}>
@@ -268,8 +275,10 @@ export default function Home() {
             <h1 style={{ ...SERIF, fontSize: 44, fontWeight: 700, margin: '18px 0 12px', letterSpacing: '-0.5px', lineHeight: 1.1 }}>
               <span style={HL.green}>KAI</span> <span style={{ color: C.paper }}>Nuvari</span>
             </h1>
-            <p style={{ fontSize: 16, color: C.paperDim, margin: 0, maxWidth: 520, lineHeight: 1.65 }}>
-              A DeFi ecosystem on Avalanche C-Chain with six tokens, yield vaults, liquidity pools, and DAO governance.
+            <p style={{ fontSize: 16, color: C.paperDim, margin: 0, maxWidth: 540, lineHeight: 1.65 }}>
+              A DeFi ecosystem on Avalanche C-Chain with six tokens, yield vaults, liquidity pools, and DAO governance,
+              plus community savings groups and a KAI agent that can check balances and find yield for you.
+              Connect a wallet to see your portfolio, join a dashboard, and get started.
             </p>
 
             <motion.button whileTap={{ scale: 0.98 }} onClick={() => {
