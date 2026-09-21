@@ -3,138 +3,106 @@
 import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { useConnect, useAccount, useDisconnect, type Connector } from 'wagmi';
-import { X, LogOut, RefreshCw, Wallet, Shield, Leaf, Mail } from 'lucide-react';
+import { X, LogOut, RefreshCw, Wallet, Mail, Check } from 'lucide-react';
 import { usePrivyAuth } from '@/lib/privy-auth';
 
 interface WalletConnectModalProps {
   onClose: () => void;
 }
 
+/* Same editorial palette as the home page (pine + gold + paper) — the modal
+   used to be a generic green Web3-template look that didn't match anything
+   else in the app, which is its own source of confusion at the exact moment
+   a user needs things to feel familiar. */
+const C = {
+  bg:        '#0E2418',
+  gold:      '#C89B3C',
+  goldLight: '#E4C878',
+  paper:     '#F6F2E7',
+  paperDim:  '#EFE9D9',
+  ink:       '#1B1A14',
+  inkLight:  '#9BA396',
+  hairline:  'rgba(200,155,60,0.16)',
+  red:       '#E88C7D',
+};
+const MONO: React.CSSProperties = { fontFamily: 'var(--font-plex-mono), monospace' };
+
 // ── Wallet display config ─────────────────────────────────────────────────────
 function getWalletMeta(connector: Connector) {
   const key = `${connector.id} ${connector.name}`.toLowerCase();
-  if (key.includes('metamask')) return {
-    icon: <MetaMaskIcon />,
-    label: 'MetaMask',
-    description: 'Browser extension - most popular EVM wallet',
-    color: '#F6851B',
-    border: 'rgba(246,133,27,0.3)',
-    bg: 'rgba(246,133,27,0.06)',
-  };
-  if (key.includes('core')) return {
-    icon: <CoreIcon />,
-    label: 'Core Wallet',
-    description: 'Built by Ava Labs - native Avalanche wallet',
-    color: '#3B99FC',
-    border: 'rgba(59,153,252,0.3)',
-    bg: 'rgba(59,153,252,0.06)',
-  };
-  return {
-    icon: <Wallet size={24} color="#22c55e" />,
-    label: connector.name,
-    description: 'EVM compatible wallet',
-    color: '#22c55e',
-    border: 'rgba(34,197,94,0.3)',
-    bg: 'rgba(34,197,94,0.06)',
-  };
+  if (key.includes('metamask')) return { icon: <MetaMaskIcon />, label: 'MetaMask', description: 'Browser extension, most popular EVM wallet' };
+  if (key.includes('core'))     return { icon: <CoreIcon />,     label: 'Core Wallet', description: 'Built by Ava Labs, native Avalanche wallet' };
+  return { icon: <Wallet size={20} color={C.goldLight} strokeWidth={1.6} />, label: connector.name, description: 'EVM compatible wallet' };
 }
 
-// ── Continue with Email (Privy embedded wallet) — primary sign-in option ────
-function EmailTile({ onClick, loading }: { onClick: () => void; loading: boolean }) {
+/* One flat row shape for every sign-in option — icon, label, description,
+   trailing chevron/spinner. No border, no colour-tinted box behind the
+   icon; only a hairline between rows and a hover wash show it's a choice. */
+function OptionRow({ icon, label, description, onClick, loading, disabled, trailing }: {
+  icon: React.ReactNode; label: string; description: string;
+  onClick?: () => void; loading?: boolean; disabled?: boolean; trailing?: React.ReactNode;
+}) {
   return (
     <button
       onClick={onClick}
-      disabled={loading}
+      disabled={disabled || loading}
+      className="wcm-row"
       style={{
         display: 'flex', alignItems: 'center', gap: 14,
-        padding: '14px 16px', borderRadius: 14, textAlign: 'left',
-        border: '1px solid rgba(34,197,94,0.3)', background: 'rgba(34,197,94,0.06)',
-        cursor: loading ? 'not-allowed' : 'pointer', opacity: loading ? 0.6 : 1,
-        transition: 'all 0.2s', width: '100%',
+        padding: '13px 4px', textAlign: 'left', background: 'none', border: 'none',
+        borderBottom: `1px solid ${C.hairline}`,
+        cursor: disabled || loading ? 'default' : 'pointer',
+        opacity: disabled ? 0.55 : 1, width: '100%', fontFamily: 'inherit',
       }}>
-      <div style={{
-        width: 48, height: 48, borderRadius: 12, background: 'rgba(34,197,94,0.15)',
-        display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
-      }}>
-        <Mail size={22} color="#22c55e" />
+      <div style={{ width: 22, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>{icon}</div>
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <p style={{ fontSize: 14, fontWeight: 700, color: C.paper, margin: '0 0 2px' }}>{label}</p>
+        <p style={{ fontSize: 11.5, color: C.inkLight, margin: 0, lineHeight: 1.4 }}>{description}</p>
       </div>
-      <div style={{ flex: 1 }}>
-        <p style={{ fontSize: 14, fontWeight: 800, color: '#f0fdf4', margin: '0 0 2px' }}>Continue with Email</p>
-        <p style={{ fontSize: 11, color: 'rgba(240,253,244,0.5)', margin: 0 }}>
-          We&apos;ll send a one-time code - no password needed
-        </p>
+      <div style={{ flexShrink: 0 }}>
+        {loading
+          ? <RefreshCw size={15} color={C.goldLight} style={{ animation: 'spin 1s linear infinite' }} />
+          : trailing ?? <span style={{ color: C.inkLight, fontSize: 16 }}>›</span>}
       </div>
-      {loading
-        ? <RefreshCw size={16} color="#22c55e" style={{ animation: 'spin 1s linear infinite' }} />
-        : <span style={{ color: 'rgba(255,255,255,0.3)', fontSize: 18 }}>›</span>
-      }
     </button>
   );
 }
 
-// ── Continue with Google (Privy embedded wallet) — secondary sign-in option ─
-function GoogleTile({ onClick, loading }: { onClick: () => void; loading: boolean }) {
+function StatusBlock({ label, address, sub, onPrimary, primaryLabel, onSignOut }: {
+  label: string; address: string; sub: string;
+  onPrimary?: () => void; primaryLabel?: string; onSignOut: () => void;
+}) {
   return (
-    <button
-      onClick={onClick}
-      disabled={loading}
-      style={{
-        display: 'flex', alignItems: 'center', gap: 14,
-        padding: '14px 16px', borderRadius: 14, textAlign: 'left',
-        border: '1px solid rgba(255,255,255,0.14)', background: 'rgba(255,255,255,0.04)',
-        cursor: loading ? 'not-allowed' : 'pointer', opacity: loading ? 0.6 : 1,
-        transition: 'all 0.2s', width: '100%',
-      }}>
+    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '6px 0 2px', gap: 14 }}>
       <div style={{
-        width: 48, height: 48, borderRadius: 12, background: 'rgba(255,255,255,0.9)',
-        display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
-      }}>
-        <GoogleIcon />
-      </div>
-      <div style={{ flex: 1 }}>
-        <p style={{ fontSize: 14, fontWeight: 800, color: '#f0fdf4', margin: '0 0 2px' }}>Continue with Google</p>
-        <p style={{ fontSize: 11, color: 'rgba(240,253,244,0.5)', margin: 0 }}>
-          Instant embedded wallet - no seed phrase, no extension
-        </p>
-      </div>
-      {loading
-        ? <RefreshCw size={16} color="#22c55e" style={{ animation: 'spin 1s linear infinite' }} />
-        : <span style={{ color: 'rgba(255,255,255,0.3)', fontSize: 18 }}>›</span>
-      }
-    </button>
-  );
-}
-
-// ── KAI Wallet — informational tile (not yet live, coming soon) ──────────────
-function KaiWalletTile() {
-  return (
-    <div style={{
-      display: 'flex', alignItems: 'center', gap: 14, padding: '14px 16px',
-      borderRadius: 14, border: '1px solid rgba(34,197,94,0.25)',
-      background: 'rgba(34,197,94,0.04)',
-      cursor: 'default', opacity: 0.75,
-    }}>
-      <div style={{
-        width: 48, height: 48, borderRadius: 12,
-        background: 'linear-gradient(135deg,#15803d,#166534)',
+        width: 52, height: 52, borderRadius: '50%',
+        background: 'rgba(200,155,60,0.12)', border: `1.5px solid ${C.gold}`,
         display: 'flex', alignItems: 'center', justifyContent: 'center',
-        boxShadow: '0 0 16px rgba(34,197,94,0.3)',
-        flexShrink: 0,
       }}>
-        <KaiIcon />
+        <Check size={22} color={C.goldLight} strokeWidth={2.4} />
       </div>
-      <div style={{ flex: 1 }}>
-        <p style={{ fontWeight: 800, color: '#f0fdf4', fontSize: 14, margin: '0 0 2px' }}>KAI Wallet</p>
-        <p style={{ fontSize: 11, color: 'rgba(240,253,244,0.5)', margin: 0 }}>
-          Native KAI identity · DID · x402 payments
+      <div style={{ textAlign: 'center' }}>
+        <p style={{ fontSize: 14, fontWeight: 700, color: C.paper, margin: '0 0 6px' }}>{label}</p>
+        <p style={{ ...MONO, fontSize: 12, color: C.goldLight, margin: '0 0 6px' }}>
+          {address.slice(0, 6)}…{address.slice(-4)}
         </p>
+        <p style={{ fontSize: 11, color: C.inkLight, margin: 0 }}>{sub}</p>
       </div>
-      {/* Vertically centered like the chevron on the other two rows, not pinned to the top */}
-      <div style={{
-        background: 'rgba(34,197,94,0.15)', border: '1px solid rgba(34,197,94,0.3)',
-        borderRadius: 6, padding: '2px 8px', fontSize: 9, fontWeight: 700, color: '#22c55e',
-        letterSpacing: 1, flexShrink: 0,
-      }}>COMING SOON</div>
+      {onPrimary && (
+        <button onClick={onPrimary} style={{
+          display: 'flex', alignItems: 'center', gap: 8, marginTop: 2,
+          padding: '11px 24px', borderRadius: 999, border: 'none', cursor: 'pointer',
+          background: C.gold, color: C.ink, fontSize: 13, fontWeight: 700, fontFamily: 'inherit',
+        }}>
+          <Wallet size={14} /> {primaryLabel}
+        </button>
+      )}
+      <button onClick={onSignOut} style={{
+        display: 'flex', alignItems: 'center', gap: 6, background: 'none',
+        border: 'none', cursor: 'pointer', color: C.inkLight, fontSize: 12, fontWeight: 600, fontFamily: 'inherit',
+      }}>
+        <LogOut size={13} /> {onPrimary ? 'Sign out' : 'Disconnect'}
+      </button>
     </div>
   );
 }
@@ -226,179 +194,98 @@ export default function WalletConnectModal({ onClose }: WalletConnectModalProps)
       style={{
         position: 'fixed', inset: 0, zIndex: 50,
         display: 'flex', alignItems: 'center', justifyContent: 'center',
-        padding: 16, background: 'rgba(0,0,0,0.75)', backdropFilter: 'blur(10px)',
+        padding: 16, background: 'rgba(7,15,11,0.75)', backdropFilter: 'blur(10px)',
       }}
       onClick={onClose}
     >
+      <style>{`.wcm-row:hover:not(:disabled) { background: rgba(200,155,60,0.06); }
+        .wcm-row:hover:not(:disabled) p:first-child { color: ${C.goldLight}; }`}</style>
       <div
         onClick={e => e.stopPropagation()}
         style={{
-          width: '100%', maxWidth: 400, borderRadius: 24, padding: 24,
-          background: '#18291f', border: '1px solid rgba(34,197,94,0.2)',
-          boxShadow: '0 24px 80px rgba(0,0,0,0.6)', position: 'relative',
+          width: '100%', maxWidth: 400, borderRadius: 20, padding: '24px 24px 20px',
+          background: C.bg, border: `1px solid ${C.hairline}`,
+          boxShadow: '0 24px 80px rgba(0,0,0,0.55)', position: 'relative',
+          fontFamily: "'Poppins', 'IBM Plex Sans', var(--font-sans)",
         }}
       >
         {/* Close */}
         <button onClick={onClose} style={{
           position: 'absolute', top: 16, right: 16,
-          background: 'rgba(255,255,255,0.06)', border: 'none',
-          borderRadius: '50%', width: 32, height: 32, cursor: 'pointer',
+          background: 'none', border: 'none',
+          borderRadius: '50%', width: 30, height: 30, cursor: 'pointer',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
-          color: 'rgba(255,255,255,0.5)',
+          color: C.inkLight,
         }}>
           <X size={16} />
         </button>
 
         {/* Header */}
-        <div style={{ textAlign: 'center', marginBottom: 20 }}>
-          <div style={{
-            width: 52, height: 52, borderRadius: 16, margin: '0 auto 12px',
-            background: 'linear-gradient(135deg,#15803d,#166534)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            boxShadow: '0 0 24px rgba(34,197,94,0.3)',
-          }}>
-            <Leaf size={26} color="#86efac" />
-          </div>
-          <h2 style={{ fontSize: 18, fontWeight: 900, color: '#f0fdf4', margin: '0 0 4px' }}>
-            Connect Wallet
-          </h2>
-          <p style={{ fontSize: 12, color: 'rgba(240,253,244,0.5)', margin: 0 }}>
-            Access KAI Nuvari · Avalanche C-Chain
+        <div style={{ marginBottom: 22 }}>
+          <p style={{ ...MONO, fontSize: 10, letterSpacing: 1.4, textTransform: 'uppercase', color: C.goldLight, fontWeight: 600, margin: '0 0 8px' }}>
+            KAI Nuvari · Avalanche C-Chain
           </p>
+          <h2 style={{ fontSize: 20, fontWeight: 700, color: C.paper, margin: 0 }}>
+            Connect a wallet
+          </h2>
         </div>
 
         {isConnected ? (
-          /* ── Connected state ── */
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '8px 0 4px', gap: 12 }}>
-            <div style={{
-              width: 60, height: 60, borderRadius: '50%',
-              background: 'rgba(34,197,94,0.15)', border: '2px solid #22c55e',
-              display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 28,
-            }}>✓</div>
-            <div style={{ textAlign: 'center' }}>
-              <p style={{ fontSize: 14, fontWeight: 700, color: '#f0fdf4', margin: '0 0 4px' }}>Connected</p>
-              <p style={{
-                fontSize: 12, fontFamily: 'monospace', color: '#22c55e',
-                background: 'rgba(34,197,94,0.1)', padding: '4px 12px', borderRadius: 8,
-                border: '1px solid rgba(34,197,94,0.2)', margin: '0 0 4px',
-              }}>
-                {address?.slice(0, 6)}…{address?.slice(-4)}
-              </p>
-              <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)', margin: 0 }}>via {activeConnector?.name}</p>
-            </div>
-            <button onClick={() => disconnect()} style={{
-              display: 'flex', alignItems: 'center', gap: 6, background: 'transparent',
-              border: 'none', cursor: 'pointer', color: '#f87171', fontSize: 12, fontWeight: 600,
-            }}>
-              <LogOut size={14} /> Disconnect
-            </button>
-          </div>
+          <StatusBlock
+            label="Connected"
+            address={address ?? ''}
+            sub={`via ${activeConnector?.name ?? 'wallet'}`}
+            onSignOut={() => disconnect()}
+          />
         ) : privyAuthenticated && privyAddress ? (
-          /* ── Privy connected state ── */
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '8px 0 4px', gap: 12 }}>
-            <div style={{
-              width: 60, height: 60, borderRadius: '50%',
-              background: 'rgba(52,211,153,0.12)', border: '2px solid #34d399',
-              display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 28,
-            }}>✓</div>
-            <div style={{ textAlign: 'center' }}>
-              <p style={{ fontSize: 14, fontWeight: 700, color: '#f0fdf4', margin: '0 0 4px' }}>Signed in via Kainovari</p>
-              <p style={{
-                fontSize: 12, fontFamily: 'monospace', color: '#34d399',
-                background: 'rgba(52,211,153,0.1)', padding: '4px 12px', borderRadius: 8,
-                border: '1px solid rgba(52,211,153,0.2)', margin: '0 0 4px',
-              }}>
-                {privyAddress.slice(0, 6)}…{privyAddress.slice(-4)}
-              </p>
-              <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)', margin: 0 }}>Embedded Avalanche wallet</p>
-            </div>
-            <button onClick={() => { router.push('/wallet'); onClose(); }} style={{
-              display: 'flex', alignItems: 'center', gap: 6, marginTop: 4,
-              padding: '10px 22px', borderRadius: 12, border: 'none', cursor: 'pointer',
-              background: 'linear-gradient(135deg,#10b981,#047857)', color: '#fff',
-              fontSize: 13, fontWeight: 800,
-            }}>
-              <Wallet size={15} /> View Wallet
-            </button>
-            <button onClick={privyLogout} style={{
-              display: 'flex', alignItems: 'center', gap: 6, background: 'transparent',
-              border: 'none', cursor: 'pointer', color: '#f87171', fontSize: 12, fontWeight: 600,
-            }}>
-              <LogOut size={14} /> Sign out
-            </button>
-          </div>
+          <StatusBlock
+            label="Signed in via Kainovari"
+            address={privyAddress}
+            sub="Embedded Avalanche wallet"
+            onPrimary={() => { router.push('/wallet'); onClose(); }}
+            primaryLabel="View wallet"
+            onSignOut={privyLogout}
+          />
         ) : (
-          /* ── Connector list ── */
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-            <EmailTile onClick={handleEmailSignIn} loading={emailLoading} />
+          /* ── Sign-in options — one flat list, easiest first ── */
+          <div>
+            <OptionRow icon={<Mail size={19} color={C.goldLight} strokeWidth={1.7} />}
+              label="Continue with email" description="We'll send a one-time code, no password"
+              onClick={handleEmailSignIn} loading={emailLoading} />
+            {emailError && <p style={{ fontSize: 11, color: C.red, margin: '8px 0 0' }}>{emailError}</p>}
 
-            {emailError && (
-              <p style={{ fontSize: 11, color: '#f87171', textAlign: 'center', margin: 0 }}>{emailError}</p>
-            )}
-
-            <GoogleTile onClick={handleGoogleSignIn} loading={googleLoading} />
-
-            {googleError && (
-              <p style={{ fontSize: 11, color: '#f87171', textAlign: 'center', margin: 0 }}>{googleError}</p>
-            )}
-
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10, margin: '2px 0' }}>
-              <div style={{ flex: 1, height: 1, background: 'rgba(255,255,255,0.10)' }} />
-              <span style={{ fontSize: 10, fontWeight: 700, color: 'rgba(255,255,255,0.35)', letterSpacing: 1 }}>OR</span>
-              <div style={{ flex: 1, height: 1, background: 'rgba(255,255,255,0.10)' }} />
-            </div>
+            <OptionRow icon={<GoogleIcon />}
+              label="Continue with Google" description="Instant embedded wallet, no seed phrase"
+              onClick={handleGoogleSignIn} loading={googleLoading} />
+            {googleError && <p style={{ fontSize: 11, color: C.red, margin: '8px 0 0' }}>{googleError}</p>}
 
             {connectors.map(connector => {
               const meta = getWalletMeta(connector);
               const connecting = status === 'pending' && connectingId === connector.id;
               return (
-                <button key={connector.id}
+                <OptionRow key={connector.id} icon={meta.icon} label={meta.label} description={meta.description}
                   onClick={() => handleConnect(connector)}
-                  disabled={status === 'pending'}
-                  style={{
-                    display: 'flex', alignItems: 'center', gap: 14,
-                    padding: '14px 16px', borderRadius: 14, textAlign: 'left',
-                    border: `1px solid ${meta.border}`, background: meta.bg,
-                    cursor: status === 'pending' ? 'not-allowed' : 'pointer',
-                    opacity: status === 'pending' && !connecting ? 0.5 : 1,
-                    transition: 'all 0.2s', width: '100%',
-                  }}>
-                  <div style={{
-                    width: 48, height: 48, borderRadius: 12, background: 'rgba(0,0,0,0.25)',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
-                  }}>
-                    {meta.icon}
-                  </div>
-                  <div style={{ flex: 1 }}>
-                    <p style={{ fontSize: 14, fontWeight: 800, color: '#f0fdf4', margin: '0 0 2px' }}>{meta.label}</p>
-                    <p style={{ fontSize: 11, color: 'rgba(240,253,244,0.5)', margin: 0 }}>{meta.description}</p>
-                  </div>
-                  {connecting
-                    ? <RefreshCw size={16} color={meta.color} style={{ animation: 'spin 1s linear infinite' }} />
-                    : <span style={{ color: 'rgba(255,255,255,0.3)', fontSize: 18 }}>›</span>
-                  }
-                </button>
+                  loading={connecting}
+                  disabled={status === 'pending' && !connecting} />
               );
             })}
 
-            {/* KAI Wallet — coming soon */}
-            <KaiWalletTile />
+            <OptionRow icon={<KaiIcon />} label="KAI Wallet" description="Native KAI identity, DID, x402 payments"
+              disabled
+              trailing={<span style={{ ...MONO, fontSize: 9, fontWeight: 700, color: C.goldLight, letterSpacing: 0.8 }}>SOON</span>} />
 
             {error && (
-              <div style={{
-                padding: '10px 14px', borderRadius: 10, fontSize: 12, color: '#f87171',
-                background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)',
-              }}>
-                <p style={{ fontWeight: 700, margin: '0 0 4px' }}>Connection Error</p>
-                <p style={{ margin: '0 0 6px' }}>{error.message}</p>
-                <button onClick={reset} style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: '#22c55e', fontSize: 11, fontWeight: 700 }}>
-                  Reset & Retry →
+              <div style={{ marginTop: 14, paddingLeft: 14, borderLeft: `2px solid ${C.red}` }}>
+                <p style={{ fontWeight: 700, fontSize: 12, color: C.red, margin: '0 0 4px' }}>Connection error</p>
+                <p style={{ fontSize: 12, color: C.inkLight, margin: '0 0 6px' }}>{error.message}</p>
+                <button onClick={reset} style={{ background: 'none', border: 'none', cursor: 'pointer', color: C.goldLight, fontSize: 11, fontWeight: 700, fontFamily: 'inherit', padding: 0 }}>
+                  Reset and retry →
                 </button>
               </div>
             )}
 
-            <p style={{ fontSize: 10, textAlign: 'center', color: 'rgba(255,255,255,0.3)', lineHeight: 1.5, marginTop: 4 }}>
-              Set wallet to <strong style={{ color: 'rgba(255,255,255,0.5)' }}>Avalanche C-Chain</strong> or <strong style={{ color: 'rgba(255,255,255,0.5)' }}>Fuji Testnet</strong>
+            <p style={{ fontSize: 10.5, textAlign: 'center', color: C.inkLight, lineHeight: 1.5, marginTop: 18 }}>
+              Set your wallet network to <strong style={{ color: C.paperDim }}>Avalanche C-Chain</strong> or <strong style={{ color: C.paperDim }}>Fuji Testnet</strong>
             </p>
           </div>
         )}
@@ -411,7 +298,7 @@ export default function WalletConnectModal({ onClose }: WalletConnectModalProps)
 
 function GoogleIcon() {
   return (
-    <svg width="24" height="24" viewBox="0 0 48 48">
+    <svg width="19" height="19" viewBox="0 0 48 48">
       <path fill="#FFC107" d="M43.6 20.1H42V20H24v8h11.3C33.7 32.7 29.2 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.9 1.2 8 3l5.7-5.7C34.7 6.1 29.6 4 24 4 13 4 4 13 4 24s9 20 20 20 20-9 20-20c0-1.3-.1-2.6-.4-3.9z"/>
       <path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.7 15.1 19 12 24 12c3.1 0 5.9 1.2 8 3l5.7-5.7C34.7 6.1 29.6 4 24 4 16.3 4 9.7 8.3 6.3 14.7z"/>
       <path fill="#4CAF50" d="M24 44c5.2 0 10-2.2 13.4-5.7l-6.2-5.2C29.2 34.5 26.7 36 24 36c-5.2 0-9.7-3.3-11.3-8l-6.5 5C9.5 39.6 16.2 44 24 44z"/>
@@ -422,7 +309,7 @@ function GoogleIcon() {
 
 function MetaMaskIcon() {
   return (
-    <svg width="28" height="28" viewBox="0 0 318 318" fill="none">
+    <svg width="20" height="20" viewBox="0 0 318 318" fill="none">
       <path d="M274.1 35.5l-99.7 73.9 18.4-43.6 81.3-30.3z" fill="#E2761B" stroke="#E2761B" strokeLinecap="round" strokeLinejoin="round"/>
       <path d="M44.4 35.5l98.9 74.5-17.6-44.2L44.4 35.5z" fill="#E4761B" stroke="#E4761B" strokeLinecap="round" strokeLinejoin="round"/>
       <path d="M238.3 206.8l-26.5 40.6 56.7 15.6 16.3-55.3-46.5-.9z" fill="#E4761B" stroke="#E4761B"/>
@@ -437,7 +324,7 @@ function MetaMaskIcon() {
 
 function CoreIcon() {
   return (
-    <svg width="28" height="28" viewBox="0 0 40 40" fill="none">
+    <svg width="20" height="20" viewBox="0 0 40 40" fill="none">
       <circle cx="20" cy="20" r="18" fill="#1A1A2E" stroke="#3B99FC" strokeWidth="1.5"/>
       <path d="M20 8 L30 14 L30 26 L20 32 L10 26 L10 14 Z" stroke="#3B99FC" strokeWidth="1.8" fill="none"/>
       <path d="M20 13 L26 16.5 L26 23.5 L20 27 L14 23.5 L14 16.5 Z" fill="#3B99FC" opacity="0.6"/>
@@ -448,10 +335,10 @@ function CoreIcon() {
 
 function KaiIcon() {
   return (
-    <svg width="28" height="28" viewBox="0 0 40 40" fill="none">
-      <path d="M20 4 L36 12 L36 28 L20 36 L4 28 L4 12 Z" fill="#15803d" stroke="#22c55e" strokeWidth="1.5"/>
-      <path d="M14 14 L20 20 L14 26" stroke="#86efac" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
-      <path d="M22 14 L26 20 L22 26" stroke="#22c55e" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
+    <svg width="20" height="20" viewBox="0 0 40 40" fill="none">
+      <path d="M20 4 L36 12 L36 28 L20 36 L4 28 L4 12 Z" fill="none" stroke="#C89B3C" strokeWidth="1.5"/>
+      <path d="M14 14 L20 20 L14 26" stroke="#E4C878" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"/>
+      <path d="M22 14 L26 20 L22 26" stroke="#C89B3C" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"/>
     </svg>
   );
 }
