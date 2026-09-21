@@ -20,7 +20,7 @@ import {
   Droplets, ImageIcon, Lock, Globe, LayoutGrid, Gift,
   Bot, Copy, RefreshCw,
   ShieldCheck, CircleDollarSign,
-  Mountain, Link2, Mic,
+  Link2, Mic,
 } from 'lucide-react';
 
 /* Same editorial system as /hub: solid pine background, one gold accent,
@@ -38,7 +38,9 @@ const C = {
   hairline:  'rgba(200,155,60,0.14)',
 };
 const MONO  = { fontFamily: "'IBM Plex Mono', monospace" } as const;
-const SERIF = { fontFamily: "'Fraunces', serif" } as const;
+/* Poppins for headings/values (bold) + body (regular) — editorial style only,
+   palette stays pine/gold/paper. */
+const SERIF = { fontFamily: "'Poppins', sans-serif" } as const;
 
 const HL = {
   green: { color: C.goldLight, fontWeight: 700 } as React.CSSProperties,
@@ -192,10 +194,10 @@ export default function Home() {
   };
 
   return (
-    <main style={{ minHeight:'100dvh', background:C.bg, color:C.paper, fontFamily:"'IBM Plex Sans', var(--font-sans)", position:'relative', paddingBottom:80 }}>
-      {/* kaiweb fonts — same family as /hub */}
+    <main style={{ minHeight:'100dvh', background:C.bg, color:C.paper, fontFamily:"'Poppins', 'IBM Plex Sans', var(--font-sans)", position:'relative', paddingBottom:80 }}>
+      {/* kaiweb fonts — Poppins display + IBM Plex Mono small-caps labels */}
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300..700;1,9..144,300..700&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap');
       `}</style>
 
       {/* TICKER */}
@@ -216,37 +218,55 @@ export default function Home() {
 
       <div className="home-container" style={{ position:'relative', zIndex:5 }}>
 
-        {/* HERO */}
-        <div style={{ paddingTop:48, textAlign:'center', position:'relative', zIndex:5 }}>
-          <Mountain size={32} color={C.goldLight} strokeWidth={1.5} style={{ marginBottom:14 }}/>
-          <h1 style={{ ...SERIF, fontSize:38, fontWeight:600, margin:'0 0 10px', letterSpacing:'-0.5px' }}>
-            <span style={HL.green}>KAI</span> <span style={{ color:C.paper }}>Nuvari</span>
-          </h1>
-          <p style={{ fontSize:16, color:C.inkLight, margin:0, maxWidth:520, marginInline:'auto', lineHeight:1.65 }}>
-            A DeFi ecosystem on Avalanche C-Chain with six tokens, yield vaults, liquidity pools, and DAO governance.
-          </p>
+        {/* HERO — full-screen photo, dark fade left→right so the copy reads.
+            Colors are the original KAI palette only; the photo is a mask */}
+        <div style={{
+          width: '100vw', marginLeft: '50%', transform: 'translateX(-50%)',
+          position: 'relative', zIndex: 5,
+          padding: '88px 0 100px',
+          backgroundImage:
+            `linear-gradient(180deg, rgba(11,28,20,0.15) 0%, rgba(11,28,20,0.65) 55%, ${C.bg} 100%),` +
+            `linear-gradient(90deg, rgba(11,28,20,0.97) 0%, rgba(11,28,20,0.80) 32%, rgba(11,28,20,0.32) 64%, rgba(11,28,20,0.10) 100%),` +
+            'url("https://i.pinimg.com/1200x/ab/ca/53/abca5353a9820268cb6fbb3cb005cb10.jpg")',
+          backgroundSize: 'cover', backgroundPosition: 'center',
+          textAlign: 'left',
+          borderBottom: `1px solid ${C.hairline}`,
+        }}>
+          <div style={{ maxWidth: 1120, marginInline: 'auto', paddingInline: 24, boxSizing: 'border-box', position: 'relative', zIndex: 2 }}>
+            {/* Pill badge — original gold dot, not the screenshot's orange */}
+            <div style={{ display: 'inline-flex', alignItems: 'center', gap: 9, padding: '7px 16px', borderRadius: 999, background: 'rgba(246,242,231,0.06)', border: `1px solid rgba(228,200,120,0.28)` }}>
+              <span style={{ width: 8, height: 8, borderRadius: '50%', background: C.goldLight, boxShadow: '0 0 10px rgba(228,200,120,0.9)' }} />
+              <span style={{ ...MONO, fontSize: 10, letterSpacing: 1.4, textTransform: 'uppercase', color: C.goldLight, fontWeight: 600 }}>Avalanche C-Chain · Forest Finance</span>
+            </div>
 
-          <motion.button whileTap={{ scale:0.98 }} onClick={() => {
-            if (privyAuthenticated) { router.push('/wallet'); return; }
-            setShowModal(true);
-          }}
-            style={{
-              marginTop:26, display:'inline-flex', alignItems:'center', justifyContent:'center', gap:10,
-              padding:'13px 28px', borderRadius:10, cursor:'pointer', border:'none',
-              background:C.gold,
-              fontSize:14, fontWeight:700, color:C.ink, fontFamily:'inherit',
-            }}>
-            <Link2 size={16}/>
-            {connected
-              ? `Connected: ${address?.slice(0,6)}…${address?.slice(-4)}`
-              : privyAuthenticated && privyAddress
-                ? `Your Wallet: ${privyAddress.slice(0,6)}…${privyAddress.slice(-4)}`
-                : 'Connect Wallet'}
-            {(connected || privyAuthenticated) && <span style={{ width:8, height:8, borderRadius:'50%', background:C.ink }} />}
-          </motion.button>
+            <h1 style={{ ...SERIF, fontSize: 44, fontWeight: 700, margin: '18px 0 12px', letterSpacing: '-0.5px', lineHeight: 1.1 }}>
+              <span style={HL.green}>KAI</span> <span style={{ color: C.paper }}>Nuvari</span>
+            </h1>
+            <p style={{ fontSize: 16, color: C.paperDim, margin: 0, maxWidth: 520, lineHeight: 1.65 }}>
+              A DeFi ecosystem on Avalanche C-Chain with six tokens, yield vaults, liquidity pools, and DAO governance.
+            </p>
 
-          <p style={{ marginTop:18, ...MONO, fontSize:11, letterSpacing:1, textTransform:'uppercase', color:C.inkLight }}>Avalanche C-Chain</p>
-          <p style={{ marginTop:4, fontSize:12, color:C.inkLight, opacity:0.8 }}>MetaMask and Core Wallet supported</p>
+            <motion.button whileTap={{ scale: 0.98 }} onClick={() => {
+              if (privyAuthenticated) { router.push('/wallet'); return; }
+              setShowModal(true);
+            }}
+              style={{
+                marginTop: 26, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 10,
+                padding: '13px 30px', borderRadius: 999, cursor: 'pointer', border: 'none',
+                background: C.gold,
+                fontSize: 14, fontWeight: 700, color: C.ink, fontFamily: 'inherit',
+              }}>
+              <Link2 size={16}/>
+              {connected
+                ? `Connected: ${address?.slice(0,6)}…${address?.slice(-4)}`
+                : privyAuthenticated && privyAddress
+                  ? `Your Wallet: ${privyAddress.slice(0,6)}…${privyAddress.slice(-4)}`
+                  : 'Connect Wallet'}
+              {(connected || privyAuthenticated) && <span style={{ width: 8, height: 8, borderRadius: '50%', background: C.ink }} />}
+            </motion.button>
+
+            <p style={{ marginTop: 18, ...MONO, fontSize: 11, letterSpacing: 1, textTransform: 'uppercase', color: C.inkLight }}>MetaMask and Core Wallet supported</p>
+          </div>
         </div>
 
         {/* TWO-COLUMN LAYOUT — wallet/profile + agent on the right (sticky on
@@ -333,7 +353,7 @@ export default function Home() {
                   onBlur={e  => (e.target.style.borderColor=C.hairline)}
                 />
                 <button onClick={askAgent} disabled={agentBusy||!agentQ.trim()} style={{
-                  padding:'0 18px', borderRadius:8, flexShrink:0, border:'none', height:38,
+                  padding:'0 20px', borderRadius:999, flexShrink:0, border:'none', height:38,
                   background:agentQ.trim()&&!agentBusy?C.gold:'transparent',
                   color:agentQ.trim()&&!agentBusy?C.ink:C.inkLight,
                   cursor:agentQ.trim()?'pointer':'not-allowed',
