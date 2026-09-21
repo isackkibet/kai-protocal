@@ -837,20 +837,20 @@ body {
 .dash-row:last-child { border-bottom: none; }
 .dash-row:hover .dash-title { color: var(--home-accent); }
 
-/* Quick Actions — a two-column link list on desktop, one column on mobile;
-   each entry is a plain row (icon, label, no fill of its own). */
-.qa-list { display: grid; grid-template-columns: 1fr; }
-@media (min-width: 640px) {
-  .qa-list { grid-template-columns: 1fr 1fr; column-gap: 40px; }
-}
+/* Quick Actions — a self-arranging link list: columns fill in from however
+   many fit at that width (minmax below), so 13 entries or 30 lay out the
+   same way with no breakpoint to hand-tune when one gets added. */
+.qa-list { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); column-gap: 32px; }
 .qa-row {
-  display: flex; align-items: center; gap: 12px; padding: 14px 0;
+  display: flex; align-items: center; gap: 12px; padding: 14px 6px 14px 2px;
   text-decoration: none; border-bottom: 1px solid var(--home-line);
   background: transparent; cursor: pointer; width: 100%; text-align: left;
   border-left: none; border-right: none; border-top: none;
+  border-radius: 6px; transition: background-color 0.15s ease;
 }
-.qa-list > .qa-row:last-child,
-.qa-list > .qa-row:nth-last-child(2):not(:nth-child(odd)) { border-bottom: none; }
+.qa-row:hover { background: rgba(200,155,60,0.05); }
+.qa-label { font-size: 14px; font-weight: 700; color: var(--home-text); transition: color 0.15s ease; }
+.qa-row:hover .qa-label { color: var(--home-accent); }
 
 /* ══════════════════════════════════════════════════════════════
    MINE / AIRDROP PAGE — flat, one accent (Avalanche red)

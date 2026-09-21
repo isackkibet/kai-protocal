@@ -441,9 +441,7 @@ export default function Home() {
                   const content = (
                     <>
                       <Icon size={18} className="action-icon" strokeWidth={1.6}/>
-                      <span style={{ fontSize:14, fontWeight:600, color:C.paperDim }}>
-                        {a.name}
-                      </span>
+                      <span className="qa-label">{a.name}</span>
                     </>
                   );
                   return isAgent ? (
