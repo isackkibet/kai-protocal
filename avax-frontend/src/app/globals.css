@@ -838,24 +838,23 @@ body {
 }
 .dash-row:hover .dash-title { color: var(--home-accent); }
 
-/* Quick Actions — grouped grids. Each group is a short mono eyebrow over
-   a bordered tile grid, so 13 actions read as four small sections instead
-   of one long link list. Tiles keep the flat hairline language. */
-.qa-group-title {
-  font-family: var(--font-plex-mono), monospace; font-size: 10px;
-  letter-spacing: 1.4px; text-transform: uppercase;
-  color: var(--home-muted); font-weight: 600; margin: 0 0 10px;
+/* Quick Actions — one horizontal, snap-scrolling row instead of stacked
+   grouped grids, so all 13 actions live in a single section and a single
+   line, the way a scroll-strip reads on a considered app rather than a
+   long stacked list. Scrollbar hidden; snap makes it feel intentional. */
+.qa-scroll {
+  display: flex; gap: 10px; overflow-x: auto;
+  scroll-snap-type: x proximity; scroll-padding-left: 2px;
+  padding-bottom: 6px; -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
 }
-.qa-group + .qa-group { margin-top: 26px; }
-.qa-grid {
-  display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
-  gap: 10px;
-}
+.qa-scroll::-webkit-scrollbar { display: none; }
 .qa-tile {
   display: flex; flex-direction: column; align-items: flex-start; gap: 10px;
   padding: 14px; border: 1px solid var(--home-line); border-radius: 12px;
   text-decoration: none; background: transparent; cursor: pointer;
-  text-align: left; width: 100%; box-sizing: border-box;
+  text-align: left; box-sizing: border-box;
+  flex: 0 0 108px; scroll-snap-align: start;
   transition: border-color 0.15s ease, background-color 0.15s ease;
 }
 .qa-tile:hover { border-color: rgba(200,155,60,0.38); background: rgba(200,155,60,0.05); }
