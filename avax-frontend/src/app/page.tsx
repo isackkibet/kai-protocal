@@ -329,6 +329,112 @@ export default function Home() {
             desktop), portfolio/dashboards/actions on the left */}
         <div className="home-grid" style={{ marginTop:56 }}>
 
+          <div className="home-main">
+            {/* PORTFOLIO */}
+            <motion.section className="home-section" aria-label="Portfolio" {...reveal}>
+              <SectionHeader icon={Wallet} eyebrow="Portfolio" />
+              <p style={{ fontSize:13, color:C.inkLight, margin:'0 0 4px', lineHeight:1.5 }}>Estimated value across your connected wallet</p>
+              {balancesLoading ? (
+                <p style={{ fontSize:14, color:C.inkLight, marginBottom:16 }}>Loading…</p>
+              ) : (
+                <div style={{ display:'flex', alignItems:'baseline', gap:12, marginBottom:22 }}>
+                  <span style={{ ...SERIF, fontSize:44, fontWeight:600, letterSpacing:'-1px', color:connected?C.paper:C.inkLight, lineHeight:1 }}>
+                    ${connected ? totalUsd.toFixed(2) : '0.00'}
+                  </span>
+                  {connected && totalUsd>0 && <span style={{ fontSize:13, ...HL.green }}>+0.00%</span>}
+                </div>
+              )}
+
+              {connected ? (
+                <>
+                  {balancesLoading ? (
+                    <p style={{ fontSize:13, color:C.inkLight, marginBottom:20 }}>Loading balances…</p>
+                  ) : (
+                    <div className="home-tokens" style={{ marginBottom:20 }}>
+                      {allTokens.map(b => {
+                        const tint = b.symbol === 'AVAX' ? C.goldLight : C.paperDim;
+                        return (
+                          <div key={b.symbol} className="home-token">
+                            <p style={{ ...MONO, fontSize:9, letterSpacing:0.5, textTransform:'uppercase', color:C.inkLight, margin:'0 0 4px', fontWeight:600 }}>{b.symbol}</p>
+                            <p style={{ ...SERIF, fontSize:16, fontWeight:600, color:tint, margin:0 }}>
+                              {b.value>=1000?`${(b.value/1000).toFixed(1)}K`:b.value>=0.001?b.value.toFixed(3):'0.000'}
+                            </p>
+                            {!b.deployed && <p style={{ fontSize:8, color:C.inkLight, opacity:0.7, fontWeight:600, margin:'3px 0 0' }}>Coming soon</p>}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                  <div style={{ display:'flex', alignItems:'center', gap:14, flexWrap:'wrap', paddingTop:16, borderTop:`1px solid ${C.hairline}` }}>
+                    <span style={{ ...MONO, fontSize:12, color:C.inkLight, wordBreak:'break-all' }}>{address}</span>
+                    <button onClick={copyAddress} style={{ background:'none', border:'none', cursor:'pointer', color:copied?C.goldLight:C.inkLight, fontSize:12, fontWeight:600, display:'flex', alignItems:'center', gap:4, padding:0 }}>
+                      {copied?'Copied':(<><Copy size={12}/> Copy</>)}
+                    </button>
+                    <button onClick={handleRefresh} style={{ background:'none', border:'none', cursor:'pointer', color:C.inkLight, fontSize:12, fontWeight:600, display:'flex', alignItems:'center', gap:4, padding:0 }}>
+                      <RefreshCw size={12} style={{ animation:refreshing?'spin 1s linear infinite':'none' }} /> Refresh
+                    </button>
+                  </div>
+                </>
+              ) : (
+                <button onClick={() => setShowModal(true)} className="text-link" style={{ background:'none', border:'none', cursor:'pointer', padding:0, font:'inherit', fontSize:14 }}>
+                  Connect a wallet to see your balances
+                </button>
+              )}
+            </motion.section>
+
+            {/* COMMUNITY — CFA, SME and Saving Group are KAI's community programs */}
+            <motion.section className="home-section" id="community"
+              style={{ scrollMarginTop:70 }} {...reveal}>
+              <SectionHeader icon={Users} eyebrow="Community" badge="● 3 active" />
+              <p style={{ fontSize:13, color:C.inkLight, margin:'-10px 0 16px', lineHeight:1.5 }}>Programs run by and for the KAI community</p>
+              <div>
+                {DASHBOARDS.map((d) => {
+                  const Icon = d.icon;
+                  return (
+                    <Link key={d.id} href={d.href} className="dash-row">
+                      <Icon size={16} className="action-icon" strokeWidth={1.6} style={{ flexShrink:0 }}/>
+                      <p style={{ flex:1, minWidth:0, fontSize:14, lineHeight:1.6, margin:0 }}>
+                        <span className="dash-title" style={{ ...SERIF, fontWeight:700, color:C.paper, transition:'color 0.15s ease' }}>{d.hl}:</span>{' '}
+                        <span style={{ color:C.inkLight }}>the {d.label} for {d.sub.charAt(0).toLowerCase() + d.sub.slice(1)}.</span>
+                      </p>
+                    </Link>
+                  );
+                })}
+              </div>
+            </motion.section>
+
+            {/* QUICK ACTIONS — its own section: one horizontal scroll strip,
+                not stacked groups mixed in with everything else. */}
+            <motion.section className="home-section" id="actions"
+              style={{ scrollMarginTop:70 }} {...reveal}>
+              <SectionHeader icon={LayoutGrid} eyebrow="Quick actions" />
+              <div className="qa-scroll">
+                {QUICK_GROUPS.flatMap(g => g.items).map((a) => {
+                  const Icon = a.icon;
+                  const isAgent = a.href === '/ai';
+                  const content = (
+                    <>
+                      <Icon size={18} className="qa-tile-icon" strokeWidth={1.6}/>
+                      <span className="qa-tile-label">{a.name}</span>
+                    </>
+                  );
+                  return isAgent ? (
+                    <button key={a.name} onClick={openAIChat} className="qa-tile">{content}</button>
+                  ) : (
+                    <Link key={a.name} href={a.href} className="qa-tile">{content}</Link>
+                  );
+                })}
+              </div>
+            </motion.section>
+          </div>
+
+          {/* Profile + KAI Agent — DOM order puts these AFTER the primary
+              content (portfolio/community/quick actions) so on mobile, where
+              there's no side-by-side column, the AI chat's tall quick-ask +
+              textarea block doesn't bury Quick Actions at the bottom of a
+              long scroll. Desktop still pins this as the right-hand rail via
+              `order` below the two column widths are set with, so nothing
+              changes for the two-column layout. */}
           <div className="home-aside">
             {/* PROFILE */}
             <motion.section className="home-section" aria-label="Profile" {...reveal}>
@@ -426,105 +532,6 @@ export default function Home() {
                   </motion.div>
                 )}
               </AnimatePresence>
-            </motion.section>
-          </div>
-
-          <div className="home-main">
-            {/* PORTFOLIO */}
-            <motion.section className="home-section" aria-label="Portfolio" {...reveal}>
-              <SectionHeader icon={Wallet} eyebrow="Portfolio" />
-              <p style={{ fontSize:13, color:C.inkLight, margin:'0 0 4px', lineHeight:1.5 }}>Estimated value across your connected wallet</p>
-              {balancesLoading ? (
-                <p style={{ fontSize:14, color:C.inkLight, marginBottom:16 }}>Loading…</p>
-              ) : (
-                <div style={{ display:'flex', alignItems:'baseline', gap:12, marginBottom:22 }}>
-                  <span style={{ ...SERIF, fontSize:44, fontWeight:600, letterSpacing:'-1px', color:connected?C.paper:C.inkLight, lineHeight:1 }}>
-                    ${connected ? totalUsd.toFixed(2) : '0.00'}
-                  </span>
-                  {connected && totalUsd>0 && <span style={{ fontSize:13, ...HL.green }}>+0.00%</span>}
-                </div>
-              )}
-
-              {connected ? (
-                <>
-                  {balancesLoading ? (
-                    <p style={{ fontSize:13, color:C.inkLight, marginBottom:20 }}>Loading balances…</p>
-                  ) : (
-                    <div className="home-tokens" style={{ marginBottom:20 }}>
-                      {allTokens.map(b => {
-                        const tint = b.symbol === 'AVAX' ? C.goldLight : C.paperDim;
-                        return (
-                          <div key={b.symbol} className="home-token">
-                            <p style={{ ...MONO, fontSize:9, letterSpacing:0.5, textTransform:'uppercase', color:C.inkLight, margin:'0 0 4px', fontWeight:600 }}>{b.symbol}</p>
-                            <p style={{ ...SERIF, fontSize:16, fontWeight:600, color:tint, margin:0 }}>
-                              {b.value>=1000?`${(b.value/1000).toFixed(1)}K`:b.value>=0.001?b.value.toFixed(3):'0.000'}
-                            </p>
-                            {!b.deployed && <p style={{ fontSize:8, color:C.inkLight, opacity:0.7, fontWeight:600, margin:'3px 0 0' }}>Coming soon</p>}
-                          </div>
-                        );
-                      })}
-                    </div>
-                  )}
-                  <div style={{ display:'flex', alignItems:'center', gap:14, flexWrap:'wrap', paddingTop:16, borderTop:`1px solid ${C.hairline}` }}>
-                    <span style={{ ...MONO, fontSize:12, color:C.inkLight, wordBreak:'break-all' }}>{address}</span>
-                    <button onClick={copyAddress} style={{ background:'none', border:'none', cursor:'pointer', color:copied?C.goldLight:C.inkLight, fontSize:12, fontWeight:600, display:'flex', alignItems:'center', gap:4, padding:0 }}>
-                      {copied?'Copied':(<><Copy size={12}/> Copy</>)}
-                    </button>
-                    <button onClick={handleRefresh} style={{ background:'none', border:'none', cursor:'pointer', color:C.inkLight, fontSize:12, fontWeight:600, display:'flex', alignItems:'center', gap:4, padding:0 }}>
-                      <RefreshCw size={12} style={{ animation:refreshing?'spin 1s linear infinite':'none' }} /> Refresh
-                    </button>
-                  </div>
-                </>
-              ) : (
-                <button onClick={() => setShowModal(true)} className="text-link" style={{ background:'none', border:'none', cursor:'pointer', padding:0, font:'inherit', fontSize:14 }}>
-                  Connect a wallet to see your balances
-                </button>
-              )}
-            </motion.section>
-
-            {/* COMMUNITY — CFA, SME and Saving Group are KAI's community programs */}
-            <motion.section className="home-section" id="community"
-              style={{ scrollMarginTop:70 }} {...reveal}>
-              <SectionHeader icon={Users} eyebrow="Community" badge="● 3 active" />
-              <p style={{ fontSize:13, color:C.inkLight, margin:'-10px 0 16px', lineHeight:1.5 }}>Programs run by and for the KAI community</p>
-              <div>
-                {DASHBOARDS.map((d) => {
-                  const Icon = d.icon;
-                  return (
-                    <Link key={d.id} href={d.href} className="dash-row">
-                      <Icon size={16} className="action-icon" strokeWidth={1.6} style={{ flexShrink:0 }}/>
-                      <p style={{ flex:1, minWidth:0, fontSize:14, lineHeight:1.6, margin:0 }}>
-                        <span className="dash-title" style={{ ...SERIF, fontWeight:700, color:C.paper, transition:'color 0.15s ease' }}>{d.hl}:</span>{' '}
-                        <span style={{ color:C.inkLight }}>the {d.label} for {d.sub.charAt(0).toLowerCase() + d.sub.slice(1)}.</span>
-                      </p>
-                    </Link>
-                  );
-                })}
-              </div>
-            </motion.section>
-
-            {/* QUICK ACTIONS — its own section: one horizontal scroll strip,
-                not stacked groups mixed in with everything else. */}
-            <motion.section className="home-section" id="actions"
-              style={{ scrollMarginTop:70 }} {...reveal}>
-              <SectionHeader icon={LayoutGrid} eyebrow="Quick actions" />
-              <div className="qa-scroll">
-                {QUICK_GROUPS.flatMap(g => g.items).map((a) => {
-                  const Icon = a.icon;
-                  const isAgent = a.href === '/ai';
-                  const content = (
-                    <>
-                      <Icon size={18} className="qa-tile-icon" strokeWidth={1.6}/>
-                      <span className="qa-tile-label">{a.name}</span>
-                    </>
-                  );
-                  return isAgent ? (
-                    <button key={a.name} onClick={openAIChat} className="qa-tile">{content}</button>
-                  ) : (
-                    <Link key={a.name} href={a.href} className="qa-tile">{content}</Link>
-                  );
-                })}
-              </div>
             </motion.section>
           </div>
         </div>
