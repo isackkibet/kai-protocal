@@ -266,15 +266,15 @@ export default function Home() {
 
         {/* HERO — full-screen photo, dark fade left→right so the copy reads.
             Colors are the original KAI palette only; the photo is a mask.
-            Sizing follows a fixed spacing scale (min-height 100vh, 140/80px
-            section padding, 1150px container, 660/490px text columns) so any
-            other section can reuse the same three rules and match exactly. */}
+            Sized well under the full viewport and top-aligned, so the copy
+            sits near the top of the section instead of floating centered
+            in a tall, mostly-empty band. */}
         <div style={{
           width: '100vw', marginLeft: '50%', transform: 'translateX(-50%)',
           position: 'relative', zIndex: 5,
-          minHeight: '100vh',
-          display: 'flex', alignItems: 'center',
-          padding: '140px 0 80px',
+          minHeight: 'clamp(420px, 56vh, 560px)',
+          display: 'flex', alignItems: 'flex-start',
+          padding: '80px 0 56px',
           boxSizing: 'border-box',
           backgroundImage:
             `linear-gradient(180deg, rgba(11,28,20,0.15) 0%, rgba(11,28,20,0.65) 55%, ${C.bg} 100%),` +
