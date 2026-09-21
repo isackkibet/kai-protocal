@@ -96,7 +96,7 @@ const NFTS = conservationData.nfts.map((nft: { key: string; serial: number }) =>
     serial: nft.serial,
     name: meta.name,
     price: meta.price,        // price in yBOB (1 yBOB ≈ $1)
-    img: `/nfts/${nft.key}.jpeg`,
+    img: `/images/nfts/${nft.key}.jpeg`,
     desc: meta.desc,
   };
 });
