@@ -829,11 +829,13 @@ body {
 .action-icon { color: var(--home-muted); transition: color 0.15s ease; }
 .dash-row:hover .action-icon { color: var(--home-accent); }
 
+/* One line per program, read as a sentence (bold name + plain description)
+   rather than stacked title/label/caption rows — the section already ends
+   in the shared hairline below, so rows themselves don't need one each. */
 .dash-row {
-  display: flex; align-items: center; gap: 14px; padding: 14px 0;
-  text-decoration: none; border-bottom: 1px solid rgba(200,155,60,0.28);
+  display: flex; align-items: center; gap: 12px; padding: 10px 0;
+  text-decoration: none;
 }
-.dash-row:last-child { border-bottom: none; }
 .dash-row:hover .dash-title { color: var(--home-accent); }
 
 /* Quick Actions — grouped grids. Each group is a short mono eyebrow over

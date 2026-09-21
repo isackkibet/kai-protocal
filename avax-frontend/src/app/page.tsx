@@ -492,12 +492,11 @@ export default function Home() {
                   const Icon = d.icon;
                   return (
                     <Link key={d.id} href={d.href} className="dash-row">
-                      <Icon size={17} className="action-icon" strokeWidth={1.6} style={{ flexShrink:0 }}/>
-                      <div style={{ flex:1 }}>
-                        <p className="dash-title" style={{ ...SERIF, fontSize:15, fontWeight:600, margin:'0 0 2px', color:C.paper, transition:'color 0.15s ease' }}>{d.hl}</p>
-                        <p style={{ fontSize:11, color:C.inkLight, margin:'0 0 1px' }}>{d.label}</p>
-                        <p style={{ fontSize:10, color:C.inkLight, opacity:0.75, margin:0 }}>{d.sub}</p>
-                      </div>
+                      <Icon size={16} className="action-icon" strokeWidth={1.6} style={{ flexShrink:0 }}/>
+                      <p style={{ fontSize:14, lineHeight:1.6, margin:0 }}>
+                        <span className="dash-title" style={{ ...SERIF, fontWeight:700, color:C.paper, transition:'color 0.15s ease' }}>{d.hl}:</span>{' '}
+                        <span style={{ color:C.inkLight }}>the {d.label} for {d.sub.charAt(0).toLowerCase() + d.sub.slice(1)}.</span>
+                      </p>
                     </Link>
                   );
                 })}
