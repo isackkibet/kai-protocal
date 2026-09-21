@@ -845,16 +845,19 @@ body {
 }
 .dash-row:hover .dash-title { color: var(--home-accent); }
 
-/* Quick Actions — a flat grid, every action visible at once. Rows carry no
-   border or box; only the hover wash + icon/label colour change (same
-   language as the Community rows) show it's interactive. */
+/* Quick Actions — a flowing wrap, not a fixed-column grid. 13 items in an
+   even grid always leaves one orphan alone on the last row with a big gap
+   next to it; tiles here size to their own label and wrap like chips, so
+   however many end up on the last row, they sit flush left with no empty
+   cells — reads as designed at any count, not just multiples of the
+   column count. */
 .qa-wrap {
-  display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
-  gap: 2px 10px;
+  display: flex; flex-wrap: wrap;
+  gap: 4px 4px;
 }
 .qa-tile {
-  display: flex; align-items: center; gap: 10px;
-  padding: 10px 8px; border-radius: 8px;
+  display: flex; align-items: center; gap: 9px;
+  padding: 10px 14px 10px 8px; border-radius: 8px;
   text-decoration: none; background: transparent; cursor: pointer;
   text-align: left; box-sizing: border-box;
   transition: background-color 0.15s ease;
