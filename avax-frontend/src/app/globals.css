@@ -791,15 +791,26 @@ body {
   .home-aside { order: 2; position: sticky; top: 24px; }
 }
 
-/* Group boundary: 3-4× breathing room plus a single hairline — space does
-   the grouping, the 1px line only marks where one group ends. No box. */
-.home-section + .home-section {
-  margin-top: 56px;
-  padding-top: 40px;
-  border-top: 1px solid var(--home-line);
+/* Each home section is its own panel — a distinct shade of the same dark
+   pine family so the page reads as clearly separated smart blocks:
+   hero band (photo over deep pine), Profile (mid pine), Quick actions
+   (deeper pine with a gold wash). No competing colors, just layers. */
+.home-section {
+  border-radius: 20px;
+  border: 1px solid var(--home-line);
+  padding: 30px 28px;
+  box-sizing: border-box;
+  background:
+    linear-gradient(180deg, rgba(228,200,120,0.04), rgba(228,200,120,0) 90px),
+    linear-gradient(180deg, #0E2B1F 0%, #0A2218 100%);
+  box-shadow: inset 0 1px 0 rgba(246,242,231,0.04);
 }
-@media (max-width: 1023px) {
-  .home-section + .home-section { margin-top: 44px; padding-top: 36px; }
+.home-section + .home-section { margin-top: 28px; }
+.home-section--qa {
+  border-color: rgba(200,155,60,0.20);
+  background:
+    linear-gradient(180deg, rgba(228,200,120,0.05), rgba(228,200,120,0) 130px),
+    linear-gradient(180deg, #0C2619 0%, #071710 100%);
 }
 
 /* Shared stat row (profile + portfolio): values aligned on a grid, hairlines
