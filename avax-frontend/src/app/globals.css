@@ -866,6 +866,26 @@ body {
 }
 .qa-tile:hover .qa-tile-label { color: var(--home-accent); }
 
+/* /apps page — big tiles, each quick action as its own large card */
+.apps-tile {
+  display: flex; flex-direction: column; gap: 8px; align-items: flex-start;
+  padding: 22px; border-radius: 16px; border: 1px solid var(--home-line);
+  text-decoration: none; box-sizing: border-box;
+  transition: border-color 0.15s ease, background-color 0.15s ease;
+}
+.apps-tile:hover { border-color: rgba(200,155,60,0.38); background: rgba(200,155,60,0.05); }
+
+/* Home entry to the apps page — one big surface, no strip to scroll */
+.qa-entry {
+  display: flex; align-items: center; justify-content: space-between; gap: 14px;
+  padding: 22px 24px; border-radius: 16px; border: 1px solid var(--home-line);
+  text-decoration: none; box-sizing: border-box;
+  transition: border-color 0.15s ease, background-color 0.15s ease;
+}
+.qa-entry:hover { border-color: rgba(200,155,60,0.38); background: rgba(200,155,60,0.05); }
+.qa-entry-icon { color: var(--home-muted); transition: color 0.15s ease; }
+.qa-entry:hover .qa-entry-icon { color: var(--home-accent); }
+
 /* ══════════════════════════════════════════════════════════════
    MINE / AIRDROP PAGE — flat, one accent (Avalanche red)
    One accent used sparingly. Cards are flat surfaces with a thin
