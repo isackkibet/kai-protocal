@@ -227,7 +227,7 @@ export default function Home() {
           backgroundImage:
             `linear-gradient(180deg, rgba(11,28,20,0.15) 0%, rgba(11,28,20,0.65) 55%, ${C.bg} 100%),` +
             `linear-gradient(90deg, rgba(11,28,20,0.97) 0%, rgba(11,28,20,0.80) 32%, rgba(11,28,20,0.32) 64%, rgba(11,28,20,0.10) 100%),` +
-            'url("https://i.pinimg.com/1200x/ab/ca/53/abca5353a9820268cb6fbb3cb005cb10.jpg")',
+            'url("/images/home-hero.jpg")',
           backgroundSize: 'cover', backgroundPosition: 'center',
           textAlign: 'left',
           borderBottom: `1px solid ${C.hairline}`,
