@@ -827,8 +827,7 @@ body {
    Icons carry colour when a row is live; the action itself is conveyed by
    the row's hover state, not an arrow glyph. */
 .action-icon { color: var(--home-muted); transition: color 0.15s ease; }
-.dash-row:hover .action-icon,
-.qa-row:hover   .action-icon { color: var(--home-accent); }
+.dash-row:hover .action-icon { color: var(--home-accent); }
 
 .dash-row {
   display: flex; align-items: center; gap: 16px; padding: 18px 0;
@@ -837,20 +836,34 @@ body {
 .dash-row:last-child { border-bottom: none; }
 .dash-row:hover .dash-title { color: var(--home-accent); }
 
-/* Quick Actions — a self-arranging link list: columns fill in from however
-   many fit at that width (minmax below), so 13 entries or 30 lay out the
-   same way with no breakpoint to hand-tune when one gets added. */
-.qa-list { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); column-gap: 32px; }
-.qa-row {
-  display: flex; align-items: center; gap: 12px; padding: 14px 6px 14px 2px;
-  text-decoration: none; border-bottom: 1px solid var(--home-line);
-  background: transparent; cursor: pointer; width: 100%; text-align: left;
-  border-left: none; border-right: none; border-top: none;
-  border-radius: 6px; transition: background-color 0.15s ease;
+/* Quick Actions — grouped grids. Each group is a short mono eyebrow over
+   a bordered tile grid, so 13 actions read as four small sections instead
+   of one long link list. Tiles keep the flat hairline language. */
+.qa-group-title {
+  font-family: var(--font-plex-mono), monospace; font-size: 10px;
+  letter-spacing: 1.4px; text-transform: uppercase;
+  color: var(--home-muted); font-weight: 600; margin: 0 0 10px;
 }
-.qa-row:hover { background: rgba(200,155,60,0.05); }
-.qa-label { font-size: 14px; font-weight: 700; color: var(--home-text); transition: color 0.15s ease; }
-.qa-row:hover .qa-label { color: var(--home-accent); }
+.qa-group + .qa-group { margin-top: 26px; }
+.qa-grid {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+  gap: 10px;
+}
+.qa-tile {
+  display: flex; flex-direction: column; align-items: flex-start; gap: 10px;
+  padding: 14px; border: 1px solid var(--home-line); border-radius: 12px;
+  text-decoration: none; background: transparent; cursor: pointer;
+  text-align: left; width: 100%; box-sizing: border-box;
+  transition: border-color 0.15s ease, background-color 0.15s ease;
+}
+.qa-tile:hover { border-color: rgba(200,155,60,0.38); background: rgba(200,155,60,0.05); }
+.qa-tile-icon { color: var(--home-muted); transition: color 0.15s ease; flex-shrink: 0; }
+.qa-tile:hover .qa-tile-icon { color: var(--home-accent); }
+.qa-tile-label {
+  font-size: 12.5px; font-weight: 600; color: var(--home-text);
+  line-height: 1.35; transition: color 0.15s ease;
+}
+.qa-tile:hover .qa-tile-label { color: var(--home-accent); }
 
 /* ══════════════════════════════════════════════════════════════
    MINE / AIRDROP PAGE — flat, one accent (Avalanche red)
