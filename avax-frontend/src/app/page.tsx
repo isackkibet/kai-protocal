@@ -16,11 +16,9 @@ import { formatChat } from '@/lib/formatChat';
 import { usePrivyAuth } from '@/lib/privy-auth';
 import { useActiveAccount } from '@/hooks/useActiveAccount';
 import {
-  Trees, Store, Users, FlaskConical, ScanLine,
-  Droplets, ImageIcon, Lock, Globe, LayoutGrid, Gift,
+  Trees, Store, Users, LayoutGrid,
   Bot, Copy, RefreshCw,
-  ShieldCheck, CircleDollarSign,
-  Link2, Mic, Wallet, UserRound,
+  Link2, Wallet, UserRound,
   type LucideIcon,
 } from 'lucide-react';
 
@@ -68,42 +66,6 @@ function SectionHeader({ icon: Icon, eyebrow, badge }: { icon: LucideIcon; eyebr
 /* Sections render fully visible on load — no hide-until-scroll animation,
    so everything is on the page at once. */
 const reveal = {} as const;
-
-const QUICK_GROUPS = [
-  {
-    title: 'Agents',
-    items: [
-      { name: 'Voice Agent', href: '/voice', icon: Mic },
-      { name: 'AI Agent',    href: '/ai',    icon: Bot },
-    ],
-  },
-  {
-    title: 'DeFi · Earn',
-    items: [
-      { name: 'Securities', href: '/securities', icon: ShieldCheck },
-      { name: 'Pools',      href: '/pools',      icon: Droplets },
-      { name: 'Vaults',     href: '/vaults',     icon: Lock },
-      { name: 'TaaS',       href: '/taas',       icon: LayoutGrid },
-    ],
-  },
-  {
-    title: 'Shop · Pay',
-    items: [
-      { name: 'Scan & Pay', href: '/pay',      icon: ScanLine },
-      { name: 'Products',   href: '/products', icon: CircleDollarSign },
-      { name: 'NFT Mkt',    href: '/connft',   icon: ImageIcon },
-      { name: 'Airdrop',    href: '/mine',     icon: Gift },
-    ],
-  },
-  {
-    title: 'Explore',
-    items: [
-      { name: 'Playground', href: '/nuvari', icon: FlaskConical },
-      { name: 'SDG Impact', href: '/sdg',    icon: Globe },
-      { name: 'KAI Web',    href: '/kai',    icon: Link2 },
-    ],
-  },
-];
 
 const DASHBOARDS = [
   { id:'cfa',    href:'/cfa',    icon:Trees, label:'CFA Dashboard',  hl:'Community Forest',   sub:'Treasury and governance'  },
@@ -397,28 +359,25 @@ export default function Home() {
               </div>
             </motion.section>
 
-            {/* QUICK ACTIONS — its own section: one horizontal scroll strip,
-                not stacked groups mixed in with everything else. */}
+            {/* QUICK ACTIONS — one big entry to the dedicated /apps page, so the home
+            column stays clean and the AI block never crowds the actions. */}
             <motion.section className="home-section" id="actions"
               style={{ scrollMarginTop:70 }} {...reveal}>
               <SectionHeader icon={LayoutGrid} eyebrow="Quick actions" />
-              <div className="qa-wrap">
-                {QUICK_GROUPS.flatMap(g => g.items).map((a) => {
-                  const Icon = a.icon;
-                  const isAgent = a.href === '/ai';
-                  const content = (
-                    <>
-                      <Icon size={18} className="qa-tile-icon" strokeWidth={1.6}/>
-                      <span className="qa-tile-label">{a.name}</span>
-                    </>
-                  );
-                  return isAgent ? (
-                    <button key={a.name} onClick={openAIChat} className="qa-tile">{content}</button>
-                  ) : (
-                    <Link key={a.name} href={a.href} className="qa-tile">{content}</Link>
-                  );
-                })}
-              </div>
+              <Link href="/apps" className="qa-entry">
+                <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+                  <LayoutGrid size={26} className="qa-entry-icon" strokeWidth={1.6} />
+                  <div>
+                    <p style={{ fontSize: 17, fontWeight: 600, margin: 0, color: C.paper, fontFamily: "'Poppins', sans-serif" }}>
+                      Open all apps &amp; actions
+                    </p>
+                    <p style={{ fontSize: 12.5, color: C.inkLight, margin: '3px 0 0' }}>
+                      13 apps in one page — voice, AI, DeFi, payments and more
+                    </p>
+                  </div>
+                </div>
+                <span style={{ ...MONO, fontSize: 20, fontWeight: 400, color: C.goldLight, flexShrink: 0 }}>→</span>
+              </Link>
             </motion.section>
           </div>
 
