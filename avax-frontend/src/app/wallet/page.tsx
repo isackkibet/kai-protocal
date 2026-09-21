@@ -6,19 +6,36 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useBalance, useReadContracts } from 'wagmi';
 import { formatUnits, type Address } from 'viem';
 import {
-  Wallet, Copy, RefreshCw, Send, QrCode, ArrowDownToLine,
+  Copy, RefreshCw, Send, QrCode, ArrowDownToLine,
   ChevronRight, CheckCircle2, Loader2, ImageIcon, ShieldCheck,
-  Info, ExternalLink, ArrowUpRight, Mountain, ListChecks,
+  ListChecks, Mountain,
 } from 'lucide-react';
 import { usePrivyAuth } from '@/lib/privy-auth';
 import { useNFTs } from '@/hooks/useNFTs';
-import { ECOSYSTEM_TOKENS, AVAX_CONFIG, FUJI_EXPLORER, formatTokenAmount } from '@/lib/tokens';
+import { ECOSYSTEM_TOKENS, formatTokenAmount } from '@/lib/tokens';
 import { ERC20_ABI } from '@/lib/erc20abi';
 import RealisticQR from '@/components/ui/RealisticQR';
 
-/* ── shared styles ── */
-const Rs: React.CSSProperties = { textShadow: '0 1px 4px rgba(0,0,0,0.88)' };
-const W: React.CSSProperties = { width: '100%', maxWidth: 1360, margin: '0 auto', padding: '0 40px' };
+/* Same editorial system as the home page and the connect-wallet modal —
+   pine + gold + paper, flat sections separated by a hairline, no card
+   shells. The wallet dashboard used to be its own dark-glass/emerald
+   design that matched nothing else in the app; that mismatch was the
+   actual source of "this is confusing", not any one screen on its own. */
+const C = {
+  bg:        '#0B1C14',
+  gold:      '#C89B3C',
+  goldLight: '#E4C878',
+  paper:     '#F6F2E7',
+  paperDim:  '#EFE9D9',
+  ink:       '#1B1A14',
+  inkLight:  '#9BA396',
+  hairline:  'rgba(200,155,60,0.14)',
+  red:       '#E88C7D',
+};
+const MONO: React.CSSProperties = { fontFamily: 'var(--font-plex-mono), monospace' };
+const SERIF: React.CSSProperties = { fontFamily: "'Poppins', sans-serif" };
+const label: React.CSSProperties = { ...MONO, fontSize: 10, letterSpacing: 1.4, textTransform: 'uppercase', color: C.goldLight, fontWeight: 600, margin: 0 };
+const W: React.CSSProperties = { width: '100%', maxWidth: 1200, margin: '0 auto', padding: '0 24px', boxSizing: 'border-box' };
 
 function shortAddr(a: string | { hash: string }) {
   const s = typeof a === 'string' ? a : a.hash;
@@ -27,10 +44,8 @@ function shortAddr(a: string | { hash: string }) {
 
 export default function WalletDashboard() {
   const {
-    ready,
     authenticated,
     address,
-    email,
     name,
     signInWithGoogle,
     logout,
@@ -127,34 +142,25 @@ export default function WalletDashboard() {
   // and the user is authenticated, the dashboard will show instead.
   if (!authenticated || !address) {
     return (
-      <main style={{ minHeight: '100dvh', color: '#fff', fontFamily: 'var(--font-sans)', position: 'relative', paddingBottom: 80 }}>
-        <div style={{ ...W, paddingTop: 72, textAlign: 'center', position: 'relative', zIndex: 5 }}>
-          <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} className="float" style={{
-            width: 76, height: 76, borderRadius: '50%', margin: '0 auto 18px',
-            background: 'linear-gradient(135deg,rgba(16,185,129,0.38),rgba(4,78,59,0.80))',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            boxShadow: '0 0 36px rgba(16,185,129,0.42)',
-          }}>
-            <Wallet size={32} color="#6ee7b7" />
-          </motion.div>
-          <h1 style={{ fontSize: 28, fontWeight: 900, margin: 0, letterSpacing: -0.8, ...Rs }}>
-            <span style={{ color: '#34d399' }}>Kainovari</span> Wallet
+      <main style={{ minHeight: '100dvh', background: C.bg, color: C.paper, fontFamily: "'Poppins', 'IBM Plex Sans', var(--font-sans)", position: 'relative', paddingBottom: 80 }}>
+        <div style={{ ...W, paddingTop: 96, textAlign: 'center', maxWidth: 440 }}>
+          <p style={label}>KAI Nuvari · Avalanche C-Chain</p>
+          <h1 style={{ ...SERIF, fontSize: 32, fontWeight: 700, margin: '14px 0 0', letterSpacing: '-0.5px' }}>
+            <span style={{ color: C.goldLight }}>Kainovari</span> Wallet
           </h1>
-          <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.60)', margin: '8px 0 26px', ...Rs }}>
+          <p style={{ fontSize: 14, color: C.inkLight, margin: '12px 0 28px', lineHeight: 1.6 }}>
             Sign in with Google to get your Avalanche wallet. No seed phrase, no extensions.
           </p>
-          <motion.button whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }} onClick={signInWithGoogle}
+          <motion.button whileTap={{ scale: 0.98 }} onClick={signInWithGoogle}
             style={{
               display: 'inline-flex', alignItems: 'center', gap: 10,
-              padding: '13px 26px', borderRadius: 14, border: 'none', cursor: 'pointer',
-              background: 'linear-gradient(135deg,#10b981,#047857)',
-              boxShadow: '0 6px 28px rgba(16,185,129,0.45)',
-              fontSize: 15, fontWeight: 800, color: '#fff', ...Rs,
+              padding: '15px 30px', borderRadius: 999, border: 'none', cursor: 'pointer',
+              background: C.gold, fontSize: 14, fontWeight: 700, color: C.ink, fontFamily: 'inherit',
             }}>
             <svg width="18" height="18" viewBox="0 0 48 48"><path fill="#FFC107" d="M43.6 20.1H42V20H24v8h11.3C33.7 32.7 29.2 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.9 1.2 8 3l5.7-5.7C34.7 6.1 29.6 4 24 4 13 4 4 13 4 24s9 20 20 20 20-9 20-20c0-1.3-.1-2.6-.4-3.9z"/><path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.7 15.1 19 12 24 12c3.1 0 5.9 1.2 8 3l5.7-5.7C34.7 6.1 29.6 4 24 4 16.3 4 9.7 8.3 6.3 14.7z"/><path fill="#4CAF50" d="M24 44c5.2 0 10-2.2 13.4-5.7l-6.2-5.2C29.2 34.5 26.7 36 24 36c-5.2 0-9.7-3.3-11.3-8l-6.5 5C9.5 39.6 16.2 44 24 44z"/><path fill="#1976D2" d="M43.6 20.1H42V20H24v8h11.3c-.8 2.3-2.3 4.3-4.1 5.7l6.2 5.2C36.9 39.2 44 34 44 24c0-1.3-.1-2.6-.4-3.9z"/></svg>
-              Continue with Google
+            Continue with Google
           </motion.button>
-          <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.35)', marginTop: 16, ...Rs }}>
+          <p style={{ fontSize: 11, color: C.inkLight, opacity: 0.7, marginTop: 18 }}>
             Powered by Privy Embedded Wallets · Non-custodial
           </p>
         </div>
@@ -164,8 +170,8 @@ export default function WalletDashboard() {
 
   const totalBalance = avaxAmt + Object.values(tokenBals).reduce((a, b) => a + b, 0);
   const assetRows = [
-    { s: 'AVAX', name: 'Avalanche', amt: avaxAmt, c: AVAX_CONFIG.color, d: true },
-    ...ECOSYSTEM_TOKENS.map(t => ({ s: t.symbol, name: t.name, amt: tokenBals[t.symbol] ?? 0, c: t.color, d: !!t.address })),
+    { s: 'AVAX', name: 'Avalanche', amt: avaxAmt, d: true },
+    ...ECOSYSTEM_TOKENS.map(t => ({ s: t.symbol, name: t.name, amt: tokenBals[t.symbol] ?? 0, d: !!t.address })),
   ];
 
   const selectAssetForSend = (symbol: string) => {
@@ -175,208 +181,182 @@ export default function WalletDashboard() {
   };
 
   return (
-    <main style={{ minHeight: '100dvh', color: '#fff', fontFamily: 'var(--font-sans)', position: 'relative', paddingBottom: 80 }}>
+    <main style={{ minHeight: '100dvh', background: C.bg, color: C.paper, fontFamily: "'Poppins', 'IBM Plex Sans', var(--font-sans)", position: 'relative', paddingBottom: 80 }}>
       <style>{`
-        .wallet-dash-grid { display: flex; flex-direction: column; gap: 16px; }
-        .wallet-dash-side { display: flex; flex-direction: column; gap: 14px; }
-        .wallet-asset-row { transition: background 0.15s ease; cursor: pointer; }
-        .wallet-asset-row:hover { background: rgba(255,255,255,0.05) !important; }
+        .wallet-grid { display: flex; flex-direction: column; gap: 12px; }
+        .wallet-row { transition: background-color 0.15s ease; cursor: pointer; border-radius: 8px; }
+        .wallet-row:hover { background: rgba(200,155,60,0.06); }
+        .wallet-link:hover .wallet-link-title { color: ${C.goldLight}; }
+        .wallet-tab { background: none; border: none; cursor: pointer; font-family: inherit; padding: 10px 0; }
         @media (min-width: 1000px) {
-          .wallet-dash-grid { display: grid; grid-template-columns: minmax(0, 1.65fr) minmax(300px, 1fr); align-items: start; gap: 20px; }
+          .wallet-grid { display: grid; grid-template-columns: minmax(0, 1.6fr) minmax(280px, 1fr); align-items: start; gap: 48px; }
         }
       `}</style>
-      <div style={{ ...W, paddingTop: 28, position: 'relative', zIndex: 5 }}>
+      <div style={{ ...W, paddingTop: 40 }}>
+
         {/* Header */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 18, flexWrap: 'wrap', gap: 10 }}>
+        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 8, flexWrap: 'wrap', gap: 14 }}>
           <div>
-            <p style={{ fontSize: 10, fontWeight: 700, letterSpacing: 1.4, textTransform: 'uppercase', color: 'rgba(255,255,255,0.48)', margin: 0 }}>Kainovari Wallet</p>
-            <h1 style={{ fontSize: 26, fontWeight: 900, margin: '4px 0 0', letterSpacing: -0.5, ...Rs }}>
-              Hello, <span style={{ color: '#34d399' }}>{name?.split(' ')[0] || 'Member'}</span>
+            <p style={label}>Kainovari Wallet</p>
+            <h1 style={{ ...SERIF, fontSize: 28, fontWeight: 700, margin: '10px 0 0', letterSpacing: '-0.4px' }}>
+              Hello, <span style={{ color: C.goldLight }}>{name?.split(' ')[0] || 'Member'}</span>
             </h1>
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <div style={{
-              display: 'flex', alignItems: 'center', gap: 8, padding: '7px 12px', borderRadius: 10,
-              background: 'rgba(16,185,129,0.08)', boxShadow: '0 0 0 1px rgba(16,185,129,0.22) inset',
-            }}>
-              <Mountain size={14} color="rgba(255,255,255,0.8)" strokeWidth={1.7} />
-              <span style={{ fontSize: 12, fontWeight: 700, color: 'rgba(255,255,255,0.85)' }}>Fuji Testnet</span>
-              <span className="badge badge-live" style={{ fontSize: 10 }}>● Live</span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 18 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
+              <Mountain size={13} color={C.inkLight} strokeWidth={1.8} />
+              <span style={{ fontSize: 12, fontWeight: 600, color: C.paperDim }}>Fuji Testnet</span>
+              <span style={{ width: 5, height: 5, borderRadius: '50%', background: C.goldLight }} />
+              <span style={{ ...MONO, fontSize: 10, color: C.goldLight, fontWeight: 600 }}>LIVE</span>
             </div>
-            <motion.button whileTap={{ scale: 0.93 }} onClick={handleRefresh} style={iconBtn}>
-              <RefreshCw size={16} style={{ animation: refreshing ? 'spin 1s linear infinite' : 'none' }} />
-            </motion.button>
-            <motion.button whileTap={{ scale: 0.93 }} onClick={logout} style={{ ...iconBtn, color: 'rgba(255,255,255,0.45)' }} title="Sign out">
+            <button onClick={handleRefresh} style={{ background: 'none', border: 'none', cursor: 'pointer', color: C.inkLight, display: 'flex', alignItems: 'center' }} aria-label="Refresh">
+              <RefreshCw size={15} style={{ animation: refreshing ? 'spin 1s linear infinite' : 'none' }} />
+            </button>
+            <button onClick={logout} style={{ background: 'none', border: 'none', cursor: 'pointer', color: C.inkLight, fontSize: 12, fontWeight: 600, fontFamily: 'inherit' }}>
               Logout
-            </motion.button>
+            </button>
           </div>
         </div>
 
-        {syncState === 'linking' && <p style={{ fontSize: 12, color: '#34d399', margin: '0 0 12px' }}>Linking your account…</p>}
-        {authError && <p style={{ fontSize: 12, color: '#f87171', margin: '0 0 12px' }}>{authError}</p>}
+        {syncState === 'linking' && <p style={{ fontSize: 12, color: C.goldLight, margin: '10px 0 0' }}>Linking your account…</p>}
+        {authError && <p style={{ fontSize: 12, color: C.red, margin: '10px 0 0' }}>{authError}</p>}
 
-        <div className="wallet-dash-grid">
+        <div className="wallet-grid" style={{ marginTop: 32 }}>
           {/* ── MAIN COLUMN ── */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 16, minWidth: 0 }}>
+          <div style={{ minWidth: 0 }}>
 
-            {/* Hero: balance + address + quick actions */}
-            <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
-              className="glass-elevated"
-              style={{ borderRadius: 20, padding: '24px 26px', position: 'relative', overflow: 'hidden',
-                background: 'linear-gradient(145deg,rgba(10,24,18,0.82),rgba(6,6,14,0.78))',
-                boxShadow: '0 1px 0 rgba(255,255,255,0.09) inset, 0 0 0 0.5px rgba(16,185,129,0.22) inset, 0 20px 60px rgba(0,0,0,0.5)',
-              }}>
-              <div style={{ position: 'absolute', top: -70, right: -60, width: 260, height: 260, borderRadius: '50%', background: 'radial-gradient(circle,rgba(16,185,129,0.16) 0%,transparent 70%)', pointerEvents: 'none' }} />
-              <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'flex-start', gap: 16, position: 'relative' }}>
+            {/* Balance + address + Receive/Send */}
+            <section>
+              <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'flex-start', gap: 16 }}>
                 <div>
-                  <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: 1.2, textTransform: 'uppercase', color: 'rgba(255,255,255,0.45)' }}>Est. Balance</span>
-                  <div style={{ fontSize: 42, fontWeight: 900, letterSpacing: -1.6, margin: '4px 0 0', ...Rs }}>{formatTokenAmount(totalBalance)}</div>
-                  <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.38)', margin: '4px 0 0' }}>Estimate is placeholder-based until a price oracle is wired up.</p>
+                  <p style={label}>Est. Balance</p>
+                  <div style={{ ...SERIF, fontSize: 46, fontWeight: 600, letterSpacing: '-1.5px', margin: '10px 0 0' }}>{formatTokenAmount(totalBalance)}</div>
+                  <p style={{ fontSize: 12, color: C.inkLight, margin: '6px 0 0' }}>Estimate is placeholder-based until a price oracle is wired up.</p>
                 </div>
-                <div style={{ display: 'flex', gap: 8, flexShrink: 0 }}>
-                  <motion.button whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.96 }} onClick={() => setTab('receive')} style={{
-                    padding: '10px 18px', borderRadius: 12, border: '1px solid rgba(255,255,255,0.14)', cursor: 'pointer',
-                    background: tab === 'receive' ? 'rgba(16,185,129,0.16)' : 'rgba(255,255,255,0.05)',
-                    color: tab === 'receive' ? '#34d399' : 'rgba(255,255,255,0.8)',
-                    fontSize: 13, fontWeight: 800, display: 'flex', alignItems: 'center', gap: 7,
+                <div style={{ display: 'flex', gap: 10, flexShrink: 0 }}>
+                  <button onClick={() => setTab('receive')} style={{
+                    padding: '11px 20px', borderRadius: 999, cursor: 'pointer',
+                    border: `1px solid ${tab === 'receive' ? C.gold : C.hairline}`, background: 'none',
+                    color: tab === 'receive' ? C.goldLight : C.paperDim,
+                    fontSize: 13, fontWeight: 700, fontFamily: 'inherit', display: 'flex', alignItems: 'center', gap: 7,
                   }}>
-                    <ArrowDownToLine size={15} /> Receive
-                  </motion.button>
-                  <motion.button whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.96 }} onClick={() => setTab('send')} style={{
-                    padding: '10px 18px', borderRadius: 12, cursor: 'pointer', border: 'none',
-                    background: tab === 'send' ? 'linear-gradient(135deg,#10b981,#047857)' : 'rgba(255,255,255,0.05)',
-                    color: '#fff', boxShadow: tab === 'send' ? '0 6px 20px rgba(16,185,129,0.35)' : 'none',
-                    fontSize: 13, fontWeight: 800, display: 'flex', alignItems: 'center', gap: 7,
+                    <ArrowDownToLine size={14} /> Receive
+                  </button>
+                  <button onClick={() => setTab('send')} style={{
+                    padding: '11px 20px', borderRadius: 999, cursor: 'pointer', border: 'none',
+                    background: tab === 'send' ? C.gold : 'transparent',
+                    boxShadow: tab === 'send' ? 'none' : `inset 0 0 0 1px ${C.hairline}`,
+                    color: tab === 'send' ? C.ink : C.paperDim,
+                    fontSize: 13, fontWeight: 700, fontFamily: 'inherit', display: 'flex', alignItems: 'center', gap: 7,
                   }}>
-                    <Send size={15} /> Send
-                  </motion.button>
+                    <Send size={14} /> Send
+                  </button>
                 </div>
               </div>
 
-              <div style={{
-                display: 'flex', alignItems: 'center', gap: 10, marginTop: 20, padding: '12px 14px',
-                borderRadius: 12, background: 'rgba(255,255,255,0.04)', boxShadow: '0 0 0 0.5px rgba(255,255,255,0.08) inset',
-                position: 'relative',
-              }}>
-                <code style={{ flex: 1, fontSize: 13, fontFamily: 'monospace', color: '#d1fae5', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{address}</code>
-                <motion.button whileTap={{ scale: 0.92 }} onClick={copyAddress} style={{
-                  padding: '7px 12px', borderRadius: 9, border: 'none', cursor: 'pointer', flexShrink: 0,
-                  background: copied ? 'rgba(52,211,153,0.16)' : 'rgba(255,255,255,0.06)',
-                  color: copied ? '#34d399' : 'rgba(255,255,255,0.55)', fontSize: 12, fontWeight: 700,
-                  display: 'flex', alignItems: 'center', gap: 5, transition: 'all 0.2s',
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginTop: 24, paddingTop: 16, paddingBottom: 4, borderTop: `1px solid ${C.hairline}` }}>
+                <code style={{ ...MONO, flex: 1, fontSize: 13, color: C.paperDim, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{address}</code>
+                <button onClick={copyAddress} style={{
+                  background: 'none', border: 'none', cursor: 'pointer', flexShrink: 0,
+                  color: copied ? C.goldLight : C.inkLight, fontSize: 12, fontWeight: 600,
+                  display: 'flex', alignItems: 'center', gap: 5, fontFamily: 'inherit',
                 }}>
                   {copied ? <CheckCircle2 size={13} /> : <Copy size={13} />} {copied ? 'Copied' : 'Copy'}
-                </motion.button>
-                <motion.button whileTap={{ scale: 0.92 }} onClick={() => setShowQr(s => !s)} style={{
-                  padding: '7px 10px', borderRadius: 9, border: 'none', cursor: 'pointer', flexShrink: 0,
-                  background: showQr ? 'rgba(16,185,129,0.16)' : 'rgba(255,255,255,0.06)', color: showQr ? '#34d399' : 'rgba(255,255,255,0.55)',
-                }}>
-                  <QrCode size={13} />
-                </motion.button>
+                </button>
+                <button onClick={() => setShowQr(s => !s)} style={{
+                  background: 'none', border: 'none', cursor: 'pointer', flexShrink: 0,
+                  color: showQr ? C.goldLight : C.inkLight,
+                }} aria-label="Show QR code">
+                  <QrCode size={14} />
+                </button>
               </div>
 
               <AnimatePresence>
                 {showQr && (
                   <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} style={{ overflow: 'hidden' }}>
                     <div style={{
-                      marginTop: 14, borderRadius: 16, padding: '14px 14px 10px', textAlign: 'center',
-                      background: '#fff', width: 200,
-                      boxShadow: '0 10px 40px rgba(0,0,0,0.5)',
+                      marginTop: 16, borderRadius: 14, padding: '14px 14px 10px', textAlign: 'center',
+                      background: C.paper, width: 200,
                     }}>
                       <RealisticQR value={address} size={164} fg="#0f172a" bg="#ffffff" />
-                      <p style={{ fontSize: 10, color: '#0f172a', margin: '8px 0 2px', fontWeight: 700, wordBreak: 'break-all' }}>{address.slice(0, 18)}…</p>
+                      <p style={{ fontSize: 10, color: C.ink, margin: '8px 0 2px', fontWeight: 700, wordBreak: 'break-all' }}>{address.slice(0, 18)}…</p>
                     </div>
                   </motion.div>
                 )}
               </AnimatePresence>
-            </motion.div>
+            </section>
 
             {/* Assets list */}
-            <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
-              className="glass-elevated"
-              style={{ borderRadius: 18, padding: '8px 0 10px',
-                background: 'rgba(6,6,14,0.72)', backdropFilter: 'blur(22px)',
-                boxShadow: '0 0 0 0.5px rgba(16,185,129,0.2) inset, 0 12px 40px rgba(0,0,0,0.48)',
-              }}>
-              <p style={{ fontSize: 10, fontWeight: 700, letterSpacing: 1.2, textTransform: 'uppercase', color: 'rgba(255,255,255,0.5)', margin: '10px 18px 6px' }}>
-                Assets
-              </p>
+            <section style={{ marginTop: 44, paddingTop: 32, borderTop: `1px solid ${C.hairline}` }}>
+              <p style={{ ...label, marginBottom: 16 }}>Assets</p>
               {assetRows.map(b => (
-                <div key={b.s} className="wallet-asset-row" onClick={() => b.d && selectAssetForSend(b.s)} style={{
-                  display: 'flex', alignItems: 'center', gap: 12, padding: '11px 18px',
+                <div key={b.s} className="wallet-row" onClick={() => b.d && selectAssetForSend(b.s)} style={{
+                  display: 'flex', alignItems: 'center', gap: 14, padding: '12px 8px',
+                  borderBottom: `1px solid ${C.hairline}`,
                 }}>
                   <div style={{
-                    width: 36, height: 36, borderRadius: 10, flexShrink: 0, fontSize: 13, fontWeight: 800,
+                    width: 34, height: 34, borderRadius: '50%', flexShrink: 0, fontSize: 11, fontWeight: 700,
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    background: `${b.c}1a`, color: b.c,
-                    boxShadow: `0 0 0 0.5px ${b.c}35 inset`,
+                    background: 'rgba(200,155,60,0.12)', color: C.goldLight,
                   }}>{b.s.slice(0, 2)}</div>
                   <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                      <span style={{ fontSize: 13, fontWeight: 800, color: 'rgba(255,255,255,0.92)' }}>{b.s}</span>
-                      {!b.d && <span style={{ fontSize: 8, color: 'rgba(255,255,255,0.3)', fontWeight: 700, padding: '1px 6px', borderRadius: 5, background: 'rgba(255,255,255,0.06)' }}>SOON</span>}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
+                      <span style={{ fontSize: 14, fontWeight: 700, color: C.paper }}>{b.s}</span>
+                      {!b.d && <span style={{ ...MONO, fontSize: 9, color: C.inkLight, fontWeight: 600 }}>SOON</span>}
                     </div>
-                    <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)', margin: '1px 0 0' }}>{b.name}</p>
+                    <p style={{ fontSize: 12, color: C.inkLight, margin: '2px 0 0' }}>{b.name}</p>
                   </div>
-                  <p style={{ fontSize: 15, fontWeight: 800, color: b.c, margin: 0, textShadow: `0 0 10px ${b.c}50`, flexShrink: 0 }}>
+                  <p style={{ ...SERIF, fontSize: 16, fontWeight: 600, color: C.paper, margin: 0, flexShrink: 0 }}>
                     {formatTokenAmount(b.amt)}
                   </p>
-                  {b.d && <ChevronRight size={15} color="rgba(255,255,255,0.25)" style={{ flexShrink: 0 }} />}
+                  {b.d && <ChevronRight size={15} color={C.inkLight} style={{ flexShrink: 0 }} />}
                 </div>
               ))}
-            </motion.div>
+            </section>
 
             {/* Send / Receive panel */}
-            <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
-              className="glass-elevated"
-              style={{ borderRadius: 18, overflow: 'hidden',
-                background: 'rgba(6,6,14,0.72)', backdropFilter: 'blur(24px)',
-                boxShadow: '0 0 0 0.5px rgba(16,185,129,0.2) inset, 0 12px 40px rgba(0,0,0,0.48)',
-              }}>
-              <div style={{ display: 'flex', padding: '10px 14px', gap: 8, borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+            <section style={{ marginTop: 44, paddingTop: 32, borderTop: `1px solid ${C.hairline}` }}>
+              <div style={{ display: 'flex', gap: 26, marginBottom: 20, borderBottom: `1px solid ${C.hairline}` }}>
                 {(['receive', 'send'] as const).map(t => (
-                  <button key={t} onClick={() => setTab(t)} style={{
-                    padding: '8px 18px', borderRadius: 10, border: 'none', cursor: 'pointer',
-                    background: tab === t ? 'rgba(16,185,129,0.16)' : 'transparent',
-                    color: tab === t ? '#34d399' : 'rgba(255,255,255,0.5)',
-                    boxShadow: tab === t ? '0 0 0 1px rgba(52,211,153,0.35) inset' : 'none',
-                    fontSize: 13, fontWeight: 800, display: 'flex', alignItems: 'center', gap: 7,
+                  <button key={t} onClick={() => setTab(t)} className="wallet-tab" style={{
+                    color: tab === t ? C.goldLight : C.inkLight,
+                    borderBottom: tab === t ? `2px solid ${C.gold}` : '2px solid transparent',
+                    marginBottom: -1,
+                    fontSize: 13, fontWeight: 700, display: 'flex', alignItems: 'center', gap: 7,
                   }}>
-                    {t === 'receive' ? <ArrowDownToLine size={15} /> : <Send size={15} />}
+                    {t === 'receive' ? <ArrowDownToLine size={14} /> : <Send size={14} />}
                     {t === 'receive' ? 'Receive' : 'Send'}
                   </button>
                 ))}
               </div>
 
               {tab === 'receive' ? (
-                <div style={{ padding: '22px 24px', textAlign: 'center' }}>
-                  <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.7)', margin: '0 0 14px' }}>
+                <div>
+                  <p style={{ fontSize: 13, color: C.paperDim, margin: '0 0 18px', lineHeight: 1.6 }}>
                     Share your address to receive AVAX, ERC-20 tokens, or NFTs.
                   </p>
-                  <div style={{ display: 'flex', justifyContent: 'center', gap: 10, flexWrap: 'wrap' }}>
-                    <motion.button whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.96 }} onClick={copyAddress} style={{
-                      padding: '11px 22px', borderRadius: 12, cursor: 'pointer', border: 'none',
-                      background: 'linear-gradient(135deg,#10b981,#047857)', color: '#fff',
-                      fontSize: 14, fontWeight: 800, display: 'flex', alignItems: 'center', gap: 8,
-                      boxShadow: '0 6px 22px rgba(16,185,129,0.35)',
+                  <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
+                    <button onClick={copyAddress} style={{
+                      padding: '13px 24px', borderRadius: 999, cursor: 'pointer', border: 'none',
+                      background: C.gold, color: C.ink,
+                      fontSize: 13, fontWeight: 700, fontFamily: 'inherit', display: 'flex', alignItems: 'center', gap: 8,
                     }}>
-                      <Copy size={16} /> {copied ? 'Copied!' : 'Copy Address'}
-                    </motion.button>
-                    <motion.button whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.96 }} onClick={() => setShowQr(true)} style={{
-                      padding: '11px 22px', borderRadius: 12, cursor: 'pointer', border: 'none',
-                      background: 'rgba(255,255,255,0.07)', color: 'rgba(255,255,255,0.8)',
-                      fontSize: 14, fontWeight: 800, display: 'flex', alignItems: 'center', gap: 8,
-                      boxShadow: '0 0 0 1px rgba(255,255,255,0.1) inset',
+                      <Copy size={15} /> {copied ? 'Copied!' : 'Copy Address'}
+                    </button>
+                    <button onClick={() => setShowQr(true)} style={{
+                      padding: '13px 24px', borderRadius: 999, cursor: 'pointer', border: `1px solid ${C.hairline}`,
+                      background: 'none', color: C.paperDim,
+                      fontSize: 13, fontWeight: 700, fontFamily: 'inherit', display: 'flex', alignItems: 'center', gap: 8,
                     }}>
-                      <QrCode size={16} /> Show QR
-                    </motion.button>
+                      <QrCode size={15} /> Show QR
+                    </button>
                   </div>
                 </div>
               ) : (
-                <div style={{ padding: '20px 24px' }}>
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 10 }}>
+                <div>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20, marginBottom: 18 }}>
                     <div>
-                      <label style={{ fontSize: 9, fontWeight: 800, letterSpacing: 1, textTransform: 'uppercase', color: 'rgba(255,255,255,0.4)', display: 'block', marginBottom: 5 }}>Asset</label>
+                      <label style={{ ...label, display: 'block', marginBottom: 8 }}>Asset</label>
                       <select value={token ?? ''} onChange={e => setToken(e.target.value as Address)} style={selectStyle}>
                         {ECOSYSTEM_TOKENS.filter((t): t is typeof t & { address: `0x${string}` } => !!t.address).map(t => (
                           <option key={t.symbol} value={t.address}>{t.symbol} ({formatTokenAmount(tokenBals[t.symbol] ?? 0)} bal.)</option>
@@ -384,144 +364,105 @@ export default function WalletDashboard() {
                       </select>
                     </div>
                     <div>
-                      <label style={{ fontSize: 9, fontWeight: 800, letterSpacing: 1, textTransform: 'uppercase', color: 'rgba(255,255,255,0.4)', display: 'block', marginBottom: 5 }}>Amount</label>
+                      <label style={{ ...label, display: 'block', marginBottom: 8 }}>Amount</label>
                       <input value={amount} onChange={e => setAmount(e.target.value)} placeholder="0.0" inputMode="decimal" style={inputStyle} />
                     </div>
                   </div>
-                  <div style={{ marginBottom: 14 }}>
-                    <label style={{ fontSize: 9, fontWeight: 800, letterSpacing: 1, textTransform: 'uppercase', color: 'rgba(255,255,255,0.4)', display: 'block', marginBottom: 5 }}>Recipient</label>
+                  <div style={{ marginBottom: 20 }}>
+                    <label style={{ ...label, display: 'block', marginBottom: 8 }}>Recipient</label>
                     <input value={recipient} onChange={e => setRecipient(e.target.value)} placeholder="0x…" style={inputStyle} />
                   </div>
 
                   {sendMsg && (
                     <div style={{
-                      padding: '10px 14px', borderRadius: 10, marginBottom: 12, fontSize: 13, lineHeight: 1.5,
-                      background: sendState === 'success' ? 'rgba(52,211,153,0.1)' : 'rgba(248,113,113,0.1)',
-                      color: sendState === 'success' ? '#6ee7b7' : '#fca5a5',
-                      boxShadow: `0 0 0 1px ${sendState === 'success' ? 'rgba(52,211,153,0.3)' : 'rgba(248,113,113,0.3)'} inset`,
+                      paddingLeft: 14, marginBottom: 18, fontSize: 13, lineHeight: 1.5,
+                      borderLeft: `2px solid ${sendState === 'success' ? C.gold : C.red}`,
+                      color: sendState === 'success' ? C.goldLight : C.red,
                     }}>{sendMsg}</div>
                   )}
 
-                  <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.97 }} onClick={doSend}
+                  <button onClick={doSend}
                     disabled={sendState === 'sending'}
                     style={{
-                      width: '100%', padding: '12px 0', borderRadius: 12, cursor: sendState === 'sending' ? 'not-allowed' : 'pointer',
-                      border: 'none', color: '#fff',
-                      background: sendState === 'sending' ? 'rgba(16,185,129,0.4)' : 'linear-gradient(135deg,#10b981,#047857)',
-                      boxShadow: '0 6px 22px rgba(16,185,129,0.35)', fontSize: 14, fontWeight: 800,
+                      width: '100%', padding: '15px 0', borderRadius: 999, cursor: sendState === 'sending' ? 'not-allowed' : 'pointer',
+                      border: 'none', color: C.ink, fontFamily: 'inherit',
+                      background: sendState === 'sending' ? 'rgba(200,155,60,0.45)' : C.gold,
+                      fontSize: 14, fontWeight: 700,
                       display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
                     }}>
                     {sendState === 'sending' ? <><Loader2 size={16} className="animate-spin" /> Sending…</> : <><Send size={16} /> Send</>}
-                  </motion.button>
-                  <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.35)', margin: '10px 0 0', textAlign: 'center' }}>
+                  </button>
+                  <p style={{ fontSize: 11, color: C.inkLight, margin: '12px 0 0', textAlign: 'center' }}>
                     Signing is handled securely by Privy. You may be asked to approve the transaction.
                   </p>
                 </div>
               )}
-            </motion.div>
+            </section>
           </div>
 
           {/* ── SIDEBAR ── */}
-          <div className="wallet-dash-side">
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
             {/* NFTs */}
-            <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
-              className="glass-elevated"
-              style={{ borderRadius: 18, padding: '18px 20px',
-                background: 'rgba(6,6,14,0.72)', backdropFilter: 'blur(22px)',
-                boxShadow: '0 0 0 0.5px rgba(16,185,129,0.2) inset, 0 12px 40px rgba(0,0,0,0.48)',
-              }}>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
-                <p style={{ fontSize: 10, fontWeight: 700, letterSpacing: 1.2, textTransform: 'uppercase', color: 'rgba(255,255,255,0.5)', margin: 0 }}>
-                  Your NFTs
-                </p>
-                <span className="badge badge-live">{nfts.length}</span>
+            <section>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
+                <p style={label}>Your NFTs</p>
+                <span style={{ ...MONO, fontSize: 11, fontWeight: 600, color: C.goldLight }}>{nfts.length}</span>
               </div>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 10 }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 12 }}>
                 {nfts.map(n => (
-                  <div key={`${n.contract}-${n.tokenId}`} style={{
-                    borderRadius: 14, overflow: 'hidden',
-                    background: 'rgba(255,255,255,0.04)',
-                    boxShadow: '0 0 0 0.5px rgba(168,85,247,0.2) inset',
-                  }}>
+                  <div key={`${n.contract}-${n.tokenId}`} style={{ borderRadius: 10, overflow: 'hidden' }}>
                     <div style={{
-                      height: 90, display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      background: n.image ? `center/cover no-repeat url("${n.image}")` : 'linear-gradient(135deg,rgba(168,85,247,0.2),rgba(6,6,14,0.9))',
+                      height: 90, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: 10,
+                      background: n.image ? `center/cover no-repeat url("${n.image}")` : 'rgba(200,155,60,0.06)',
                     }}>
-                      {!n.image && <ImageIcon size={26} color="rgba(192,132,252,0.5)" />}
+                      {!n.image && <ImageIcon size={24} color={C.inkLight} />}
                     </div>
-                    <div style={{ padding: '8px 10px' }}>
-                      <p style={{ fontSize: 12, fontWeight: 800, margin: 0, color: '#fff', ...Rs, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{n.name}</p>
-                      <p style={{ fontSize: 10, color: 'rgba(255,255,255,0.45)', margin: '2px 0 0' }}>#{n.tokenId}</p>
+                    <div style={{ padding: '8px 2px 0' }}>
+                      <p style={{ fontSize: 12, fontWeight: 700, margin: 0, color: C.paper, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{n.name}</p>
+                      <p style={{ fontSize: 10, color: C.inkLight, margin: '2px 0 0' }}>#{n.tokenId}</p>
                     </div>
                   </div>
                 ))}
                 {nfts.length === 0 && !nftsLoading && (
-                  <div style={{ gridColumn: '1 / -1', padding: '18px', textAlign: 'center', color: 'rgba(255,255,255,0.4)', fontSize: 12 }}>
+                  <div style={{ gridColumn: '1 / -1', padding: '10px 0', color: C.inkLight, fontSize: 12 }}>
                     {nftSource === 'none' || nftSource === 'error'
                       ? 'No NFTs detected yet on this address.'
                       : 'No NFTs in your wallet yet.'}
                   </div>
                 )}
                 {nftsLoading && (
-                  <div style={{ gridColumn: '1 / -1', padding: '18px', textAlign: 'center', color: 'rgba(255,255,255,0.4)', fontSize: 12 }}>
-                    <Loader2 className="animate-spin" size={18} color="#a78bfa" style={{ verticalAlign: 'middle', marginRight: 6 }} />
+                  <div style={{ gridColumn: '1 / -1', padding: '10px 0', color: C.inkLight, fontSize: 12, display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <Loader2 className="animate-spin" size={16} color={C.goldLight} />
                     Detecting NFTs…
                   </div>
                 )}
               </div>
               {nfts.length > 0 && (
-                <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.35)', margin: '12px 0 0' }}>
+                <p style={{ fontSize: 11, color: C.inkLight, margin: '14px 0 0' }}>
                   Detected via {nftSource === 'fetchFromReservoir' ? 'Reservoir' : nftSource === 'fetchFromSimpleHash' ? 'SimpleHash' : nftSource === 'fetchFromLogs' ? 'event log scan' : 'on-chain lookup'}.
                 </p>
               )}
-            </motion.div>
+            </section>
 
             {/* Quick links */}
-            <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}>
-              <Link href="/kai-bar" style={{ textDecoration: 'none' }}>
-                <div className="hover-shine" style={{
-                  display: 'flex', alignItems: 'center', gap: 14,
-                  padding: '15px 18px', borderRadius: 16,
-                  background: 'linear-gradient(110deg, rgba(245,158,11,0.1), rgba(6,6,14,0.6))',
-                  boxShadow: '0 0 0 0.5px rgba(245,158,11,0.2) inset',
-                }}>
-                  <div style={{
-                    width: 40, height: 40, borderRadius: 12, flexShrink: 0,
-                    background: 'rgba(245,158,11,0.14)', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  }}>
-                    <ShieldCheck size={20} color="#fbbf24" />
-                  </div>
-                  <div style={{ flex: 1 }}>
-                    <p style={{ fontSize: 13, fontWeight: 800, margin: '0 0 2px', color: 'rgba(255,255,255,0.92)', ...Rs }}>Kai Bar Rewards</p>
-                    <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.5)', margin: 0 }}>Points, referrals, airdrop.</p>
-                  </div>
-                  <ChevronRight size={16} color="rgba(255,255,255,0.3)" />
+            <section style={{ marginTop: 36, paddingTop: 28, borderTop: `1px solid ${C.hairline}` }}>
+              <Link href="/kai-bar" className="wallet-link" style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 14, padding: '12px 0', borderBottom: `1px solid ${C.hairline}` }}>
+                <ShieldCheck size={18} color={C.goldLight} strokeWidth={1.7} style={{ flexShrink: 0 }} />
+                <div style={{ flex: 1 }}>
+                  <p className="wallet-link-title" style={{ fontSize: 14, fontWeight: 700, margin: '0 0 2px', color: C.paper, transition: 'color 0.15s ease' }}>Kai Bar Rewards</p>
+                  <p style={{ fontSize: 11.5, color: C.inkLight, margin: 0 }}>Points, referrals, airdrop.</p>
                 </div>
+                <ChevronRight size={15} color={C.inkLight} style={{ flexShrink: 0 }} />
               </Link>
-            </motion.div>
-
-            <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}>
-              <Link href="/waitlist" style={{ textDecoration: 'none' }}>
-                <div className="hover-shine" style={{
-                  display: 'flex', alignItems: 'center', gap: 14,
-                  padding: '15px 18px', borderRadius: 16,
-                  background: 'linear-gradient(110deg, rgba(16,185,129,0.1), rgba(6,6,14,0.6))',
-                  boxShadow: '0 0 0 0.5px rgba(16,185,129,0.2) inset',
-                }}>
-                  <div style={{
-                    width: 40, height: 40, borderRadius: 12, flexShrink: 0,
-                    background: 'rgba(16,185,129,0.14)', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  }}>
-                    <ListChecks size={20} color="#34d399" />
-                  </div>
-                  <div style={{ flex: 1 }}>
-                    <p style={{ fontSize: 13, fontWeight: 800, margin: '0 0 2px', color: 'rgba(255,255,255,0.92)', ...Rs }}>KAI Nuvari Waitlist</p>
-                    <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.5)', margin: 0 }}>Account, wallet & points status.</p>
-                  </div>
-                  <ChevronRight size={16} color="rgba(255,255,255,0.3)" />
+              <Link href="/waitlist" className="wallet-link" style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 14, padding: '12px 0' }}>
+                <ListChecks size={18} color={C.goldLight} strokeWidth={1.7} style={{ flexShrink: 0 }} />
+                <div style={{ flex: 1 }}>
+                  <p className="wallet-link-title" style={{ fontSize: 14, fontWeight: 700, margin: '0 0 2px', color: C.paper, transition: 'color 0.15s ease' }}>KAI Nuvari Waitlist</p>
+                  <p style={{ fontSize: 11.5, color: C.inkLight, margin: 0 }}>Account, wallet & points status.</p>
                 </div>
+                <ChevronRight size={15} color={C.inkLight} style={{ flexShrink: 0 }} />
               </Link>
-            </motion.div>
+            </section>
           </div>
         </div>
       </div>
@@ -530,19 +471,14 @@ export default function WalletDashboard() {
 }
 
 const selectStyle: React.CSSProperties = {
-  background: '#0c0c14', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 10,
-  padding: '10px 12px', fontSize: 13, color: '#f8f8fa', outline: 'none', fontFamily: 'inherit',
+  background: 'none', border: 'none', borderBottom: `1px solid ${C.hairline}`, borderRadius: 0,
+  padding: '8px 2px', fontSize: 13, color: C.paper, outline: 'none', fontFamily: 'inherit',
   width: '100%', boxSizing: 'border-box', appearance: 'none',
-  backgroundImage: 'url("data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'12\' height=\'12\' viewBox=\'0 0 24 24\' fill=\'none\' stroke=\'%23888\' stroke-width=\'2\'%3E%3Cpath d=\'M6 9l6 6 6-6\'/%3E%3C/svg%3E")',
-  backgroundRepeat: 'no-repeat', backgroundPosition: 'right 12px center',
+  backgroundImage: 'url("data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'12\' height=\'12\' viewBox=\'0 0 24 24\' fill=\'none\' stroke=\'%239BA396\' stroke-width=\'2\'%3E%3Cpath d=\'M6 9l6 6 6-6\'/%3E%3C/svg%3E")',
+  backgroundRepeat: 'no-repeat', backgroundPosition: 'right 2px center',
 };
 const inputStyle: React.CSSProperties = {
-  background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)',
-  borderRadius: 10, padding: '10px 12px', fontSize: 13, color: '#f8f8fa',
+  background: 'none', border: 'none', borderBottom: `1px solid ${C.hairline}`, borderRadius: 0,
+  padding: '8px 2px', fontSize: 13, color: C.paper,
   outline: 'none', fontFamily: 'inherit', width: '100%', boxSizing: 'border-box',
-};
-const iconBtn: React.CSSProperties = {
-  padding: '9px 13px', borderRadius: 10, border: 'none', cursor: 'pointer',
-  background: 'rgba(255,255,255,0.06)', color: 'rgba(255,255,255,0.6)',
-  display: 'flex', alignItems: 'center', gap: 5, fontSize: 12, fontWeight: 700,
 };
