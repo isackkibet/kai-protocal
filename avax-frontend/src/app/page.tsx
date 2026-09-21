@@ -267,7 +267,6 @@ export default function Home() {
             'url("/images/home-hero.jpg")',
           backgroundSize: 'cover', backgroundPosition: 'center 30%',
           textAlign: 'left',
-          borderBottom: `1px solid ${C.hairline}`,
         }}>
           <div style={{ width: 'min(1150px, calc(100% - 48px))', marginInline: 'auto', boxSizing: 'border-box', position: 'relative', zIndex: 2 }}>
             <div style={{ maxWidth: 660 }}>
@@ -309,6 +308,13 @@ export default function Home() {
             </div>
           </div>
         </div>
+
+        {/* The hero above is a full-bleed element on a `transform: translateX`
+            offset (for the 100vw break-out trick); a border on that same
+            transformed/composited layer shimmers into a jagged line on real
+            GPU compositing. This hairline lives outside the transform, in
+            normal flow, so the seam is a clean flat line. */}
+        <div style={{ height:1, background:C.hairline }} />
 
         {/* SECTION 2 — PROFILE */}
         <motion.section className="home-section" aria-label="Profile" style={{ marginTop: 40 }} {...reveal}>
