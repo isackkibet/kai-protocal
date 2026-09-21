@@ -197,7 +197,7 @@ model CreatorPayout {
   bankCode      String?
   accountNumber String
   accountName   String?
-  recipientCode String?cactus-needle (on-device LLM) · Groq (RAG) · Gemini (voice orchestrator)
+  recipientCode String?
   currency      String   @default("KES")
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
