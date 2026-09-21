@@ -246,16 +246,15 @@ export default function Home() {
 
         {/* HERO — full-screen photo, dark fade left→right so the copy reads.
             Colors are the original KAI palette only; the photo is a mask.
-            The source photo is a tall 9:16 shot, so a short wide strip only
-            ever showed a thin sliver of it under `cover`; a responsive
-            min-height (tall on phones, capped on desktop) lets the forest
-            actually read instead of getting cropped to a line. */}
+            Sizing follows a fixed spacing scale (min-height 100vh, 140/80px
+            section padding, 1150px container, 660/490px text columns) so any
+            other section can reuse the same three rules and match exactly. */}
         <div style={{
           width: '100vw', marginLeft: '50%', transform: 'translateX(-50%)',
           position: 'relative', zIndex: 5,
-          minHeight: 'clamp(480px, 78vh, 720px)',
+          minHeight: '100vh',
           display: 'flex', alignItems: 'center',
-          padding: '100px 0',
+          padding: '140px 0 80px',
           boxSizing: 'border-box',
           backgroundImage:
             `linear-gradient(180deg, rgba(11,28,20,0.15) 0%, rgba(11,28,20,0.65) 55%, ${C.bg} 100%),` +
@@ -265,42 +264,44 @@ export default function Home() {
           textAlign: 'left',
           borderBottom: `1px solid ${C.hairline}`,
         }}>
-          <div style={{ maxWidth: 1120, marginInline: 'auto', paddingInline: 24, boxSizing: 'border-box', position: 'relative', zIndex: 2 }}>
-            {/* Pill badge — original gold dot, not the screenshot's orange */}
-            <div style={{ display: 'inline-flex', alignItems: 'center', gap: 9, padding: '7px 16px', borderRadius: 999, background: 'rgba(246,242,231,0.06)', border: `1px solid rgba(228,200,120,0.28)` }}>
-              <span style={{ width: 8, height: 8, borderRadius: '50%', background: C.goldLight, boxShadow: '0 0 10px rgba(228,200,120,0.9)' }} />
-              <span style={{ ...MONO, fontSize: 10, letterSpacing: 1.4, textTransform: 'uppercase', color: C.goldLight, fontWeight: 600 }}>Avalanche C-Chain · Forest Finance</span>
+          <div style={{ width: 'min(1150px, calc(100% - 48px))', marginInline: 'auto', boxSizing: 'border-box', position: 'relative', zIndex: 2 }}>
+            <div style={{ maxWidth: 660 }}>
+              {/* Pill badge — original gold dot, not the screenshot's orange */}
+              <div style={{ display: 'inline-flex', alignItems: 'center', gap: 9, padding: '7px 14px', borderRadius: 999, background: 'rgba(246,242,231,0.06)', border: `1px solid rgba(228,200,120,0.28)` }}>
+                <span style={{ width: 8, height: 8, borderRadius: '50%', background: C.goldLight, boxShadow: '0 0 10px rgba(228,200,120,0.9)' }} />
+                <span style={{ ...MONO, fontSize: 10, letterSpacing: 1.4, textTransform: 'uppercase', color: C.goldLight, fontWeight: 600 }}>Avalanche C-Chain · Forest Finance</span>
+              </div>
+
+              <h1 style={{ ...SERIF, fontSize: 'clamp(2.6rem, 1.9rem + 3vw, 4.3rem)', fontWeight: 700, margin: '24px 0 0', letterSpacing: '-0.5px', lineHeight: 1.08 }}>
+                <span style={HL.green}>KAI</span> <span style={{ color: C.paper }}>Nuvari</span>
+              </h1>
+              <p style={{ fontSize: 16, color: C.paperDim, margin: '32px 0 0', maxWidth: 490, lineHeight: 1.6 }}>
+                A DeFi ecosystem on Avalanche C-Chain with six tokens, yield vaults, liquidity pools, and DAO governance,
+                plus community savings groups and a KAI agent that can check balances and find yield for you.
+                Connect a wallet to see your portfolio, join a dashboard, and get started.
+              </p>
+
+              <motion.button whileTap={{ scale: 0.98 }} onClick={() => {
+                if (privyAuthenticated) { router.push('/wallet'); return; }
+                setShowModal(true);
+              }}
+                style={{
+                  marginTop: 40, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 10,
+                  padding: '16px 32px', borderRadius: 999, cursor: 'pointer', border: 'none',
+                  background: C.gold,
+                  fontSize: 14, fontWeight: 700, color: C.ink, fontFamily: 'inherit',
+                }}>
+                <Link2 size={16}/>
+                {connected
+                  ? `Connected: ${address?.slice(0,6)}…${address?.slice(-4)}`
+                  : privyAuthenticated && privyAddress
+                    ? `Your Wallet: ${privyAddress.slice(0,6)}…${privyAddress.slice(-4)}`
+                    : 'Connect Wallet'}
+                {(connected || privyAuthenticated) && <span style={{ width: 8, height: 8, borderRadius: '50%', background: C.ink }} />}
+              </motion.button>
+
+              <p style={{ marginTop: 18, ...MONO, fontSize: 11, letterSpacing: 1, textTransform: 'uppercase', color: C.inkLight }}>MetaMask and Core Wallet supported</p>
             </div>
-
-            <h1 style={{ ...SERIF, fontSize: 44, fontWeight: 700, margin: '18px 0 12px', letterSpacing: '-0.5px', lineHeight: 1.1 }}>
-              <span style={HL.green}>KAI</span> <span style={{ color: C.paper }}>Nuvari</span>
-            </h1>
-            <p style={{ fontSize: 16, color: C.paperDim, margin: 0, maxWidth: 540, lineHeight: 1.65 }}>
-              A DeFi ecosystem on Avalanche C-Chain with six tokens, yield vaults, liquidity pools, and DAO governance,
-              plus community savings groups and a KAI agent that can check balances and find yield for you.
-              Connect a wallet to see your portfolio, join a dashboard, and get started.
-            </p>
-
-            <motion.button whileTap={{ scale: 0.98 }} onClick={() => {
-              if (privyAuthenticated) { router.push('/wallet'); return; }
-              setShowModal(true);
-            }}
-              style={{
-                marginTop: 26, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 10,
-                padding: '13px 30px', borderRadius: 999, cursor: 'pointer', border: 'none',
-                background: C.gold,
-                fontSize: 14, fontWeight: 700, color: C.ink, fontFamily: 'inherit',
-              }}>
-              <Link2 size={16}/>
-              {connected
-                ? `Connected: ${address?.slice(0,6)}…${address?.slice(-4)}`
-                : privyAuthenticated && privyAddress
-                  ? `Your Wallet: ${privyAddress.slice(0,6)}…${privyAddress.slice(-4)}`
-                  : 'Connect Wallet'}
-              {(connected || privyAuthenticated) && <span style={{ width: 8, height: 8, borderRadius: '50%', background: C.ink }} />}
-            </motion.button>
-
-            <p style={{ marginTop: 18, ...MONO, fontSize: 11, letterSpacing: 1, textTransform: 'uppercase', color: C.inkLight }}>MetaMask and Core Wallet supported</p>
           </div>
         </div>
 
