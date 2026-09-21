@@ -12,7 +12,7 @@ import {
 } from 'lucide-react';
 import { usePrivyAuth } from '@/lib/privy-auth';
 import { useNFTs } from '@/hooks/useNFTs';
-import { ECOSYSTEM_TOKENS, formatTokenAmount } from '@/lib/tokens';
+import { ECOSYSTEM_TOKENS, AVAX_CONFIG, formatTokenAmount } from '@/lib/tokens';
 import { ERC20_ABI } from '@/lib/erc20abi';
 import RealisticQR from '@/components/ui/RealisticQR';
 
@@ -170,8 +170,8 @@ export default function WalletDashboard() {
 
   const totalBalance = avaxAmt + Object.values(tokenBals).reduce((a, b) => a + b, 0);
   const assetRows = [
-    { s: 'AVAX', name: 'Avalanche', amt: avaxAmt, d: true },
-    ...ECOSYSTEM_TOKENS.map(t => ({ s: t.symbol, name: t.name, amt: tokenBals[t.symbol] ?? 0, d: !!t.address })),
+    { s: 'AVAX', name: 'Avalanche', amt: avaxAmt, d: true, c: AVAX_CONFIG.color },
+    ...ECOSYSTEM_TOKENS.map(t => ({ s: t.symbol, name: t.name, amt: tokenBals[t.symbol] ?? 0, d: !!t.address, c: t.color })),
   ];
 
   const selectAssetForSend = (symbol: string) => {
@@ -297,7 +297,7 @@ export default function WalletDashboard() {
                   <div style={{
                     width: 34, height: 34, borderRadius: '50%', flexShrink: 0, fontSize: 11, fontWeight: 700,
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    background: 'rgba(200,155,60,0.12)', color: C.goldLight,
+                    background: `${b.c}1f`, color: b.c,
                   }}>{b.s.slice(0, 2)}</div>
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
@@ -306,7 +306,7 @@ export default function WalletDashboard() {
                     </div>
                     <p style={{ fontSize: 12, color: C.inkLight, margin: '2px 0 0' }}>{b.name}</p>
                   </div>
-                  <p style={{ ...SERIF, fontSize: 16, fontWeight: 600, color: C.paper, margin: 0, flexShrink: 0 }}>
+                  <p style={{ ...SERIF, fontSize: 16, fontWeight: 600, color: b.c, margin: 0, flexShrink: 0 }}>
                     {formatTokenAmount(b.amt)}
                   </p>
                   {b.d && <ChevronRight size={15} color={C.inkLight} style={{ flexShrink: 0 }} />}
