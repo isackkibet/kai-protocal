@@ -30,16 +30,16 @@ const MONO: React.CSSProperties = { fontFamily: 'var(--font-plex-mono), monospac
 // ── Wallet display config ─────────────────────────────────────────────────────
 function getWalletMeta(connector: Connector) {
   const key = `${connector.id} ${connector.name}`.toLowerCase();
-  if (key.includes('metamask')) return { icon: <MetaMaskIcon />, label: 'MetaMask', description: 'Browser extension, most popular EVM wallet' };
-  if (key.includes('core'))     return { icon: <CoreIcon />,     label: 'Core Wallet', description: 'Built by Ava Labs, native Avalanche wallet' };
-  return { icon: <Wallet size={20} color={C.goldLight} strokeWidth={1.6} />, label: connector.name, description: 'EVM compatible wallet' };
+  if (key.includes('metamask')) return { icon: <MetaMaskIcon />, label: 'MetaMask', description: <>Browser extension, <Hi>most popular</Hi> EVM wallet</> };
+  if (key.includes('core'))     return { icon: <CoreIcon />,     label: 'Core Wallet', description: <>Built by Ava Labs, <Hi>native Avalanche</Hi> wallet</> };
+  return { icon: <Wallet size={24} color={C.goldLight} strokeWidth={1.6} />, label: connector.name, description: 'EVM compatible wallet' };
 }
 
 /* One flat row shape for every sign-in option — icon, label, description,
    trailing chevron/spinner. No border, no colour-tinted box behind the
    icon; only a hairline between rows and a hover wash show it's a choice. */
 function OptionRow({ icon, label, description, onClick, loading, disabled, trailing }: {
-  icon: React.ReactNode; label: string; description: string;
+  icon: React.ReactNode; label: string; description: React.ReactNode;
   onClick?: () => void; loading?: boolean; disabled?: boolean; trailing?: React.ReactNode;
 }) {
   return (
@@ -48,60 +48,67 @@ function OptionRow({ icon, label, description, onClick, loading, disabled, trail
       disabled={disabled || loading}
       className="wcm-row"
       style={{
-        display: 'flex', alignItems: 'center', gap: 14,
-        padding: '13px 4px', textAlign: 'left', background: 'none', border: 'none',
+        display: 'flex', alignItems: 'center', gap: 16,
+        padding: '18px 4px', textAlign: 'left', background: 'none', border: 'none',
         borderBottom: `1px solid ${C.hairline}`,
         cursor: disabled || loading ? 'default' : 'pointer',
         opacity: disabled ? 0.55 : 1, width: '100%', fontFamily: 'inherit',
       }}>
-      <div style={{ width: 22, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>{icon}</div>
+      <div style={{ width: 28, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>{icon}</div>
       <div style={{ flex: 1, minWidth: 0 }}>
-        <p style={{ fontSize: 14, fontWeight: 700, color: C.paper, margin: '0 0 2px' }}>{label}</p>
-        <p style={{ fontSize: 11.5, color: C.inkLight, margin: 0, lineHeight: 1.4 }}>{description}</p>
+        <p style={{ fontSize: 16, fontWeight: 700, color: C.paper, margin: '0 0 3px' }}>{label}</p>
+        <p style={{ fontSize: 13, color: C.inkLight, margin: 0, lineHeight: 1.45 }}>{description}</p>
       </div>
       <div style={{ flexShrink: 0 }}>
         {loading
-          ? <RefreshCw size={15} color={C.goldLight} style={{ animation: 'spin 1s linear infinite' }} />
-          : trailing ?? <span style={{ color: C.inkLight, fontSize: 16 }}>›</span>}
+          ? <RefreshCw size={18} color={C.goldLight} style={{ animation: 'spin 1s linear infinite' }} />
+          : trailing ?? <span style={{ color: C.inkLight, fontSize: 20 }}>›</span>}
       </div>
     </button>
   );
 }
+
+/* Bold + gold on the phrase that actually matters in each option's
+   description, so the differences between five sign-in choices are
+   scannable instead of five same-weight sentences. */
+const Hi = ({ children }: { children: React.ReactNode }) => (
+  <strong style={{ color: C.goldLight, fontWeight: 700 }}>{children}</strong>
+);
 
 function StatusBlock({ label, address, sub, onPrimary, primaryLabel, onSignOut }: {
   label: string; address: string; sub: string;
   onPrimary?: () => void; primaryLabel?: string; onSignOut: () => void;
 }) {
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '6px 0 2px', gap: 14 }}>
+    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '10px 0 4px', gap: 18 }}>
       <div style={{
-        width: 52, height: 52, borderRadius: '50%',
-        background: 'rgba(200,155,60,0.12)', border: `1.5px solid ${C.gold}`,
+        width: 64, height: 64, borderRadius: '50%',
+        background: 'rgba(200,155,60,0.12)', border: `2px solid ${C.gold}`,
         display: 'flex', alignItems: 'center', justifyContent: 'center',
       }}>
-        <Check size={22} color={C.goldLight} strokeWidth={2.4} />
+        <Check size={28} color={C.goldLight} strokeWidth={2.4} />
       </div>
       <div style={{ textAlign: 'center' }}>
-        <p style={{ fontSize: 14, fontWeight: 700, color: C.paper, margin: '0 0 6px' }}>{label}</p>
-        <p style={{ ...MONO, fontSize: 12, color: C.goldLight, margin: '0 0 6px' }}>
+        <p style={{ fontSize: 16, fontWeight: 700, color: C.paper, margin: '0 0 8px' }}>{label}</p>
+        <p style={{ ...MONO, fontSize: 14, color: C.goldLight, margin: '0 0 8px' }}>
           {address.slice(0, 6)}…{address.slice(-4)}
         </p>
-        <p style={{ fontSize: 11, color: C.inkLight, margin: 0 }}>{sub}</p>
+        <p style={{ fontSize: 12.5, color: C.inkLight, margin: 0 }}>{sub}</p>
       </div>
       {onPrimary && (
         <button onClick={onPrimary} style={{
           display: 'flex', alignItems: 'center', gap: 8, marginTop: 2,
-          padding: '11px 24px', borderRadius: 999, border: 'none', cursor: 'pointer',
-          background: C.gold, color: C.ink, fontSize: 13, fontWeight: 700, fontFamily: 'inherit',
+          padding: '13px 28px', borderRadius: 999, border: 'none', cursor: 'pointer',
+          background: C.gold, color: C.ink, fontSize: 14, fontWeight: 700, fontFamily: 'inherit',
         }}>
-          <Wallet size={14} /> {primaryLabel}
+          <Wallet size={15} /> {primaryLabel}
         </button>
       )}
       <button onClick={onSignOut} style={{
         display: 'flex', alignItems: 'center', gap: 6, background: 'none',
-        border: 'none', cursor: 'pointer', color: C.inkLight, fontSize: 12, fontWeight: 600, fontFamily: 'inherit',
+        border: 'none', cursor: 'pointer', color: C.inkLight, fontSize: 13, fontWeight: 600, fontFamily: 'inherit',
       }}>
-        <LogOut size={13} /> {onPrimary ? 'Sign out' : 'Disconnect'}
+        <LogOut size={14} /> {onPrimary ? 'Sign out' : 'Disconnect'}
       </button>
     </div>
   );
@@ -203,7 +210,7 @@ export default function WalletConnectModal({ onClose }: WalletConnectModalProps)
       <div
         onClick={e => e.stopPropagation()}
         style={{
-          width: '100%', maxWidth: 400, borderRadius: 20, padding: '24px 24px 20px',
+          width: '100%', maxWidth: 460, borderRadius: 22, padding: '34px 30px 28px',
           background: C.bg, border: `1px solid ${C.hairline}`,
           boxShadow: '0 24px 80px rgba(0,0,0,0.55)', position: 'relative',
           fontFamily: "'Poppins', 'IBM Plex Sans', var(--font-sans)",
@@ -211,21 +218,21 @@ export default function WalletConnectModal({ onClose }: WalletConnectModalProps)
       >
         {/* Close */}
         <button onClick={onClose} style={{
-          position: 'absolute', top: 16, right: 16,
+          position: 'absolute', top: 18, right: 18,
           background: 'none', border: 'none',
-          borderRadius: '50%', width: 30, height: 30, cursor: 'pointer',
+          borderRadius: '50%', width: 34, height: 34, cursor: 'pointer',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
           color: C.inkLight,
         }}>
-          <X size={16} />
+          <X size={18} />
         </button>
 
         {/* Header */}
-        <div style={{ marginBottom: 22 }}>
-          <p style={{ ...MONO, fontSize: 10, letterSpacing: 1.4, textTransform: 'uppercase', color: C.goldLight, fontWeight: 600, margin: '0 0 8px' }}>
+        <div style={{ marginBottom: 28 }}>
+          <p style={{ ...MONO, fontSize: 11, letterSpacing: 1.4, textTransform: 'uppercase', color: C.goldLight, fontWeight: 600, margin: '0 0 10px' }}>
             KAI Nuvari · Avalanche C-Chain
           </p>
-          <h2 style={{ fontSize: 20, fontWeight: 700, color: C.paper, margin: 0 }}>
+          <h2 style={{ fontSize: 26, fontWeight: 700, color: C.paper, margin: 0, letterSpacing: '-0.3px' }}>
             Connect a wallet
           </h2>
         </div>
@@ -249,15 +256,15 @@ export default function WalletConnectModal({ onClose }: WalletConnectModalProps)
         ) : (
           /* ── Sign-in options — one flat list, easiest first ── */
           <div>
-            <OptionRow icon={<Mail size={19} color={C.goldLight} strokeWidth={1.7} />}
-              label="Continue with email" description="We'll send a one-time code, no password"
+            <OptionRow icon={<Mail size={23} color={C.goldLight} strokeWidth={1.7} />}
+              label="Continue with email" description={<>We&apos;ll send a <Hi>one-time code</Hi>, no password</>}
               onClick={handleEmailSignIn} loading={emailLoading} />
-            {emailError && <p style={{ fontSize: 11, color: C.red, margin: '8px 0 0' }}>{emailError}</p>}
+            {emailError && <p style={{ fontSize: 12, color: C.red, margin: '8px 0 0' }}>{emailError}</p>}
 
             <OptionRow icon={<GoogleIcon />}
-              label="Continue with Google" description="Instant embedded wallet, no seed phrase"
+              label="Continue with Google" description={<><Hi>Instant</Hi> embedded wallet, no seed phrase</>}
               onClick={handleGoogleSignIn} loading={googleLoading} />
-            {googleError && <p style={{ fontSize: 11, color: C.red, margin: '8px 0 0' }}>{googleError}</p>}
+            {googleError && <p style={{ fontSize: 12, color: C.red, margin: '8px 0 0' }}>{googleError}</p>}
 
             {connectors.map(connector => {
               const meta = getWalletMeta(connector);
