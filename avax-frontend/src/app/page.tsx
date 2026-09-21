@@ -1,24 +1,22 @@
 'use client';
 
-import { useState, useEffect, useRef, useSyncExternalStore } from 'react';
+import { useState, useEffect, useSyncExternalStore } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import dynamic from 'next/dynamic';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { useBalance, useReadContracts } from 'wagmi';
 import { formatUnits } from 'viem';
 import { useKaivaxStore } from '@/store/useKaivaxStore';
-import { useAIChatStore } from '@/store/useAIChatStore';
 const WalletConnectModal = dynamic(() => import('@/components/WalletConnectModal'), { ssr: false });
 import { ECOSYSTEM_TOKENS, TICKER_TOKENS } from '@/lib/tokens';
 import { ERC20_ABI } from '@/lib/erc20abi';
-import { formatChat } from '@/lib/formatChat';
 import { usePrivyAuth } from '@/lib/privy-auth';
 import { useActiveAccount } from '@/hooks/useActiveAccount';
 import {
-  Trees, Store, Users, LayoutGrid,
-  Bot, Copy, RefreshCw,
-  Link2, Wallet, UserRound,
+  Mic, Bot, FlaskConical, ScanLine, CircleDollarSign,
+  Globe, ShieldCheck, ImageIcon, Droplets, Lock, Gift,
+  LayoutGrid, Copy, RefreshCw, Link2, UserRound,
   type LucideIcon,
 } from 'lucide-react';
 
@@ -67,10 +65,40 @@ function SectionHeader({ icon: Icon, eyebrow, badge }: { icon: LucideIcon; eyebr
    so everything is on the page at once. */
 const reveal = {} as const;
 
-const DASHBOARDS = [
-  { id:'cfa',    href:'/cfa',    icon:Trees, label:'CFA Dashboard',  hl:'Community Forest',   sub:'Treasury and governance'  },
-  { id:'sme',    href:'/sme',    icon:Store, label:'SME Dashboard',   hl:'Digitise Cash',      sub:'Loans and inventory'      },
-  { id:'saving', href:'/saving', icon:Users, label:'Saving Group',    hl:'Pool Funds & Yield', sub:'Decentralised savings'  },
+const QUICK_GROUPS = [
+  {
+    title: 'Agents',
+    items: [
+      { name: 'Voice Agent', href: '/voice', icon: Mic },
+      { name: 'AI Agent',    href: '/ai',    icon: Bot },
+    ],
+  },
+  {
+    title: 'DeFi · Earn',
+    items: [
+      { name: 'Securities', href: '/securities', icon: ShieldCheck },
+      { name: 'Pools',      href: '/pools',      icon: Droplets },
+      { name: 'Vaults',     href: '/vaults',     icon: Lock },
+      { name: 'TaaS',       href: '/taas',       icon: LayoutGrid },
+    ],
+  },
+  {
+    title: 'Shop · Pay',
+    items: [
+      { name: 'Scan & Pay', href: '/pay',      icon: ScanLine },
+      { name: 'Products',   href: '/products', icon: CircleDollarSign },
+      { name: 'NFT Mkt',    href: '/connft',   icon: ImageIcon },
+      { name: 'Airdrop',    href: '/mine',     icon: Gift },
+    ],
+  },
+  {
+    title: 'Explore',
+    items: [
+      { name: 'Playground', href: '/nuvari', icon: FlaskConical },
+      { name: 'SDG Impact', href: '/sdg',    icon: Globe },
+      { name: 'KAI Web',    href: '/kai',    icon: Link2 },
+    ],
+  },
 ];
 
 function buildCalls(addr: `0x${string}` | undefined) {
@@ -97,16 +125,11 @@ export default function Home() {
   const connected = mounted && isConnected;
   const { data: avaxBal, refetch: refetchAvax } = useBalance({ address });
   const { connectWallet, disconnectWallet, setAvaxBalance, setAllBalances } = useKaivaxStore();
-  const openAIChat = useAIChatStore(s => s.open);
 
   const [showModal,  setShowModal]  = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [copied,     setCopied]     = useState(false);
-  const [agentQ,     setAgentQ]     = useState('');
-  const [agentA,     setAgentA]     = useState('');
-  const [agentBusy,  setAgentBusy]  = useState(false);
   const [profile,    setProfile]    = useState<{ name?: string; displayName?: string } | null>(null);
-  const agentRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
     isConnected && address ? connectWallet('metamask', address) : disconnectWallet();
@@ -173,28 +196,6 @@ export default function Home() {
   const balancesLoading = connected && tokenData === undefined;
   const displayName = mounted ? (profile?.displayName || profile?.name || (address ? `${address.slice(0,6)}…${address.slice(-4)}` : '')) : '';
 
-  /* Wallet context sent alongside every question so the agent can answer
-     "what's my portfolio worth" / "best yield for me" with real balances
-     instead of generic copy. */
-  const agentContext = {
-    connected,
-    address,
-    network: 'Fuji',
-    totalUsd,
-    balances: allTokens.filter(b => b.value > 0).map(b => ({ symbol: b.symbol, value: b.value })),
-  };
-
-  const askAgent = async () => {
-    if (!agentQ.trim() || agentBusy) return;
-    setAgentBusy(true); setAgentA('');
-    try {
-      const r = await fetch('/api/chat', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ message: agentQ, rag: true, stream: false, context: agentContext }) });
-      const d = await r.json();
-      setAgentA(d.text || d.response || 'No answer returned.');
-    } catch { setAgentA('Agent offline. Start the server.'); }
-    finally { setAgentBusy(false); }
-  };
-
   return (
     <main style={{ minHeight:'100dvh', background:C.bg, color:C.paper, fontFamily:"'Poppins', 'IBM Plex Sans', var(--font-sans)", position:'relative', paddingBottom:80 }}>
       {/* kaiweb fonts — Poppins display + IBM Plex Mono small-caps labels */}
@@ -215,16 +216,10 @@ export default function Home() {
         </div>
       </div>
 
-      {/* Bottom nav (site-wide) is the one and only navigation on this page —
-          no second, competing top tab bar. */}
-
       <div className="home-container" style={{ position:'relative', zIndex:5 }}>
 
-        {/* HERO — full-screen photo, dark fade left→right so the copy reads.
-            Colors are the original KAI palette only; the photo is a mask.
-            Sized well under the full viewport and top-aligned, so the copy
-            sits near the top of the section instead of floating centered
-            in a tall, mostly-empty band. */}
+        {/* SECTION 1 — CONNECT WALLET (hero photo). Colors are the original
+            KAI palette only; the photo is a mask. */}
         <div style={{
           width: '100vw', marginLeft: '50%', transform: 'translateX(-50%)',
           position: 'relative', zIndex: 5,
@@ -281,213 +276,88 @@ export default function Home() {
           </div>
         </div>
 
-        {/* TWO-COLUMN LAYOUT — wallet/profile + agent on the right (sticky on
-            desktop), portfolio/dashboards/actions on the left */}
-        <div className="home-grid" style={{ marginTop:56 }}>
-
-          <div className="home-main">
-            {/* PORTFOLIO */}
-            <motion.section className="home-section" aria-label="Portfolio" {...reveal}>
-              <SectionHeader icon={Wallet} eyebrow="Portfolio" />
-              <p style={{ fontSize:13, color:C.inkLight, margin:'0 0 4px', lineHeight:1.5 }}>Estimated value across your connected wallet</p>
-              {balancesLoading ? (
-                <p style={{ fontSize:14, color:C.inkLight, marginBottom:16 }}>Loading…</p>
-              ) : (
-                <div style={{ display:'flex', alignItems:'baseline', gap:12, marginBottom:22 }}>
-                  <span style={{ ...SERIF, fontSize:44, fontWeight:600, letterSpacing:'-1px', color:connected?C.paper:C.inkLight, lineHeight:1 }}>
-                    ${connected ? totalUsd.toFixed(2) : '0.00'}
-                  </span>
-                  {connected && totalUsd>0 && <span style={{ fontSize:13, ...HL.green }}>+0.00%</span>}
-                </div>
+        {/* SECTION 2 — PROFILE */}
+        <motion.section className="home-section" aria-label="Profile" style={{ marginTop: 40 }} {...reveal}>
+          <SectionHeader icon={UserRound} eyebrow="Profile" badge={connected ? '● Active' : undefined} />
+          <div style={{ display:'flex', alignItems:'center', gap:14, marginBottom:24 }}>
+            <div style={{ position:'relative', flexShrink:0 }}>
+              <div style={{
+                width:52, height:52, borderRadius:'50%', background:C.gold,
+                display:'flex', alignItems:'center', justifyContent:'center',
+                ...SERIF, fontSize:20, fontWeight:600, color:C.ink,
+              }}>{(displayName || 'K').charAt(0).toUpperCase()}</div>
+              <span style={{ position:'absolute', bottom:1, right:0, width:11, height:11, borderRadius:'50%', background:C.pineLight, border:`2px solid ${C.bg}` }} />
+            </div>
+            <div style={{ flex:1, minWidth:0 }}>
+              <p style={{ ...SERIF, fontSize:18, fontWeight:600, margin:0, color:C.paper }}>
+                {connected || privyAuthenticated ? (displayName || 'KAI Member') : 'Not connected'}
+              </p>
+              <p style={{ fontSize:14, color:C.inkLight, margin:'3px 0 0', lineHeight:1.5 }}>
+                {connected || privyAuthenticated
+                  ? "You're an active KAI Nuvari member on Avalanche Fuji, based in Kenya."
+                  : 'Connect a wallet to see your profile.'}
+              </p>
+              {connected && !profile && (
+                <Link href="/profile" className="text-link" style={{ fontSize:12 }}>Complete your profile</Link>
               )}
-
-              {connected ? (
-                <>
-                  {balancesLoading ? (
-                    <p style={{ fontSize:13, color:C.inkLight, marginBottom:20 }}>Loading balances…</p>
-                  ) : (
-                    <div className="home-tokens" style={{ marginBottom:20 }}>
-                      {allTokens.map(b => {
-                        const tint = b.symbol === 'AVAX' ? C.goldLight : C.paperDim;
-                        return (
-                          <div key={b.symbol} className="home-token">
-                            <p style={{ ...MONO, fontSize:9, letterSpacing:0.5, textTransform:'uppercase', color:C.inkLight, margin:'0 0 4px', fontWeight:600 }}>{b.symbol}</p>
-                            <p style={{ ...SERIF, fontSize:16, fontWeight:600, color:tint, margin:0 }}>
-                              {b.value>=1000?`${(b.value/1000).toFixed(1)}K`:b.value>=0.001?b.value.toFixed(3):'0.000'}
-                            </p>
-                            {!b.deployed && <p style={{ fontSize:8, color:C.inkLight, opacity:0.7, fontWeight:600, margin:'3px 0 0' }}>Coming soon</p>}
-                          </div>
-                        );
-                      })}
-                    </div>
-                  )}
-                  <div style={{ display:'flex', alignItems:'center', gap:14, flexWrap:'wrap', paddingTop:16, borderTop:`1px solid ${C.hairline}` }}>
-                    <span style={{ ...MONO, fontSize:12, color:C.inkLight, wordBreak:'break-all' }}>{address}</span>
-                    <button onClick={copyAddress} style={{ background:'none', border:'none', cursor:'pointer', color:copied?C.goldLight:C.inkLight, fontSize:12, fontWeight:600, display:'flex', alignItems:'center', gap:4, padding:0 }}>
-                      {copied?'Copied':(<><Copy size={12}/> Copy</>)}
-                    </button>
-                    <button onClick={handleRefresh} style={{ background:'none', border:'none', cursor:'pointer', color:C.inkLight, fontSize:12, fontWeight:600, display:'flex', alignItems:'center', gap:4, padding:0 }}>
-                      <RefreshCw size={12} style={{ animation:refreshing?'spin 1s linear infinite':'none' }} /> Refresh
-                    </button>
-                  </div>
-                </>
-              ) : (
-                <button onClick={() => setShowModal(true)} className="text-link" style={{ background:'none', border:'none', cursor:'pointer', padding:0, font:'inherit', fontSize:14 }}>
-                  Connect a wallet to see your balances
-                </button>
-              )}
-            </motion.section>
-
-            {/* COMMUNITY — CFA, SME and Saving Group are KAI's community programs */}
-            <motion.section className="home-section" id="community"
-              style={{ scrollMarginTop:70 }} {...reveal}>
-              <SectionHeader icon={Users} eyebrow="Community" badge="● 3 active" />
-              <p style={{ fontSize:13, color:C.inkLight, margin:'-10px 0 16px', lineHeight:1.5 }}>Programs run by and for the KAI community</p>
-              <div>
-                {DASHBOARDS.map((d) => {
-                  const Icon = d.icon;
-                  return (
-                    <Link key={d.id} href={d.href} className="dash-row">
-                      <Icon size={16} className="action-icon" strokeWidth={1.6} style={{ flexShrink:0 }}/>
-                      <p style={{ flex:1, minWidth:0, fontSize:14, lineHeight:1.6, margin:0 }}>
-                        <span className="dash-title" style={{ ...SERIF, fontWeight:700, color:C.paper, transition:'color 0.15s ease' }}>{d.hl}:</span>{' '}
-                        <span style={{ color:C.inkLight }}>the {d.label} for {d.sub.charAt(0).toLowerCase() + d.sub.slice(1)}.</span>
-                      </p>
-                    </Link>
-                  );
-                })}
-              </div>
-            </motion.section>
-
-            {/* QUICK ACTIONS — one big entry to the dedicated /apps page, so the home
-            column stays clean and the AI block never crowds the actions. */}
-            <motion.section className="home-section" id="actions"
-              style={{ scrollMarginTop:70 }} {...reveal}>
-              <SectionHeader icon={LayoutGrid} eyebrow="Quick actions" />
-              <Link href="/apps" className="qa-entry">
-                <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-                  <LayoutGrid size={26} className="qa-entry-icon" strokeWidth={1.6} />
-                  <div>
-                    <p style={{ fontSize: 17, fontWeight: 600, margin: 0, color: C.paper, fontFamily: "'Poppins', sans-serif" }}>
-                      Open all apps &amp; actions
-                    </p>
-                    <p style={{ fontSize: 12.5, color: C.inkLight, margin: '3px 0 0' }}>
-                      13 apps in one page — voice, AI, DeFi, payments and more
-                    </p>
-                  </div>
-                </div>
-                <span style={{ ...MONO, fontSize: 20, fontWeight: 400, color: C.goldLight, flexShrink: 0 }}>→</span>
-              </Link>
-            </motion.section>
+            </div>
           </div>
 
-          {/* Profile + KAI Agent — DOM order puts these AFTER the primary
-              content (portfolio/community/quick actions) so on mobile, where
-              there's no side-by-side column, the AI chat's tall quick-ask +
-              textarea block doesn't bury Quick Actions at the bottom of a
-              long scroll. Desktop still pins this as the right-hand rail via
-              `order` below the two column widths are set with, so nothing
-              changes for the two-column layout. */}
-          <div className="home-aside">
-            {/* PROFILE */}
-            <motion.section className="home-section" aria-label="Profile" {...reveal}>
-              <SectionHeader icon={UserRound} eyebrow="Profile" />
-              <div style={{ display:'flex', alignItems:'center', gap:14, marginBottom:20 }}>
-                <div style={{ position:'relative', flexShrink:0 }}>
-                  <div style={{
-                    width:52, height:52, borderRadius:'50%', background:C.gold,
-                    display:'flex', alignItems:'center', justifyContent:'center',
-                    ...SERIF, fontSize:20, fontWeight:600, color:C.ink,
-                  }}>{(displayName || 'K').charAt(0).toUpperCase()}</div>
-                  <span style={{ position:'absolute', bottom:1, right:0, width:11, height:11, borderRadius:'50%', background:C.pineLight, border:`2px solid ${C.bg}` }} />
-                </div>
-                <div>
-                  <p style={{ ...SERIF, fontSize:18, fontWeight:600, margin:0, color:C.paper }}>
-                    {connected || privyAuthenticated ? (displayName || 'KAI Member') : 'Not connected'}
-                  </p>
-                  <p style={{ fontSize:14, color:C.inkLight, margin:'3px 0 0', lineHeight:1.5 }}>
-                    {connected || privyAuthenticated
-                      ? "You're an active KAI Nuvari member on Avalanche Fuji, based in Kenya."
-                      : 'Connect a wallet to see your profile.'}
-                  </p>
-                  {connected && !profile && (
-                    <Link href="/profile" className="text-link" style={{ fontSize:12 }}>Complete your profile</Link>
-                  )}
-                </div>
+          <div className="home-stats">
+            {[
+              { l:'Est. value', v: connected ? (balancesLoading ? '…' : `$${totalUsd.toFixed(2)}`) : '$0.00', color:C.goldLight },
+              { l:'Network',   v:'Fuji',   color:null },
+              { l:'Tokens',    v:connected ? (balancesLoading ? '…' : String(activeTokenCount)) : '0', color:null },
+              { l:'Status',    v:connected ? 'Active' : 'Idle', color:connected ? C.goldLight : null },
+            ].map(s => (
+              <div key={s.l} className="home-stat">
+                <p className="home-stat-value" style={{ color: s.color ?? C.paper }}>{s.v}</p>
+                <p className="home-stat-label">{s.l}</p>
               </div>
-
-              <div className="home-stats">
-                {[
-                  { l:'Est. value', v: connected ? (balancesLoading ? '…' : `$${totalUsd.toFixed(2)}`) : '$0.00', color:C.goldLight },
-                  { l:'Network',   v:'Fuji',   color:null },
-                  { l:'Tokens',    v:connected ? (balancesLoading ? '…' : String(activeTokenCount)) : '0', color:null },
-                  { l:'Status',    v:connected ? 'Active' : 'Idle', color:connected ? C.goldLight : null },
-                ].map(s => (
-                  <div key={s.l} className="home-stat">
-                    <p className="home-stat-value" style={{ color: s.color ?? C.paper }}>{s.v}</p>
-                    <p className="home-stat-label">{s.l}</p>
-                  </div>
-                ))}
-              </div>
-            </motion.section>
-
-            {/* KAI AGENT */}
-            <motion.section className="home-section" id="agent"
-              style={{ scrollMarginTop:70 }} {...reveal}>
-              <SectionHeader icon={Bot} eyebrow="Intelligence" />
-              <p style={{ ...SERIF, fontSize:18, fontWeight:600, margin:'0 0 8px', color:C.paper }}>
-                <span style={HL.green}>KAI</span> Agent
-              </p>
-              <p style={{ fontSize:14, color:C.inkLight, margin:'0 0 6px', lineHeight:1.6 }}>
-                Live and ready to help, powered by Qwen3 RAG. Best for quick questions.{' '}
-                <button onClick={openAIChat} className="text-link" style={{ background:'none', border:'none', cursor:'pointer', padding:0, font:'inherit', fontSize:'inherit' }}>Open the full chat</button>
-              </p>
-              <p style={{ fontSize:13, color:C.inkLight, opacity:0.85, margin:'0 0 18px', lineHeight:1.6 }}>
-                Need to check balances or make a swap by talking? Try the{' '}
-                <Link href="/voice" className="text-link">Voice Agent</Link>
-              </p>
-
-              <p style={label}>Quick ask</p>
-              <div style={{ display:'flex', flexWrap:'wrap', gap:'6px 22px', marginBottom:18 }}>
-                {(connected
-                  ? ["What's my portfolio worth?", 'Best yield for me?', 'What tokens does KAI have?', 'How to get started?']
-                  : ['What tokens does KAI have?','Best yield now?','How to get started?','Pool rates?']
-                ).map(q => (
-                  <button key={q} onClick={() => setAgentQ(q)} style={{ background:'none', border:'none', cursor:'pointer', padding:0, font:'inherit', fontSize:13, fontWeight:600, textAlign:'left', color: agentQ===q ? C.goldLight : C.inkLight }}>{q}</button>
-                ))}
-              </div>
-
-              <div style={{ display:'flex', gap:9, marginBottom: agentA ? 16 : 0, alignItems:'flex-end' }}>
-                <textarea ref={agentRef} value={agentQ}
-                  onChange={e => setAgentQ(e.target.value)}
-                  onKeyDown={e => e.key==='Enter' && !e.shiftKey && (e.preventDefault(), askAgent())}
-                  placeholder="Ask KAI anything…" rows={2}
-                  style={{ flex:1, background:'none', border:'none', borderBottom:`1px solid ${C.hairline}`, borderRadius:0, padding:'8px 2px', fontSize:13, color:C.paper, outline:'none', fontFamily:'inherit', resize:'none', lineHeight:1.5, caretColor:C.goldLight, transition:'border-color 0.15s ease' }}
-                  onFocus={e => (e.target.style.borderColor=C.gold)}
-                  onBlur={e  => (e.target.style.borderColor=C.hairline)}
-                />
-                <button onClick={askAgent} disabled={agentBusy||!agentQ.trim()} style={{
-                  padding:'0 20px', borderRadius:999, flexShrink:0, border:'none', height:38,
-                  background:agentQ.trim()&&!agentBusy?C.gold:'transparent',
-                  color:agentQ.trim()&&!agentBusy?C.ink:C.inkLight,
-                  cursor:agentQ.trim()?'pointer':'not-allowed',
-                  fontSize:13, fontWeight:700, fontFamily:'inherit',
-                }}>
-                  {agentBusy ? 'Asking…' : 'Send'}
-                </button>
-              </div>
-
-              <AnimatePresence>
-                {agentA && (
-                  <motion.div initial={{ opacity:0, height:0 }} animate={{ opacity:1, height:'auto' }} exit={{ opacity:0, height:0 }}
-                    style={{ paddingLeft:14, borderLeft:`2px solid ${C.gold}`, fontSize:13, color:C.paperDim, lineHeight:1.65, maxHeight:200, overflowY:'auto' }}>
-                    <div dangerouslySetInnerHTML={{ __html:formatChat(agentA) }} />
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </motion.section>
+            ))}
           </div>
-        </div>
+
+          {connected ? (
+            <div style={{ display:'flex', alignItems:'center', gap:14, flexWrap:'wrap', marginTop:18, paddingTop:16, borderTop:`1px solid ${C.hairline}` }}>
+              <span style={{ ...MONO, fontSize:12, color:C.inkLight, wordBreak:'break-all' }}>{address}</span>
+              <button onClick={copyAddress} style={{ background:'none', border:'none', cursor:'pointer', color:copied?C.goldLight:C.inkLight, fontSize:12, fontWeight:600, display:'flex', alignItems:'center', gap:4, padding:0 }}>
+                {copied?'Copied':(<><Copy size={12}/> Copy</>)}
+              </button>
+              <button onClick={handleRefresh} style={{ background:'none', border:'none', cursor:'pointer', color:C.inkLight, fontSize:12, fontWeight:600, display:'flex', alignItems:'center', gap:4, padding:0 }}>
+                <RefreshCw size={12} style={{ animation:refreshing?'spin 1s linear infinite':'none' }} /> Refresh
+              </button>
+            </div>
+          ) : (
+            <button onClick={() => setShowModal(true)} className="text-link" style={{ background:'none', border:'none', cursor:'pointer', padding:0, font:'inherit', fontSize:14, marginTop:18 }}>
+              Connect a wallet to see your balances
+            </button>
+          )}
+        </motion.section>
+
+        {/* SECTION 3 — QUICK ACTIONS, arranged in groups so all 13 are
+            visible at once and easy to scan. */}
+        <motion.section className="home-section" id="actions"
+          style={{ scrollMarginTop:70 }} {...reveal}>
+          <SectionHeader icon={LayoutGrid} eyebrow="Quick actions" badge="● 13 apps" />
+          <div className="qa-groups">
+            {QUICK_GROUPS.map(g => (
+              <div key={g.title} className="qa-group">
+                <p className="qa-group-title">{g.title}</p>
+                <div className="qa-grid">
+                  {g.items.map(a => {
+                    const Icon = a.icon;
+                    return (
+                      <Link key={a.name} href={a.href} className="qa-tile">
+                        <Icon size={18} className="qa-tile-icon" strokeWidth={1.6}/>
+                        <span className="qa-tile-label">{a.name}</span>
+                      </Link>
+                    );
+                  })}
+                </div>
+              </div>
+            ))}
+          </div>
+        </motion.section>
       </div>
 
       {showModal && <WalletConnectModal onClose={() => setShowModal(false)} />}

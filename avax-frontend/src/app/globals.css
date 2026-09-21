@@ -843,10 +843,16 @@ body {
 }
 .dash-row:hover .dash-title { color: var(--home-accent); }
 
-/* Quick Actions — its own section: every action visible at once in a
-   wrapping grid that fills the column, so nothing is tucked off-stage
-   and you never have to scroll a strip to find one. */
-.qa-wrap {
+/* Quick Actions — its own section, arranged in labelled groups with each
+   action as a compact tile, all 13 visible at once. */
+.qa-groups { display: flex; flex-direction: column; gap: 26px; }
+.qa-group-title {
+  margin: 0 0 12px;
+  font-family: var(--font-plex-mono, 'IBM Plex Mono'), monospace;
+  font-size: 10px; letter-spacing: 1.4px; text-transform: uppercase;
+  color: var(--home-muted); font-weight: 600;
+}
+.qa-grid {
   display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
   gap: 10px;
 }
@@ -874,17 +880,6 @@ body {
   transition: border-color 0.15s ease, background-color 0.15s ease;
 }
 .apps-tile:hover { border-color: rgba(200,155,60,0.38); background: rgba(200,155,60,0.05); }
-
-/* Home entry to the apps page — one big surface, no strip to scroll */
-.qa-entry {
-  display: flex; align-items: center; justify-content: space-between; gap: 14px;
-  padding: 22px 24px; border-radius: 16px; border: 1px solid var(--home-line);
-  text-decoration: none; box-sizing: border-box;
-  transition: border-color 0.15s ease, background-color 0.15s ease;
-}
-.qa-entry:hover { border-color: rgba(200,155,60,0.38); background: rgba(200,155,60,0.05); }
-.qa-entry-icon { color: var(--home-muted); transition: color 0.15s ease; }
-.qa-entry:hover .qa-entry-icon { color: var(--home-accent); }
 
 /* ══════════════════════════════════════════════════════════════
    MINE / AIRDROP PAGE — flat, one accent (Avalanche red)
