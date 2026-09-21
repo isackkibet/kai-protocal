@@ -843,31 +843,26 @@ body {
 }
 .dash-row:hover .dash-title { color: var(--home-accent); }
 
-/* Quick Actions — one horizontal, snap-scrolling row instead of stacked
-   grouped grids, so all 13 actions live in a single section and a single
-   line, the way a scroll-strip reads on a considered app rather than a
-   long stacked list. Scrollbar hidden; snap makes it feel intentional. */
-.qa-scroll {
-  display: flex; gap: 10px; overflow-x: auto;
-  scroll-snap-type: x proximity; scroll-padding-left: 2px;
-  padding-bottom: 6px; -webkit-overflow-scrolling: touch;
-  scrollbar-width: none;
+/* Quick Actions — its own section: every action visible at once in a
+   wrapping grid that fills the column, so nothing is tucked off-stage
+   and you never have to scroll a strip to find one. */
+.qa-wrap {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+  gap: 10px;
 }
-.qa-scroll::-webkit-scrollbar { display: none; }
 .qa-tile {
-  display: flex; flex-direction: column; align-items: flex-start; gap: 10px;
-  padding: 14px; border: 1px solid var(--home-line); border-radius: 12px;
+  display: flex; align-items: center; gap: 10px;
+  padding: 12px 14px; border: 1px solid var(--home-line); border-radius: 12px;
   text-decoration: none; background: transparent; cursor: pointer;
   text-align: left; box-sizing: border-box;
-  flex: 0 0 108px; scroll-snap-align: start;
   transition: border-color 0.15s ease, background-color 0.15s ease;
 }
 .qa-tile:hover { border-color: rgba(200,155,60,0.38); background: rgba(200,155,60,0.05); }
 .qa-tile-icon { color: var(--home-muted); transition: color 0.15s ease; flex-shrink: 0; }
 .qa-tile:hover .qa-tile-icon { color: var(--home-accent); }
 .qa-tile-label {
-  font-size: 12.5px; font-weight: 600; color: var(--home-text);
-  line-height: 1.35; transition: color 0.15s ease;
+  font-size: 13px; font-weight: 600; color: var(--home-text);
+  white-space: nowrap; transition: color 0.15s ease;
 }
 .qa-tile:hover .qa-tile-label { color: var(--home-accent); }
 
