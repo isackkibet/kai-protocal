@@ -818,6 +818,11 @@ body {
   color: var(--home-muted); margin-top: 6px;
 }
 
+/* Portfolio token balances — wraps as a grid instead of scrolling
+   sideways, so the row never runs off the edge or looks cut off. */
+.home-tokens { display: grid; grid-template-columns: repeat(auto-fill, minmax(70px, 1fr)); gap: 24px 12px; }
+.home-token { text-align: center; min-width: 0; }
+
 /* Dashboard + quick-action rows — flat link lists, hairline rows only.
    Icons carry colour when a row is live; the action itself is conveyed by
    the row's hover state, not an arrow glyph. */
