@@ -4,7 +4,7 @@ import { useState, useEffect, useRef, useSyncExternalStore } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import dynamic from 'next/dynamic';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { useBalance, useReadContracts } from 'wagmi';
 import { formatUnits } from 'viem';
 import { useKaivaxStore } from '@/store/useKaivaxStore';
@@ -438,14 +438,12 @@ export default function Home() {
             </button>
           </div>
 
-          <AnimatePresence>
-            {agentA && (
-              <motion.div initial={{ opacity:0, height:0 }} animate={{ opacity:1, height:'auto' }} exit={{ opacity:0, height:0 }}
-                style={{ paddingLeft:14, borderLeft:`2px solid ${C.gold}`, fontSize:13, color:C.paperDim, lineHeight:1.65, maxHeight:200, overflowY:'auto' }}>
-                <div dangerouslySetInnerHTML={{ __html:formatChat(agentA) }} />
-              </motion.div>
-            )}
-          </AnimatePresence>
+          {agentA && (
+            <motion.div initial={{ opacity:0 }} animate={{ opacity:1 }}
+              style={{ paddingLeft:14, borderLeft:`2px solid ${C.gold}`, fontSize:13, color:C.paperDim, lineHeight:1.65, maxHeight:280, overflowY:'auto' }}>
+              <div dangerouslySetInnerHTML={{ __html:formatChat(agentA) }} />
+            </motion.div>
+          )}
         </motion.section>
       </div>
 
