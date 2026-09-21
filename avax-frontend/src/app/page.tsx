@@ -232,7 +232,7 @@ export default function Home() {
           padding: '80px 0 56px',
           boxSizing: 'border-box',
           backgroundImage:
-            `linear-gradient(180deg, rgba(11,28,20,0.15) 0%, rgba(11,28,20,0.65) 55%, ${C.bg} 100%),` +
+            `linear-gradient(180deg, rgba(11,28,20,0.15) 0%, rgba(11,28,20,0.65) 55%, #0A2A20 100%),` +
             `linear-gradient(90deg, rgba(11,28,20,0.97) 0%, rgba(11,28,20,0.80) 32%, rgba(11,28,20,0.32) 64%, rgba(11,28,20,0.10) 100%),` +
             'url("/images/home-hero.jpg")',
           backgroundSize: 'cover', backgroundPosition: 'center 30%',
@@ -340,7 +340,7 @@ export default function Home() {
 
         {/* SECTION 3 — QUICK ACTIONS, a single compact grid so all 13 are
             visible at once and arranged in one place. */}
-        <motion.section className="home-section" id="actions"
+        <motion.section className="home-section home-section--qa" id="actions"
           style={{ scrollMarginTop:70 }} {...reveal}>
           <SectionHeader icon={LayoutGrid} eyebrow="Quick actions" badge="● 13 apps" />
           <div className="qa-wrap">
