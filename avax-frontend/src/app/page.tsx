@@ -75,20 +75,40 @@ const reveal = {
   transition: { duration: 0.5, ease: [0.22, 1, 0.36, 1] },
 } as const;
 
-const QUICK = [
-  { name: 'Voice Agent', href: '/voice',     icon: Mic },
-  { name: 'AI Agent',    href: '/ai',        icon: Bot },
-  { name: 'Playground',  href: '/nuvari',     icon: FlaskConical },
-  { name: 'Scan & Pay',  href: '/pay',        icon: ScanLine },
-  { name: 'Products',    href: '/products',   icon: CircleDollarSign },
-  { name: 'SDG Impact',  href: '/sdg',        icon: Globe },
-  { name: 'Securities',  href: '/securities', icon: ShieldCheck },
-  { name: 'NFT Mkt',     href: '/connft',     icon: ImageIcon },
-  { name: 'Pools',       href: '/pools',      icon: Droplets },
-  { name: 'Vaults',      href: '/vaults',     icon: Lock },
-  { name: 'Airdrop',     href: '/mine',       icon: Gift },
-  { name: 'KAI Web',     href: '/kai',        icon: Globe },
-  { name: 'TaaS',        href: '/taas',       icon: LayoutGrid },
+const QUICK_GROUPS = [
+  {
+    title: 'Agents',
+    items: [
+      { name: 'Voice Agent', href: '/voice', icon: Mic },
+      { name: 'AI Agent',    href: '/ai',    icon: Bot },
+    ],
+  },
+  {
+    title: 'DeFi · Earn',
+    items: [
+      { name: 'Securities', href: '/securities', icon: ShieldCheck },
+      { name: 'Pools',      href: '/pools',      icon: Droplets },
+      { name: 'Vaults',     href: '/vaults',     icon: Lock },
+      { name: 'TaaS',       href: '/taas',       icon: LayoutGrid },
+    ],
+  },
+  {
+    title: 'Shop · Pay',
+    items: [
+      { name: 'Scan & Pay', href: '/pay',      icon: ScanLine },
+      { name: 'Products',   href: '/products', icon: CircleDollarSign },
+      { name: 'NFT Mkt',    href: '/connft',   icon: ImageIcon },
+      { name: 'Airdrop',    href: '/mine',     icon: Gift },
+    ],
+  },
+  {
+    title: 'Explore',
+    items: [
+      { name: 'Playground', href: '/nuvari', icon: FlaskConical },
+      { name: 'SDG Impact', href: '/sdg',    icon: Globe },
+      { name: 'KAI Web',    href: '/kai',    icon: Link2 },
+    ],
+  },
 ];
 
 const DASHBOARDS = [
@@ -484,26 +504,33 @@ export default function Home() {
               </div>
             </motion.section>
 
-            {/* QUICK ACTIONS — a link list, not a grid of icon tiles */}
+            {/* QUICK ACTIONS — grouped eyebrow titles over tile grids */}
             <motion.section className="home-section" id="actions"
               style={{ scrollMarginTop:70 }} {...reveal}>
               <SectionHeader icon={LayoutGrid} eyebrow="Quick actions" />
-              <div className="qa-list">
-                {QUICK.map((a) => {
-                  const Icon = a.icon;
-                  const isAgent = a.href === '/ai';
-                  const content = (
-                    <>
-                      <Icon size={18} className="action-icon" strokeWidth={1.6}/>
-                      <span className="qa-label">{a.name}</span>
-                    </>
-                  );
-                  return isAgent ? (
-                    <button key={a.name} onClick={openAIChat} className="qa-row">{content}</button>
-                  ) : (
-                    <Link key={a.name} href={a.href} className="qa-row">{content}</Link>
-                  );
-                })}
+              <div>
+                {QUICK_GROUPS.map(g => (
+                  <div key={g.title} className="qa-group">
+                    <p className="qa-group-title">{g.title}</p>
+                    <div className="qa-grid">
+                      {g.items.map((a) => {
+                        const Icon = a.icon;
+                        const isAgent = a.href === '/ai';
+                        const content = (
+                          <>
+                            <Icon size={18} className="qa-tile-icon" strokeWidth={1.6}/>
+                            <span className="qa-tile-label">{a.name}</span>
+                          </>
+                        );
+                        return isAgent ? (
+                          <button key={a.name} onClick={openAIChat} className="qa-tile">{content}</button>
+                        ) : (
+                          <Link key={a.name} href={a.href} className="qa-tile">{content}</Link>
+                        );
+                      })}
+                    </div>
+                  </div>
+                ))}
               </div>
             </motion.section>
           </div>
