@@ -371,12 +371,14 @@ export default function Home() {
 
               {connected ? (
                 <>
-                  <div style={{ overflowX:'auto', scrollbarWidth:'none', marginBottom:20 }}>
-                    <div style={{ display:'flex', gap:26, minWidth:'max-content' }}>
-                      {balancesLoading ? <p style={{ fontSize:13, color:C.inkLight }}>Loading balances…</p> : allTokens.map(b => {
+                  {balancesLoading ? (
+                    <p style={{ fontSize:13, color:C.inkLight, marginBottom:20 }}>Loading balances…</p>
+                  ) : (
+                    <div className="home-tokens" style={{ marginBottom:20 }}>
+                      {allTokens.map(b => {
                         const tint = b.symbol === 'AVAX' ? C.goldLight : C.paperDim;
                         return (
-                          <div key={b.symbol} style={{ textAlign:'center' }}>
+                          <div key={b.symbol} className="home-token">
                             <p style={{ ...MONO, fontSize:9, letterSpacing:0.5, textTransform:'uppercase', color:C.inkLight, margin:'0 0 4px', fontWeight:600 }}>{b.symbol}</p>
                             <p style={{ ...SERIF, fontSize:16, fontWeight:600, color:tint, margin:0 }}>
                               {b.value>=1000?`${(b.value/1000).toFixed(1)}K`:b.value>=0.001?b.value.toFixed(3):'0.000'}
@@ -386,7 +388,7 @@ export default function Home() {
                         );
                       })}
                     </div>
-                  </div>
+                  )}
                   <div style={{ display:'flex', alignItems:'center', gap:14, flexWrap:'wrap', paddingTop:16, borderTop:`1px solid ${C.hairline}` }}>
                     <span style={{ ...MONO, fontSize:12, color:C.inkLight, wordBreak:'break-all' }}>{address}</span>
                     <button onClick={copyAddress} style={{ background:'none', border:'none', cursor:'pointer', color:copied?C.goldLight:C.inkLight, fontSize:12, fontWeight:600, display:'flex', alignItems:'center', gap:4, padding:0 }}>
