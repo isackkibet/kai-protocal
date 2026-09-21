@@ -779,7 +779,12 @@ body {
 /* Two-column split on desktop — content left, sticky wallet/agent rail right.
    Below 1024px it's a single column; the bottom nav is the only navigation
    at every width, so there's no second in-page tab bar competing with it. */
+/* min-width: 0 on the grid items — without it, a grid item's automatic
+   minimum size is its content's max-content width, so the qa-scroll strip's
+   non-shrinking tiles would drag the whole column (and page) out to fit
+   all 13 tiles in a row instead of scrolling within it. */
 .home-grid { display: grid; grid-template-columns: 1fr; gap: 44px; }
+.home-main, .home-aside { min-width: 0; }
 @media (min-width: 1024px) {
   .home-grid  { grid-template-columns: 64fr 36fr; align-items: start; gap: 64px; }
   .home-main  { order: 1; }
