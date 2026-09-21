@@ -169,11 +169,22 @@ export default function Home() {
   const balancesLoading = connected && tokenData === undefined;
   const displayName = mounted ? (profile?.displayName || profile?.name || (address ? `${address.slice(0,6)}…${address.slice(-4)}` : '')) : '';
 
+  /* Wallet context sent alongside every question so the agent can answer
+     "what's my portfolio worth" / "best yield for me" with real balances
+     instead of generic copy. */
+  const agentContext = {
+    connected,
+    address,
+    network: 'Fuji',
+    totalUsd,
+    balances: allTokens.filter(b => b.value > 0).map(b => ({ symbol: b.symbol, value: b.value })),
+  };
+
   const askAgent = async () => {
     if (!agentQ.trim() || agentBusy) return;
     setAgentBusy(true); setAgentA('');
     try {
-      const r = await fetch('/api/chat', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ message: agentQ, rag: true, stream: false }) });
+      const r = await fetch('/api/chat', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ message: agentQ, rag: true, stream: false, context: agentContext }) });
       const d = await r.json();
       setAgentA(d.text || d.response || 'No answer returned.');
     } catch { setAgentA('Agent offline. Start the server.'); }
