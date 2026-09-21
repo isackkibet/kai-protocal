@@ -65,15 +65,9 @@ function SectionHeader({ icon: Icon, eyebrow, badge }: { icon: LucideIcon; eyebr
   );
 }
 
-/* Fade + rise as each section enters the viewport — the "interesting
-   scroll" the flat editorial layout otherwise lacks. Fires once, so
-   scrolling back up doesn't replay it. */
-const reveal = {
-  initial: { opacity: 0, y: 18 },
-  whileInView: { opacity: 1, y: 0 },
-  viewport: { once: true, margin: '-80px' },
-  transition: { duration: 0.5, ease: [0.22, 1, 0.36, 1] },
-} as const;
+/* Sections render fully visible on load — no hide-until-scroll animation,
+   so everything is on the page at once. */
+const reveal = {} as const;
 
 const QUICK_GROUPS = [
   {
@@ -408,7 +402,7 @@ export default function Home() {
             <motion.section className="home-section" id="actions"
               style={{ scrollMarginTop:70 }} {...reveal}>
               <SectionHeader icon={LayoutGrid} eyebrow="Quick actions" />
-              <div className="qa-scroll">
+              <div className="qa-wrap">
                 {QUICK_GROUPS.flatMap(g => g.items).map((a) => {
                   const Icon = a.icon;
                   const isAgent = a.href === '/ai';
