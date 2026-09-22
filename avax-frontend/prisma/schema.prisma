@@ -40,6 +40,7 @@ model KaiUser {
   sentReferrals   Referral[] @relation("Referrer")
   receivedReferrals Referral[] @relation("Referred")
   forestMembership  ForestMember?
+  whitelistEntry    WhitelistEntry?
 
   @@map("kai_users")
 }
@@ -152,6 +153,27 @@ model AirdropEligibility {
   user              KaiUser  @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("airdrop_eligibility")
+}
+
+/// A member who has a spot on the KAI waitlist whitelist — claimed by the
+/// member themselves (`SELF`) or granted by ops (`ADMIN`). Presence of a row
+/// means whitelisted; delete the row to revoke.
+model WhitelistEntry {
+  id       String         @id @default(cuid())
+  userId   String         @unique
+  /// Who put this member on the whitelist — used to highlight self-claims
+  /// ("whitelisted himself") in the admin member list.
+  joinedBy WhitelistJoin  @default(SELF)
+  joinedAt DateTime       @default(now())
+
+  user     KaiUser        @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("whitelist_entries")
+}
+
+enum WhitelistJoin {
+  SELF
+  ADMIN
 }
 
 /// An audit-style record of important user actions on the KAI platform.
