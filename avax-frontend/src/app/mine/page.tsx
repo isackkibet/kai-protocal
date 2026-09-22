@@ -321,7 +321,7 @@ export default function MinePage() {
                   <Zap size={17} color={C.goldLight} strokeWidth={1.7} />
                   <div>
                     <p style={{ fontSize:14, fontWeight:700, color:C.paper, margin:0 }}>Auto-Drop Agent</p>
-                    <p style={{ fontSize:11.5, color:C.inkLight, margin:'2px 0 0' }}>Mines <span style={{ color:C.paper, fontWeight:700 }}>NVR</span> while you&apos;re away</p>
+                    <p style={{ fontSize:12.5, color:C.inkLight, margin:'2px 0 0' }}>Mines <span style={{ color:C.paper, fontWeight:700 }}>NVR</span> while you&apos;re away</p>
                   </div>
                 </div>
                 <motion.button whileTap={{ scale:0.94 }}
@@ -384,7 +384,7 @@ export default function MinePage() {
                       {done ? <CheckCircle size={17} style={{ color:C.goldLight, flexShrink:0 }}/> : <TaskIcon id={task.id} color={C.goldLight}/>}
                       <div style={{ flex:1, minWidth:0 }}>
                         <p style={{ fontSize:13.5, fontWeight:700, color:C.paper, margin:0 }}>{task.title}</p>
-                        <p style={{ fontSize:11, color:C.inkLight, margin:'2px 0 0' }}>{done ? 'Completed today' : task.desc}</p>
+                        <p style={{ fontSize:12.5, color:C.inkLight, margin:'2px 0 0' }}>{done ? 'Completed today' : task.desc}</p>
                       </div>
                       {!done && <span style={{ ...MONO, fontSize:12.5, fontWeight:700, color:C.goldLight, flexShrink:0 }}>+{task.reward}&nbsp;{task.unit}</span>}
                     </button>
