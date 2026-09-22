@@ -50,11 +50,11 @@ async function resolveOwnedWallet(
     const prisma = await getPrisma();
     if (prisma) {
       try {
-        const user = await (prisma as any).kaiUser.findFirst({
+        const user = await prisma.kaiUser.findFirst({
           where: { privyUserId },
           include: { wallets: true },
         });
-        const bound = user?.wallets?.find((w: any) => w.chain === 'AVALANCHE')?.address?.toLowerCase();
+        const bound = user?.wallets?.find((w) => w.chain === 'AVALANCHE')?.address?.toLowerCase();
         if (bound) return { owned: true, key: bound, privyUserId };
       } catch { /* fall through to supplied wallet */ }
     }
@@ -91,14 +91,14 @@ export async function GET(req: Request) {
     try {
       // Prefer the DB-bound user (by wallet, or for Privy sessions by user id
       // when the wallet isn't bound yet) so name/phone/updatedAt survive.
-      const byWallet = await (prisma as any).kaiUser.findFirst({
+      const byWallet = await prisma.kaiUser.findFirst({
         where: {
           wallets: { some: { address: { equals: key, mode: 'insensitive' } } },
         },
         include: { wallets: true },
       });
       const byPrivy = identity.privyUserId
-        ? await (prisma as any).kaiUser.findFirst({
+        ? await prisma.kaiUser.findFirst({
             where: { privyUserId: identity.privyUserId },
             include: { wallets: true },
           })
@@ -165,12 +165,12 @@ export async function POST(req: Request) {
       // Privy session → bind to the verified user id so the embedded wallet
       // (already or newly) lives under it.
       if (identity.privyUserId) {
-        let user = await (prisma as any).kaiUser.findFirst({
+        let user = await prisma.kaiUser.findFirst({
           where: { privyUserId: identity.privyUserId },
           include: { wallets: true },
         });
         if (!user) {
-          user = await (prisma as any).kaiUser.create({
+          user = await prisma.kaiUser.create({
             data: {
               name:  profile.displayName || 'KAI User',
               email: `privy-${identity.privyUserId.slice(0, 10)}@kai.local`,
@@ -180,23 +180,23 @@ export async function POST(req: Request) {
             include: { wallets: true },
           });
         }
-        const bound = user.wallets?.find((w: any) => w.chain === 'AVALANCHE');
+        const bound = user.wallets?.find((w) => w.chain === 'AVALANCHE');
         if (!bound) {
-          await (prisma as any).kaiWallet.create({
+          await prisma.kaiWallet.create({
             data: { userId: user.id, chain: 'AVALANCHE', address: key },
           });
         }
-        await (prisma as any).kaiUser.update({
+        await prisma.kaiUser.update({
           where: { id: user.id },
           data: { name: profile.displayName || user.name, phone: profile.phone || user.phone },
         });
       } else {
         // wagmi wallet → existing behaviour: upsert KaiUser by wallet address
-        const existing = await (prisma as any).kaiWallet.findFirst({
+        const existing = await prisma.kaiWallet.findFirst({
           where: { address: { equals: key, mode: 'insensitive' } },
         });
         if (!existing) {
-          await (prisma as any).kaiUser.create({
+          await prisma.kaiUser.create({
             data: {
               name:  profile.displayName || 'KAI User',
               email: `${key.slice(2, 10)}@kai.local`,
