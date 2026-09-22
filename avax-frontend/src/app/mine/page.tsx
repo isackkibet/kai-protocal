@@ -148,6 +148,22 @@ export default function MinePage() {
     setMinted(`0x${Math.random().toString(16).slice(2,12).toUpperCase()}`);
   };
 
+  const joinWaitlist = async () => {
+    if (joiningWait) return;
+    setJoiningWait(true);
+    setWlMsg('');
+    try {
+      const token = await privy.getAccessToken();
+      const r = await fetch('/api/whitelist', { method: 'POST', headers: token ? { authorization: `Bearer ${token}` } : {} });
+      const d = await r.json();
+      if (r.ok) setJoinedWait(true);
+      else setWlMsg(String(d.error ?? 'Could not join — try again'));
+    } catch {
+      setWlMsg('Network error — try again');
+    }
+    setJoiningWait(false);
+  };
+
   return (
     <main style={{ minHeight:'100dvh', backgroundColor:'var(--mine-bg)', color:'var(--mine-text)', fontFamily:'var(--font-sans)', position:'relative', paddingBottom:88 }}>
       <div style={{ ...W, paddingTop:28 }}>
@@ -395,13 +411,14 @@ export default function MinePage() {
               <p style={{ fontSize:12.5, color:'var(--mine-text-2)', margin:'0 0 14px', lineHeight:1.5 }}>
                 Higher reward tiers at launch.
               </p>
-              <AnimatePresence mode="wait">
+<AnimatePresence mode="wait">
                 {!joinedWait ? (
-                  <motion.button key="join" whileTap={{ scale:0.97 }}
-                    onClick={() => setJoinedWait(true)}
+                  <motion.button key="join" whileTap={{ scale: 0.97 }}
+                    onClick={joinWaitlist}
+                    disabled={joiningWait}
                     className="mine-btn-outline"
-                    style={{ width:'100%', fontWeight:600, fontSize:12.5, padding:'10px', borderRadius:10, fontFamily:'inherit' }}>
-                    Join waitlist
+                    style={{ width:'100%', fontWeight:600, fontSize:12.5, padding:'10px', borderRadius:10, fontFamily:'inherit', opacity:joiningWait?0.7:1 }}>
+                    {joiningWait ? 'Joining…' : 'Join waitlist'}
                   </motion.button>
                 ) : (
                   <motion.div key="done" initial={{ opacity:0 }} animate={{ opacity:1 }}
@@ -410,6 +427,7 @@ export default function MinePage() {
                   </motion.div>
                 )}
               </AnimatePresence>
+              {wlMsg && <p style={{ fontSize:11, color:'var(--mine-dim)', margin:'8px 0 0' }}>{wlMsg}</p>}
             </div>
 
             {/* MINT TOKEN — quiet entry point; the form opens on request */}
