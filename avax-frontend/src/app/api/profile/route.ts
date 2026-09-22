@@ -86,11 +86,11 @@ export async function GET(req: Request) {
   const key = identity.key;
 
   const prisma = await getPrisma();
-  let full: Record<string, unknown> | null = null;
+  let dbFull: Record<string, unknown> | null = null;
   if (prisma) {
     try {
-      // Prefer the DB-bound user (by wallet, or for Privy sessions by user id
-      // when the wallet isn't bound yet) so name/phone/updatedAt survive.
+      // DB-bound user (by wallet, or for Privy sessions by user id when the
+      // wallet isn't bound yet) — the source of truth for name/phone/updatedAt.
       const byWallet = await prisma.kaiUser.findFirst({
         where: {
           wallets: { some: { address: { equals: key, mode: 'insensitive' } } },
@@ -103,10 +103,13 @@ export async function GET(req: Request) {
             include: { wallets: true },
           })
         : null;
-      full = byPrivy ?? byWallet;
+      dbFull = byPrivy ?? byWallet;
     } catch { /* fall through to mem */ }
   }
-  if (!full) full = MEM[key] ?? null;
+  // Combine: DB record for identity fields + in-memory snapshot for the full
+  // form (county, ID, memberships, prefs), so a fresh save reloads intact.
+  const saved = MEM[key] ?? null;
+  const full = dbFull || saved ? { ...(dbFull ?? {}), ...(saved ?? {}) } : null;
 
   return NextResponse.json({ profile: owned ? full : publicSubset(full, key) });
 }
