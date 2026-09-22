@@ -62,21 +62,24 @@ export default function WaitlistPage() {
   const [emailLoading, setEmailLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
   const [signInError, setSignInError] = useState<string | null>(null);
-  const [wl, setWl] = useState<{ whitelisted: boolean; joinedBy: string | null; joinedAt: string | null } | null>(null);
+  const [wl, setWl] = useState<{ whitelisted: boolean; joinedBy: string | null; joinedAt: string | null; joinedCount: number; whitelistedCount: number } | null>(null);
   const [claimingWl, setClaimingWl] = useState(false);
   const [wlMsg, setWlMsg] = useState<string>('');
 
+  const refreshWl = async () => {
+    try {
+      const token = await getAccessToken();
+      const r = await fetch('/api/whitelist', { headers: token ? { authorization: `Bearer ${token}` } : {} });
+      const d = await r.json();
+      setWl(d);
+    } catch { /* leave wl as-is */ }
+  };
+
   useEffect(() => {
     if (!authenticated) return;
-    (async () => {
-      try {
-        const token = await getAccessToken();
-        const r = await fetch('/api/whitelist', { headers: token ? { authorization: `Bearer ${token}` } : {} });
-        const d = await r.json();
-        setWl(d);
-      } catch { /* leave wl null */ }
-    })();
-  }, [authenticated, getAccessToken]);
+    void refreshWl();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [authenticated]);
 
   const claimWhitelist = async () => {
     setClaimingWl(true);
@@ -85,7 +88,7 @@ export default function WaitlistPage() {
       const token = await getAccessToken();
       const r = await fetch('/api/whitelist', { method: 'POST', headers: token ? { authorization: `Bearer ${token}` } : {} });
       const d = await r.json();
-      if (r.ok) setWl(d);
+      if (r.ok) await refreshWl();
       else setWlMsg(String(d.error ?? 'Could not join — try again'));
     } catch {
       setWlMsg('Network error — try again');
@@ -205,24 +208,81 @@ export default function WaitlistPage() {
           />
         </section>
 
-        {wl && !wl?.whitelisted && (
-          <section style={{ marginTop: 24, padding: 16, border: `1px solid ${C.hairline}`, borderRadius: 12 }}>
-            <p style={{ fontSize: 13, color: C.paper, margin: '0 0 10px', fontWeight: 600 }}>
-              Whitelist yourself for early rewards
-            </p>
-            <button
-              onClick={claimWhitelist}
-              disabled={claimingWl}
-              style={{
-                padding: '12px 22px', borderRadius: 999, border: 'none', cursor: claimingWl ? 'default' : 'pointer',
-                background: C.gold, color: '#1B1A14', fontSize: 13, fontWeight: 700, fontFamily: 'inherit',
-                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, width: '100%',
-                opacity: claimingWl ? 0.7 : 1,
-              }}
-            >
-              {claimingWl ? <Loader2 size={15} className="animate-spin" /> : <UserCheck size={15} />} Claim my whitelist spot
-            </button>
-            {wlMsg && <p style={{ fontSize: 11.5, color: C.red, margin: '10px 0 0' }}>{wlMsg}</p>}
+        {wl && (
+          <section style={{
+            marginTop: 32, padding: '34px 26px', borderRadius: 18, textAlign: 'center',
+            border: wl?.whitelisted ? `1px solid ${C.goldLight}` : `1px solid ${C.gold}`,
+            background: 'linear-gradient(180deg, rgba(200,155,60,0.12), rgba(200,155,60,0.03))',
+            boxShadow: wl?.whitelisted ? '0 0 0 1px rgba(228,200,120,0.25)' : `inset 0 0 0 1px rgba(200,155,60,0.25)`,
+          }}>
+            <div style={{
+              width: 54, height: 54, margin: '0 auto 16px', borderRadius: '50%', display: 'flex',
+              alignItems: 'center', justifyContent: 'center',
+              background: wl?.whitelisted ? 'rgba(228,200,120,0.18)' : 'rgba(200,155,60,0.16)',
+              color: C.goldLight,
+            }}>
+              {wl?.whitelisted
+                ? <CheckCircle2 size={26} />
+                : <ShieldCheck size={26} />}
+            </div>
+
+            {wl?.whitelisted ? (
+              <>
+                <h2 style={{ ...SERIF, fontSize: 24, fontWeight: 700, margin: '0 0 8px', letterSpacing: '-0.4px' }}>
+                  You&apos;re <span style={{ color: C.goldLight }}>whitelisted</span>
+                </h2>
+                <p style={{ fontSize: 14, color: C.inkLight, margin: '0 0 6px', lineHeight: 1.6 }}>
+                  {wl?.joinedBy === 'SELF'
+                    ? 'You claimed your spot yourself — early rewards are unlocked for you.'
+                    : 'Your spot was granted by the KAI team — early rewards are unlocked for you.'}
+                </p>
+                {wl?.joinedAt && (
+                  <p style={{ fontSize: 12, color: C.gold, margin: '0 0 18px', fontFamily: 'var(--font-plex-mono), monospace' }}>
+                    {wl?.joinedBy === 'SELF' ? 'Self-claimed' : 'Approved'} · {new Date(wl!.joinedAt!).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}
+                  </p>
+                )}
+              </>
+            ) : (
+              <>
+                <h2 style={{ ...SERIF, fontSize: 24, fontWeight: 700, margin: '0 0 8px', letterSpacing: '-0.4px' }}>
+                  Claim your <span style={{ color: C.goldLight }}>whitelist spot</span>
+                </h2>
+                <p style={{ fontSize: 14, color: C.inkLight, margin: '0 0 18px', lineHeight: 1.6, maxWidth: 400, marginInline: 'auto' }}>
+                  Whitelisted members get early access to KAI rewards at launch. One tap — no payment, no form.
+                </p>
+              </>
+            )}
+
+            <div style={{ maxWidth: 340, margin: '0 auto 22px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, color: C.inkLight, marginBottom: 6, fontFamily: 'var(--font-plex-mono), monospace' }}>
+                <span>{wl?.whitelistedCount ?? 0} whitelisted</span>
+                <span>{wl?.joinedCount ?? 0} members joined</span>
+              </div>
+              <div style={{ height: 6, borderRadius: 6, background: 'rgba(200,155,60,0.14)', overflow: 'hidden' }}>
+                <div style={{
+                  height: '100%', borderRadius: 6,
+                  width: `${wl?.joinedCount ? Math.min(100, Math.round(((wl?.whitelistedCount ?? 0) / wl!.joinedCount!) * 100)) : 0}%`,
+                  background: 'linear-gradient(90deg, #C89B3C, #E4C878)',
+                }} />
+              </div>
+            </div>
+
+            {!wl?.whitelisted && (
+              <button
+                onClick={claimWhitelist}
+                disabled={claimingWl}
+                style={{
+                  padding: '16px 40px', borderRadius: 999, border: 'none', cursor: claimingWl ? 'default' : 'pointer',
+                  background: C.gold, color: '#1B1A14', fontSize: 15, fontWeight: 700, fontFamily: 'inherit',
+                  display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 9,
+                  opacity: claimingWl ? 0.7 : 1, boxShadow: '0 6px 24px rgba(200,155,60,0.28)',
+                }}
+              >
+                {claimingWl ? <Loader2 size={17} className="animate-spin" /> : <UserCheck size={17} />} {claimingWl ? 'Claiming…' : 'Claim my whitelist spot'}
+              </button>
+            )}
+
+            {wlMsg && <p style={{ fontSize: 12.5, color: C.red, margin: '14px 0 0' }}>{wlMsg}</p>}
           </section>
         )}
 
