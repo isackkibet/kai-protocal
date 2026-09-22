@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Globe, Leaf, Zap, Loader2, ArrowUpRight } from 'lucide-react';
 import Link from 'next/link';
 import { useSDGImpact } from '@/hooks/useSDGImpact';
+import { iconForSdg, iconForTier } from '@/lib/sdgIcons';
 
 /* Same editorial system as the rest of the app — pine + gold + paper,
    flat rows separated by a hairline, no filled "surface" boxes. */
@@ -22,7 +23,6 @@ export default function SDGImpactCard() {
   const {
     totalPoints,
     tier,
-    badge,
     multiplier,
     nextTierPts,
     progressToNextTier,
@@ -81,16 +81,21 @@ export default function SDGImpactCard() {
 
       {/* Stats */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 8, marginBottom: 20 }}>
-        {[
-          { l: 'SDG effort score', v: `${totalPoints.toLocaleString()} pts`, color: C.goldLight },
-          { l: 'Impact tier',      v: `${badge} ${tier}`, color: C.paper },
-          { l: 'Airdrop bonus',    v: `${multiplier} multiplier`, color: C.goldLight },
-        ].map(s => (
-          <div key={s.l} style={{ textAlign: 'center', minWidth: 0 }}>
-            <p style={{ ...MONO, fontSize: 9, color: C.inkLight, margin: '0 0 6px', textTransform: 'uppercase', letterSpacing: 0.5 }}>{s.l}</p>
-            <p style={{ ...SERIF, fontSize: 13.5, fontWeight: 600, color: s.color, margin: 0, lineHeight: 1.3 }}>{s.v}</p>
-          </div>
-        ))}
+        <div style={{ textAlign: 'center', minWidth: 0 }}>
+          <p style={{ ...MONO, fontSize: 9, color: C.inkLight, margin: '0 0 6px', textTransform: 'uppercase', letterSpacing: 0.5 }}>SDG effort score</p>
+          <p style={{ ...SERIF, fontSize: 13.5, fontWeight: 600, color: C.goldLight, margin: 0, lineHeight: 1.3 }}>{totalPoints.toLocaleString()} pts</p>
+        </div>
+        <div style={{ textAlign: 'center', minWidth: 0 }}>
+          <p style={{ ...MONO, fontSize: 9, color: C.inkLight, margin: '0 0 6px', textTransform: 'uppercase', letterSpacing: 0.5 }}>Impact tier</p>
+          <p style={{ ...SERIF, fontSize: 13.5, fontWeight: 600, color: C.paper, margin: 0, lineHeight: 1.3, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
+            {(() => { const TierIcon = iconForTier(tier); return <TierIcon size={14} color={C.goldLight} strokeWidth={1.8} />; })()}
+            {tier}
+          </p>
+        </div>
+        <div style={{ textAlign: 'center', minWidth: 0 }}>
+          <p style={{ ...MONO, fontSize: 9, color: C.inkLight, margin: '0 0 6px', textTransform: 'uppercase', letterSpacing: 0.5 }}>Airdrop bonus</p>
+          <p style={{ ...SERIF, fontSize: 13.5, fontWeight: 600, color: C.goldLight, margin: 0, lineHeight: 1.3 }}>{multiplier} multiplier</p>
+        </div>
       </div>
 
       {/* Progress toward next tier */}
@@ -166,7 +171,7 @@ export default function SDGImpactCard() {
               padding: '11px 0',
             }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 12, flex: 1, minWidth: 0 }}>
-                <span style={{ fontSize: 17, flexShrink: 0 }}>{act.icon}</span>
+                {(() => { const ActIcon = iconForSdg(act.sdgNumber); return <ActIcon size={16} color={C.goldLight} strokeWidth={1.7} style={{ flexShrink: 0 }} />; })()}
                 <div style={{ minWidth: 0 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
                     <p style={{ margin: 0, fontSize: 13, fontWeight: 600, color: C.paper, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>

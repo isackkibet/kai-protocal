@@ -75,13 +75,13 @@ export function useSDGImpact(): SDGImpactState {
       if (!res.ok) throw new Error('Failed to log action');
       const data = await res.json();
 
-      setToast(data.message || '🎉 SDG Effort Points Logged!');
+      setToast(data.message || 'SDG effort points logged.');
       setTimeout(() => setToast(null), 3500);
 
       await fetchStats();
       return true;
     } catch {
-      setToast('⚠️ Could not log activity. Try again.');
+      setToast('Could not log activity. Try again.');
       setTimeout(() => setToast(null), 3000);
       return false;
     }
