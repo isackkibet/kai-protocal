@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useAccount, useDisconnect, useSignMessage } from 'wagmi';
 import { buildOwnershipChallenge } from '@/lib/wallet-signature';
+import { usePrivyAuth } from '@/lib/privy-auth';
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
@@ -133,6 +134,11 @@ export default function ProfilePage() {
   const { address, isConnected } = useAccount();
   const { disconnect } = useDisconnect();
   const { signMessageAsync } = useSignMessage();
+  const privy = usePrivyAuth();
+  // Profile identity: a wagmi-injected wallet (MetaMask/Core) when connected,
+  // otherwise the Privy embedded wallet from the Google/email session.
+  const effectiveAddress: string | undefined = address ?? privy.address ?? undefined;
+  const canAuth = isConnected || privy.authenticated;
   const [profile, setProfile] = useState<Profile>({ ...EMPTY });
   const [saved,   setSaved]   = useState(false);
   const [saving,  setSaving]  = useState(false);
@@ -141,30 +147,52 @@ export default function ProfilePage() {
   const [toast,   setToast]   = useState('');
   const [editing, setEditing] = useState(false);
 
-  const load = useCallback(async (addr:string) => {
+  const getAuthHeader = async (): Promise<Record<string, string>> => {
     try {
-      const timestamp = Date.now();
-      const signature = await signMessageAsync({ message: buildOwnershipChallenge(addr, timestamp) });
-      const r = await fetch(`/api/profile?wallet=${addr}&signature=${encodeURIComponent(signature)}&timestamp=${timestamp}`);
-      const { profile:p } = await r.json();
-      setProfile(p ? { ...EMPTY, ...p } : { ...EMPTY, walletAddress:addr });
-    } catch { setProfile({ ...EMPTY, walletAddress:addr }); }
-  }, [signMessageAsync]);
+      const token = await privy.getAccessToken();
+      return token ? { authorization: `Bearer ${token}` } : {};
+    } catch {
+      return {};
+    }
+  };
 
-  useEffect(() => { if (address) load(address); }, [address, load]);
+  const load = useCallback(async (addr: string) => {
+    try {
+      let extra = '';
+      const headers = await getAuthHeader();
+      // No Privy session → prove ownership with a wagmi wallet signature.
+      if (!headers.authorization && isConnected) {
+        const timestamp = Date.now();
+        const signature = await signMessageAsync({ message: buildOwnershipChallenge(addr, timestamp) });
+        extra = `&signature=${encodeURIComponent(signature)}&timestamp=${timestamp}`;
+      }
+      const r = await fetch(`/api/profile?wallet=${addr}${extra}`, { headers });
+      const { profile: p } = await r.json();
+      setProfile(p ? { ...EMPTY, ...p } : { ...EMPTY, walletAddress: addr });
+    } catch { setProfile({ ...EMPTY, walletAddress: addr }); }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isConnected, signMessageAsync, privy.authenticated]);
+
+  useEffect(() => { if (effectiveAddress) load(effectiveAddress); }, [effectiveAddress, load]);
 
   const set = (k:keyof Profile) => (v:string|boolean) =>
     setProfile(p=>({ ...p, [k]:v }));
 
   const save = async () => {
-    if (!address) { setToast('Connect wallet first'); return; }
+    if (!effectiveAddress) { setToast('Connect wallet or sign in first'); return; }
     setSaving(true);
     try {
-      const timestamp = Date.now();
-      const signature = await signMessageAsync({ message: buildOwnershipChallenge(address, timestamp) });
+      const headers = await getAuthHeader();
+      let body: Record<string, unknown> = { ...profile, walletAddress: effectiveAddress };
+      // No Privy session → attach a signed wallet-ownership challenge.
+      if (!headers.authorization) {
+        const timestamp = Date.now();
+        const signature = await signMessageAsync({ message: buildOwnershipChallenge(effectiveAddress, timestamp) });
+        body = { ...body, signature, timestamp };
+      }
       const r = await fetch('/api/profile', {
-        method:'POST', headers:{'Content-Type':'application/json'},
-        body:JSON.stringify({ ...profile, walletAddress:address, signature, timestamp }),
+        method:'POST', headers:{'Content-Type':'application/json', ...headers},
+        body:JSON.stringify(body),
       });
       if (r.ok) {
         setSaved(true); setToast('Profile saved'); setEditing(false);
@@ -175,8 +203,8 @@ export default function ProfilePage() {
   };
 
   const copyAddr = () => {
-    if (!address) return;
-    navigator.clipboard.writeText(address);
+    if (!effectiveAddress) return;
+    navigator.clipboard.writeText(effectiveAddress);
     setCopied(true); setTimeout(()=>setCopied(false), 1600);
   };
 
@@ -236,7 +264,7 @@ export default function ProfilePage() {
             }}>
               {initials}
             </div>
-            {isConnected && (
+            {canAuth && (
               <span style={{ position:'absolute', bottom:6, right:4, width:18, height:18, borderRadius:'50%', background: C.goldLight, border:`3px solid ${C.bg}` }}/>
             )}
           </div>
@@ -247,7 +275,7 @@ export default function ProfilePage() {
               <h1 style={{ ...SERIF, fontSize:'clamp(24px,3vw,34px)', fontWeight:700, margin:0, letterSpacing:'-0.5px', color: C.paper }}>
                 {profile.displayName || <span style={{ color: C.inkLight }}>Your Name</span>}
               </h1>
-              {isConnected && (
+              {canAuth && (
                 <span style={{ ...MONO, padding:'4px 12px', borderRadius:999, border: `1px solid ${C.hairline}`, fontSize:10, fontWeight:600, letterSpacing: 0.6, color: C.goldLight, flexShrink:0 }}>
                   KAI MEMBER
                 </span>
@@ -264,9 +292,9 @@ export default function ProfilePage() {
                   <Phone size={14} color={C.goldLight}/> {profile.phone}
                 </span>
               )}
-              {isConnected && (
+              {canAuth && (
                 <button onClick={copyAddr} style={{ display:'flex', alignItems:'center', gap:6, background:'none', border:'none', cursor:'pointer', fontSize:12.5, color: C.inkLight, fontFamily: 'var(--font-plex-mono), monospace', padding:0 }}>
-                  {address?.slice(0,10)}...{address?.slice(-6)}
+                  {effectiveAddress?.slice(0,10)}...{effectiveAddress?.slice(-6)}
                   {copied ? <CheckCircle size={12} color={C.goldLight}/> : <Copy size={12}/>}
                 </button>
               )}
@@ -279,8 +307,8 @@ export default function ProfilePage() {
               style={{ display:'flex', alignItems:'center', gap:8, padding:'11px 20px', borderRadius:999, border: `1px solid ${C.hairline}`, cursor:'pointer', background:'none', color: C.paperDim, fontSize:13, fontWeight:700, fontFamily: 'inherit' }}>
               <Edit3 size={15}/> {editing ? 'Cancel' : 'Edit Profile'}
             </button>
-            <button onClick={save} disabled={saving||!isConnected}
-              style={{ display:'flex', alignItems:'center', gap:8, padding:'11px 22px', borderRadius:999, border:'none', cursor:isConnected?'pointer':'not-allowed', background: saved ? 'rgba(200,155,60,0.18)' : C.gold, color: saved ? C.goldLight : C.ink, fontSize:13, fontWeight:700, fontFamily: 'inherit', opacity: isConnected ? 1 : 0.5 }}>
+            <button onClick={save} disabled={saving||!canAuth}
+              style={{ display:'flex', alignItems:'center', gap:8, padding:'11px 22px', borderRadius:999, border:'none', cursor:canAuth?'pointer':'not-allowed', background: saved ? 'rgba(200,155,60,0.18)' : C.gold, color: saved ? C.goldLight : C.ink, fontSize:13, fontWeight:700, fontFamily: 'inherit', opacity: canAuth ? 1 : 0.5 }}>
               {saving?<RefreshCw size={15} style={{animation:'spin 1s linear infinite'}}/>:saved?<CheckCircle size={15}/>:<Save size={15}/>}
               {saving?'Saving':saved?'Saved':'Save Profile'}
             </button>
@@ -354,24 +382,26 @@ export default function ProfilePage() {
           <div className="profile-about">
             <p style={{ ...label, margin: '0 0 14px' }}>About</p>
 
-            {isConnected ? (
+            {canAuth ? (
               <div style={{ paddingBottom:20, borderBottom: `1px solid ${C.hairline}`, marginBottom:20 }}>
                 <p style={{ fontSize:11.5, color: C.inkLight, margin: '0 0 10px' }}>Linked Wallet</p>
                 <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:12 }}>
                   <Wallet size={14} color={C.goldLight}/>
                   <span style={{ ...MONO, fontSize:11, color: C.inkLight, flex:1, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>
-                    {address}
+                    {effectiveAddress}
                   </span>
                   <button onClick={copyAddr} style={{ background:'none', border:'none', cursor:'pointer', color: C.inkLight, padding:0, display:'flex' }}>
                     {copied?<CheckCircle size={12} color={C.goldLight}/>:<Copy size={12}/>}
                   </button>
-                  <a href={`https://testnet.snowtrace.io/address/${address}`} target="_blank" rel="noreferrer" style={{ color: C.goldLight, display:'flex' }}>
+                  <a href={`https://testnet.snowtrace.io/address/${effectiveAddress}`} target="_blank" rel="noreferrer" style={{ color: C.goldLight, display:'flex' }}>
                     <ExternalLink size={12}/>
                   </a>
                 </div>
-                <button onClick={()=>disconnect()} style={{ display:'flex', alignItems:'center', gap:7, padding:0, border:'none', background:'none', cursor:'pointer', color: C.red, fontSize:12.5, fontWeight:600, fontFamily:'inherit' }}>
-                  <LogOut size={13}/> Disconnect Wallet
-                </button>
+                {isConnected && (
+                  <button onClick={()=>disconnect()} style={{ display:'flex', alignItems:'center', gap:7, padding:0, border:'none', background:'none', cursor:'pointer', color: C.red, fontSize:12.5, fontWeight:600, fontFamily:'inherit' }}>
+                    <LogOut size={13}/> Disconnect Wallet
+                  </button>
+                )}
               </div>
             ) : (
               <div style={{ paddingBottom:20, borderBottom: `1px solid ${C.hairline}`, marginBottom:20 }}>
@@ -453,13 +483,13 @@ export default function ProfilePage() {
                         <KSelect value={profile.county} onChange={set('county')} options={COUNTIES} placeholder="Select your county..."/>
                       </FormRow>
                     </div>
-                    {isConnected && (
+                    {canAuth && (
                       <div style={{ gridColumn:'1/-1', paddingTop:8 }}>
                         <p style={{ ...label, margin: '0 0 10px' }}>Linked Wallet</p>
                         <div style={{ display:'flex', alignItems:'center', gap:10 }}>
                           <Wallet size={15} color={C.goldLight}/>
-                          <span style={{ ...MONO, fontSize:12.5, color: C.paperDim, flex:1, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{address}</span>
-                          <a href={`https://testnet.snowtrace.io/address/${address}`} target="_blank" rel="noreferrer" style={{ color: C.goldLight, display:'flex' }}>
+                          <span style={{ ...MONO, fontSize:12.5, color: C.paperDim, flex:1, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{effectiveAddress}</span>
+                          <a href={`https://testnet.snowtrace.io/address/${effectiveAddress}`} target="_blank" rel="noreferrer" style={{ color: C.goldLight, display:'flex' }}>
                             <ExternalLink size={13}/>
                           </a>
                         </div>
@@ -623,8 +653,8 @@ export default function ProfilePage() {
                 )}
 
                 {/* Save button */}
-                <button onClick={save} disabled={saving||!isConnected}
-                  style={{ marginTop:40, width:'100%', padding:'15px', borderRadius:999, border:'none', cursor:isConnected?'pointer':'not-allowed', background: saved ? 'rgba(200,155,60,0.18)' : C.gold, color: saved ? C.goldLight : C.ink, fontSize:14, fontWeight:700, fontFamily: 'inherit', display:'flex', alignItems:'center', justifyContent:'center', gap:9, opacity: saving||!isConnected ? 0.5 : 1 }}>
+                <button onClick={save} disabled={saving||!canAuth}
+                  style={{ marginTop:40, width:'100%', padding:'15px', borderRadius:999, border:'none', cursor:canAuth?'pointer':'not-allowed', background: saved ? 'rgba(200,155,60,0.18)' : C.gold, color: saved ? C.goldLight : C.ink, fontSize:14, fontWeight:700, fontFamily: 'inherit', display:'flex', alignItems:'center', justifyContent:'center', gap:9, opacity: saving||!canAuth ? 0.5 : 1 }}>
                   {saving?<><RefreshCw size={16} style={{animation:'spin 1s linear infinite'}}/> Saving profile…</>
                   :saved?<><CheckCircle size={16}/> Profile Saved</>
                   :<><Save size={16}/> Save Profile</>}
