@@ -137,7 +137,7 @@ export default function SDGImpactCard() {
       {activeTab === 'goals' && (
         <div>
           {goals.map((g) => (
-            <div key={g.code} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '11px 0', borderBottom: `1px solid ${C.hairline}` }}>
+            <div key={g.code} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '11px 0' }}>
               <span style={{ width: 7, height: 7, borderRadius: '50%', background: g.color, flexShrink: 0 }} />
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
@@ -163,7 +163,7 @@ export default function SDGImpactCard() {
           {availableActions.map((act) => (
             <div key={act.id} style={{
               display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12,
-              padding: '11px 0', borderBottom: `1px solid ${C.hairline}`,
+              padding: '11px 0',
             }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 12, flex: 1, minWidth: 0 }}>
                 <span style={{ fontSize: 17, flexShrink: 0 }}>{act.icon}</span>

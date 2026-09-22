@@ -178,6 +178,7 @@ export default function MinePage() {
 
   return (
     <main style={{ minHeight:'100dvh', background:C.bg, color:C.paper, fontFamily:"'Poppins', 'IBM Plex Sans', var(--font-sans)", position:'relative', paddingBottom:88 }}>
+      <style>{`.airdrop-row:hover:not(:disabled) { background: rgba(200,155,60,0.06); }`}</style>
       <div style={{ ...W, paddingTop:32 }}>
         <Link href="/" style={{ display:'inline-flex', alignItems:'center', gap:8, textDecoration:'none', color:C.inkLight, fontSize:13, marginBottom:32, transition:'color 0.15s ease' }}
           onMouseEnter={e => (e.currentTarget.style.color=C.goldLight)}
@@ -252,9 +253,9 @@ export default function MinePage() {
                 </div>
                 <span style={{ fontSize:11.5, color:C.inkLight, fontWeight:500 }}>4 tokens</span>
               </div>
-              <div className="airdrop-token-grid" style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:'20px 24px' }}>
+              <div className="airdrop-token-grid" style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:'22px 24px' }}>
                 {TOKEN_DROPS.map(t => (
-                  <div key={t.symbol} style={{ paddingBottom:16, borderBottom:`1px solid ${C.hairline}` }}>
+                  <div key={t.symbol}>
                     <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:10 }}>
                       <span style={{ width:7, height:7, borderRadius:'50%', background:t.color, flexShrink:0 }} />
                       <p style={{ fontSize:13, fontWeight:700, color:C.paper, margin:0 }}>{t.symbol}</p>
@@ -281,7 +282,8 @@ export default function MinePage() {
               {POOLS.map((p,i) => (
                 <div key={i}
                   onClick={() => setActivePool(activePool===i?null:i)}
-                  style={{ padding:'14px 0', cursor:'pointer', borderBottom:`1px solid ${C.hairline}` }}>
+                  className="airdrop-row"
+                  style={{ padding:'12px 8px', margin:'0 -8px', borderRadius:10, cursor:'pointer' }}>
                   <div style={{ display:'flex', alignItems:'center', gap:14 }}>
                     <Layers size={17} color={C.goldLight} strokeWidth={1.7} style={{ flexShrink:0 }} />
                     <div style={{ flex:1, minWidth:0 }}>
@@ -377,7 +379,8 @@ export default function MinePage() {
                   return (
                     <button key={task.id}
                       onClick={() => doTask(task.id, task.reward, task.unit)} disabled={done}
-                      style={{ width:'100%', textAlign:'left', display:'flex', alignItems:'center', gap:14, padding:'13px 0', borderBottom:`1px solid ${C.hairline}`, cursor:done?'default':'pointer', background:'none', color:C.paper, opacity:done?0.6:1, fontFamily:'inherit' }}>
+                      className={done ? undefined : 'airdrop-row'}
+                      style={{ width:'100%', textAlign:'left', display:'flex', alignItems:'center', gap:14, padding:'11px 8px', margin:'0 -8px', borderRadius:10, cursor:done?'default':'pointer', background:'none', border:'none', color:C.paper, opacity:done?0.6:1, fontFamily:'inherit' }}>
                       {done ? <CheckCircle size={17} style={{ color:C.goldLight, flexShrink:0 }}/> : <TaskIcon id={task.id} color={C.goldLight}/>}
                       <div style={{ flex:1, minWidth:0 }}>
                         <p style={{ fontSize:13.5, fontWeight:700, color:C.paper, margin:0 }}>{task.title}</p>
