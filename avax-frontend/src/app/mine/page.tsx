@@ -13,6 +13,27 @@ import {
 } from 'lucide-react';
 import SDGImpactCard from '@/components/SDGImpactCard';
 
+/* Same editorial system as the rest of the app — pine + gold + paper,
+   flat sections separated by a hairline, no card shells. This page used
+   to run its own black/white/Avalanche-red theme with bordered/filled
+   "surface" boxes around every stat and task; that mismatch, plus the
+   boxes themselves, is what read as inconsistent and impersonal. */
+const C = {
+  bg:        '#0B1C14',
+  gold:      '#C89B3C',
+  goldLight: '#E4C878',
+  paper:     '#F6F2E7',
+  paperDim:  '#EFE9D9',
+  inkLight:  '#9BA396',
+  hairline:  'rgba(200,155,60,0.14)',
+};
+const MONO: React.CSSProperties = { fontFamily: 'var(--font-plex-mono), monospace' };
+const SERIF: React.CSSProperties = { fontFamily: "'Poppins', sans-serif" };
+const label: React.CSSProperties = { ...MONO, fontSize: 10, letterSpacing: 1.4, textTransform: 'uppercase', color: C.goldLight, fontWeight: 600, margin: 0 };
+const h2: React.CSSProperties = { ...SERIF, fontSize: 17, fontWeight: 600, color: C.paper, margin: 0 };
+const sub: React.CSSProperties = { fontSize: 12.5, color: C.inkLight, margin: '3px 0 0' };
+const W: React.CSSProperties = { width: '100%', maxWidth: 1120, margin: '0 auto', padding: '0 24px', boxSizing: 'border-box' };
+
 const POOLS = [
   { name:'AVAX Alpha Miners', spots:'247/500', pct:49, open:true,  reward:500,  unit:'NVR' },
   { name:'NVR Launch Pool',   spots:'89/200',  pct:45, open:true,  reward:1000, unit:'NVR' },
@@ -20,27 +41,18 @@ const POOLS = [
 ];
 
 const TOKEN_DROPS = [
-  { symbol:'NVR',    name:'Nuvari Token',  reward:10, unit:'NVR',    color:'#E84142' },
-  { symbol:'YBOB',   name:'Stablecoin',    reward:2,  unit:'YBOB',   color:'#22c55e' },
-  { symbol:'YTOKEN', name:'Yield Token',   reward:1,  unit:'YTOKEN', color:'#60a5fa' },
-  { symbol:'GAMI',   name:'Community',     reward:5,  unit:'GAMI',   color:'#f59e0b' },
+  { symbol:'NVR',    name:'Nuvari Token',  reward:10, unit:'NVR',    color:'#E4C878' },
+  { symbol:'YBOB',   name:'Stablecoin',    reward:2,  unit:'YBOB',   color:'#7DC383' },
+  { symbol:'YTOKEN', name:'Yield Token',   reward:1,  unit:'YTOKEN', color:'#6FA8DC' },
+  { symbol:'GAMI',   name:'Community',     reward:5,  unit:'GAMI',   color:'#C89B3C' },
 ];
 
 const TASKS = [
-  { id:'checkin',   title:'Daily check-in',  desc:'Open the app today',       reward:5,    unit:'NVR',    color:'#E84142' },
-  { id:'policy',    title:'Explore policy',  desc:'Open any policy template', reward:2,    unit:'YBOB',   color:'#22c55e' },
-  { id:'agent',     title:'Ask KAI agent',   desc:'Chat with KAI once',       reward:1,    unit:'GAMI',   color:'#f59e0b' },
-  { id:'community', title:'Join community',  desc:'Follow ecosystem updates', reward:1,    unit:'YTOKEN', color:'#60a5fa' },
+  { id:'checkin',   title:'Daily check-in',  desc:'Open the app today',       reward:5,    unit:'NVR',    color:'#E4C878' },
+  { id:'policy',    title:'Explore policy',  desc:'Open any policy template', reward:2,    unit:'YBOB',   color:'#7DC383' },
+  { id:'agent',     title:'Ask KAI agent',   desc:'Chat with KAI once',       reward:1,    unit:'GAMI',   color:'#C89B3C' },
+  { id:'community', title:'Join community',  desc:'Follow ecosystem updates', reward:1,    unit:'YTOKEN', color:'#6FA8DC' },
 ];
-
-const h2: React.CSSProperties = { fontSize:15, fontWeight:600, color:'var(--mine-text)', margin:0, letterSpacing:'-0.01em' };
-const sub: React.CSSProperties = { fontSize:13, color:'var(--mine-text-2)', margin:'3px 0 0' };
-const cardIcon: React.CSSProperties = {
-  width:36, height:36, borderRadius:10, flexShrink:0,
-  display:'flex', alignItems:'center', justifyContent:'center',
-  background:'var(--mine-surface-2)', color:'var(--mine-text-2)',
-};
-const W: React.CSSProperties = { width:'100%', maxWidth:1280, margin:'0 auto', padding:'0 40px' };
 
 /* Numbers that visibly count up when they change feel alive, not just swapped */
 function useCountUp(target: number, duration = 600) {
@@ -68,10 +80,10 @@ function useCountUp(target: number, duration = 600) {
 /* Flat, neutral progress bar — no token colour, no glow. */
 function Bar({ v, max }: { v:number; max:number }) {
   return (
-    <div style={{ height:4, borderRadius:4, background:'rgba(255,255,255,0.06)', overflow:'hidden' }}>
+    <div style={{ height:3, borderRadius:2, background:C.hairline, overflow:'hidden' }}>
       <motion.div initial={{ width:0 }} animate={{ width:`${Math.min(v/max*100,100)}%` }}
         transition={{ duration:0.9, ease:'easeOut' }}
-        style={{ height:'100%', borderRadius:4, background:'var(--mine-text-2)' }} />
+        style={{ height:'100%', borderRadius:2, background:C.gold }} />
     </div>
   );
 }
@@ -165,346 +177,319 @@ export default function MinePage() {
   };
 
   return (
-    <main style={{ minHeight:'100dvh', backgroundColor:'var(--mine-bg)', color:'var(--mine-text)', fontFamily:'var(--font-sans)', position:'relative', paddingBottom:88 }}>
-      <div style={{ ...W, paddingTop:28 }}>
-        <Link href="/" style={{ display:'inline-flex', alignItems:'center', gap:8, textDecoration:'none', color:'var(--mine-dim)', fontSize:13, marginBottom:36, transition:'color 0.15s ease' }}
-          onMouseEnter={e => (e.currentTarget.style.color='var(--mine-text)')}
-          onMouseLeave={e => (e.currentTarget.style.color='var(--mine-dim)')}>
+    <main style={{ minHeight:'100dvh', background:C.bg, color:C.paper, fontFamily:"'Poppins', 'IBM Plex Sans', var(--font-sans)", position:'relative', paddingBottom:88 }}>
+      <div style={{ ...W, paddingTop:32 }}>
+        <Link href="/" style={{ display:'inline-flex', alignItems:'center', gap:8, textDecoration:'none', color:C.inkLight, fontSize:13, marginBottom:32, transition:'color 0.15s ease' }}
+          onMouseEnter={e => (e.currentTarget.style.color=C.goldLight)}
+          onMouseLeave={e => (e.currentTarget.style.color=C.inkLight)}>
           <ArrowLeft size={14}/> Back to Home
         </Link>
 
         {/* HERO — centred, flat. The claim action is the one loud thing on the page. */}
-        <div style={{ textAlign:'center', maxWidth:640, margin:'0 auto' }}>
-          <div style={{ display:'inline-flex', alignItems:'center', gap:8, marginBottom:20 }}>
-            <span style={{ width:6, height:6, borderRadius:'50%', background:'var(--mine-accent)', animation:'pulse-dot 2s ease-in-out infinite' }} />
-            <span style={{ fontSize:11.5, fontWeight:600, color:'var(--mine-text-2)', letterSpacing:0.2 }}>Live rewards · Fuji testnet</span>
-          </div>
+        <div style={{ textAlign:'center', maxWidth:600, margin:'0 auto' }}>
+          <p style={{ ...label, display:'inline-flex', alignItems:'center', gap:8, marginBottom:20 }}>
+            <span style={{ width:6, height:6, borderRadius:'50%', background:C.goldLight }} /> Live rewards · Fuji testnet
+          </p>
 
-          <h1 style={{ fontSize:'clamp(30px,4vw,44px)', fontWeight:700, letterSpacing:'-1px', lineHeight:1.1, color:'var(--mine-text)', margin:'0 0 14px' }}>
-            Claim <span className="mine-num" style={{ color:'var(--mine-accent)', fontWeight:700 }}>10 NVR</span> daily
+          <h1 style={{ ...SERIF, fontSize:'clamp(30px,4vw,42px)', fontWeight:700, letterSpacing:'-1px', lineHeight:1.1, color:C.paper, margin:'0 0 14px' }}>
+            Claim <span style={{ color:C.goldLight }}>10 NVR</span> daily
           </h1>
-          <p style={{ fontSize:16, lineHeight:1.65, color:'var(--mine-text-2)', margin:'0 auto', maxWidth:460 }}>
-            Complete tasks to earn <span className="mine-hl">Kai Bar points</span> toward the <span className="mine-hl">KAI airdrop</span>.
+          <p style={{ fontSize:15, lineHeight:1.65, color:C.inkLight, margin:'0 auto', maxWidth:440 }}>
+            Complete tasks to earn <span style={{ color:C.paper, fontWeight:700 }}>Kai Bar points</span> toward the <span style={{ color:C.paper, fontWeight:700 }}>KAI airdrop</span>.
           </p>
 
-          <p style={{ marginTop:18, fontSize:14, fontWeight:500, color:'var(--mine-text-2)' }}>
-            <span className="mine-num" style={{ fontSize:20, fontWeight:800, color:'var(--mine-text)' }}>{displayPts} pts</span>
-            &ensp;·&ensp;<span className="mine-num">{streak}-day streak</span>&ensp;·&ensp;<span className="mine-num">{doneTasks.length}/{TASKS.length} today</span>
+          <p style={{ marginTop:18, fontSize:13, fontWeight:500, color:C.inkLight }}>
+            <span style={{ ...MONO, fontSize:19, fontWeight:700, color:C.goldLight }}>{displayPts} pts</span>
+            &ensp;·&ensp;<span style={MONO}>{streak}-day streak</span>&ensp;·&ensp;<span style={MONO}>{doneTasks.length}/{TASKS.length} today</span>
           </p>
 
-          <div style={{ display:'flex', justifyContent:'center', alignItems:'center', gap:8, flexWrap:'wrap', marginTop:26 }}>
+          <div style={{ display:'flex', justifyContent:'center', alignItems:'center', gap:14, flexWrap:'wrap', marginTop:26 }}>
             <motion.button
-              whileHover={claimed||claiming?{}:{ scale:1.02 }}
               whileTap={claimed||claiming?{}:{ scale:0.98 }}
               onClick={claim} disabled={claimed||claiming}
               style={{
                 display:'inline-flex', alignItems:'center', gap:10,
-                padding:'16px 34px', borderRadius:12, border:'none',
+                padding:'16px 32px', borderRadius:999, border:'none',
                 cursor: claimed||claiming?'default':'pointer',
-                background: claimed?'var(--mine-surface-2)':'var(--mine-accent)',
-                color: claimed?'var(--mine-text-2)':'#fff',
-                fontSize:16, fontWeight:700, letterSpacing:'-0.01em',
-                boxShadow: claimed?'inset 0 0 0 1px var(--mine-line)':'none',
-                transition:'background 0.2s',
+                background: claimed?'rgba(200,155,60,0.16)':C.gold,
+                color: claimed?C.goldLight:'#1B1A14',
+                fontSize:15, fontWeight:700, fontFamily:'inherit',
               }}>
               {claiming
                 ? <><Clock size={18} style={{ animation:'spin 1s linear infinite' }}/> Processing…</>
                 : claimed
-                  ? <><CheckCircle size={18} className="celebrate-pop"/> Claimed · next in <span className="mine-num">{fmt(countdown)}</span></>
+                  ? <><CheckCircle size={18}/> Claimed · next in <span style={MONO}>{fmt(countdown)}</span></>
                   : <><Gift size={18}/> Claim 10 NVR</>
               }
             </motion.button>
-            <span style={{ width:1, height:22, background:'var(--mine-line)' }} />
-            <Link href="/kai-bar" className="mine-link" style={{ fontSize:14, fontWeight:500, padding:'6px 8px' }}>
+            <Link href="/kai-bar" style={{ fontSize:13.5, fontWeight:600, color:C.goldLight, textDecoration:'none' }}>
               View Kai Bar →
             </Link>
           </div>
 
           <AnimatePresence>
             {heroMsg && (
-              <motion.div initial={{ opacity:0, y:6 }} animate={{ opacity:1, y:0 }} exit={{ opacity:0 }}
-                style={{ margin:'16px auto 0', display:'inline-flex', alignItems:'center', gap:8, padding:'7px 16px', borderRadius:999,
-                  background:'var(--mine-surface-2)', boxShadow:'inset 0 0 0 1px var(--mine-line)', color:'var(--mine-text-2)', fontSize:13 }}>
-                <CheckCircle size={13} style={{ color:'var(--mine-accent)' }}/> {heroMsg}
-              </motion.div>
+              <motion.p initial={{ opacity:0, y:6 }} animate={{ opacity:1, y:0 }} exit={{ opacity:0 }}
+                style={{ margin:'16px 0 0', fontSize:12.5, color:C.goldLight, display:'flex', alignItems:'center', justifyContent:'center', gap:6 }}>
+                <CheckCircle size={13}/> {heroMsg}
+              </motion.p>
             )}
           </AnimatePresence>
         </div>
-      </div>
 
-      {/* MAIN CONTENT GRID */}
-      <div className="airdrop-main-grid" style={{ ...W, marginTop:44, display:'grid', gridTemplateColumns:'1fr 1fr', gap:28, alignItems:'start' }}>
+        {/* MAIN CONTENT GRID */}
+        <div className="airdrop-main-grid" style={{ marginTop:48, display:'grid', gridTemplateColumns:'1fr 1fr', gap:56, alignItems:'start' }}>
 
-        {/* LEFT COLUMN */}
-        <div style={{ display:'flex', flexDirection:'column', gap:28, minWidth:0 }}>
+          {/* LEFT COLUMN */}
+          <div style={{ minWidth:0 }}>
 
-          {/* TOKEN DROPS */}
-          <section>
-            <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:14 }}>
-              <div>
-                <h2 style={h2}>Ecosystem token drops</h2>
-                <p style={sub}>Rotating rewards for active members</p>
-              </div>
-              <span style={{ fontSize:11.5, color:'var(--mine-text-2)', fontWeight:500 }}>4 tokens</span>
-            </div>
-            <div className="airdrop-token-grid" style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:12 }}>
-              {TOKEN_DROPS.map(t => (
-                <motion.div key={t.symbol} whileHover={{ y:-2 }}
-                  style={{ padding:'18px 16px', background:'var(--mine-surface)', border:'1px solid var(--mine-line)', borderRadius:12 }}>
-                  <div style={{ display:'flex', alignItems:'center', gap:10, marginBottom:14 }}>
-                    <span style={{ width:8, height:8, borderRadius:'50%', background:t.color, flexShrink:0 }} />
-                    <div>
-                      <p style={{ fontSize:13, fontWeight:700, color:'var(--mine-text)', margin:0 }}>{t.symbol}</p>
-<p style={{ fontSize:11.5, color:'var(--mine-text-2)', margin:'1px 0 0' }}>{t.name}</p>
-                  </div>
+            {/* TOKEN DROPS */}
+            <section>
+              <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:16 }}>
+                <div>
+                  <h2 style={h2}>Ecosystem token drops</h2>
+                  <p style={sub}>Rotating rewards for active members</p>
                 </div>
-                <p className="mine-num" style={{ fontSize:22, fontWeight:500, color:'var(--mine-text)', margin:'0 0 5px' }}>
-                  {t.reward.toLocaleString()}<span style={{ fontSize:12.5, color:'var(--mine-text-2)', fontWeight:400, marginLeft:6 }}>{t.unit}</span>
-                </p>
-                  <p style={{ fontSize:11, color:'var(--mine-text-2)', fontWeight:600, margin:0 }}>Per claim cycle</p>
-                </motion.div>
-              ))}
-            </div>
-          </section>
-
-          {/* LAUNCHPOOLS */}
-          <section>
-            <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:14 }}>
-              <div>
-                <h2 style={h2}>Active launchpools</h2>
-                <p style={sub}>Join early for maximum rewards</p>
+                <span style={{ fontSize:11.5, color:C.inkLight, fontWeight:500 }}>4 tokens</span>
               </div>
-              <span style={{ fontSize:11, color:'var(--mine-text-2)', fontWeight:500 }}>{POOLS.filter(p=>p.open).length} open</span>
-            </div>
-            <div style={{ display:'flex', flexDirection:'column', gap:10 }}>
+              <div className="airdrop-token-grid" style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:'20px 24px' }}>
+                {TOKEN_DROPS.map(t => (
+                  <div key={t.symbol} style={{ paddingBottom:16, borderBottom:`1px solid ${C.hairline}` }}>
+                    <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:10 }}>
+                      <span style={{ width:7, height:7, borderRadius:'50%', background:t.color, flexShrink:0 }} />
+                      <p style={{ fontSize:13, fontWeight:700, color:C.paper, margin:0 }}>{t.symbol}</p>
+                      <p style={{ fontSize:11, color:C.inkLight, margin:0 }}>{t.name}</p>
+                    </div>
+                    <p style={{ ...SERIF, fontSize:22, fontWeight:600, color:C.paper, margin:'0 0 4px' }}>
+                      {t.reward.toLocaleString()}<span style={{ fontSize:12, color:C.inkLight, fontWeight:400, marginLeft:6 }}>{t.unit}</span>
+                    </p>
+                    <p style={{ ...MONO, fontSize:10, color:C.inkLight, fontWeight:600, margin:0 }}>Per claim cycle</p>
+                  </div>
+                ))}
+              </div>
+            </section>
+
+            {/* LAUNCHPOOLS */}
+            <section style={{ marginTop:36, paddingTop:32, borderTop:`1px solid ${C.hairline}` }}>
+              <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:16 }}>
+                <div>
+                  <h2 style={h2}>Active launchpools</h2>
+                  <p style={sub}>Join early for maximum rewards</p>
+                </div>
+                <span style={{ fontSize:11.5, color:C.inkLight, fontWeight:500 }}>{POOLS.filter(p=>p.open).length} open</span>
+              </div>
               {POOLS.map((p,i) => (
-                <motion.div key={i}
-                  whileHover={{ x:2 }}
+                <div key={i}
                   onClick={() => setActivePool(activePool===i?null:i)}
-                  style={{ padding:'16px 18px', cursor:'pointer', background:'var(--mine-surface)', border:'1px solid var(--mine-line)', borderRadius:12 }}>
+                  style={{ padding:'14px 0', cursor:'pointer', borderBottom:`1px solid ${C.hairline}` }}>
                   <div style={{ display:'flex', alignItems:'center', gap:14 }}>
-                    <div style={cardIcon}><Layers size={17} /></div>
+                    <Layers size={17} color={C.goldLight} strokeWidth={1.7} style={{ flexShrink:0 }} />
                     <div style={{ flex:1, minWidth:0 }}>
                       <div style={{ display:'flex', alignItems:'center', gap:8 }}>
-                        <p style={{ fontSize:13.5, fontWeight:600, color:'var(--mine-text)', margin:0, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{p.name}</p>
-                        <span style={{ fontSize:10, fontWeight:600, padding:'2px 8px', borderRadius:999, background:'var(--mine-surface-2)', color:'var(--mine-text-2)', boxShadow:'inset 0 0 0 1px var(--mine-line)', flexShrink:0 }}>
-                          {p.open ? 'Open' : 'Closed'}
+                        <p style={{ fontSize:13.5, fontWeight:700, color:C.paper, margin:0, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{p.name}</p>
+                        <span style={{ ...MONO, fontSize:9.5, fontWeight:700, color: p.open?C.goldLight:C.inkLight, letterSpacing:0.4, flexShrink:0 }}>
+                          {p.open ? 'OPEN' : 'CLOSED'}
                         </span>
                       </div>
                       <div style={{ display:'flex', gap:14, alignItems:'center', margin:'5px 0 8px' }}>
-                        <span className="mine-num" style={{ fontSize:12, color:'var(--mine-text-2)' }}>{p.spots}&nbsp;joined</span>
-                        <span className="mine-num" style={{ fontSize:12, fontWeight:500, color:'var(--mine-text)' }}>{p.reward.toLocaleString()}&nbsp;{p.unit}</span>
+                        <span style={{ ...MONO, fontSize:11.5, color:C.inkLight }}>{p.spots}&nbsp;joined</span>
+                        <span style={{ ...MONO, fontSize:11.5, fontWeight:600, color:C.paperDim }}>{p.reward.toLocaleString()}&nbsp;{p.unit}</span>
                       </div>
                       <Bar v={p.pct} max={100} />
                     </div>
-                    <motion.button
-                      whileHover={p.open?{ borderColor:'rgba(255,255,255,0.28)', color:'var(--mine-text)' }:{}}
-                      whileTap={p.open?{ scale:0.97 }:{}}
+                    <button
                       disabled={!p.open}
                       onClick={e => { e.stopPropagation(); if(!isConnected) setShowModal(true); }}
-                      className="mine-btn-outline"
-                      style={{ padding:'7px 18px', borderRadius:8, fontSize:12, fontWeight:600, flexShrink:0, fontFamily:'inherit' }}>
+                      style={{
+                        padding:'8px 18px', borderRadius:999, fontSize:12, fontWeight:700, flexShrink:0, fontFamily:'inherit',
+                        border: `1px solid ${p.open ? C.hairline : 'transparent'}`, background:'none',
+                        color: p.open ? C.paperDim : C.inkLight, cursor: p.open ? 'pointer' : 'default',
+                      }}>
                       {p.open ? 'Join' : 'Closed'}
-                    </motion.button>
+                    </button>
                   </div>
-                </motion.div>
+                </div>
               ))}
-            </div>
-          </section>
+            </section>
 
-          {/* AUTO-DROP AGENT */}
-          <section>
-            <div className="mine-card" style={{ padding:'20px' }}>
-              <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:16 }}>
-                <div style={{ display:'flex', alignItems:'center', gap:10 }}>
-                  <div style={cardIcon}><Zap size={16} /></div>
+            {/* AUTO-DROP AGENT */}
+            <section style={{ marginTop:36, paddingTop:32, borderTop:`1px solid ${C.hairline}` }}>
+              <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:20 }}>
+                <div style={{ display:'flex', alignItems:'center', gap:11 }}>
+                  <Zap size={17} color={C.goldLight} strokeWidth={1.7} />
                   <div>
-                    <p style={{ fontSize:14, fontWeight:600, color:'var(--mine-text)', margin:0 }}>Auto-Drop Agent</p>
-                    <p style={{ fontSize:12, color:'var(--mine-text-2)', margin:'2px 0 0' }}>Mines <span className="mine-hl">NVR</span> while you&apos;re away</p>
+                    <p style={{ fontSize:14, fontWeight:700, color:C.paper, margin:0 }}>Auto-Drop Agent</p>
+                    <p style={{ fontSize:11.5, color:C.inkLight, margin:'2px 0 0' }}>Mines <span style={{ color:C.paper, fontWeight:700 }}>NVR</span> while you&apos;re away</p>
                   </div>
                 </div>
                 <motion.button whileTap={{ scale:0.94 }}
                   onClick={() => { if (!isConnected) setShowModal(true); else setAgentOn(v=>!v); }}
                   aria-pressed={agentOn}
-                  style={{ width:52, height:28, borderRadius:14, border:'none', cursor:'pointer', position:'relative', background:agentOn?'var(--mine-accent)':'var(--mine-surface-2)', boxShadow:'inset 0 0 0 1px var(--mine-line)', transition:'background 0.28s' }}>
-                  <motion.div animate={{ left:agentOn?26:3 }} transition={{ type:'spring', stiffness:500, damping:30 }}
-                    style={{ width:22, height:22, borderRadius:'50%', background:'#fff', position:'absolute', top:3, boxShadow:'0 1px 4px rgba(0,0,0,0.4)' }} />
+                  style={{ width:44, height:24, borderRadius:12, border:`1px solid ${agentOn?C.gold:C.hairline}`, cursor:'pointer', position:'relative', background: agentOn?'rgba(200,155,60,0.18)':'none', transition:'all 0.2s', flexShrink:0 }}>
+                  <motion.div animate={{ left:agentOn?22:2 }} transition={{ type:'spring', stiffness:500, damping:30 }}
+                    style={{ width:18, height:18, borderRadius:'50%', background: agentOn?C.goldLight:C.inkLight, position:'absolute', top:2 }} />
                 </motion.button>
               </div>
-              <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:10 }}>
+              <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:8 }}>
                 {[
                   { l:'Mining rate', v:agentOn?'0.003/s':'0.000/s' },
                   { l:'Total mined',  v:`${minedAmount.toFixed(3)} NVR` },
                   { l:'Status',       v:agentOn?'Active':'Idle' },
                 ].map(s => (
-                  <div key={s.l} style={{ padding:'12px 14px', borderRadius:10, background:'var(--mine-surface-2)', minWidth:0 }}>
-                    <p style={{ fontSize:10.5, color:'var(--mine-text-2)', margin:'0 0 5px' }}>{s.l}</p>
-                    <p className="mine-num" style={{ fontSize:14, fontWeight:500, color:'var(--mine-text)', margin:0, lineHeight:1.3 }}>{s.v}</p>
+                  <div key={s.l} style={{ textAlign:'center' }}>
+                    <p style={{ ...MONO, fontSize:9.5, color:C.inkLight, margin:'0 0 6px', textTransform:'uppercase', letterSpacing:0.5 }}>{s.l}</p>
+                    <p style={{ ...SERIF, fontSize:15, fontWeight:600, color:C.paper, margin:0 }}>{s.v}</p>
                   </div>
                 ))}
               </div>
-            </div>
-          </section>
-        </div>
-
-        {/* RIGHT COLUMN */}
-        <div style={{ display:'flex', flexDirection:'column', gap:28, minWidth:0 }}>
-
-          {/* DAILY TASKS */}
-          <section>
-            <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:14 }}>
-              <div>
-                <h2 style={h2}>Today&apos;s tasks</h2>
-                <p style={sub}>Complete all four for the daily drop</p>
-              </div>
-              <AnimatePresence>
-                {taskMsg && (
-                  <motion.div initial={{ opacity:0, y:-4 }} animate={{ opacity:1, y:0 }} exit={{ opacity:0 }}
-                    style={{ fontSize:11.5, color:'var(--mine-text-2)', boxShadow:'inset 0 0 0 1px var(--mine-line)', background:'var(--mine-surface-2)', padding:'5px 12px', borderRadius:999 }}>
-                    {taskMsg}
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </div>
-
-            <div className="mine-card" style={{ padding:'14px 16px', marginBottom:10 }}>
-              <div style={{ display:'flex', justifyContent:'space-between', marginBottom:8 }}>
-                <span style={{ fontSize:11, color:'var(--mine-text-2)' }}>Progress</span>
-                <span className="mine-num" style={{ fontSize:11, color:'var(--mine-text)' }}>{doneTasks.length}/{TASKS.length}</span>
-              </div>
-              <Bar v={doneTasks.length} max={TASKS.length} />
-            </div>
-
-            <div style={{ display:'flex', flexDirection:'column', gap:10 }}>
-              {TASKS.map((task,i) => {
-                const done = doneTasks.includes(task.id);
-                return (
-                  <motion.button key={task.id}
-                    initial={{ opacity:0, x:10 }} animate={{ opacity:1, x:0 }} transition={{ delay:0.05+i*0.04 }}
-                    whileHover={done?{}:{ borderColor:'rgba(255,255,255,0.24)' }}
-                    onClick={() => doTask(task.id, task.reward, task.unit)} disabled={done}
-                    style={{ textAlign:'left', display:'flex', alignItems:'center', gap:14, padding:'14px 16px', borderRadius:12, cursor:done?'default':'pointer', background:done?'var(--mine-surface-2)':'var(--mine-surface)', border:'1px solid var(--mine-line)', color:'var(--mine-text)', opacity:done?0.72:1, fontFamily:'inherit', transition:'border-color 0.15s' }}>
-                    <div style={{ width:34, height:34, borderRadius:10, flexShrink:0, display:'flex', alignItems:'center', justifyContent:'center', background:'var(--mine-surface-2)', color:done?'var(--mine-dim)':'var(--mine-text-2)' }}>
-                      {done ? <CheckCircle size={16} className="celebrate-pop" style={{ color:'var(--mine-accent)' }}/> : <TaskIcon id={task.id}/>}
-                    </div>
-                    <div style={{ flex:1, minWidth:0 }}>
-                      <p style={{ fontSize:13.5, fontWeight:600, color:done?'var(--mine-dim)':'var(--mine-text)', margin:0 }}>{task.title}</p>
-                      <p style={{ fontSize:11, color:done?'var(--mine-dim)':'var(--mine-dim)', margin:'2px 0 0' }}>{done ? 'Completed today' : task.desc}</p>
-                    </div>
-                    <div style={{ display:'flex', alignItems:'center', gap:10, flexShrink:0 }}>
-                      <span style={{ width:7, height:7, borderRadius:'50%', background:done?'transparent':task.color }} />
-                      {!done && <span className="mine-num" style={{ fontSize:13, fontWeight:500, color:'var(--mine-text)' }}>+{task.reward}&nbsp;{task.unit}</span>}
-                    </div>
-                  </motion.button>
-                );
-              })}
-            </div>
-          </section>
-
-          {/* EARLY ACCESS + MINT */}
-          <div className="airdrop-side-grid" style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:14 }}>
-
-            {/* EARLY ACCESS */}
-            <div className="mine-card" style={{ padding:'18px' }}>
-              <Star size={16} style={{ color:'var(--mine-text-2)', marginBottom:10 }} />
-              <p style={{ fontSize:14, fontWeight:600, color:'var(--mine-text)', margin:'0 0 5px' }}>Early access</p>
-              <p style={{ fontSize:12.5, color:'var(--mine-text-2)', margin:'0 0 14px', lineHeight:1.5 }}>
-                Higher reward tiers at launch.
-              </p>
-<AnimatePresence mode="wait">
-                {!joinedWait ? (
-                  <motion.button key="join" whileTap={{ scale: 0.97 }}
-                    onClick={joinWaitlist}
-                    disabled={joiningWait}
-                    className="mine-btn-outline"
-                    style={{ width:'100%', fontWeight:600, fontSize:12.5, padding:'10px', borderRadius:10, fontFamily:'inherit', opacity:joiningWait?0.7:1 }}>
-                    {joiningWait ? 'Joining…' : 'Join waitlist'}
-                  </motion.button>
-                ) : (
-                  <motion.div key="done" initial={{ opacity:0 }} animate={{ opacity:1 }}
-                    style={{ display:'flex', alignItems:'center', gap:7, padding:'10px 12px', borderRadius:10, background:'var(--mine-surface-2)', boxShadow:'inset 0 0 0 1px var(--mine-line)', color:'var(--mine-text-2)', fontWeight:600, fontSize:12.5 }}>
-                    <CheckCircle size={14} className="celebrate-pop" style={{ color:'var(--mine-accent)' }}/> You&apos;re on the list.
-                  </motion.div>
-                )}
-              </AnimatePresence>
-              {wlMsg && <p style={{ fontSize:11, color:'var(--mine-dim)', margin:'8px 0 0' }}>{wlMsg}</p>}
-            </div>
-
-            {/* MINT TOKEN — quiet entry point; the form opens on request */}
-            <div className="mine-card" style={{ padding:'18px' }}>
-              <TrendingUp size={16} style={{ color:'var(--mine-text-2)', marginBottom:10 }} />
-              <p style={{ fontSize:14, fontWeight:600, color:'var(--mine-text)', margin:'0 0 5px' }}>Mint a token</p>
-              <p style={{ fontSize:12.5, color:'var(--mine-text-2)', margin:'0 0 14px', lineHeight:1.5 }}>
-                Deploy your own ERC-20 on Fuji.
-              </p>
-              <AnimatePresence mode="wait">
-                {!minted ? (
-                  <motion.div key="inner" initial={{ opacity:0 }} animate={{ opacity:1 }} exit={{ opacity:0 }}>
-                    {showMint ? (
-                      <div style={{ display:'flex', flexDirection:'column', gap:8 }}>
-                        {[
-                          { v:mintName,   s:setMintName,   p:'Token name',  t:'text'   },
-                          { v:mintSym,    s:setMintSym,    p:'Symbol (TKN)', t:'text'   },
-                          { v:mintSupply, s:setMintSupply, p:'Total supply', t:'number' },
-                        ].map(({ v,s,p,t }) => (
-                          <input key={p} value={v} onChange={e => s(e.target.value)} placeholder={p} type={t}
-                            style={{ background:'var(--mine-surface-2)', border:'1px solid var(--mine-line)', borderRadius:10, padding:'9px 12px', fontSize:12.5, color:'var(--mine-text)', outline:'none', fontFamily:'inherit', width:'100%', boxSizing:'border-box', transition:'border-color 0.15s' }}
-                            onFocus={e => (e.target.style.borderColor='rgba(255,255,255,0.35)')}
-                            onBlur={e  => (e.target.style.borderColor='var(--mine-line)')}
-                          />
-                        ))}
-                        <motion.button onClick={mintToken}
-                          disabled={!(mintName&&mintSym&&mintSupply)}
-                          whileTap={(mintName&&mintSym&&mintSupply)?{ scale:0.97 }:{}}
-                          className="mine-btn-quiet"
-                          style={{ fontWeight:600, fontSize:12.5, padding:'10px', borderRadius:10, fontFamily:'inherit', opacity:(mintName&&mintSym&&mintSupply)?1:0.5 }}>
-                          Deploy on Fuji
-                        </motion.button>
-                      </div>
-                    ) : (
-                      <button onClick={() => setShowMint(true)} className="mine-link"
-                        style={{ background:'none', border:'none', padding:0, font:'inherit', fontSize:12.5 }}>
-                        Deploy on Fuji →
-                      </button>
-                    )}
-                  </motion.div>
-                ) : (
-                  <motion.div key="success" initial={{ opacity:0 }} animate={{ opacity:1 }}
-                    style={{ textAlign:'center', padding:'4px 0' }}>
-                    <p style={{ fontSize:12.5, fontWeight:600, color:'var(--mine-text)', margin:'0 0 6px' }}>Token deployed</p>
-                    <p className="mine-num" style={{ fontSize:10.5, color:'var(--mine-dim)', margin:'0 0 10px', wordBreak:'break-all', background:'var(--mine-surface-2)', padding:'6px 8px', borderRadius:8 }}>{minted}</p>
-                    <button onClick={() => { setMinted(null); setShowMint(false); setMintName(''); setMintSym(''); setMintSupply(''); }}
-                      className="mine-link" style={{ fontSize:11, background:'none', border:'none', padding:0, font:'inherit' }}>
-                      Deploy another
-                    </button>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </div>
+            </section>
           </div>
 
-          {/* SDG IMPACT & EFFORT SCORE */}
-          <motion.div initial={{ opacity:0, y:14 }} animate={{ opacity:1, y:0 }} transition={{ delay:0.25 }} style={{ marginBottom: 20 }}>
-            <SDGImpactCard />
-          </motion.div>
+          {/* RIGHT COLUMN */}
+          <div style={{ minWidth:0 }}>
 
-          {/* COUNTDOWN */}
-          <div className="mine-card" style={{ padding:'18px 20px', display:'flex', alignItems:'center', gap:18 }}>
-            <div style={cardIcon}><Timer size={19} /></div>
-            <div style={{ flex:1, minWidth:0 }}>
-              <p style={{ fontSize:12, color:'var(--mine-text-2)', margin:'0 0 4px', lineHeight:1.35 }}>
-                {claimed ? 'Next claim available in' : 'Daily claim resets in'}
-              </p>
-              <p className="mine-num" style={{ fontSize:26, fontWeight:500, color:'var(--mine-text)', margin:0, letterSpacing:1 }}>
-                {fmt(countdown)}
-              </p>
+            {/* DAILY TASKS */}
+            <section>
+              <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:16 }}>
+                <div>
+                  <h2 style={h2}>Today&apos;s tasks</h2>
+                  <p style={sub}>Complete all four for the daily drop</p>
+                </div>
+                <AnimatePresence>
+                  {taskMsg && (
+                    <motion.span initial={{ opacity:0 }} animate={{ opacity:1 }} exit={{ opacity:0 }}
+                      style={{ fontSize:11.5, color:C.goldLight, fontWeight:600 }}>
+                      {taskMsg}
+                    </motion.span>
+                  )}
+                </AnimatePresence>
+              </div>
+
+              <div style={{ display:'flex', justifyContent:'space-between', marginBottom:8 }}>
+                <span style={{ fontSize:11, color:C.inkLight }}>Progress</span>
+                <span style={{ ...MONO, fontSize:11, color:C.paperDim }}>{doneTasks.length}/{TASKS.length}</span>
+              </div>
+              <Bar v={doneTasks.length} max={TASKS.length} />
+
+              <div style={{ marginTop:20 }}>
+                {TASKS.map((task) => {
+                  const done = doneTasks.includes(task.id);
+                  return (
+                    <button key={task.id}
+                      onClick={() => doTask(task.id, task.reward, task.unit)} disabled={done}
+                      style={{ width:'100%', textAlign:'left', display:'flex', alignItems:'center', gap:14, padding:'13px 0', borderBottom:`1px solid ${C.hairline}`, cursor:done?'default':'pointer', background:'none', color:C.paper, opacity:done?0.6:1, fontFamily:'inherit' }}>
+                      {done ? <CheckCircle size={17} style={{ color:C.goldLight, flexShrink:0 }}/> : <TaskIcon id={task.id} color={C.goldLight}/>}
+                      <div style={{ flex:1, minWidth:0 }}>
+                        <p style={{ fontSize:13.5, fontWeight:700, color:C.paper, margin:0 }}>{task.title}</p>
+                        <p style={{ fontSize:11, color:C.inkLight, margin:'2px 0 0' }}>{done ? 'Completed today' : task.desc}</p>
+                      </div>
+                      {!done && <span style={{ ...MONO, fontSize:12.5, fontWeight:600, color:C.paperDim, flexShrink:0 }}>+{task.reward}&nbsp;{task.unit}</span>}
+                    </button>
+                  );
+                })}
+              </div>
+            </section>
+
+            {/* EARLY ACCESS + MINT */}
+            <div className="airdrop-side-grid" style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:'24px 32px', marginTop:36, paddingTop:32, borderTop:`1px solid ${C.hairline}` }}>
+
+              {/* EARLY ACCESS */}
+              <div>
+                <Star size={16} color={C.goldLight} style={{ marginBottom:10 }} />
+                <p style={{ fontSize:14, fontWeight:700, color:C.paper, margin:'0 0 5px' }}>Early access</p>
+                <p style={{ fontSize:12, color:C.inkLight, margin:'0 0 14px', lineHeight:1.5 }}>
+                  Higher reward tiers at launch.
+                </p>
+                <AnimatePresence mode="wait">
+                  {!joinedWait ? (
+                    <motion.button key="join"
+                      onClick={joinWaitlist}
+                      disabled={joiningWait}
+                      style={{ padding:'9px 20px', borderRadius:999, border:`1px solid ${C.hairline}`, background:'none', color:C.paperDim, fontWeight:700, fontSize:12, fontFamily:'inherit', cursor:'pointer', opacity:joiningWait?0.7:1 }}>
+                      {joiningWait ? 'Joining…' : 'Join waitlist'}
+                    </motion.button>
+                  ) : (
+                    <motion.div key="done" initial={{ opacity:0 }} animate={{ opacity:1 }}
+                      style={{ display:'flex', alignItems:'center', gap:7, color:C.goldLight, fontWeight:600, fontSize:12.5 }}>
+                      <CheckCircle size={14}/> You&apos;re on the list.
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+                {wlMsg && <p style={{ fontSize:11, color:C.inkLight, margin:'8px 0 0' }}>{wlMsg}</p>}
+              </div>
+
+              {/* MINT TOKEN — quiet entry point; the form opens on request */}
+              <div>
+                <TrendingUp size={16} color={C.goldLight} style={{ marginBottom:10 }} />
+                <p style={{ fontSize:14, fontWeight:700, color:C.paper, margin:'0 0 5px' }}>Mint a token</p>
+                <p style={{ fontSize:12, color:C.inkLight, margin:'0 0 14px', lineHeight:1.5 }}>
+                  Deploy your own ERC-20 on Fuji.
+                </p>
+                <AnimatePresence mode="wait">
+                  {!minted ? (
+                    <motion.div key="inner" initial={{ opacity:0 }} animate={{ opacity:1 }} exit={{ opacity:0 }}>
+                      {showMint ? (
+                        <div style={{ display:'flex', flexDirection:'column', gap:12 }}>
+                          {[
+                            { v:mintName,   s:setMintName,   p:'Token name',  t:'text'   },
+                            { v:mintSym,    s:setMintSym,    p:'Symbol (TKN)', t:'text'   },
+                            { v:mintSupply, s:setMintSupply, p:'Total supply', t:'number' },
+                          ].map(({ v,s,p,t }) => (
+                            <input key={p} value={v} onChange={e => s(e.target.value)} placeholder={p} type={t}
+                              style={{ background:'none', border:'none', borderBottom:`1px solid ${C.hairline}`, borderRadius:0, padding:'6px 2px', fontSize:12.5, color:C.paper, outline:'none', fontFamily:'inherit', width:'100%', boxSizing:'border-box', transition:'border-color 0.15s' }}
+                              onFocus={e => (e.target.style.borderColor=C.gold)}
+                              onBlur={e  => (e.target.style.borderColor=C.hairline)}
+                            />
+                          ))}
+                          <button onClick={mintToken}
+                            disabled={!(mintName&&mintSym&&mintSupply)}
+                            style={{ marginTop:4, padding:'9px 0', borderRadius:999, border:'none', background: (mintName&&mintSym&&mintSupply)?C.gold:'rgba(200,155,60,0.18)', color: (mintName&&mintSym&&mintSupply)?'#1B1A14':C.inkLight, fontWeight:700, fontSize:12.5, fontFamily:'inherit', cursor:(mintName&&mintSym&&mintSupply)?'pointer':'default' }}>
+                            Deploy on Fuji
+                          </button>
+                        </div>
+                      ) : (
+                        <button onClick={() => setShowMint(true)}
+                          style={{ background:'none', border:'none', padding:0, font:'inherit', fontSize:12.5, color:C.goldLight, cursor:'pointer' }}>
+                          Deploy on Fuji →
+                        </button>
+                      )}
+                    </motion.div>
+                  ) : (
+                    <motion.div key="success" initial={{ opacity:0 }} animate={{ opacity:1 }}>
+                      <p style={{ fontSize:12.5, fontWeight:700, color:C.paper, margin:'0 0 6px' }}>Token deployed</p>
+                      <p style={{ ...MONO, fontSize:10.5, color:C.inkLight, margin:'0 0 10px', wordBreak:'break-all' }}>{minted}</p>
+                      <button onClick={() => { setMinted(null); setShowMint(false); setMintName(''); setMintSym(''); setMintSupply(''); }}
+                        style={{ fontSize:11.5, background:'none', border:'none', padding:0, font:'inherit', color:C.goldLight, cursor:'pointer' }}>
+                        Deploy another
+                      </button>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
             </div>
-            <div style={{ width:1, height:34, background:'var(--mine-line)', flexShrink:0 }} />
-            <div style={{ minWidth:86, flexShrink:0 }}>
-              <p style={{ fontSize:11.5, color:'var(--mine-text-2)', margin:'0 0 4px' }}>Streak</p>
-              <p className="mine-num" style={{ fontSize:17, fontWeight:500, color:'var(--mine-text)', margin:0 }}>
-                {streak} {streak === 1 ? 'day' : 'days'}
-              </p>
+
+            {/* SDG IMPACT & EFFORT SCORE */}
+            <div style={{ marginTop:36, paddingTop:32, borderTop:`1px solid ${C.hairline}` }}>
+              <SDGImpactCard />
+            </div>
+
+            {/* COUNTDOWN */}
+            <div style={{ marginTop:36, paddingTop:32, borderTop:`1px solid ${C.hairline}`, display:'flex', alignItems:'center', gap:20 }}>
+              <Timer size={19} color={C.goldLight} strokeWidth={1.7} style={{ flexShrink:0 }} />
+              <div style={{ flex:1, minWidth:0 }}>
+                <p style={{ fontSize:11.5, color:C.inkLight, margin:'0 0 4px', lineHeight:1.35 }}>
+                  {claimed ? 'Next claim available in' : 'Daily claim resets in'}
+                </p>
+                <p style={{ ...SERIF, fontSize:24, fontWeight:600, color:C.paper, margin:0, letterSpacing:1 }}>
+                  {fmt(countdown)}
+                </p>
+              </div>
+              <div style={{ minWidth:80, flexShrink:0, textAlign:'right' }}>
+                <p style={{ fontSize:11, color:C.inkLight, margin:'0 0 4px' }}>Streak</p>
+                <p style={{ ...SERIF, fontSize:16, fontWeight:600, color:C.paper, margin:0 }}>
+                  {streak} {streak === 1 ? 'day' : 'days'}
+                </p>
+              </div>
             </div>
           </div>
         </div>
@@ -516,8 +501,8 @@ export default function MinePage() {
 }
 
 /* Neutral icon per task type — colour stays off the chrome. */
-function TaskIcon({ id }: { id:string }) {
-  const common = { size:16 };
+function TaskIcon({ id, color }: { id:string; color:string }) {
+  const common = { size:17, color, strokeWidth:1.7 };
   switch (id) {
     case 'checkin':   return <Gift {...common}/>;
     case 'policy':    return <Sparkles {...common}/>;
