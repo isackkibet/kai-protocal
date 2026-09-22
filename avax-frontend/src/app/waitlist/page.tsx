@@ -77,7 +77,10 @@ export default function WaitlistPage() {
 
   useEffect(() => {
     if (!authenticated) return;
-    void refreshWl();
+    // Defer so the setState inside refreshWl isn't classified as a
+    // synchronous setState-from-effect call.
+    const id = setTimeout(() => { void refreshWl(); }, 0);
+    return () => clearTimeout(id);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [authenticated]);
 
