@@ -203,12 +203,12 @@ export default function ProfilePage() {
            within it, the same CSS Grid + horizontal-scroll-child overflow
            the home page's Quick Actions strip hit. */
         .profile-main-grid > div { min-width: 0; }
+        .profile-tabbar { scrollbar-width: none; }
+        .profile-tabbar::-webkit-scrollbar { display: none; }
         @media (max-width: 760px) {
           .profile-container { padding: 0 20px !important; }
           .profile-hero-row { flex-direction: column !important; align-items: center !important; text-align: center !important; gap: 16px !important; }
-          .profile-main-grid { grid-template-columns: 1fr !important; gap: 32px !important; }
-          .profile-tabnav-buttons { flex-direction: row !important; overflow-x: auto; -webkit-overflow-scrolling: touch; padding-bottom: 4px; }
-          .profile-tabnav-buttons > button { flex-shrink: 0; }
+          .profile-main-grid { grid-template-columns: 1fr !important; gap: 28px !important; }
           .profile-2col, .profile-3col, .profile-4col { grid-template-columns: 1fr 1fr !important; gap: 24px !important; }
         }
         @media (max-width: 480px) {
@@ -323,61 +323,68 @@ export default function ProfilePage() {
           )}
         </div>
 
-        <div style={{ marginTop:32, height:1, background: C.hairline }}/>
+        {/* Horizontal tab bar — the way a real profile (Facebook, LinkedIn)
+            switches between About/Posts/Photos: a row of tabs under the
+            identity block, not a settings-style sidebar list. */}
+        <div className="profile-tabbar" style={{ marginTop:32, display:'flex', gap:28, borderBottom: `1px solid ${C.hairline}`, overflowX:'auto' }}>
+          {TABS.map((t) => (
+            <button key={t.id}
+              onClick={()=>setTab(t.id)}
+              style={{
+                display:'flex', alignItems:'center', gap:8, padding:'14px 2px',
+                border:'none', cursor:'pointer', background: 'none', flexShrink:0,
+                color: tab===t.id ? t.color : C.inkLight,
+                borderBottom: tab===t.id ? `2px solid ${t.color}` : '2px solid transparent',
+                marginBottom:-1,
+                fontSize:14, fontWeight: tab===t.id ? 700 : 500, fontFamily: 'inherit',
+              }}>
+              <t.Icon size={16}/>
+              {t.label}
+            </button>
+          ))}
+        </div>
 
-        {/* MAIN BODY: sidebar nav + form */}
-        <div className="profile-main-grid" style={{ marginTop:36, display:'grid', gridTemplateColumns:'220px 1fr', gap:48 }}>
+        {/* MAIN BODY: About sidebar + active tab content — the same split
+            Facebook uses (Intro/details on the left, the selected view's
+            content on the right), instead of a form buried under settings
+            nav. */}
+        <div className="profile-main-grid" style={{ marginTop:32, display:'grid', gridTemplateColumns:'240px 1fr', gap:48 }}>
 
-          {/* LEFT: vertical tab nav */}
-          <div className="profile-tabnav" style={{ display:'flex', flexDirection:'column', gap:0 }}>
-            <div className="profile-tabnav-buttons" style={{ display:'flex', flexDirection:'column', gap:2 }}>
-              {TABS.map((t) => (
-                <button key={t.id}
-                  onClick={()=>setTab(t.id)}
-                  style={{
-                    display:'flex', alignItems:'center', gap:11, padding:'11px 4px',
-                    border:'none', cursor:'pointer', textAlign:'left', background: 'none',
-                    color: tab===t.id ? t.color : C.inkLight,
-                    fontSize:14, fontWeight: tab===t.id ? 700 : 500, fontFamily: 'inherit',
-                  }}>
-                  <t.Icon size={17}/>
-                  {t.label}
-                </button>
-              ))}
-            </div>
+          {/* LEFT: About panel */}
+          <div className="profile-about">
+            <p style={{ ...label, margin: '0 0 14px' }}>About</p>
 
-            {/* wallet */}
-            <div style={{ marginTop:28, paddingTop:20, borderTop: `1px solid ${C.hairline}` }}>
-              {isConnected ? (
-                <>
-                  <p style={{ ...label, margin: '0 0 12px' }}>Linked Wallet</p>
-                  <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:12 }}>
-                    <Wallet size={14} color={C.goldLight}/>
-                    <span style={{ ...MONO, fontSize:11, color: C.inkLight, flex:1, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>
-                      {address}
-                    </span>
-                    <button onClick={copyAddr} style={{ background:'none', border:'none', cursor:'pointer', color: C.inkLight, padding:0, display:'flex' }}>
-                      {copied?<CheckCircle size={12} color={C.goldLight}/>:<Copy size={12}/>}
-                    </button>
-                    <a href={`https://testnet.snowtrace.io/address/${address}`} target="_blank" rel="noreferrer" style={{ color: C.goldLight, display:'flex' }}>
-                      <ExternalLink size={12}/>
-                    </a>
-                  </div>
-                  <button onClick={()=>disconnect()} style={{ display:'flex', alignItems:'center', gap:7, padding:'8px 0', border:'none', background:'none', cursor:'pointer', color: C.red, fontSize:12.5, fontWeight:600, fontFamily:'inherit' }}>
-                    <LogOut size={13}/> Disconnect Wallet
+            {isConnected ? (
+              <div style={{ paddingBottom:20, borderBottom: `1px solid ${C.hairline}`, marginBottom:20 }}>
+                <p style={{ fontSize:11.5, color: C.inkLight, margin: '0 0 10px' }}>Linked Wallet</p>
+                <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:12 }}>
+                  <Wallet size={14} color={C.goldLight}/>
+                  <span style={{ ...MONO, fontSize:11, color: C.inkLight, flex:1, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>
+                    {address}
+                  </span>
+                  <button onClick={copyAddr} style={{ background:'none', border:'none', cursor:'pointer', color: C.inkLight, padding:0, display:'flex' }}>
+                    {copied?<CheckCircle size={12} color={C.goldLight}/>:<Copy size={12}/>}
                   </button>
-                </>
-              ) : (
-                <Link href="/" style={{ textDecoration:'none', display:'flex', alignItems:'center', gap:9, padding:'8px 0', color: C.paperDim, fontSize:13.5 }}>
+                  <a href={`https://testnet.snowtrace.io/address/${address}`} target="_blank" rel="noreferrer" style={{ color: C.goldLight, display:'flex' }}>
+                    <ExternalLink size={12}/>
+                  </a>
+                </div>
+                <button onClick={()=>disconnect()} style={{ display:'flex', alignItems:'center', gap:7, padding:0, border:'none', background:'none', cursor:'pointer', color: C.red, fontSize:12.5, fontWeight:600, fontFamily:'inherit' }}>
+                  <LogOut size={13}/> Disconnect Wallet
+                </button>
+              </div>
+            ) : (
+              <div style={{ paddingBottom:20, borderBottom: `1px solid ${C.hairline}`, marginBottom:20 }}>
+                <Link href="/" style={{ textDecoration:'none', display:'flex', alignItems:'center', gap:9, color: C.paperDim, fontSize:13.5 }}>
                   <Wallet size={14} color={C.goldLight}/> Connect wallet
                   <ChevronRight size={13} color={C.goldLight} style={{ marginLeft:'auto' }}/>
                 </Link>
-              )}
-            </div>
+              </div>
+            )}
 
             {/* quick links */}
-            <div style={{ marginTop:24, paddingTop:20, borderTop: `1px solid ${C.hairline}` }}>
-              <p style={{ ...label, margin: '0 0 12px' }}>Quick Access</p>
+            <div>
+              <p style={{ fontSize:11.5, color: C.inkLight, margin: '0 0 12px' }}>Quick Access</p>
               {[
                 { label:'CFA Dashboard',  href:'/cfa',     Icon:Trees     },
                 { label:'SME Dashboard',  href:'/sme',     Icon:Store     },
@@ -385,7 +392,7 @@ export default function ProfilePage() {
                 { label:'Kai Bar',        href:'/kai-bar', Icon:Award     },
                 { label:'Pools',          href:'/pools',   Icon:BarChart3 },
               ].map(l => (
-                <Link key={l.label} href={l.href} className="profile-quicklink" style={{ textDecoration:'none', display:'flex', alignItems:'center', gap:10, padding:'8px 0' }}>
+                <Link key={l.label} href={l.href} className="profile-quicklink" style={{ textDecoration:'none', display:'flex', alignItems:'center', gap:10, padding:'7px 0' }}>
                   <l.Icon size={15} color={C.goldLight}/>
                   <span className="profile-quicklink-title" style={{ fontSize:13, fontWeight:600, color: C.paperDim, transition: 'color 0.15s ease' }}>{l.label}</span>
                   <ChevronRight size={12} color={C.inkLight} style={{ marginLeft:'auto' }}/>
@@ -394,7 +401,7 @@ export default function ProfilePage() {
             </div>
           </div>
 
-          {/* RIGHT: form */}
+          {/* RIGHT: active tab's content */}
           <div>
             <AnimatePresence mode="wait">
               <motion.div key={tab}
