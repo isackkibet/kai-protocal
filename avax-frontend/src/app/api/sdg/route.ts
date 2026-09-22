@@ -309,7 +309,7 @@ export async function POST(req: NextRequest) {
       action: actionDef,
       tier: tierInfo.tier,
       badge: tierInfo.badge,
-      message: `🎉 +${actionDef.points} SDG Points earned for ${actionDef.title}!`,
+      message: `+${actionDef.points} SDG points earned for ${actionDef.title}.`,
     });
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : 'Unknown error';
