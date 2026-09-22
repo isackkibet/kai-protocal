@@ -197,6 +197,12 @@ export default function ProfilePage() {
   return (
     <main style={{ minHeight:'100dvh', background: C.bg, color: C.paper, fontFamily: "'Poppins', 'IBM Plex Sans', var(--font-sans)", paddingBottom:100, position:'relative' }}>
       <style>{`
+        /* min-width: 0 on the grid items — without it, the mobile tab row's
+           non-shrinking horizontal-scroll buttons drag the whole grid track
+           (and the page) wider than the viewport instead of scrolling
+           within it, the same CSS Grid + horizontal-scroll-child overflow
+           the home page's Quick Actions strip hit. */
+        .profile-main-grid > div { min-width: 0; }
         @media (max-width: 760px) {
           .profile-container { padding: 0 20px !important; }
           .profile-hero-row { flex-direction: column !important; align-items: center !important; text-align: center !important; gap: 16px !important; }
