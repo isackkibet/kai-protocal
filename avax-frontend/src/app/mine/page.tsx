@@ -261,7 +261,7 @@ export default function MinePage() {
                       <p style={{ fontSize:13, fontWeight:700, color:C.paper, margin:0 }}>{t.symbol}</p>
                       <p style={{ fontSize:11, color:C.inkLight, margin:0 }}>{t.name}</p>
                     </div>
-                    <p style={{ ...SERIF, fontSize:22, fontWeight:600, color:C.paper, margin:'0 0 4px' }}>
+                    <p style={{ ...SERIF, fontSize:22, fontWeight:600, color:C.goldLight, margin:'0 0 4px' }}>
                       {t.reward.toLocaleString()}<span style={{ fontSize:12, color:C.inkLight, fontWeight:400, marginLeft:6 }}>{t.unit}</span>
                     </p>
                     <p style={{ ...MONO, fontSize:10, color:C.inkLight, fontWeight:600, margin:0 }}>Per claim cycle</p>
@@ -295,7 +295,7 @@ export default function MinePage() {
                       </div>
                       <div style={{ display:'flex', gap:14, alignItems:'center', margin:'5px 0 8px' }}>
                         <span style={{ ...MONO, fontSize:11.5, color:C.inkLight }}>{p.spots}&nbsp;joined</span>
-                        <span style={{ ...MONO, fontSize:11.5, fontWeight:600, color:C.paperDim }}>{p.reward.toLocaleString()}&nbsp;{p.unit}</span>
+                        <span style={{ ...MONO, fontSize:11.5, fontWeight:700, color:C.goldLight }}>{p.reward.toLocaleString()}&nbsp;{p.unit}</span>
                       </div>
                       <Bar v={p.pct} max={100} />
                     </div>
@@ -334,13 +334,13 @@ export default function MinePage() {
               </div>
               <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:8 }}>
                 {[
-                  { l:'Mining rate', v:agentOn?'0.003/s':'0.000/s' },
-                  { l:'Total mined',  v:`${minedAmount.toFixed(3)} NVR` },
-                  { l:'Status',       v:agentOn?'Active':'Idle' },
+                  { l:'Mining rate', v:agentOn?'0.003/s':'0.000/s', color:C.paper },
+                  { l:'Total mined',  v:`${minedAmount.toFixed(3)} NVR`, color:C.goldLight },
+                  { l:'Status',       v:agentOn?'Active':'Idle', color: agentOn?C.goldLight:C.paper },
                 ].map(s => (
                   <div key={s.l} style={{ textAlign:'center' }}>
                     <p style={{ ...MONO, fontSize:9.5, color:C.inkLight, margin:'0 0 6px', textTransform:'uppercase', letterSpacing:0.5 }}>{s.l}</p>
-                    <p style={{ ...SERIF, fontSize:15, fontWeight:600, color:C.paper, margin:0 }}>{s.v}</p>
+                    <p style={{ ...SERIF, fontSize:15, fontWeight:600, color:s.color, margin:0 }}>{s.v}</p>
                   </div>
                 ))}
               </div>
@@ -386,7 +386,7 @@ export default function MinePage() {
                         <p style={{ fontSize:13.5, fontWeight:700, color:C.paper, margin:0 }}>{task.title}</p>
                         <p style={{ fontSize:11, color:C.inkLight, margin:'2px 0 0' }}>{done ? 'Completed today' : task.desc}</p>
                       </div>
-                      {!done && <span style={{ ...MONO, fontSize:12.5, fontWeight:600, color:C.paperDim, flexShrink:0 }}>+{task.reward}&nbsp;{task.unit}</span>}
+                      {!done && <span style={{ ...MONO, fontSize:12.5, fontWeight:700, color:C.goldLight, flexShrink:0 }}>+{task.reward}&nbsp;{task.unit}</span>}
                     </button>
                   );
                 })}

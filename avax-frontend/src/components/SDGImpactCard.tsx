@@ -82,13 +82,13 @@ export default function SDGImpactCard() {
       {/* Stats */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 8, marginBottom: 20 }}>
         {[
-          { l: 'SDG effort score', v: `${totalPoints.toLocaleString()} pts` },
-          { l: 'Impact tier',      v: `${badge} ${tier}` },
-          { l: 'Airdrop bonus',    v: `${multiplier} multiplier` },
+          { l: 'SDG effort score', v: `${totalPoints.toLocaleString()} pts`, color: C.goldLight },
+          { l: 'Impact tier',      v: `${badge} ${tier}`, color: C.paper },
+          { l: 'Airdrop bonus',    v: `${multiplier} multiplier`, color: C.goldLight },
         ].map(s => (
           <div key={s.l} style={{ textAlign: 'center', minWidth: 0 }}>
             <p style={{ ...MONO, fontSize: 9, color: C.inkLight, margin: '0 0 6px', textTransform: 'uppercase', letterSpacing: 0.5 }}>{s.l}</p>
-            <p style={{ ...SERIF, fontSize: 13.5, fontWeight: 600, color: C.paper, margin: 0, lineHeight: 1.3 }}>{s.v}</p>
+            <p style={{ ...SERIF, fontSize: 13.5, fontWeight: 600, color: s.color, margin: 0, lineHeight: 1.3 }}>{s.v}</p>
           </div>
         ))}
       </div>
@@ -148,7 +148,7 @@ export default function SDGImpactCard() {
               </div>
               <div style={{ textAlign: 'right', flexShrink: 0 }}>
                 <p style={{ ...SERIF, margin: 0, fontSize: 13, fontWeight: 600, color: C.paper }}>{g.impactValue}</p>
-                <p style={{ ...MONO, margin: '2px 0 0', fontSize: 9.5, color: C.inkLight }}>
+                <p style={{ ...MONO, margin: '2px 0 0', fontSize: 9.5, fontWeight: 700, color: g.points > 0 ? C.goldLight : C.inkLight }}>
                   {g.points} pts ({g.actionsCount})
                 </p>
               </div>
