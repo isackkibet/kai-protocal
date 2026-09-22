@@ -99,9 +99,9 @@ export default function AppsPage() {
                   );
                   const isAgent = a.href === '/ai';
                   return isAgent ? (
-                    <Link key={a.name} href="/ai" className="apps-tile">{tile}</Link>
+                    <Link key={a.name} href="/ai" className="apps-tile" prefetch={false}>{tile}</Link>
                   ) : (
-                    <Link key={a.name} href={a.href} className="apps-tile">{tile}</Link>
+                    <Link key={a.name} href={a.href} className="apps-tile" prefetch={false}>{tile}</Link>
                   );
                 })}
               </div>

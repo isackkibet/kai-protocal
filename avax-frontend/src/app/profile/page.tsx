@@ -327,19 +327,19 @@ export default function ProfilePage() {
         {/* membership tags */}
         <div style={{ display:'flex', gap:10, flexWrap:'wrap', marginTop:18 }}>
           {profile.cfaGroup && (
-            <Link href="/cfa" style={{ textDecoration:'none', display:'flex', alignItems:'center', gap:7, padding:'6px 14px', borderRadius:999, border: '1px solid rgba(125,195,131,0.35)' }}>
+            <Link href="/cfa" prefetch={false} style={{ textDecoration:'none', display:'flex', alignItems:'center', gap:7, padding:'6px 14px', borderRadius:999, border: '1px solid rgba(125,195,131,0.35)' }}>
               <Trees size={13} color="#7DC383"/>
               <span style={{ fontSize:12.5, fontWeight:700, color:'#7DC383' }}>{profile.cfaGroup}</span>
             </Link>
           )}
           {profile.businessName && (
-            <Link href="/sme" style={{ textDecoration:'none', display:'flex', alignItems:'center', gap:7, padding:'6px 14px', borderRadius:999, border: '1px solid rgba(111,168,220,0.35)' }}>
+            <Link href="/sme" prefetch={false} style={{ textDecoration:'none', display:'flex', alignItems:'center', gap:7, padding:'6px 14px', borderRadius:999, border: '1px solid rgba(111,168,220,0.35)' }}>
               <Store size={13} color="#6FA8DC"/>
               <span style={{ fontSize:12.5, fontWeight:700, color:'#6FA8DC' }}>{profile.businessName}</span>
             </Link>
           )}
           {profile.chamaName && (
-            <Link href="/saving" style={{ textDecoration:'none', display:'flex', alignItems:'center', gap:7, padding:'6px 14px', borderRadius:999, border: '1px solid rgba(196,143,224,0.35)' }}>
+            <Link href="/saving" prefetch={false} style={{ textDecoration:'none', display:'flex', alignItems:'center', gap:7, padding:'6px 14px', borderRadius:999, border: '1px solid rgba(196,143,224,0.35)' }}>
               <Users size={13} color="#C48FE0"/>
               <span style={{ fontSize:12.5, fontWeight:700, color:'#C48FE0' }}>{profile.chamaName}</span>
             </Link>
@@ -422,7 +422,7 @@ export default function ProfilePage() {
                 { label:'Kai Bar',        href:'/kai-bar', Icon:Award     },
                 { label:'Pools',          href:'/pools',   Icon:BarChart3 },
               ].map(l => (
-                <Link key={l.label} href={l.href} className="profile-quicklink" style={{ textDecoration:'none', display:'flex', alignItems:'center', gap:10, padding:'7px 0' }}>
+                <Link key={l.label} href={l.href} prefetch={false} className="profile-quicklink" style={{ textDecoration:'none', display:'flex', alignItems:'center', gap:10, padding:'7px 0' }}>
                   <l.Icon size={15} color={C.goldLight}/>
                   <span className="profile-quicklink-title" style={{ fontSize:13, fontWeight:600, color: C.paperDim, transition: 'color 0.15s ease' }}>{l.label}</span>
                   <ChevronRight size={12} color={C.inkLight} style={{ marginLeft:'auto' }}/>
