@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { ListChecks, Mail, Wallet, Trophy, Gift, Loader2, CheckCircle2, Clock, ChevronRight, ArrowLeft } from 'lucide-react';
+import { ListChecks, Mail, Wallet, Trophy, Gift, Loader2, CheckCircle2, Clock, ChevronRight, ArrowLeft, ShieldCheck, UserCheck } from 'lucide-react';
 import { usePrivyAuth } from '@/lib/privy-auth';
 import { useKaiBar } from '@/hooks/useKaiBar';
 
@@ -57,11 +57,41 @@ function QuickLink({ icon, title, sub, href }: { icon: React.ReactNode; title: s
 }
 
 export default function WaitlistPage() {
-  const { authenticated, ready, email, address, signInWithGoogle, signInWithEmail } = usePrivyAuth();
+  const { authenticated, ready, email, address, getAccessToken, signInWithGoogle, signInWithEmail } = usePrivyAuth();
   const { kaiBar, airdrop, loading } = useKaiBar();
   const [emailLoading, setEmailLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
   const [signInError, setSignInError] = useState<string | null>(null);
+  const [wl, setWl] = useState<{ whitelisted: boolean; joinedBy: string | null; joinedAt: string | null } | null>(null);
+  const [claimingWl, setClaimingWl] = useState(false);
+  const [wlMsg, setWlMsg] = useState<string>('');
+
+  useEffect(() => {
+    if (!authenticated) return;
+    (async () => {
+      try {
+        const token = await getAccessToken();
+        const r = await fetch('/api/whitelist', { headers: token ? { authorization: `Bearer ${token}` } : {} });
+        const d = await r.json();
+        setWl(d);
+      } catch { /* leave wl null */ }
+    })();
+  }, [authenticated, getAccessToken]);
+
+  const claimWhitelist = async () => {
+    setClaimingWl(true);
+    setWlMsg('');
+    try {
+      const token = await getAccessToken();
+      const r = await fetch('/api/whitelist', { method: 'POST', headers: token ? { authorization: `Bearer ${token}` } : {} });
+      const d = await r.json();
+      if (r.ok) setWl(d);
+      else setWlMsg(String(d.error ?? 'Could not join — try again'));
+    } catch {
+      setWlMsg('Network error — try again');
+    }
+    setClaimingWl(false);
+  };
 
   // `ready` (Privy SDK + embedded wallet init) has no hard timeout of its own —
   // without this, a slow/stuck Privy init spins this page forever instead of
@@ -167,7 +197,34 @@ export default function WaitlistPage() {
             value={airdrop?.eligible ? 'Eligible' : 'In Progress'}
             valueColor={airdrop?.eligible ? C.goldLight : undefined}
           />
+          <Row
+            icon={<ShieldCheck size={16} color={wl?.whitelisted ? C.goldLight : C.inkLight} />}
+            label="Whitelist Status"
+            value={wl === null ? '…' : wl?.whitelisted ? (wl?.joinedBy === 'SELF' ? 'Claimed by you' : 'Approved') : 'Not whitelisted'}
+            valueColor={wl?.whitelisted ? C.goldLight : undefined}
+          />
         </section>
+
+        {wl && !wl?.whitelisted && (
+          <section style={{ marginTop: 24, padding: 16, border: `1px solid ${C.hairline}`, borderRadius: 12 }}>
+            <p style={{ fontSize: 13, color: C.paper, margin: '0 0 10px', fontWeight: 600 }}>
+              Whitelist yourself for early rewards
+            </p>
+            <button
+              onClick={claimWhitelist}
+              disabled={claimingWl}
+              style={{
+                padding: '12px 22px', borderRadius: 999, border: 'none', cursor: claimingWl ? 'default' : 'pointer',
+                background: C.gold, color: '#1B1A14', fontSize: 13, fontWeight: 700, fontFamily: 'inherit',
+                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, width: '100%',
+                opacity: claimingWl ? 0.7 : 1,
+              }}
+            >
+              {claimingWl ? <Loader2 size={15} className="animate-spin" /> : <UserCheck size={15} />} Claim my whitelist spot
+            </button>
+            {wlMsg && <p style={{ fontSize: 11.5, color: C.red, margin: '10px 0 0' }}>{wlMsg}</p>}
+          </section>
+        )}
 
         <section style={{ marginTop: 36, paddingTop: 28, borderTop: `1px solid ${C.hairline}` }}>
           <QuickLink href="/kai-bar" icon={<Trophy size={18} color={C.goldLight} strokeWidth={1.7} />}

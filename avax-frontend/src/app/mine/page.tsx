@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useAccount } from 'wagmi';
 import WalletConnectModal from '@/components/WalletConnectModal';
 import { useKaivaxStore } from '@/store/useKaivaxStore';
+import { usePrivyAuth } from '@/lib/privy-auth';
 import {
   ArrowLeft, CheckCircle, Clock, Coins, Gift,
   Layers, Sparkles, Star, Timer, TrendingUp,
@@ -77,6 +78,7 @@ function Bar({ v, max }: { v:number; max:number }) {
 
 export default function MinePage() {
   const { isConnected } = useAccount();
+  const privy = usePrivyAuth();
   const setTokenBalance = useKaivaxStore(s => s.setTokenBalance);
 
   const [showModal,  setShowModal]  = useState(false);
@@ -84,6 +86,8 @@ export default function MinePage() {
   const [claiming,   setClaiming]   = useState(false);
   const [countdown,  setCountdown]  = useState(86400);
   const [joinedWait, setJoinedWait] = useState(false);
+  const [joiningWait,setJoiningWait]= useState(false);
+  const [wlMsg,      setWlMsg]      = useState('');
   const [showMint,   setShowMint]   = useState(false);
   const [minted,     setMinted]     = useState<string|null>(null);
   const [mintName,   setMintName]   = useState('');
