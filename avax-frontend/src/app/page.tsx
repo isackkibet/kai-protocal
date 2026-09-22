@@ -383,7 +383,7 @@ export default function Home() {
             {QUICK_ACTIONS.map(a => {
               const Icon = a.icon;
               return (
-                <Link key={a.name} href={a.href} className="qa-tile">
+                <Link key={a.name} href={a.href} className="qa-tile" prefetch={false}>
                   <Icon size={18} className="qa-tile-icon" strokeWidth={1.6}/>
                   <span className="qa-tile-label">{a.name}</span>
                 </Link>

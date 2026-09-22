@@ -31,7 +31,7 @@ export default function BottomNav() {
       {NAV.map(({ name, href, icon: Icon }) => {
         const active = href === '/' ? path === '/' : path?.startsWith(href);
         return (
-          <Link key={name} href={href} style={itemStyle(active)}>
+          <Link key={name} href={href} style={itemStyle(active)} prefetch={false}>
             {active && <motion.span layoutId="nav-indicator" style={{
               position: 'absolute', top: 0, left: '20%', right: '20%',
               height: 2, borderRadius: '0 0 4px 4px',
