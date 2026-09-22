@@ -398,34 +398,35 @@ export default function MinePage() {
 
               {/* EARLY ACCESS */}
               <div>
-                <Star size={16} color={C.goldLight} style={{ marginBottom:10 }} />
-                <p style={{ fontSize:14, fontWeight:700, color:C.paper, margin:'0 0 5px' }}>Early access</p>
-                <p style={{ fontSize:12, color:C.inkLight, margin:'0 0 14px', lineHeight:1.5 }}>
+                <Star size={18} color={C.goldLight} style={{ marginBottom:10 }} />
+                <p style={{ fontSize:16, fontWeight:700, color:C.paper, margin:'0 0 6px' }}>Early access</p>
+                <p style={{ fontSize:13.5, color:C.paperDim, margin:'0 0 16px', lineHeight:1.5 }}>
                   Higher reward tiers at launch.
                 </p>
                 <AnimatePresence mode="wait">
                   {!joinedWait ? (
                     <motion.button key="join"
+                      whileTap={{ scale:0.97 }}
                       onClick={joinWaitlist}
                       disabled={joiningWait}
-                      style={{ padding:'9px 20px', borderRadius:999, border:`1px solid ${C.hairline}`, background:'none', color:C.paperDim, fontWeight:700, fontSize:12, fontFamily:'inherit', cursor:'pointer', opacity:joiningWait?0.7:1 }}>
+                      style={{ padding:'11px 24px', borderRadius:999, border:'none', background:C.gold, color:'#1B1A14', fontWeight:700, fontSize:13.5, fontFamily:'inherit', cursor:'pointer', opacity:joiningWait?0.7:1 }}>
                       {joiningWait ? 'Joining…' : 'Join waitlist'}
                     </motion.button>
                   ) : (
                     <motion.div key="done" initial={{ opacity:0 }} animate={{ opacity:1 }}
-                      style={{ display:'flex', alignItems:'center', gap:7, color:C.goldLight, fontWeight:600, fontSize:12.5 }}>
-                      <CheckCircle size={14}/> You&apos;re on the list.
+                      style={{ display:'flex', alignItems:'center', gap:7, color:C.goldLight, fontWeight:700, fontSize:13.5 }}>
+                      <CheckCircle size={15}/> You&apos;re on the list.
                     </motion.div>
                   )}
                 </AnimatePresence>
-                {wlMsg && <p style={{ fontSize:11, color:C.inkLight, margin:'8px 0 0' }}>{wlMsg}</p>}
+                {wlMsg && <p style={{ fontSize:12, color:C.inkLight, margin:'8px 0 0' }}>{wlMsg}</p>}
               </div>
 
               {/* MINT TOKEN — quiet entry point; the form opens on request */}
               <div>
-                <TrendingUp size={16} color={C.goldLight} style={{ marginBottom:10 }} />
-                <p style={{ fontSize:14, fontWeight:700, color:C.paper, margin:'0 0 5px' }}>Mint a token</p>
-                <p style={{ fontSize:12, color:C.inkLight, margin:'0 0 14px', lineHeight:1.5 }}>
+                <TrendingUp size={18} color={C.goldLight} style={{ marginBottom:10 }} />
+                <p style={{ fontSize:16, fontWeight:700, color:C.paper, margin:'0 0 6px' }}>Mint a token</p>
+                <p style={{ fontSize:13.5, color:C.paperDim, margin:'0 0 16px', lineHeight:1.5 }}>
                   Deploy your own ERC-20 on Fuji.
                 </p>
                 <AnimatePresence mode="wait">
@@ -439,20 +440,20 @@ export default function MinePage() {
                             { v:mintSupply, s:setMintSupply, p:'Total supply', t:'number' },
                           ].map(({ v,s,p,t }) => (
                             <input key={p} value={v} onChange={e => s(e.target.value)} placeholder={p} type={t}
-                              style={{ background:'none', border:'none', borderBottom:`1px solid ${C.hairline}`, borderRadius:0, padding:'6px 2px', fontSize:12.5, color:C.paper, outline:'none', fontFamily:'inherit', width:'100%', boxSizing:'border-box', transition:'border-color 0.15s' }}
+                              style={{ background:'none', border:'none', borderBottom:`1px solid ${C.hairline}`, borderRadius:0, padding:'7px 2px', fontSize:13.5, color:C.paper, outline:'none', fontFamily:'inherit', width:'100%', boxSizing:'border-box', transition:'border-color 0.15s' }}
                               onFocus={e => (e.target.style.borderColor=C.gold)}
                               onBlur={e  => (e.target.style.borderColor=C.hairline)}
                             />
                           ))}
                           <button onClick={mintToken}
                             disabled={!(mintName&&mintSym&&mintSupply)}
-                            style={{ marginTop:4, padding:'9px 0', borderRadius:999, border:'none', background: (mintName&&mintSym&&mintSupply)?C.gold:'rgba(200,155,60,0.18)', color: (mintName&&mintSym&&mintSupply)?'#1B1A14':C.inkLight, fontWeight:700, fontSize:12.5, fontFamily:'inherit', cursor:(mintName&&mintSym&&mintSupply)?'pointer':'default' }}>
+                            style={{ marginTop:4, padding:'11px 0', borderRadius:999, border:'none', background: (mintName&&mintSym&&mintSupply)?C.gold:'rgba(200,155,60,0.18)', color: (mintName&&mintSym&&mintSupply)?'#1B1A14':C.inkLight, fontWeight:700, fontSize:13.5, fontFamily:'inherit', cursor:(mintName&&mintSym&&mintSupply)?'pointer':'default' }}>
                             Deploy on Fuji
                           </button>
                         </div>
                       ) : (
                         <button onClick={() => setShowMint(true)}
-                          style={{ background:'none', border:'none', padding:0, font:'inherit', fontSize:12.5, color:C.goldLight, cursor:'pointer' }}>
+                          style={{ background:'none', border:'none', padding:0, font:'inherit', fontSize:13.5, fontWeight:700, color:C.goldLight, cursor:'pointer' }}>
                           Deploy on Fuji →
                         </button>
                       )}
