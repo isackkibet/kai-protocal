@@ -46,8 +46,8 @@ export async function GET(req: Request) {
 }
 
 export async function POST(req: Request) {
-  const verivyUserId = await verifyPrivyUserId(req.headers.get('authorization'));
-  if (!verivyUserId) {
+  const privyUserId = await verifyPrivyUserId(req.headers.get('authorization'));
+  if (!privyUserId) {
     return NextResponse.json({ error: 'Could not verify your session. Please sign in again.' }, { status: 401 });
   }
 
@@ -55,7 +55,7 @@ export async function POST(req: Request) {
   if (!prisma) return NextResponse.json({ error: 'database unavailable' }, { status: 503 });
 
   try {
-    const user = await prisma.kaiUser.findUnique({ where: { privyUserId: verivyUserId } });
+    const user = await prisma.kaiUser.findUnique({ where: { privyUserId } });
     if (!user) return NextResponse.json({ error: 'User not found' }, { status: 404 });
     if (user.status === 'BLOCKED') {
       return NextResponse.json({ error: 'Account blocked' }, { status: 403 });
