@@ -164,7 +164,7 @@ export default function KaiBarDashboard() {
 
             {/* Balance hero */}
             <section>
-              <p style={label}>Kai Bar</p>
+              <p style={label}>Your Balance</p>
               <div style={{ display: 'flex', alignItems: 'baseline', gap: 10, margin: '10px 0 0' }}>
                 <span style={{ ...SERIF, fontSize: 44, fontWeight: 600, letterSpacing: '-1.5px', lineHeight: 1, color: C.goldLight }}>{kb.kaiBar.toLocaleString()}</span>
                 <span style={{ fontSize: 13, color: C.inkLight, fontWeight: 600 }}>points</span>
