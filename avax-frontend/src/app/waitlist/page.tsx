@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { ListChecks, Mail, Wallet, Trophy, Gift, Loader2, CheckCircle2, Clock, ChevronRight, ArrowLeft, ShieldCheck, UserCheck } from 'lucide-react';
+import { Mail, Wallet, Trophy, Gift, Loader2, CheckCircle2, Clock, ChevronRight, ArrowLeft, ShieldCheck, UserCheck } from 'lucide-react';
 import { usePrivyAuth } from '@/lib/privy-auth';
 import { useKaiBar } from '@/hooks/useKaiBar';
 
