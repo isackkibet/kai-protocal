@@ -4,28 +4,42 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  ArrowLeft, Globe, Award, Sparkles, TrendingUp,
-  CheckCircle2, Trees, Droplets, Leaf, Shield,
-  Coins, HeartHandshake, Loader2, ExternalLink,
-  ChevronRight, ArrowUpRight, Flame,
+  ArrowLeft, Globe, Sparkles, Loader2, Wallet,
 } from 'lucide-react';
 import { useAccount } from 'wagmi';
 import { useSDGImpact } from '@/hooks/useSDGImpact';
 import WalletConnectModal from '@/components/WalletConnectModal';
+import { iconForSdg, iconForTier } from '@/lib/sdgIcons';
 
-const W: React.CSSProperties = { width: '100%', maxWidth: 1080, margin: '0 auto', padding: '0 24px' };
-const Rs: React.CSSProperties = { textShadow: '0 1px 4px rgba(0,0,0,0.88)' };
+/* Same editorial system as the rest of the app — pine + gold + paper,
+   flat sections separated by a hairline, no gradient card shells. Real
+   lucide icons throughout instead of the emoji this page used to render
+   directly (🌍/🌿/⚡ headings, an emoji badge, an emoji per goal/action). */
+const C = {
+  bg:        '#0B1C14',
+  gold:      '#C89B3C',
+  goldLight: '#E4C878',
+  paper:     '#F6F2E7',
+  paperDim:  '#EFE9D9',
+  inkLight:  '#9BA396',
+  hairline:  'rgba(200,155,60,0.14)',
+};
+const MONO: React.CSSProperties = { fontFamily: 'var(--font-plex-mono), monospace' };
+const SERIF: React.CSSProperties = { fontFamily: "'Poppins', sans-serif" };
+const label: React.CSSProperties = { ...MONO, fontSize: 10, letterSpacing: 1.4, textTransform: 'uppercase', color: C.goldLight, fontWeight: 600, margin: 0 };
+const W: React.CSSProperties = { width: '100%', maxWidth: 1080, margin: '0 auto', padding: '0 24px', boxSizing: 'border-box' };
+
+const CATEGORIES = ['All', 'Environment', 'Economy', 'Community', 'Agriculture'] as const;
 
 export default function SDGPage() {
   const { address, isConnected } = useAccount();
   const [showModal, setShowModal] = useState(false);
-  const [activeCategory, setActiveCategory] = useState<'All' | 'Environment' | 'Economy' | 'Community' | 'Agriculture'>('All');
+  const [activeCategory, setActiveCategory] = useState<typeof CATEGORIES[number]>('All');
   const [submittingId, setSubmittingId] = useState<string | null>(null);
 
   const {
     totalPoints,
     tier,
-    badge,
     multiplier,
     nextTierPts,
     progressToNextTier,
@@ -33,7 +47,6 @@ export default function SDGPage() {
     availableActions,
     toast,
     logAction,
-    loading,
   } = useSDGImpact();
 
   const handleClaim = async (actionId: string) => {
@@ -47,29 +60,21 @@ export default function SDGPage() {
     ? availableActions
     : availableActions.filter(a => a.category === activeCategory);
 
+  const TierIcon = iconForTier(tier);
+
   return (
-    <main style={{ minHeight: '100dvh', color: '#fff', fontFamily: 'var(--font-sans)', position: 'relative', paddingBottom: 100 }}>
-      {/* Toast Alert */}
+    <main style={{ minHeight: '100dvh', background: C.bg, color: C.paper, fontFamily: "'Poppins', 'IBM Plex Sans', var(--font-sans)", position: 'relative', paddingBottom: 100 }}>
+      <style>{`.sdg-cat:hover { color: ${C.goldLight}; }`}</style>
+
+      {/* Toast */}
       <AnimatePresence>
         {toast && (
           <motion.div
-            initial={{ opacity: 0, y: -20, scale: 0.95 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: -20, scale: 0.95 }}
+            initial={{ opacity: 0, y: -12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -12 }}
             style={{
-              position: 'fixed',
-              top: 24,
-              left: '50%',
-              transform: 'translateX(-50%)',
-              padding: '12px 20px',
-              borderRadius: 14,
-              background: 'linear-gradient(135deg, #10b981, #059669)',
-              color: '#fff',
-              fontSize: 13,
-              fontWeight: 800,
-              boxShadow: '0 8px 32px rgba(16,185,129,0.5)',
-              zIndex: 100,
-              textAlign: 'center',
+              position: 'fixed', top: 24, left: '50%', transform: 'translateX(-50%)',
+              padding: '11px 22px', borderRadius: 999, background: C.bg, border: `1px solid ${C.hairline}`,
+              color: C.goldLight, fontSize: 13, fontWeight: 700, zIndex: 100, textAlign: 'center',
             }}
           >
             {toast}
@@ -78,36 +83,22 @@ export default function SDGPage() {
       </AnimatePresence>
 
       <div style={{ ...W, paddingTop: 32 }}>
-        {/* Navigation bar */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-            <Link
-              href="/"
-              style={{
-                width: 38,
-                height: 38,
-                borderRadius: '50%',
-                background: 'rgba(16,185,129,0.12)',
-                border: '1px solid rgba(16,185,129,0.25)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                color: '#34d399',
-                textDecoration: 'none',
-              }}
-            >
+
+        {/* Header */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 32, gap: 16, flexWrap: 'wrap' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+            <Link href="/" style={{ display: 'flex', alignItems: 'center', color: C.inkLight }}>
               <ArrowLeft size={18} />
             </Link>
+            <Globe size={20} color={C.goldLight} strokeWidth={1.7} />
             <div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <h1 style={{ fontSize: 22, fontWeight: 900, margin: 0, letterSpacing: -0.5, ...Rs }}>
-                  🌍 SDG Impact &amp; Effort Score
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                <h1 style={{ ...SERIF, fontSize: 21, fontWeight: 600, margin: 0, color: C.paper }}>
+                  SDG Impact &amp; Effort Score
                 </h1>
-                <span style={{ fontSize: 10, fontWeight: 800, background: 'rgba(52,211,153,0.15)', color: '#34d399', padding: '2px 8px', borderRadius: 20, border: '1px solid rgba(52,211,153,0.3)' }}>
-                  UN 2030 Aligned
-                </span>
+                <span style={{ ...MONO, fontSize: 9.5, fontWeight: 700, color: C.goldLight, letterSpacing: 0.4 }}>UN 2030 ALIGNED</span>
               </div>
-              <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.5)', margin: '3px 0 0' }}>
+              <p style={{ fontSize: 11.5, color: C.inkLight, margin: '3px 0 0' }}>
                 On-chain sustainability metrics · Community MRV verification · Avalanche C-Chain
               </p>
             </div>
@@ -116,163 +107,118 @@ export default function SDGPage() {
           {!isConnected ? (
             <button
               onClick={() => setShowModal(true)}
-              style={{
-                padding: '8px 16px',
-                borderRadius: 12,
-                background: 'linear-gradient(135deg, #10b981, #059669)',
-                color: '#fff',
-                fontSize: 12,
-                fontWeight: 800,
-                border: 'none',
-                cursor: 'pointer',
-              }}
+              style={{ padding: '9px 20px', borderRadius: 999, background: C.gold, color: '#1B1A14', fontSize: 12.5, fontWeight: 700, border: 'none', cursor: 'pointer', fontFamily: 'inherit' }}
             >
               Connect Wallet
             </button>
           ) : (
-            <div style={{ fontSize: 12, color: '#34d399', fontWeight: 700, background: 'rgba(52,211,153,0.1)', padding: '6px 12px', borderRadius: 10, border: '1px solid rgba(52,211,153,0.25)' }}>
-              🟢 {address?.slice(0, 6)}…{address?.slice(-4)}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 7, fontSize: 12.5, color: C.goldLight, fontWeight: 600 }}>
+              <Wallet size={13} /> {address?.slice(0, 6)}…{address?.slice(-4)}
             </div>
           )}
         </div>
 
-        {/* Hero Banner with Impact Score and Tier */}
-        <div
-          style={{
-            borderRadius: 24,
-            padding: '28px 24px',
-            background: 'linear-gradient(135deg, rgba(6,32,20,0.85) 0%, rgba(10,20,16,0.95) 100%)',
-            border: '1px solid rgba(52,211,153,0.3)',
-            boxShadow: '0 12px 40px rgba(0,0,0,0.5), 0 0 30px rgba(16,185,129,0.15)',
-            marginBottom: 28,
-            position: 'relative',
-            overflow: 'hidden',
-          }}
-        >
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 20, alignItems: 'center' }}>
-            <div>
-              <p style={{ margin: 0, fontSize: 11, fontWeight: 800, letterSpacing: 1.5, textTransform: 'uppercase', color: 'rgba(255,255,255,0.45)' }}>
-                YOUR VERIFIED IMPACT
-              </p>
-              <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, marginTop: 4 }}>
-                <span style={{ fontSize: 40, fontWeight: 900, color: '#34d399', letterSpacing: -1 }}>
-                  {totalPoints.toLocaleString()}
-                </span>
-                <span style={{ fontSize: 16, fontWeight: 700, color: 'rgba(255,255,255,0.5)' }}>SDG Points</span>
-              </div>
-              <p style={{ margin: '6px 0 0', fontSize: 12, color: 'rgba(255,255,255,0.65)' }}>
-                Your activities contribute to real-world carbon offset and African community development.
-              </p>
+        {/* Hero: score + tier */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: 32, marginBottom: 36, paddingBottom: 32, borderBottom: `1px solid ${C.hairline}` }}>
+          <div>
+            <p style={label}>Your Verified Impact</p>
+            <div style={{ display: 'flex', alignItems: 'baseline', gap: 10, marginTop: 10 }}>
+              <span style={{ ...SERIF, fontSize: 40, fontWeight: 600, color: C.goldLight, letterSpacing: '-1px' }}>
+                {totalPoints.toLocaleString()}
+              </span>
+              <span style={{ fontSize: 15, fontWeight: 600, color: C.inkLight }}>SDG points</span>
             </div>
+            <p style={{ margin: '8px 0 0', fontSize: 12.5, color: C.inkLight, lineHeight: 1.6, maxWidth: 340 }}>
+              Your activities contribute to real-world carbon offset and African community development.
+            </p>
+          </div>
 
-            <div style={{ background: 'rgba(0,0,0,0.3)', borderRadius: 18, padding: '16px 18px', border: '1px solid rgba(255,255,255,0.06)' }}>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
-                <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)', fontWeight: 700 }}>TIER &amp; REWARD MULTIPLIER</span>
-                <span style={{ fontSize: 11, color: '#fbbf24', fontWeight: 800 }}>{multiplier} Airdrop Boost</span>
+          <div>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
+              <p style={label}>Tier &amp; Reward Multiplier</p>
+              <span style={{ fontSize: 11.5, color: C.goldLight, fontWeight: 700 }}>{multiplier} airdrop boost</span>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
+              <TierIcon size={22} color={C.goldLight} strokeWidth={1.7} />
+              <div>
+                <p style={{ ...SERIF, margin: 0, fontSize: 16, fontWeight: 600, color: C.paper }}>{tier}</p>
+                <p style={{ margin: 0, fontSize: 11.5, color: C.goldLight, fontWeight: 600 }}>
+                  {progressToNextTier}% to {nextTierPts} pts milestone
+                </p>
               </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <span style={{ fontSize: 24 }}>{badge}</span>
-                <div>
-                  <h3 style={{ margin: 0, fontSize: 16, fontWeight: 900, color: '#fff' }}>{tier}</h3>
-                  <p style={{ margin: 0, fontSize: 11, color: '#34d399', fontWeight: 700 }}>
-                    {progressToNextTier}% to {nextTierPts} pts milestone
-                  </p>
-                </div>
-              </div>
-              <div style={{ height: 6, borderRadius: 3, background: 'rgba(255,255,255,0.08)', marginTop: 12, overflow: 'hidden' }}>
-                <div style={{ width: `${progressToNextTier}%`, height: '100%', background: 'linear-gradient(90deg, #10b981, #34d399)' }} />
-              </div>
+            </div>
+            <div style={{ height: 3, borderRadius: 2, background: C.hairline, overflow: 'hidden' }}>
+              <div style={{ width: `${progressToNextTier}%`, height: '100%', background: C.gold }} />
             </div>
           </div>
         </div>
 
-        {/* Goals Breakdown Section */}
-        <div style={{ marginBottom: 32 }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
+        {/* Goals breakdown */}
+        <div style={{ marginBottom: 36, paddingBottom: 32, borderBottom: `1px solid ${C.hairline}` }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
             <div>
-              <h2 style={{ fontSize: 18, fontWeight: 800, margin: 0, color: '#fff' }}>
-                🌿 UN Sustainable Development Goals (SDGs)
+              <h2 style={{ ...SERIF, fontSize: 17, fontWeight: 600, margin: 0, color: C.paper }}>
+                UN Sustainable Development Goals
               </h2>
-              <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.45)', margin: '2px 0 0' }}>
-                Hover or inspect each goal to see your contribution breakdown
+              <p style={{ fontSize: 12, color: C.inkLight, margin: '3px 0 0' }}>
+                Your contribution breakdown across the six goals KAI tracks
               </p>
             </div>
-            <span style={{ fontSize: 11, color: '#34d399', fontWeight: 700 }}>6 Goals Active</span>
+            <span style={{ fontSize: 11.5, color: C.goldLight, fontWeight: 600 }}>6 active</span>
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(310px, 1fr))', gap: 14 }}>
-            {goals.map((g) => (
-              <div
-                key={g.code}
-                style={{
-                  borderRadius: 18,
-                  padding: '16px 18px',
-                  background: 'rgba(10,16,14,0.7)',
-                  border: `1px solid ${g.color}40`,
-                  boxShadow: `0 4px 20px rgba(0,0,0,0.3), 0 0 16px ${g.color}15`,
-                  display: 'flex',
-                  flexDirection: 'column',
-                  justifyContent: 'space-between',
-                  gap: 12,
-                }}
-              >
-                <div>
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                      <span style={{ fontSize: 11, fontWeight: 900, color: '#fff', background: g.color, padding: '2px 8px', borderRadius: 6 }}>
-                        {g.code}
-                      </span>
-                      <h4 style={{ margin: 0, fontSize: 14, fontWeight: 800, color: '#fff' }}>{g.name}</h4>
-                    </div>
-                    <span style={{ fontSize: 18 }}>{g.icon}</span>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '24px 32px' }}>
+            {goals.map((g) => {
+              const GoalIcon = iconForSdg(g.sdgNumber);
+              return (
+                <div key={g.code}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
+                    <GoalIcon size={16} color={g.color} strokeWidth={1.7} />
+                    <span style={{ ...MONO, fontSize: 9.5, fontWeight: 700, color: g.color }}>{g.code}</span>
+                    <p style={{ margin: 0, fontSize: 13.5, fontWeight: 700, color: C.paper }}>{g.name}</p>
                   </div>
-                  <p style={{ margin: 0, fontSize: 11.5, color: 'rgba(255,255,255,0.6)', lineHeight: 1.45 }}>
+                  <p style={{ margin: '0 0 12px', fontSize: 11.5, color: C.inkLight, lineHeight: 1.5 }}>
                     {g.description}
                   </p>
-                </div>
-
-                <div style={{ background: 'rgba(0,0,0,0.3)', borderRadius: 12, padding: '10px 12px', border: '1px solid rgba(255,255,255,0.05)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <div>
-                    <p style={{ margin: 0, fontSize: 10, color: 'rgba(255,255,255,0.4)', fontWeight: 700 }}>{g.impactMetric}</p>
-                    <p style={{ margin: 0, fontSize: 13, fontWeight: 900, color: '#34d399' }}>{g.impactValue}</p>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', paddingTop: 10, borderTop: `1px solid ${C.hairline}` }}>
+                    <div>
+                      <p style={{ margin: '0 0 2px', fontSize: 9.5, color: C.inkLight, fontWeight: 600, textTransform: 'uppercase', letterSpacing: 0.4 }}>{g.impactMetric}</p>
+                      <p style={{ ...SERIF, margin: 0, fontSize: 14, fontWeight: 600, color: g.color }}>{g.impactValue}</p>
+                    </div>
+                    <div style={{ textAlign: 'right' }}>
+                      <p style={{ margin: '0 0 2px', fontSize: 9.5, color: C.inkLight, fontWeight: 600, textTransform: 'uppercase', letterSpacing: 0.4 }}>Points</p>
+                      <p style={{ ...SERIF, margin: 0, fontSize: 14, fontWeight: 600, color: g.points > 0 ? C.goldLight : C.paper }}>{g.points} pts</p>
+                    </div>
                   </div>
-                  <div style={{ textAlign: 'right' }}>
-                    <p style={{ margin: 0, fontSize: 10, color: 'rgba(255,255,255,0.4)', fontWeight: 700 }}>Points Earned</p>
-                    <p style={{ margin: 0, fontSize: 13, fontWeight: 900, color: '#fff' }}>{g.points} pts</p>
-                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
 
-        {/* Actionable Activities Checklist */}
+        {/* Earn points */}
         <div>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14, flexWrap: 'wrap', gap: 10 }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20, flexWrap: 'wrap', gap: 14 }}>
             <div>
-              <h2 style={{ fontSize: 18, fontWeight: 800, margin: 0, color: '#fff' }}>
-                ⚡ Earn SDG Points &amp; Level Up
+              <h2 style={{ ...SERIF, fontSize: 17, fontWeight: 600, margin: 0, color: C.paper }}>
+                Earn SDG points &amp; level up
               </h2>
-              <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.45)', margin: '2px 0 0' }}>
-                Perform on-chain actions or log community verification activities to earn points
+              <p style={{ fontSize: 12, color: C.inkLight, margin: '3px 0 0' }}>
+                Perform on-chain actions or log community verification activities
               </p>
             </div>
 
-            {/* Category filter tabs */}
-            <div style={{ display: 'flex', gap: 6, background: 'rgba(0,0,0,0.3)', padding: 4, borderRadius: 10 }}>
-              {(['All', 'Environment', 'Economy', 'Community', 'Agriculture'] as const).map(cat => (
+            <div style={{ display: 'flex', gap: 18 }}>
+              {CATEGORIES.map(cat => (
                 <button
                   key={cat}
                   onClick={() => setActiveCategory(cat)}
+                  className="sdg-cat"
                   style={{
-                    padding: '5px 10px',
-                    borderRadius: 7,
-                    fontSize: 11,
-                    fontWeight: 700,
-                    border: 'none',
-                    cursor: 'pointer',
-                    background: activeCategory === cat ? 'rgba(52,211,153,0.22)' : 'transparent',
-                    color: activeCategory === cat ? '#34d399' : 'rgba(255,255,255,0.45)',
+                    padding: 0, border: 'none', background: 'none', cursor: 'pointer', fontFamily: 'inherit',
+                    fontSize: 12, fontWeight: activeCategory === cat ? 700 : 500,
+                    color: activeCategory === cat ? C.goldLight : C.inkLight,
+                    transition: 'color 0.15s ease',
                   }}
                 >
                   {cat}
@@ -281,86 +227,48 @@ export default function SDGPage() {
             </div>
           </div>
 
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-            {filteredActions.map((act) => (
-              <div
-                key={act.id}
-                style={{
-                  borderRadius: 18,
-                  padding: '16px 20px',
-                  background: 'rgba(10,16,14,0.6)',
-                  border: '1px solid rgba(255,255,255,0.06)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  gap: 16,
-                }}
-              >
-                <div style={{ display: 'flex', alignItems: 'center', gap: 14, flex: 1 }}>
-                  <div
-                    style={{
-                      width: 44,
-                      height: 44,
-                      borderRadius: 14,
-                      background: 'rgba(52,211,153,0.12)',
-                      border: '1px solid rgba(52,211,153,0.25)',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      fontSize: 20,
-                      flexShrink: 0,
-                    }}
-                  >
-                    {act.icon}
-                  </div>
-                  <div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                      <h4 style={{ margin: 0, fontSize: 14, fontWeight: 800, color: '#fff' }}>{act.title}</h4>
-                      <span style={{ fontSize: 10, fontWeight: 800, color: '#34d399', background: 'rgba(52,211,153,0.14)', padding: '1px 7px', borderRadius: 6 }}>
-                        SDG {act.sdgNumber}
-                      </span>
-                      <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.4)', fontWeight: 600 }}>
-                        {act.category}
-                      </span>
+          {filteredActions.map((act) => {
+            const ActIcon = iconForSdg(act.sdgNumber);
+            return (
+              <div key={act.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16, padding: '14px 0', borderBottom: `1px solid ${C.hairline}` }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 14, flex: 1, minWidth: 0 }}>
+                  <ActIcon size={18} color={C.goldLight} strokeWidth={1.7} style={{ flexShrink: 0 }} />
+                  <div style={{ minWidth: 0 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                      <p style={{ margin: 0, fontSize: 14, fontWeight: 700, color: C.paper }}>{act.title}</p>
+                      <span style={{ ...MONO, fontSize: 9.5, fontWeight: 700, color: C.goldLight }}>SDG {act.sdgNumber}</span>
+                      <span style={{ fontSize: 10.5, color: C.inkLight, fontWeight: 600 }}>{act.category}</span>
                     </div>
-                    <p style={{ margin: '4px 0 0', fontSize: 12, color: 'rgba(255,255,255,0.55)', lineHeight: 1.3 }}>
+                    <p style={{ margin: '3px 0 0', fontSize: 12, color: C.inkLight, lineHeight: 1.4 }}>
                       {act.desc}
                     </p>
                   </div>
                 </div>
 
                 <motion.button
-                  whileHover={{ scale: 1.04 }}
-                  whileTap={{ scale: 0.95 }}
+                  whileTap={{ scale: 0.96 }}
                   onClick={() => handleClaim(act.id)}
                   disabled={submittingId === act.id}
                   style={{
-                    padding: '10px 18px',
-                    borderRadius: 12,
-                    border: 'none',
-                    cursor: submittingId === act.id ? 'not-allowed' : 'pointer',
-                    background: 'linear-gradient(135deg, #10b981, #059669)',
-                    color: '#fff',
-                    fontSize: 13,
-                    fontWeight: 800,
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 6,
-                    flexShrink: 0,
-                    boxShadow: '0 4px 16px rgba(16,185,129,0.35)',
+                    padding: '9px 18px', borderRadius: 999, border: 'none',
+                    cursor: submittingId === act.id ? 'default' : 'pointer',
+                    background: C.gold, color: '#1B1A14',
+                    fontSize: 12.5, fontWeight: 700, fontFamily: 'inherit',
+                    display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0,
+                    opacity: submittingId === act.id ? 0.7 : 1,
                   }}
                 >
                   {submittingId === act.id ? (
-                    <Loader2 size={16} className="animate-spin" />
+                    <Loader2 size={14} className="animate-spin" />
                   ) : (
                     <>
-                      <Sparkles size={14} /> +{act.points} pts
+                      <Sparkles size={13} /> +{act.points} pts
                     </>
                   )}
                 </motion.button>
               </div>
-            ))}
-          </div>
+            );
+          })}
         </div>
       </div>
 
