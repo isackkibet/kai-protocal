@@ -6,6 +6,11 @@ import { HUB_THEME, labelStyle, MONO, SERIF, SANS } from '@/lib/hub-theme';
 
 export const dynamic = 'force-dynamic';
 
+const hoverStyle = `
+.kai-card { transition: transform 0.18s ease; }
+a:hover .kai-card { transform: translateY(-3px); }
+`;
+
 export default function ConservationHome() {
   const featured = METHODOLOGIES.filter(m => m.featured);
   const knowledge = KNOWLEDGE.slice(0, 4);
@@ -13,6 +18,7 @@ export default function ConservationHome() {
 
   return (
     <ConservationShell>
+      <style>{hoverStyle}</style>
       {/* Hero + Ask */}
       <section style={{ padding: '56px 0 30px' }}>
         <p style={labelStyle()}>Learn · Explore · Ask · Connect</p>
@@ -45,10 +51,8 @@ export default function ConservationHome() {
               <div style={{
                 padding: '26px 26px 22px', height: '100%', boxSizing: 'border-box',
                 background: i % 2 === 0 ? `linear-gradient(135deg, ${HUB_THEME.pine} 0%, ${HUB_THEME.bgSoft} 100%)` : HUB_THEME.card,
-                borderRadius: 14, transition: 'transform 0.18s',
-              }}
-                onMouseEnter={e => (e.currentTarget.style.transform = 'translateY(-3px)')}
-                onMouseLeave={e => (e.currentTarget.style.transform = 'translateY(0)')}>
+                borderRadius: 14,
+              }} className="kai-card">
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 14 }}>
                   <Leaf size={16} color={HUB_THEME.goldLight} />
                   <span style={{ ...MONO, fontSize: 9, letterSpacing: 1.4, textTransform: 'uppercase', color: HUB_THEME.goldLight }}>Methodology</span>
