@@ -93,6 +93,7 @@ function PrivyAuthContextProvider({ children }: { children: React.ReactNode }) {
   const privyUserId = (user?.id as string | undefined) ?? null;
   const email = user?.email?.address ?? null;
   const name = user?.google?.name ?? user?.email?.address ?? null;
+  const authProvider = user?.google ? 'GOOGLE' : 'EMAIL';
 
   // Always-current snapshot of identity/wallet state, read from a ref rather
   // than closed-over variables. Without this, signInWithGoogle/signInWithEmail
@@ -100,24 +101,13 @@ function PrivyAuthContextProvider({ children }: { children: React.ReactNode }) {
   // address is still null in that closure no matter how long you wait, so the
   // sync call always failed with "missing-identity" even when login itself
   // succeeded and the wallet was created moments later.
-  const stateRef = useRef({ privyUserId, email, name, address: null as Address | null });
+  const stateRef = useRef({ privyUserId, email, name, authProvider, address: null as Address | null });
   useEffect(() => {
-    stateRef.current = { privyUserId, email, name, address };
-  }, [privyUserId, email, name, address]);
+    stateRef.current = { privyUserId, email, name, authProvider, address };
+  }, [privyUserId, email, name, authProvider, address]);
 
   const builtLogin = useCallback(() => login({ loginMethods: ['google'] }), [login]);
   const builtEmailLogin = useCallback(() => login({ loginMethods: ['email'] }), [login]);
-
-  // Polls the always-current ref for a wallet address instead of a fixed
-  // sleep, so a slow-to-provision wallet doesn't race the sync call.
-  const waitForAddress = useCallback(async (timeoutMs = 6000, intervalMs = 200) => {
-    const deadline = Date.now() + timeoutMs;
-    while (Date.now() < deadline) {
-      if (stateRef.current.address) return stateRef.current.address;
-      await new Promise((r) => setTimeout(r, intervalMs));
-    }
-    return stateRef.current.address;
-  }, []);
 
   // Log the page the user was on before starting login, so that if Privy uses
   // its redirect-based OAuth flow (browser popup blocked, embedded/mobile
@@ -198,12 +188,15 @@ function PrivyAuthContextProvider({ children }: { children: React.ReactNode }) {
   );
 
   /**
-   * Creates/links the Kainovari KaiUser + KaiWallet and credits the welcome
-   * bonus (handoff between PRD 1 and PRD 2). Idempotent.
+   * Creates/links the Kainovari KaiUser (and attaches the KaiWallet once one
+   * exists) and credits the welcome bonus (handoff between PRD 1 and PRD 2).
+   * Idempotent. Deliberately does NOT require a wallet address — a person who
+   * has verified their email must be saved immediately (PRD: "wallet-
+   * optional"); the wallet attaches on a later call once it's ready.
    */
   const syncToBackend = useCallback(async (): Promise<PrivyAuthSyncResult> => {
     const s = stateRef.current;
-    if (!s.privyUserId || !s.email || !s.address) {
+    if (!s.privyUserId || !s.email) {
       return { ok: false, reason: 'missing-identity', isNew: false };
     }
     setSyncState('linking');
@@ -217,7 +210,10 @@ function PrivyAuthContextProvider({ children }: { children: React.ReactNode }) {
       const res = await fetch('/api/kai-bar/onboard', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ privyUserId: s.privyUserId, email: s.email, name: s.name, address: s.address }),
+        body: JSON.stringify({
+          privyUserId: s.privyUserId, email: s.email, name: s.name,
+          authProvider: s.authProvider, address: s.address ?? undefined,
+        }),
       });
       const data = await res.json();
       if (!res.ok) {
@@ -246,14 +242,13 @@ function PrivyAuthContextProvider({ children }: { children: React.ReactNode }) {
     try {
       rememberPostLoginPath();
       await builtLogin();
-      // Wait for the embedded wallet to actually exist rather than sleeping a
-      // fixed amount of time — provisioning speed varies.
-      await waitForAddress();
+      // Identity (email + privyUserId) is saved immediately — it must not
+      // wait on the embedded wallet, which can lag or fail independently
+      // (the wallet-attach effect below picks it up once it's ready). Retry
+      // once for the brief state-update race right after login() resolves.
       let result = await syncToBackend();
-      // The wallet can take a beat longer than our poll window on a slow
-      // network; retry once before surfacing an error to the user.
       if (!result.ok && result.reason === 'missing-identity') {
-        await new Promise((r) => setTimeout(r, 1000));
+        await new Promise((r) => setTimeout(r, 400));
         result = await syncToBackend();
       }
       return result;
@@ -268,7 +263,7 @@ function PrivyAuthContextProvider({ children }: { children: React.ReactNode }) {
       setError(rawMsg || 'Google sign-in failed. Please try again.');
       return { ok: false, reason: rawMsg || 'login-failed', isNew: false };
     }
-  }, [authenticated, builtLogin, waitForAddress, syncToBackend]);
+  }, [authenticated, builtLogin, syncToBackend]);
 
   /**
    * "Continue with Email": opens Privy's email OTP flow, then links the
@@ -280,10 +275,9 @@ function PrivyAuthContextProvider({ children }: { children: React.ReactNode }) {
     try {
       rememberPostLoginPath();
       await builtEmailLogin();
-      await waitForAddress();
       let result = await syncToBackend();
       if (!result.ok && result.reason === 'missing-identity') {
-        await new Promise((r) => setTimeout(r, 1000));
+        await new Promise((r) => setTimeout(r, 400));
         result = await syncToBackend();
       }
       return result;
@@ -298,23 +292,35 @@ function PrivyAuthContextProvider({ children }: { children: React.ReactNode }) {
       setError(rawMsg || 'Email sign-in failed. Please try again.');
       return { ok: false, reason: rawMsg || 'login-failed', isNew: false };
     }
-  }, [authenticated, builtEmailLogin, waitForAddress, syncToBackend]);
+  }, [authenticated, builtEmailLogin, syncToBackend]);
 
   const loginFn = login;
 
-  // Auto-sync once the user is authenticated and a wallet is ready, so a
-  // returning user's account + welcome bonus are always attached. Only locks
-  // out further attempts on success — a transient failure (network blip,
-  // cold-start race) gets a couple of retries instead of being stuck until
-  // the user logs out and back in.
+  // Auto-sync identity as soon as the user is authenticated with an email —
+  // deliberately NOT gated on a wallet being ready, so a returning user (or
+  // one whose embedded wallet is slow/fails to provision) is still saved.
+  // Only locks out further attempts on success — a transient failure
+  // (network blip, cold-start race) gets a couple of retries instead of
+  // being stuck until the user logs out and back in.
   useEffect(() => {
-    if (!ready || !authenticated || !address || haveSynced.current) return;
+    if (!ready || !authenticated || !email || haveSynced.current) return;
     if (syncAttempts.current >= 3) return;
     syncAttempts.current += 1;
     syncToBackend().then((result) => {
       if (result.ok) haveSynced.current = true;
     });
-  }, [ready, authenticated, address, syncToBackend, syncState]);
+  }, [ready, authenticated, email, syncToBackend, syncState]);
+
+  // Separate pass: once a wallet address becomes available — possibly well
+  // after identity was already synced above — attach it to the account.
+  // syncToBackend is idempotent (finds the existing user, only creates/
+  // updates the wallet row), so calling it again here is safe.
+  const haveSyncedWallet = useRef(false);
+  useEffect(() => {
+    if (!ready || !authenticated || !address || haveSyncedWallet.current) return;
+    haveSyncedWallet.current = true;
+    syncToBackend();
+  }, [ready, authenticated, address, syncToBackend]);
 
   const value = useMemo<PrivyAuthValue>(
     () => ({
@@ -334,6 +340,7 @@ function PrivyAuthContextProvider({ children }: { children: React.ReactNode }) {
       login: loginFn,
       logout: async () => {
         haveSynced.current = false;
+        haveSyncedWallet.current = false;
         await logout();
       },
       createWallet: async () => {
