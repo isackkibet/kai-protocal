@@ -550,6 +550,236 @@ enum NurseryActivityType {
   SOLD
 }
 
+// ═══════════════════════════════════════════════════════════════
+//  SIHU INFORMATION HUB — CONTENT, PUBLISHING & ENGAGEMENT
+//  (SIHU PRD: articles, AI pre-review, human editorial approval,
+//   reader engagement, transparency, auditable revisions)
+// ═══════════════════════════════════════════════════════════════
+
+enum ContentPostStatus {
+  DRAFT
+  SUBMITTED
+  CHANGES_REQUESTED
+  APPROVED
+  REJECTED
+  PUBLISHED
+}
+
+enum ContentType {
+  ARTICLE
+  NEWS_UPDATE
+  FIELD_JOURNAL
+  MARKET_NEWS
+  AUDIO_PODCAST
+  EDUCATIONAL_GUIDE
+  VIDEO
+  REPORT
+  DOCUMENT
+  CONSERVATION_IMPACT
+}
+
+/// A piece of content on the SIHU information hub. The canonical workflow is
+/// DRAFT → SUBMITTED → (AI pre-review) → editor APPROVED/REJECTED/
+/// CHANGES_REQUESTED → PUBLISHED. AI can never reach PUBLISHED on its own.
+model ContentPost {
+  id              String            @id @default(cuid())
+  slug            String            @unique
+  title           String
+  summary         String?
+  body            String
+  contentType     ContentType       @default(ARTICLE)
+  category        String
+  language        String            @default("EN")
+  status          ContentPostStatus @default(DRAFT)
+  /// Transparency disclosure: HUMAN or AI_ASSISTED, set per editorial policy.
+  aiDisclosure    String            @default("HUMAN")
+  authorBadge     String?
+  creatorName     String
+  creatorUserId   String?
+  creatorEmail    String?
+  tags            String[]          @default([])
+  mediaUrl        String?
+  audioUrl        String?
+  audioDurationSeconds Int?
+  featured        Boolean           @default(false)
+  viewsCount      Int               @default(0)
+  likesCount      Int               @default(0)
+  tipsEarnedKes   Float             @default(0)
+  /// JSON payload from the AI pre-review engine (see sihu-ai-review.ts).
+  aiReport        Json?
+  editorNote      String?
+  reviewedById    String?
+  reviewedAt      DateTime?
+  publishedAt     DateTime?
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+
+  comments        PostComment[]
+  likes           PostLike[]
+  saves           PostSave[]
+  reports         PostReport[]
+  revisions       PostRevision[]
+
+  @@index([status])
+  @@index([contentType])
+  @@index([category])
+  @@index([publishedAt])
+  @@map("content_posts")
+}
+
+/// Append-only audit trail of every workflow action on a post
+/// (created / submitted / AI-reviewed / approved / published / rejected…).
+model PostRevision {
+  id        String   @id @default(cuid())
+  postId    String
+  action    String
+  actorName String
+  note      String?
+  snapshot  Json?
+  createdAt DateTime @default(now())
+
+  post      ContentPost @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  @@index([postId])
+  @@map("post_revisions")
+}
+
+/// Reader like. Deduplicated by (postId, userIdKey) so one reader = one like.
+model PostLike {
+  id        String   @id @default(cuid())
+  postId    String
+  userIdKey String
+  createdAt DateTime @default(now())
+
+  post      ContentPost @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  @@unique([postId, userIdKey])
+  @@index([postId])
+  @@map("post_likes")
+}
+
+/// Reader comment. Guests submit a display name; signed-in users can link their
+/// KAI account. Reported comments are flagged for moderation, not deleted.
+model PostComment {
+  id           String    @id @default(cuid())
+  postId       String
+  authorName   String
+  authorUserId String?
+  body         String
+  status       String    @default("VISIBLE") // VISIBLE | REPORTED | HIDDEN
+  createdAt    DateTime  @default(now())
+
+  post         ContentPost @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  @@index([postId])
+  @@index([status])
+  @@map("post_comments")
+}
+
+/// Reader "save for later" bookmark. One per reader per post.
+model PostSave {
+  id        String   @id @default(cuid())
+  postId    String
+  userIdKey String
+  createdAt DateTime @default(now())
+
+  post      ContentPost @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  @@unique([postId, userIdKey])
+  @@map("post_saves")
+}
+
+/// Content moderation report from a reader (spam, misinformation, harassment…).
+model PostReport {
+  id        String    @id @default(cuid())
+  postId    String
+  userIdKey String
+  reason    String
+  note      String?
+  // Value copied at report time so the reported text survives edits.
+  snapshot  String?
+  resolved  Boolean   @default(false)
+  createdAt DateTime  @default(now())
+
+  post      ContentPost @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  @@index([postId])
+  @@index([resolved])
+  @@map("post_reports")
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  KAI NUVARI CONSERVATION / CFA INFORMATION HUB
+//  (methodologies, knowledge, resources — CFA hub PRD)
+// ═══════════════════════════════════════════════════════════════
+
+/// A standardized, modular methodology page (initially Jaza Miti &
+/// GTCI). The structure stays open so new methodologies can be added
+/// without rebuilding the platform.
+model Methodology {
+  id                      String   @id @default(cuid())
+  slug                    String   @unique
+  name                    String
+  shortDescription        String
+  purpose                 String
+  problemAddressed        String
+  howItWorks              String[]
+  activities              String[]
+  requiredData            String[]
+  participants            String[]
+  expectedOutcomes        String[]
+  conservationBenefits    String[]
+  economicValue           String?
+  verificationRequirements String
+  relatedResources        String[]
+  relatedCfas             String[]
+  featured                Boolean  @default(false)
+  /// KAI_CREATED | EXTERNAL | PARTNER — the hub never claims ownership of a
+  /// methodology unless that relationship genuinely exists.
+  ownerType               String   @default("EXTERNAL")
+  createdAt               DateTime @default(now())
+  updatedAt               DateTime @updatedAt
+
+  resources               Resource[]
+
+  @@index([featured])
+  @@map("methodologies")
+}
+
+/// Curated conservation knowledge article (basics, tree planting, species,
+/// nursery practice, restoration, biodiversity, conservation finance…).
+model KnowledgeArticle {
+  id                String   @id @default(cuid())
+  slug              String   @unique
+  category          String
+  title             String
+  summary           String
+  body              String
+  sourceAttribution String?
+  updatedAt         DateTime @updatedAt
+  createdAt         DateTime @default(now())
+
+  @@index([category])
+  @@map("knowledge_articles")
+}
+
+/// A tagged external or KAI-created learning resource, with attribution.
+model Resource {
+  id            String       @id @default(cuid())
+  title         String
+  kind          String       // GUIDE | MANUAL | PAPER | TRAINING | VIDEO | DOCUMENT
+  description   String?
+  url           String
+  sourceName    String
+  sourceType    String       @default("EXTERNAL") // KAI_CREATED | EXTERNAL
+  methodologyId String?
+  createdAt     DateTime     @default(now())
+
+  methodology   Methodology? @relation(fields: [methodologyId], references: [id], onDelete: SetNull)
+
+  @@map("resources")
+}
+
 // ── 2. MSME INTELLIGENT LEDGER ───────────────────────────────────
 
 model MsmeBusiness {
