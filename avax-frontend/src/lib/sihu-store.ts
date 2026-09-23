@@ -30,6 +30,9 @@ export interface Actor {
 // ── In-memory fallback ───────────────────────────────────────────
 interface MemPost extends ContentPost {
   comments: PostComment[];
+  likedByKeys?: Set<string>;
+  savedByKeys?: Set<string>;
+  reportsArr?: { reason: string; note: string | null; actor: string; at: string }[];
 }
 
 const mem = new Map<string, MemPost>();
@@ -641,11 +644,4 @@ async function uniqueSlugFromDb(title: string): Promise<string> {
     slug = `${base}-${n++}`;
   }
   return slug;
-}
-
-// Extend Memory-only engagement keys so the type system doesn't fight us.
-interface MemPost {
-  likedByKeys?: Set<string>;
-  savedByKeys?: Set<string>;
-  reportsArr?: { reason: string; note: string | null; actor: string; at: string }[];
 }
