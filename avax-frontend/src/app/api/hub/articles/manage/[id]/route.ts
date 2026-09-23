@@ -6,9 +6,9 @@ import type { PostDraftInput } from '@/lib/sihu-types';
 /**
  * SIHU author workflow endpoints (PRD Part A §2).
  *
- * PATCH /api/hub/articles/:id      — save changes to a DRAFT / CHANGES_REQUESTED post
- * POST  /api/hub/articles/:id/submit — move DRAFT / CHANGES_REQUESTED → SUBMITTED
- * POST  /api/hub/articles/:id/preview — run the AI editorial pre-review (never publishes)
+ * PATCH /api/hub/articles/manage/:id           — save changes to a DRAFT / CHANGES_REQUESTED post
+ * POST  /api/hub/articles/manage/:id (submit)  — move DRAFT / CHANGES_REQUESTED → SUBMITTED
+ * POST  /api/hub/articles/manage/:id (preview) — run the AI editorial pre-review (never publishes)
  */
 export async function PATCH(req: Request, ctx: { params: Promise<{ id: string }> }) {
   const { id } = await ctx.params;
