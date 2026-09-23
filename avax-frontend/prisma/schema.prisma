@@ -195,6 +195,22 @@ model Activity {
   @@map("activities")
 }
 
+/// Diagnostic record of every onboarding attempt, success or failure — no
+/// required KaiUser link, since the whole point is to capture the attempts
+/// that never produced one. Temporary: added to find why real sign-ins
+/// weren't landing in KaiUser; safe to drop once that's confirmed fixed.
+model OnboardAttemptLog {
+  id           String   @id @default(cuid())
+  privyUserId  String?
+  email        String?
+  outcome      String   // OK | REJECTED
+  reason       String?
+  createdAt    DateTime @default(now())
+
+  @@index([createdAt])
+  @@map("onboard_attempt_logs")
+}
+
 model Payment {
   id              String   @id @default(cuid())
   reference       String   @unique
