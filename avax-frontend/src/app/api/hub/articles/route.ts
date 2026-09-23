@@ -29,7 +29,7 @@ export async function POST(req: Request) {
   const post = await createDraft(
     {
       title,
-      summary: body.summary?.trim() || null,
+      summary: body.summary?.trim() || undefined,
       body: text,
       contentType: body.contentType ?? 'ARTICLE',
       category: body.category ?? 'COMMUNITY',

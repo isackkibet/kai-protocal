@@ -404,12 +404,12 @@ export async function preReview(id: string, actor: Actor): Promise<{ post: Conte
       const row = await prisma.contentPost.update({
         where: { id },
         data: {
-          aiReport: report as unknown as Prisma.JsonValue,
+          aiReport: report as unknown as Prisma.InputJsonValue,
           aiDisclosure: report.disclosure,
         },
       });
       await prisma.postRevision.create({
-        data: { postId: id, action: 'AI_REVIEWED', actorName: actor.name, snapshot: { report } },
+        data: { postId: id, action: 'AI_REVIEWED', actorName: actor.name, snapshot: { report } as unknown as Prisma.InputJsonValue },
       });
       return { post: mapPrismaPost(row), report };
     } catch {
