@@ -34,7 +34,7 @@ export async function POST(req: Request, ctx: { params: Promise<{ slug: string }
     return NextResponse.json({ error: 'Article not found.' }, { status: 404 });
   }
 
-  const { actor, authenticated } = await resolveActor(req, body.name, body.guestKey);
+  const { actor } = await resolveActor(req, body.name, body.guestKey);
   if (!actor) {
     return NextResponse.json({ error: 'Please sign in or provide a guest identifier.' }, { status: 401 });
   }
