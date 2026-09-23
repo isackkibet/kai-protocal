@@ -6,6 +6,25 @@ import { verifyPrivyUserId } from '@/lib/privy-server';
 type KaiUserWithWallets = Prisma.KaiUserGetPayload<{ include: { wallets: true } }>;
 
 /**
+ * Temporary diagnostic trail (OnboardAttemptLog) — records every onboarding
+ * attempt, success or failure, with the exact rejection reason. Added to
+ * find why real production sign-ins weren't producing KaiUser rows without
+ * needing Vercel dashboard/log access. Never throws — logging must not be
+ * able to block onboarding itself.
+ */
+async function logAttempt(data: { privyUserId?: string | null; email?: string | null; outcome: 'OK' | 'REJECTED'; reason?: string | null }) {
+  try {
+    const prisma = await getPrisma();
+    if (!prisma) return;
+    await prisma.onboardAttemptLog.create({
+      data: { privyUserId: data.privyUserId ?? null, email: data.email ?? null, outcome: data.outcome, reason: data.reason ?? null },
+    });
+  } catch {
+    /* diagnostic only — never blocks the real flow */
+  }
+}
+
+/**
  * /api/kai-bar/onboard  —  POST
  *
  * Called once after a successful Google login + embedded-wallet creation
@@ -37,11 +56,15 @@ export async function POST(req: Request) {
   try {
     body = await req.json();
   } catch {
+    await logAttempt({ outcome: 'REJECTED', reason: 'invalid-json-body' });
     return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
   }
 
+  const bodyEmailForLog = String(body?.email ?? '').trim().toLowerCase() || null;
+
   const verifiedPrivyUserId = await verifyPrivyUserId(req.headers.get('authorization'));
   if (!verifiedPrivyUserId) {
+    await logAttempt({ email: bodyEmailForLog, outcome: 'REJECTED', reason: 'privy-verification-failed' });
     return NextResponse.json({ error: 'Could not verify your session. Please sign in again.' }, { status: 401 });
   }
 
@@ -53,12 +76,16 @@ export async function POST(req: Request) {
   const authProvider = authProviderInput === 'GOOGLE' ? 'GOOGLE' : 'EMAIL';
 
   if (!email || !name) {
+    await logAttempt({ privyUserId, email, outcome: 'REJECTED', reason: `missing-fields (email=${!!email}, name=${!!name})` });
     return NextResponse.json({ error: 'email and name required' }, { status: 400 });
   }
   const hasValidAddress = /^0x[a-fA-F0-9]{40}$/.test(address);
 
   const prisma = await getPrisma();
-  if (!prisma) return NextResponse.json({ error: 'database unavailable' }, { status: 503 });
+  if (!prisma) {
+    await logAttempt({ privyUserId, email, outcome: 'REJECTED', reason: 'database-unavailable' });
+    return NextResponse.json({ error: 'database unavailable' }, { status: 503 });
+  }
 
   const referralCode = String(body.referralCode ?? '').trim().toUpperCase() || null;
 
@@ -271,6 +298,7 @@ export async function POST(req: Request) {
       }
     }
 
+    await logAttempt({ privyUserId, email, outcome: 'OK', reason: isNew ? 'created' : 'existing' });
     return NextResponse.json({
       ok: true,
       isNew,
@@ -283,6 +311,7 @@ export async function POST(req: Request) {
     });
   } catch (e: any) {
     console.error('[kai-bar/onboard] failed', e);
+    await logAttempt({ privyUserId, email, outcome: 'REJECTED', reason: `exception: ${String(e?.message ?? e).slice(0, 200)}` });
     return NextResponse.json({ error: 'Failed to onboard user' }, { status: 500 });
   }
 }
