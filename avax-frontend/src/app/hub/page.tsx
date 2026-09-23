@@ -7,12 +7,13 @@ import {
   Newspaper, Mic, BookOpen,
   Play, Pause, Heart, DollarSign,
   Search, RefreshCw, ChevronRight, Zap,
-  Leaf, TrendingUp, Eye,
+  Leaf, TrendingUp, Eye, Megaphone, Video, FileText, File, TreePine,
 } from 'lucide-react';
 import { usePrivyAuth } from '@/lib/privy-auth';
+import type { SihuContentType } from '@/lib/sihu-types';
 
 // ── Types ──────────────────────────────────────────────────────────────────
-type ContentType = 'ARTICLE' | 'FIELD_JOURNAL' | 'AUDIO_PODCAST' | 'MARKET_NEWS' | 'EDUCATIONAL_GUIDE';
+type ContentType = SihuContentType;
 type Category    = 'ALL' | 'FORESTRY_MRV' | 'MSME_GROWTH' | 'CHAMA_SAVINGS' | 'AGRI_MARKET';
 
 interface Post {
@@ -82,11 +83,16 @@ const CATEGORIES: { id: Category; label: string }[] = [
 ];
 
 const TYPE_CFG: Record<ContentType, { icon: React.ReactNode; label: string }> = {
-  ARTICLE:           { icon:<Newspaper size={11} />,  label:'Article' },
-  FIELD_JOURNAL:     { icon:<Leaf size={11} />,        label:'Journal' },
-  AUDIO_PODCAST:     { icon:<Mic size={11} />,         label:'Podcast' },
-  MARKET_NEWS:       { icon:<TrendingUp size={11} />,  label:'Market' },
-  EDUCATIONAL_GUIDE: { icon:<BookOpen size={11} />,    label:'Guide' },
+  ARTICLE:            { icon:<Newspaper size={11} />,  label:'Article' },
+  NEWS_UPDATE:        { icon:<Megaphone size={11} />,  label:'Update' },
+  FIELD_JOURNAL:      { icon:<Leaf size={11} />,        label:'Journal' },
+  MARKET_NEWS:        { icon:<TrendingUp size={11} />,  label:'Market' },
+  AUDIO_PODCAST:      { icon:<Mic size={11} />,         label:'Podcast' },
+  EDUCATIONAL_GUIDE:  { icon:<BookOpen size={11} />,    label:'Guide' },
+  VIDEO:              { icon:<Video size={11} />,       label:'Video' },
+  REPORT:             { icon:<FileText size={11} />,    label:'Report' },
+  DOCUMENT:           { icon:<File size={11} />,        label:'Document' },
+  CONSERVATION_IMPACT:{ icon:<TreePine size={11} />,    label:'Impact' },
 };
 
 function fmt(secs: number) {
@@ -129,7 +135,7 @@ function Stat({ icon, value, label, accent }: { icon: React.ReactNode; value: st
 
 // ── Post row (editorial, no box) ───────────────────────────────────────────
 function PostRow({ post, idx, onLike, onTip }: { post: Post; idx: number; onLike:(id:string)=>void; onTip:(p:Post)=>void }) {
-  const tc  = TYPE_CFG[post.contentType];
+  const tc  = TYPE_CFG[post.contentType] ?? TYPE_CFG.ARTICLE;
   const cat = CATEGORIES.find(c => c.id === post.category);
   const { playing, toggle } = useAudio(post.audioUrl);
   const isPodcast = post.contentType === 'AUDIO_PODCAST';
