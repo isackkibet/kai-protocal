@@ -205,3 +205,6 @@ npm --prefix avax-frontend run lint
 ## 📄 License
 
 ISC
+## Deploy
+
+This monorepo stores the hardhat contracts at the root and the Next.js app in `avax-frontend/`. Vercel uses the root `vercel.json` (`rootDirectory: avax-frontend`) to build the app. Create the pull-request/main branch and Vercel auto-deploys.
