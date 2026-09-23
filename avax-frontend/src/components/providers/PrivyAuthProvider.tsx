@@ -112,6 +112,22 @@ function PrivyAuthContextProvider({ children }: { children: React.ReactNode }) {
   const builtLogin = useCallback(() => login({ loginMethods: ['google'] }), [login]);
   const builtEmailLogin = useCallback(() => login({ loginMethods: ['email'] }), [login]);
 
+  // Temporary: report the raw client-side error to the server so it can be
+  // inspected without needing browser devtools access. Fire-and-forget,
+  // never throws, never blocks the caller.
+  const reportClientError = (event: string, message: string) => {
+    try {
+      void fetch('/api/diag/client-log', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ event, message }),
+        keepalive: true,
+      });
+    } catch {
+      /* diagnostic only */
+    }
+  };
+
   // Log the page the user was on before starting login, so that if Privy uses
   // its redirect-based OAuth flow (browser popup blocked, embedded/mobile
   // webview) the Google callback — which lands on the app root, the registered
@@ -254,11 +270,13 @@ function PrivyAuthContextProvider({ children }: { children: React.ReactNode }) {
         await new Promise((r) => setTimeout(r, 400));
         result = await syncToBackend();
       }
+      if (!result.ok) reportClientError('google-signin-no-throw-fail', String(result.reason ?? 'unknown'));
       return result;
     } catch (e: unknown) {
       const rawMsg = typeof e === 'object' && e !== null && 'message' in e
         ? String((e as { message: unknown }).message)
-        : '';
+        : String(e);
+      reportClientError('google-signin-catch', rawMsg);
       const msg = rawMsg.toLowerCase();
       if (msg.includes('cancelled') || msg.includes('rejected') || msg.includes('closed')) {
         return { ok: false, reason: 'login-cancelled', isNew: false };
@@ -283,11 +301,13 @@ function PrivyAuthContextProvider({ children }: { children: React.ReactNode }) {
         await new Promise((r) => setTimeout(r, 400));
         result = await syncToBackend();
       }
+      if (!result.ok) reportClientError('email-signin-no-throw-fail', String(result.reason ?? 'unknown'));
       return result;
     } catch (e: unknown) {
       const rawMsg = typeof e === 'object' && e !== null && 'message' in e
         ? String((e as { message: unknown }).message)
-        : '';
+        : String(e);
+      reportClientError('email-signin-catch', rawMsg);
       const msg = rawMsg.toLowerCase();
       if (msg.includes('cancelled') || msg.includes('rejected') || msg.includes('closed')) {
         return { ok: false, reason: 'login-cancelled', isNew: false };
