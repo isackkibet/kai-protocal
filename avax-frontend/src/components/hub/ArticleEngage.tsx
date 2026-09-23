@@ -320,10 +320,18 @@ const inputStyle: React.CSSProperties = {
   outline: 'none', fontFamily: 'inherit', minWidth: 0,
 };
 
+interface TipState {
+  open: boolean;
+  amount: string;
+  email: string;
+  status: string;
+  info: string;
+}
+
 function TipCard({ post, tip, setTip, onStart, onClose }: {
   post: ContentPost;
-  tip: { open: boolean; amount: string; email: string; status: string; info: string };
-  setTip: (t: any) => void;
+  tip: TipState;
+  setTip: React.Dispatch<React.SetStateAction<TipState>>;
   onStart: () => void;
   onClose: () => void;
 }) {
@@ -339,14 +347,14 @@ function TipCard({ post, tip, setTip, onStart, onClose }: {
 
         <div style={{ display: 'flex', gap: 8, marginBottom: 12 }}>
           {['50', '100', '250', '500'].map(a => (
-            <motion.button key={a} whileTap={{ scale: 0.94 }} onClick={() => setTip((t: any) => ({ ...t, amount: a }))} disabled={disabled}
+            <motion.button key={a} whileTap={{ scale: 0.94 }} onClick={() => setTip(t => ({ ...t, amount: a }))} disabled={disabled}
               style={{ flex: 1, padding: '11px 0', borderRadius: 8, border: 'none', cursor: 'pointer', background: tip.amount === a ? HUB_THEME.gold : 'rgba(255,255,255,0.05)', color: tip.amount === a ? HUB_THEME.ink : HUB_THEME.paperDim, fontWeight: 700, fontFamily: 'inherit' }}>
               KES {a}
             </motion.button>
           ))}
         </div>
-        <input value={tip.amount} onChange={e => setTip((t: any) => ({ ...t, amount: e.target.value }))} placeholder="Custom amount" disabled={disabled} style={inputStyle} />
-        <input value={tip.email} onChange={e => setTip((t: any) => ({ ...t, email: e.target.value }))} placeholder="Your email (for the receipt)" disabled={disabled} type="email" style={{ ...inputStyle, marginTop: 10 }} />
+        <input value={tip.amount} onChange={e => setTip(t => ({ ...t, amount: e.target.value }))} placeholder="Custom amount" disabled={disabled} style={inputStyle} />
+        <input value={tip.email} onChange={e => setTip(t => ({ ...t, email: e.target.value }))} placeholder="Your email (for the receipt)" disabled={disabled} type="email" style={{ ...inputStyle, marginTop: 10 }} />
 
         {tip.info && <p style={{ fontSize: 12, lineHeight: 1.5, color: tip.status === 'error' ? HUB_THEME.clay : HUB_THEME.goldLight, margin: '12px 0 0' }}>{tip.info}</p>}
 

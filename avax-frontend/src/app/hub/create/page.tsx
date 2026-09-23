@@ -33,7 +33,7 @@ const STATUS_STEPS: { status: ContentPost['status']; label: string }[] = [
 ];
 
 export default function CreatePage() {
-  const { authenticated, ready, signInWithEmail, getAccessToken, name } = usePrivyAuth();
+  const { authenticated, ready, signInWithEmail, getAccessToken } = usePrivyAuth();
 
   const [postId, setPostId] = useState<string | null>(null);
   const [title, setTitle] = useState('');
@@ -64,7 +64,18 @@ export default function CreatePage() {
     } catch { /* ignore */ }
   };
 
-  useEffect(() => { if (authenticated) loadMine(); }, [authenticated]);
+  useEffect(() => {
+    if (!authenticated) return;
+    void (async () => {
+      const t = await getAccessToken();
+      if (!t) return;
+      try {
+        const r = await fetch('/api/hub/articles', { headers: { Authorization: `Bearer ${t}` } });
+        const d = await r.json();
+        if (r.ok) setDrafts(d.posts ?? []);
+      } catch { /* ignore */ }
+    })();
+  }, [authenticated, getAccessToken]);
 
   const payload = (): PostDraftInput => ({
     title,

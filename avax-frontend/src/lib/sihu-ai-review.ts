@@ -66,11 +66,6 @@ function duplicatedSentences(text: string): { sentence: string; count: number }[
     .map(([s, c]) => ({ sentence: s.slice(0, 90), count: c }));
 }
 
-function countMissingExternalLinks(body: string): number {
-  const links = body.match(LINK) ?? [];
-  return links.length === 0 ? 1 : 0;
-}
-
 function citationScore(body: string): string[] {
   const mentions = (body.match(ATTRIBUTION) ?? []).length;
   const links = body.match(LINK) ?? [];

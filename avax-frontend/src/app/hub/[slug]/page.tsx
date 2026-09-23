@@ -3,7 +3,7 @@ import Link from 'next/link';
 import { ArrowLeft, ShieldCheck, Newspaper } from 'lucide-react';
 import { getBySlug } from '@/lib/sihu-store';
 import ArticleEngage from '@/components/hub/ArticleEngage';
-import { HUB_THEME, labelStyle, MONO, SERIF, SANS } from '@/lib/hub-theme';
+import { HUB_THEME, MONO, SERIF, SANS } from '@/lib/hub-theme';
 
 export const dynamic = 'force-dynamic';
 

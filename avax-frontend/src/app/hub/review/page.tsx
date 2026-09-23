@@ -2,13 +2,13 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import {
   ArrowLeft, Check, X, AlertTriangle, RefreshCw, Sparkles,
   Loader, MessageSquareWarning, ChevronDown, ChevronUp,
 } from 'lucide-react';
 import { usePrivyAuth } from '@/lib/privy-auth';
-import { HUB_THEME, labelStyle, MONO, SERIF, SANS } from '@/lib/hub-theme';
+import { HUB_THEME, MONO, SERIF } from '@/lib/hub-theme';
 import type { ContentPost } from '@/lib/sihu-types';
 
 export default function ReviewPage() {
@@ -41,7 +41,21 @@ export default function ReviewPage() {
     }
   };
 
-  useEffect(() => { if (authenticated) load(); }, [authenticated]);
+  useEffect(() => {
+    if (!authenticated) return;
+    void (async () => {
+      const b = await getAccessToken();
+      if (!b) return;
+      try {
+        const r = await fetch('/api/hub/editor', { headers: { Authorization: `Bearer ${b}` } });
+        const d = await r.json();
+        if (!r.ok) throw new Error(d.error || 'Could not load the review queue.');
+        setPosts(d.posts ?? []);
+      } catch {
+        setAuthMsg('Could not reach the review queue.');
+      }
+    })();
+  }, [authenticated, getAccessToken]);
 
   const decide = async (post: ContentPost, decision: 'PUBLISH' | 'REJECT' | 'REQUIRE_CHANGES') => {
     setBusy(post.id);
