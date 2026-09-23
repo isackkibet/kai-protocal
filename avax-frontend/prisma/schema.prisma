@@ -211,6 +211,20 @@ model OnboardAttemptLog {
   @@map("onboard_attempt_logs")
 }
 
+/// Temporary: raw client-side sign-in errors, captured before any request
+/// even reaches /api/kai-bar/onboard (popup blocked, Privy SDK throw, etc).
+/// Added alongside OnboardAttemptLog to find why real sign-ins produce zero
+/// trace anywhere server-side. Safe to drop once resolved.
+model ClientAuthErrorLog {
+  id        String   @id @default(cuid())
+  event     String   // e.g. google-signin-catch, email-signin-catch
+  message   String
+  createdAt DateTime @default(now())
+
+  @@index([createdAt])
+  @@map("client_auth_error_logs")
+}
+
 model Payment {
   id              String   @id @default(cuid())
   reference       String   @unique
