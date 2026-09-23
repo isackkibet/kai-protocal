@@ -11,7 +11,6 @@ import {
   Layers, Sparkles, Star, Timer, TrendingUp,
   UserPlus, Zap,
 } from 'lucide-react';
-import SDGImpactCard from '@/components/SDGImpactCard';
 
 /* Same editorial system as the rest of the app — pine + gold + paper,
    flat sections separated by a hairline, no card shells. This page used
@@ -470,11 +469,6 @@ export default function MinePage() {
                   )}
                 </AnimatePresence>
               </div>
-            </div>
-
-            {/* SDG IMPACT & EFFORT SCORE */}
-            <div style={{ marginTop:36, paddingTop:32, borderTop:`1px solid ${C.hairline}` }}>
-              <SDGImpactCard />
             </div>
 
             {/* COUNTDOWN */}
