@@ -20,6 +20,13 @@ type KaiUserWithWallets = Prisma.KaiUserGetPayload<{ include: { wallets: true } 
  * Idempotent: running it twice for the same Privy user is a no-op that just
  * returns the existing record.
  *
+ * The wallet address is attached when available but is NOT required to
+ * create the account — email-only participation must work (PRD: "wallet-
+ * optional"). Embedded-wallet provisioning can lag or fail after a person
+ * has already verified their email; requiring it here used to mean that
+ * person was never saved at all. The frontend calls this endpoint again once
+ * the wallet is ready, which attaches it to the already-created account.
+ *
  * Security (PRD 1 §12): the caller's Privy identity is verified server-side
  * against the bearer token, never trusted from the request body. Without this,
  * anyone could POST an arbitrary privyUserId to farm welcome bonuses or
@@ -42,13 +49,13 @@ export async function POST(req: Request) {
   const email = String(body.email ?? '').trim().toLowerCase();
   const name = String(body.name ?? '').trim();
   const address = String(body.address ?? '').trim();
+  const authProviderInput = String(body.authProvider ?? '').trim().toUpperCase();
+  const authProvider = authProviderInput === 'GOOGLE' ? 'GOOGLE' : 'EMAIL';
 
   if (!email || !name) {
     return NextResponse.json({ error: 'email and name required' }, { status: 400 });
   }
-  if (!/^0x[a-fA-F0-9]{40}$/.test(address)) {
-    return NextResponse.json({ error: 'A valid wallet address is required' }, { status: 400 });
-  }
+  const hasValidAddress = /^0x[a-fA-F0-9]{40}$/.test(address);
 
   const prisma = await getPrisma();
   if (!prisma) return NextResponse.json({ error: 'database unavailable' }, { status: 503 });
@@ -65,24 +72,28 @@ export async function POST(req: Request) {
     let isNew = false;
     if (!user) {
       user = await prisma.kaiUser.create({
-        data: { name, email, privyUserId },
+        data: { name, email, privyUserId, authProvider },
         include: { wallets: true },
       });
       isNew = true;
     }
 
-    // ── persist the wallet (create or update address) ──
+    // ── persist the wallet if a valid address is available yet (create or
+    // update). Not required to reach this point — a person is saved on email
+    // verification alone; the wallet attaches whenever it's ready. ──
     const existingWallet = user.wallets.find((w) => w.chain === 'AVALANCHE');
-    let wallet = existingWallet;
-    if (!existingWallet) {
-      wallet = await prisma.kaiWallet.create({
-        data: { userId: user.id, chain: 'AVALANCHE', address },
-      });
-    } else if (existingWallet.address !== address) {
-      wallet = await prisma.kaiWallet.update({
-        where: { id: existingWallet.id },
-        data: { address },
-      });
+    let wallet = existingWallet ?? null;
+    if (hasValidAddress) {
+      if (!existingWallet) {
+        wallet = await prisma.kaiWallet.create({
+          data: { userId: user.id, chain: 'AVALANCHE', address },
+        });
+      } else if (existingWallet.address !== address) {
+        wallet = await prisma.kaiWallet.update({
+          where: { id: existingWallet.id },
+          data: { address },
+        });
+      }
     }
 
     // ── +1000 WELCOME_BONUS exactly once ──

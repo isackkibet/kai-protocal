@@ -25,6 +25,9 @@ model KaiUser {
   updatedAt  DateTime    @updatedAt
   /// Privy user ID — the sole identity link, verified server-side on every request.
   privyUserId String?    @unique
+  /// How this account first signed up — EMAIL or GOOGLE. Set once at creation,
+  /// never overwritten, so membership growth can be broken down by channel.
+  authProvider String?
   /// Unique referral code shared with friends (PRD 2 §6), e.g. AUST92.
   referralCode String?   @unique
   /// Set to REVIEW / BLOCKED by anti-abuse tooling (PRD 2 §13).
