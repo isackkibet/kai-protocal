@@ -86,7 +86,7 @@ export default function CreatePage() {
     try {
       const b = await bearer();
       const url = postId
-        ? `/api/hub/articles/${postId}`
+        ? `/api/hub/articles/manage/${postId}`
         : '/api/hub/articles';
       const r = await fetch(url, {
         method: postId ? 'PATCH' : 'POST',
@@ -113,7 +113,7 @@ export default function CreatePage() {
     setMsg(null);
     try {
       const b = await bearer();
-      const r = await fetch(`/api/hub/articles/${postId}`, {
+      const r = await fetch(`/api/hub/articles/manage/${postId}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: b },
         body: JSON.stringify({ action: 'preview' }),
@@ -137,7 +137,7 @@ export default function CreatePage() {
     setMsg(null);
     try {
       const b = await bearer();
-      const r = await fetch(`/api/hub/articles/${postId}`, {
+      const r = await fetch(`/api/hub/articles/manage/${postId}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: b },
         body: JSON.stringify({ action: 'submit' }),
