@@ -43,7 +43,10 @@ export function PrivyAuthProvider({ children }: { children: React.ReactNode }) {
     <PrivyProvider
       appId={appId}
       config={{
-        loginMethods: ['email', 'google'],
+        // Only one of loginMethods / loginMethodsAndOrder may be set — Privy
+        // warns and its behavior is undefined otherwise (was silently
+        // breaking the Google login popup). loginMethodsAndOrder is the one
+        // that also lets us control button order, so it wins.
         loginMethodsAndOrder: { primary: ['email', 'google'] },
         appearance: {
           theme: 'dark',
