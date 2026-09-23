@@ -30,7 +30,7 @@ export async function PATCH(req: Request, ctx: { params: Promise<{ id: string }>
     id,
     {
       title,
-      summary: body.summary?.trim() ?? existing.summary,
+      summary: body.summary?.trim() ?? existing.summary ?? undefined,
       body: text,
       contentType: body.contentType ?? existing.contentType,
       category: body.category ?? existing.category,
