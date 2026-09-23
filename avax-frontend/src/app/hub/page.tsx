@@ -165,7 +165,15 @@ function PostRow({ post, idx, onLike, onTip }: { post: Post; idx: number; onLike
 
       {/* Title */}
       <h3 style={{ ...SERIF, fontSize: 26, fontWeight: 600, color: C.paper, margin: '0 0 10px', lineHeight: 1.3, maxWidth: 860 }}>
-        {post.title}
+        <Link href={`/hub/${post.slug}`} style={{ color: C.paper, textDecoration: 'none', transition: 'color 0.18s' }}
+          onMouseEnter={e => (e.currentTarget.style.color = C.goldLight)}
+          onMouseLeave={e => (e.currentTarget.style.color = C.paper)}>
+          {post.title}
+        </Link>
+        {' '}
+        <Link href={`/hub/${post.slug}`} style={{ ...MONO, fontSize: 11, letterSpacing: 1, textTransform: 'uppercase', color: C.goldLight, textDecoration: 'none' }}>
+          Read →
+        </Link>
       </h3>
 
       {/* Summary */}
