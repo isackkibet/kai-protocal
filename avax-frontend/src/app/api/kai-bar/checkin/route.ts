@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server';
 import { getPrisma } from '@/lib/db';
 import { verifyPrivyUserId } from '@/lib/privy-server';
+import { MiningTier } from '@prisma/client';
+import { awardXp } from '@/lib/mining-engine';
 
 /** Fallback daily-sign-in reward if no active DAILY_CHECKIN RewardTask row exists. */
 const DEFAULT_DAILY_POINTS = 10;
