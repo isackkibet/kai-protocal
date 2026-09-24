@@ -44,6 +44,10 @@ model KaiUser {
   receivedReferrals Referral[] @relation("Referred")
   forestMembership  ForestMember?
   whitelistEntry    WhitelistEntry?
+  miningStat      UserMiningStat?
+  miningXpEvents  MiningXpEvent[]
+  dailyClaims     DailyClaim[]
+  miningBalance   MiningBalance?
 
   @@map("kai_users")
 }
@@ -177,6 +181,96 @@ model WhitelistEntry {
 enum WhitelistJoin {
   SELF
   ADMIN
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  NUVARI V4 — HASH POWER ENGINE (DAILY CLAIM × MULTIPLIER)
+//  The "more active = more mining" mechanic. XP is awarded from the
+//  same verified, idempotent event pipeline as Kai Bar points, and
+//  drives a hypothesised Hash Power figure with decay; the daily claim
+//  is a floor amount scaled by Hash Power, capped, with a treasury cut.
+// ═══════════════════════════════════════════════════════════════
+
+/// Lifetime XP (never decays) and Hash Power (decays with inactivity) per
+/// user. Server-computed only — never accept a client-submitted value.
+model UserMiningStat {
+  id          String   @id @default(cuid())
+  userId      String   @unique
+  /// Never decreases — a permanent record of total earned XP.
+  lifetimeXP  Decimal  @default(0) @db.Decimal(38, 18)
+  /// Decays with inactivity — this is what multiplies daily claims.
+  hashPower   Decimal  @default(0) @db.Decimal(38, 18)
+  lastActiveAt DateTime?
+  updatedAt   DateTime @updatedAt
+
+  user        KaiUser  @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("user_mining_stats")
+}
+
+/// Append-only record of every XP award (audit + window computation).
+/// XP is awarded by the same onEventVerified-style hook as Kai Bar points,
+/// so it inherits the existing anti-farm idempotency rules.
+model MiningXpEvent {
+  id          String    @id @default(cuid())
+  userId      String
+  tier        MiningTier
+  amount      Int
+  source      String     // e.g. CHECKIN, TASK, PLANTING, SURVIVAL
+  referenceId String     // the upstream event id — prevents double-award
+  createdAt   DateTime  @default(now())
+
+  user        KaiUser   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, tier, source, referenceId])
+  @@index([userId, createdAt])
+  @@map("mining_xp_events")
+}
+
+/// One "Claim Drop" row per successful claim. Used for the 24h rolling
+/// cooldown (not calendar-day, unlike the older checkin guard).
+model DailyClaim {
+  id          String   @id @default(cuid())
+  userId      String
+  claimAmount Decimal  @db.Decimal(38, 18)
+  multiplier  Decimal  @db.Decimal(38, 18)
+  hashPower   Decimal  @db.Decimal(38, 18)
+  claimedAt   DateTime @default(now())
+
+  user        KaiUser  @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, claimedAt])
+  @@map("daily_claims")
+}
+
+/// Off-chain running balance of minted NVR credited to a user via claims.
+model MiningBalance {
+  id        String   @id @default(cuid())
+  userId    String   @unique
+  amount    Decimal  @default(0) @db.Decimal(38, 18)
+  updatedAt DateTime @updatedAt
+
+  user      KaiUser  @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("mining_balances")
+}
+
+/// System-wide totals (spec §2): minted supply and the treasury skim.
+/// Settlement to on-chain batches is out of scope for v4 (existing
+/// KAIAirdropVault covers on-chain), these are the off-chain rolling totals.
+model MiningSystemTotals {
+  id             String   @id @default("singleton")
+  mintedSupply   Decimal  @default(0) @db.Decimal(38, 18)
+  treasuryReserve Decimal @default(0) @db.Decimal(38, 18)
+  updatedAt      DateTime @updatedAt
+
+  @@map("mining_system_totals")
+}
+
+enum MiningTier {
+  TIER_0
+  TIER_1
+  TIER_2
 }
 
 /// An audit-style record of important user actions on the KAI platform.
