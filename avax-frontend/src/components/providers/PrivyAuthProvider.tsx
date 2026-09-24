@@ -53,7 +53,7 @@ export function PrivyAuthProvider({ children }: { children: React.ReactNode }) {
           accentColor: '#10b981',
         },
         embeddedWallets: {
-          ethereum: { createOnLogin: 'all-users' },
+          ethereum: { createOnLogin: 'off' },
         },
         defaultChain: avalancheFuji,
         supportedChains: [avalancheFuji],
