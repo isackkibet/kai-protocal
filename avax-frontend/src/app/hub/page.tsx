@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
@@ -10,6 +10,12 @@ import {
   Compass, Eye
 } from 'lucide-react';
 import { HUB_THEME, labelStyle, MONO, SERIF, SANS } from '@/lib/hub-theme';
+
+// Same env vars BottomNav.tsx uses — set NEXT_PUBLIC_SIHU_URL /
+// NEXT_PUBLIC_OLOOLUA_URL once real deployed URLs exist, and every link
+// below updates from that one place instead of 15+ scattered hardcodes.
+const SIHU_BASE = process.env.NEXT_PUBLIC_SIHU_URL || 'http://localhost:3000';
+const OLOOLUA_BASE = process.env.NEXT_PUBLIC_OLOOLUA_URL || 'http://localhost:3002';
 
 interface HubEndpoint {
   id: 'sihu' | 'oloolua';
@@ -32,40 +38,40 @@ const HUBS: HubEndpoint[] = [
     tagline: 'Decentralized Community Journalism & Knowledge Dissemination',
     desc: 'Pre-built dedicated news service with full editorial workflow: 7 PRD roles (Chairperson, Secretary, Treasurer, Editor, Contributor), automated AI pre-review verification, contributor dashboard, and editorial queue.',
     port: 3000,
-    url: 'http://localhost:3000/portal',
+    url: `${SIHU_BASE}/portal`,
     accent: HUB_THEME.gold,
     features: [
       {
         title: 'Story Submission & Authoring',
         desc: 'Submit articles, field journals, or guides with structured citations and real-time validation.',
-        url: 'http://localhost:3000/portal/submit',
+        url: `${SIHU_BASE}/portal/submit`,
       },
       {
         title: '7 PRD Governance Roles & RBAC',
         desc: 'Role-based access matrix for Chairperson, Secretary, Treasurer, Editor, Verified Contributor, and Readers.',
-        url: 'http://localhost:3000/portal/contributor',
+        url: `${SIHU_BASE}/portal/contributor`,
       },
       {
         title: 'Automated AI Pre-Review Service',
         desc: 'Instant pre-flight audit for plagiarism risk, citation completeness, and AI generation confidence before review.',
-        url: 'http://localhost:3000/portal/submit',
+        url: `${SIHU_BASE}/portal/submit`,
       },
       {
         title: 'Editorial Review & Moderation Queue',
         desc: 'Inspect submitted drafts, analyze AI audit scores, request revisions, or approve and publish to the live feed.',
-        url: 'http://localhost:3000/admin/review',
+        url: `${SIHU_BASE}/admin/review`,
       },
       {
         title: 'Live News Portal Feed',
         desc: 'Curated ecosystem articles, verified publications, market commentary, and community podcasts.',
-        url: 'http://localhost:3000/portal',
+        url: `${SIHU_BASE}/portal`,
       },
     ],
     actions: [
-      { label: 'Open SIHU Portal', url: 'http://localhost:3000/portal', primary: true, external: true },
-      { label: 'Submit Story', url: 'http://localhost:3000/portal/submit', external: true },
-      { label: 'Contributor Dashboard', url: 'http://localhost:3000/portal/contributor', external: true },
-      { label: 'Editorial Review Queue', url: 'http://localhost:3000/admin/review', external: true },
+      { label: 'Open SIHU Portal', url: `${SIHU_BASE}/portal`, primary: true, external: true },
+      { label: 'Submit Story', url: `${SIHU_BASE}/portal/submit`, external: true },
+      { label: 'Contributor Dashboard', url: `${SIHU_BASE}/portal/contributor`, external: true },
+      { label: 'Editorial Review Queue', url: `${SIHU_BASE}/admin/review`, external: true },
     ],
   },
   {
@@ -75,18 +81,18 @@ const HUBS: HubEndpoint[] = [
     tagline: 'Community Forest Association (CFA) & Nature Conservation',
     desc: 'Pre-built community conservation management platform. Tracks indigenous tree seedlings, nursery operations, community guardians, and field conservation methodologies.',
     port: 3002,
-    url: 'http://localhost:3002',
+    url: OLOOLUA_BASE,
     accent: '#10B981',
     features: [
       {
         title: 'Seedlings & Nursery Management',
         desc: 'Real-time inventory of indigenous and exotic species ready for community planting.',
-        url: 'http://localhost:3002/seedlings.html',
+        url: `${OLOOLUA_BASE}/seedlings.html`,
       },
       {
         title: 'Guardian Member Dashboard',
         desc: 'Community guardian profiles, forest patrols, and conservation activity tracking.',
-        url: 'http://localhost:3002/member-dashboard.html',
+        url: `${OLOOLUA_BASE}/member-dashboard.html`,
       },
       {
         title: 'Conservation Methodologies',
@@ -102,9 +108,9 @@ const HUBS: HubEndpoint[] = [
       },
     ],
     actions: [
-      { label: 'Open Oloolua Hub', url: 'http://localhost:3002', primary: true, external: true },
-      { label: 'Seedlings Registry', url: 'http://localhost:3002/seedlings.html', external: true },
-      { label: 'Member Dashboard', url: 'http://localhost:3002/member-dashboard.html', external: true },
+      { label: 'Open Oloolua Hub', url: OLOOLUA_BASE, primary: true, external: true },
+      { label: 'Seedlings Registry', url: `${OLOOLUA_BASE}/seedlings.html`, external: true },
+      { label: 'Member Dashboard', url: `${OLOOLUA_BASE}/member-dashboard.html`, external: true },
       { label: 'In-App Conservation Layer', url: '/conservation', internal: true },
     ],
   },
@@ -121,10 +127,10 @@ export default function HubPage() {
   const checkServers = async () => {
     setIsChecking(true);
     const updated: { [port: number]: boolean } = {};
-    for (const port of [3000, 3002]) {
+    for (const [port, base] of [[3000, SIHU_BASE], [3002, OLOOLUA_BASE]] as const) {
       try {
-        const res = await fetch(`http://localhost:${port}`, { mode: 'no-cors' });
-        // mode: 'no-cors' succeeds if server is listening and accepts connections
+        await fetch(base, { mode: 'no-cors' });
+        // mode: 'no-cors' succeeds if the endpoint is listening and accepts connections
         updated[port] = true;
       } catch {
         updated[port] = false;
@@ -134,11 +140,10 @@ export default function HubPage() {
     setIsChecking(false);
   };
 
-  useEffect(() => {
-    checkServers();
-    const interval = setInterval(checkServers, 15000);
-    return () => clearInterval(interval);
-  }, []);
+  // Status is manual-only now (the refresh button below triggers checkServers)
+  // — this used to auto-poll every 15s against literal localhost URLs from
+  // every visitor's own browser, which can never succeed for a real visitor
+  // and spammed ERR_CONNECTION_REFUSED into the console indefinitely.
 
   return (
     <main style={{
@@ -448,7 +453,7 @@ export default function HubPage() {
           </div>
           <div style={{ display: 'flex', gap: 8 }}>
             <a
-              href="http://localhost:3000/portal/submit"
+              href={`${SIHU_BASE}/portal/submit`}
               target="_blank"
               rel="noreferrer"
               style={{
@@ -461,7 +466,7 @@ export default function HubPage() {
               Write Story (SIHU) ↗
             </a>
             <a
-              href="http://localhost:3000/admin/review"
+              href={`${SIHU_BASE}/admin/review`}
               target="_blank"
               rel="noreferrer"
               style={{
