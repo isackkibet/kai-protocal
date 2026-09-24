@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server';
 import { getPrisma } from '@/lib/db';
 import { verifyPrivyUserId } from '@/lib/privy-server';
+import { MiningTier } from '@prisma/client';
+import { awardXp } from '@/lib/mining-engine';
 
 /**
  * /api/kai-bar/tasks/complete  —  POST
@@ -81,6 +83,14 @@ export async function POST(req: Request) {
         },
       }),
     ]);
+
+    // Nuvari v4 §3.2 — genuine engagement maps to TIER_1 XP.
+    // Idempotent by (user, tier, source, referenceId=taskId).
+    try {
+      await awardXp({ prisma, userId: user.id, tier: MiningTier.TIER_1, source: 'TASK', referenceId: taskId });
+    } catch (e) {
+      console.error('[kai-bar/tasks/complete] awardXp failed', e); // XP is best-effort
+    }
 
     return NextResponse.json({ ok: true, earned: task.rewardAmount, entry: ledger.id });
   } catch (e: unknown) {
