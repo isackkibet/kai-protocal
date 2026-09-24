@@ -152,7 +152,7 @@ export async function claimDrop(prisma: PrismaClient, userId: string): Promise<
   const hashPower = liveHashPower(toNum(stat?.hashPower), stat?.lastActiveAt ?? null);
   const multiplier = claimMultiplier(hashPower, HP_NORMALIZATION, HP_MULTIPLIER_CAP);
   const claimAmount = +(BASE_DAILY_CLAIM * multiplier).toFixed(4);
-  const { userAmount, treasuryAmount } = applyTreasuryCut(claimAmount, CLAIM_TREASURY_CUT);
+  const { userAmount } = applyTreasuryCut(claimAmount, CLAIM_TREASURY_CUT);
 
   const gate = await canMint(prisma, claimAmount);
   if (!gate.ok) {

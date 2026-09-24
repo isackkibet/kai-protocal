@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server';
 import { getPrisma } from '@/lib/db';
 import { verifyPrivyUserId } from '@/lib/privy-server';
 import { getOrCreateDefaultForest } from '@/lib/cfa';
+import { MiningTier } from '@prisma/client';
+import { awardXp } from '@/lib/mining-engine';
 
 /** Kai Bar points credited for a verified planting submission — change here (KAI Nuvari PRD §3). */
 const PLANTING_POINTS = 20;
@@ -105,6 +107,14 @@ export async function POST(req: Request) {
         prisma.plantingRecord.update({ where: { id: record.id }, data: { pointsAwarded: true } }),
       ]);
       pointsEarned = PLANTING_POINTS;
+
+      // Nuvari v4 §3.2 — verified ecological work maps to TIER_2 XP.
+      // Idempotent by (user, tier, source, referenceId=record.id).
+      try {
+        await awardXp({ prisma, userId: member.kaiUserId!, tier: MiningTier.TIER_2, source: 'PLANTING', referenceId: record.id });
+      } catch (e) {
+        console.error('[cfa/planting] awardXp failed', e); // XP is best-effort
+      }
     }
 
     return NextResponse.json({ ok: true, record, pointsEarned });

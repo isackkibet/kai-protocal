@@ -62,6 +62,21 @@ export async function POST(req: Request) {
       }),
     ]);
 
+    // Nuvari v4 §3.2 — award Hash Power XP for this verified daily event
+    // (TIER_0: presence). Idempotent by (user, tier, source, referenceId).
+    try {
+      await awardXp({
+        prisma,
+        userId: user.id,
+        tier: MiningTier.TIER_0,
+        source: 'CHECKIN',
+        referenceId: `checkin:${now.toISOString().slice(0, 10)}`,
+        at: now,
+      });
+    } catch (e) {
+      console.error('[kai-bar/checkin] awardXp failed', e); // XP is best-effort, don't block the claim
+    }
+
     return NextResponse.json({ ok: true, earned: points, entry: ledger.id });
   } catch (e: unknown) {
     console.error('[kai-bar/checkin] failed', e);

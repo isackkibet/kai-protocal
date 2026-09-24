@@ -96,6 +96,10 @@ export default function MinePage() {
   const [claimed,    setClaimed]    = useState(false);
   const [claiming,   setClaiming]   = useState(false);
   const [countdown,  setCountdown]  = useState(86400);
+  const [hashPower,  setHashPower]  = useState(0);
+  const [lifetimeXP, setLifetimeXP] = useState(0);
+  const [nextClaim,  setNextClaim]  = useState(10);
+  const [multiplier, setMultiplier] = useState(1);
   const [joinedWait, setJoinedWait] = useState(false);
   const [joiningWait,setJoiningWait]= useState(false);
   const [wlMsg,      setWlMsg]      = useState('');
@@ -122,10 +126,30 @@ export default function MinePage() {
     return () => clearInterval(id);
   }, [agentOn]);
 
-  const pts = doneTasks.length * 5 + (claimed ? 10 : 0);
+  /* Load real mining status once signed in (spec Phase 2: /mine claims real API). */
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const token = await privy.getAccessToken();
+      if (!token) return;
+      const r = await fetch('/api/mine/claim', { headers: { authorization: `Bearer ${token}` } });
+      if (!r.ok || cancelled) return;
+      const d = await r.json();
+      if (cancelled) return;
+      setClaimed(!d.canClaimNow);
+      setCountdown(d.remainingSeconds ?? 86400);
+      setHashPower(Number(d.hashPower ?? 0));
+      setLifetimeXP(Number(d.lifetimeXP ?? 0));
+      setNextClaim(Number(d.projectedNextClaim ?? 10));
+      setMultiplier(Number(d.multiplier ?? 1));
+    })();
+    return () => { cancelled = true; };
+  }, [privy]);
+
+  const pts = Math.round(lifetimeXP);
   const displayPts = useCountUp(pts);
   /* Streak stays honest: it starts at 0 and only ticks once you engage. */
-  const streak = claimed || doneTasks.length > 0 ? 1 : 0;
+  const streak = claimed || privy.authenticated ? 1 : 0;
 
   const fmt = (s:number) => {
     const h   = Math.floor(s/3600).toString().padStart(2,'0');
@@ -135,13 +159,27 @@ export default function MinePage() {
   };
 
   const claim = async () => {
-    if (!isConnected) { setShowModal(true); return; }
+    if (!privy.authenticated) { setShowModal(true); return; }
     setClaiming(true);
-    await new Promise(r => setTimeout(r,1400));
-    setTokenBalance('nvr', useKaivaxStore.getState().balances.nvr + 10);
-    setClaimed(true); setClaiming(false);
-    setHeroMsg('10 NVR added to your wallet.');
-    setTimeout(() => setHeroMsg(''), 4000);
+    try {
+      const token = await privy.getAccessToken();
+      if (!token) throw new Error('no-token');
+      const r = await fetch('/api/mine/claim', { method: 'POST', headers: { 'Content-Type': 'application/json', authorization: `Bearer ${token}` } });
+      const d = await r.json();
+      if (!r.ok) { setHeroMsg(String(d.error ?? 'Claim failed — try again')); setTimeout(() => setHeroMsg(''), 5000); return; }
+      setClaimed(true);
+      setClaiming(false);
+      setCountdown(86400);
+      setNextClaim(Number(d.projectedNextClaim ?? d.claimAmount ?? nextClaim));
+      if (d.multiplier) setMultiplier(Number(d.multiplier));
+      if (d.hashPower != null) setHashPower(Number(d.hashPower));
+      setHeroMsg(`${d.claimAmount} NVR claimed${multiplier > 1 ? ` (${multiplier.toFixed(2)}× hash-power bonus)` : ''}.`);
+    } catch {
+      setHeroMsg('Network error — try again');
+    } finally {
+      setClaiming(false);
+      setTimeout(() => setHeroMsg(''), 5000);
+    }
   };
 
   const doTask = (id:string, reward:number, unit:string) => {
@@ -192,15 +230,15 @@ export default function MinePage() {
           </p>
 
           <h1 style={{ ...SERIF, fontSize:'clamp(30px,4vw,42px)', fontWeight:700, letterSpacing:'-1px', lineHeight:1.1, color:C.paper, margin:'0 0 14px' }}>
-            Claim <span style={{ color:C.goldLight }}>10 NVR</span> daily
+            Claim <span style={{ color:C.goldLight }}>{Math.max(10, Math.round(nextClaim))} NVR</span> daily
           </h1>
           <p style={{ fontSize:15, lineHeight:1.65, color:C.inkLight, margin:'0 auto', maxWidth:440 }}>
-            Complete tasks to earn <span style={{ color:C.paper, fontWeight:700 }}>Kai Bar points</span> toward the <span style={{ color:C.paper, fontWeight:700 }}>KAI airdrop</span>.
+            Your claim scales with <span style={{ color:C.paper, fontWeight:700 }}>Hash Power</span> — the more you engage, the more you mine. <span style={{ color:C.paper, fontWeight:700 }}>365×1 NVR</span> floor for everyone.
           </p>
 
           <p style={{ marginTop:18, fontSize:13, fontWeight:500, color:C.inkLight }}>
-            <span style={{ ...MONO, fontSize:19, fontWeight:700, color:C.goldLight }}>{displayPts} pts</span>
-            &ensp;·&ensp;<span style={MONO}>{streak}-day streak</span>&ensp;·&ensp;<span style={MONO}>{doneTasks.length}/{TASKS.length} today</span>
+            <span style={{ ...MONO, fontSize:19, fontWeight:700, color:C.goldLight }}>{displayPts} XP</span>
+            &ensp;·&ensp;<span style={MONO}>{hashPower.toFixed(1)} hash</span>&ensp;·&ensp;<span style={MONO}>{multiplier.toFixed(2)}× next claim</span>
           </p>
 
           <div style={{ display:'flex', justifyContent:'center', alignItems:'center', gap:14, flexWrap:'wrap', marginTop:26 }}>
@@ -219,7 +257,7 @@ export default function MinePage() {
                 ? <><Clock size={18} style={{ animation:'spin 1s linear infinite' }}/> Processing…</>
                 : claimed
                   ? <><CheckCircle size={18}/> Claimed · next in <span style={MONO}>{fmt(countdown)}</span></>
-                  : <><Gift size={18}/> Claim 10 NVR</>
+                  : <><Gift size={18}/> Claim {Math.max(10, Math.round(nextClaim))} NVR</>
               }
             </motion.button>
             <Link href="/kai-bar" style={{ fontSize:13.5, fontWeight:600, color:C.goldLight, textDecoration:'none' }}>

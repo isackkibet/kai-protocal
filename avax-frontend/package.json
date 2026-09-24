@@ -8,6 +8,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
+    "test:mining": "node --test src/lib/mining-engine.test.ts",
     "tokens:compile": "hardhat compile",
     "tokens:deploy:fuji": "hardhat run scripts/deploy-ecosystem-tokens.cjs --network fuji"
   },
