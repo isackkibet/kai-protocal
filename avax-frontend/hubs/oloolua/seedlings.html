@@ -1,0 +1,972 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>Oloolua Forest Nursery | Tree Species & Uses</title>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;1,400&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        :root {
+            --forest-deep: #0b2e14;
+            --forest-mid: #174823;
+            --forest-light: #2a6040;
+            --canopy: #3d7a52;
+            --leaf: #5da06e;
+            --pale-green: #d6ead9;
+            --cream: #faf5e8;
+            --gold: #c9a227;
+            --gold-light: #e8c96a;
+            --bark: #7a5c38;
+            --text-dark: #131f14;
+            --text-mid: #334a34;
+            --text-muted: #617060;
+            --card-bg: #ffffff;
+            --border: #daebd9;
+            --warning: #b04a1e;
+            --warning-bg: #fdf0eb;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'DM Sans', sans-serif;
+            background: var(--cream);
+            color: var(--text-dark);
+            line-height: 1.6;
+        }
+
+        /* ── NAV BAR (Minimal integration) ── */
+        .simple-nav {
+            background: var(--forest-deep);
+            padding: 1rem 2rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+        .simple-nav a {
+            color: white;
+            text-decoration: none;
+            font-size: 0.9rem;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            transition: color 0.2s;
+        }
+        .simple-nav a:hover {
+            color: var(--gold-light);
+        }
+        .simple-nav .logo {
+            font-family: 'Playfair Display', serif;
+            font-size: 1.2rem;
+            font-weight: 700;
+        }
+
+        /* ── HERO ── */
+        .hero {
+            background: var(--forest-deep);
+            color: white;
+            padding: 4rem 2rem 3rem;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .hero::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background:
+                radial-gradient(ellipse 60% 40% at 20% 80%, rgba(61,122,82,0.25) 0%, transparent 60%),
+                radial-gradient(ellipse 50% 60% at 80% 20%, rgba(93,160,110,0.15) 0%, transparent 55%);
+            pointer-events: none;
+        }
+
+        .hero-eyebrow {
+            font-size: 0.75rem;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            color: var(--gold-light);
+            font-weight: 600;
+            margin-bottom: 1rem;
+        }
+
+        .hero h1 {
+            font-family: 'Playfair Display', serif;
+            font-size: clamp(2.2rem, 5vw, 3.5rem);
+            font-weight: 700;
+            letter-spacing: -0.02em;
+            margin-bottom: 0.5rem;
+            line-height: 1.1;
+        }
+
+        .hero h1 em {
+            color: var(--gold-light);
+            font-style: italic;
+        }
+
+        .hero-sub {
+            max-width: 640px;
+            margin: 1rem auto 0;
+            font-size: 1.05rem;
+            opacity: 0.85;
+            font-weight: 300;
+        }
+
+        .hero-badges {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.6rem;
+            justify-content: center;
+            margin-top: 2rem;
+        }
+
+        .hero-badge {
+            background: rgba(255,255,255,0.1);
+            border: 1px solid rgba(255,255,255,0.2);
+            color: white;
+            padding: 0.4rem 1.1rem;
+            border-radius: 40px;
+            font-size: 0.82rem;
+            font-weight: 500;
+            backdrop-filter: blur(4px);
+        }
+
+        .hero-badge.gold {
+            background: var(--gold);
+            border-color: var(--gold);
+            color: var(--forest-deep);
+            font-weight: 700;
+        }
+
+        /* ── FILTER BAR ── */
+        .filter-bar {
+            background: white;
+            padding: 1rem 1.5rem;
+            position: sticky;
+            top: 0;
+            z-index: 50;
+            box-shadow: 0 2px 16px rgba(0,0,0,0.07);
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 0.5rem;
+            border-bottom: 2px solid var(--border);
+        }
+
+        .filter-btn {
+            background: var(--pale-green);
+            border: 1.5px solid transparent;
+            padding: 0.45rem 1.1rem;
+            border-radius: 40px;
+            font-weight: 500;
+            font-size: 0.82rem;
+            cursor: pointer;
+            transition: all 0.18s ease;
+            color: var(--forest-mid);
+            font-family: inherit;
+            letter-spacing: 0.2px;
+        }
+
+        .filter-btn.active {
+            background: var(--forest-mid);
+            color: white;
+            border-color: var(--forest-mid);
+            box-shadow: 0 2px 10px rgba(23,72,35,0.3);
+        }
+
+        .filter-btn:hover:not(.active) {
+            background: #c4dfc7;
+            border-color: var(--canopy);
+            transform: translateY(-1px);
+        }
+
+        /* ── GRID ── */
+        .container {
+            max-width: 1440px;
+            margin: 0 auto;
+            padding: 2.5rem 1.5rem;
+        }
+
+        .section-label {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        .section-label h2 {
+            font-family: 'Playfair Display', serif;
+            font-size: 1.6rem;
+            color: var(--forest-mid);
+        }
+
+        .section-label p {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+            margin-top: 0.3rem;
+        }
+
+        .trees-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(370px, 1fr));
+            gap: 1.8rem;
+        }
+
+        /* ── CARD ── */
+        .tree-card {
+            background: var(--card-bg);
+            border-radius: 20px;
+            overflow: hidden;
+            box-shadow: 0 4px 20px rgba(11,46,20,0.07);
+            transition: transform 0.22s ease, box-shadow 0.22s ease;
+            display: flex;
+            flex-direction: column;
+            border: 1px solid var(--border);
+        }
+
+        .tree-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 16px 36px rgba(11,46,20,0.12);
+        }
+
+        .card-header {
+            padding: 1.4rem 1.5rem 1rem;
+            border-bottom: 1px solid var(--border);
+            position: relative;
+        }
+
+        .card-header-bg {
+            position: absolute;
+            inset: 0;
+            opacity: 0.06;
+            background: var(--forest-light);
+        }
+
+        .card-header > * { position: relative; }
+
+        .common-name {
+            font-family: 'Playfair Display', serif;
+            font-size: 1.55rem;
+            font-weight: 700;
+            color: var(--forest-deep);
+            letter-spacing: -0.01em;
+            line-height: 1.2;
+            margin-bottom: 0.2rem;
+        }
+
+        .scientific-name {
+            font-size: 0.87rem;
+            font-style: italic;
+            color: var(--text-muted);
+            font-weight: 400;
+            margin-bottom: 0.6rem;
+        }
+
+        .tag-group {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.4rem;
+            margin-top: 0.5rem;
+        }
+
+        .tag {
+            padding: 0.18rem 0.7rem;
+            border-radius: 30px;
+            font-size: 0.68rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .tag-medicinal   { background: #e8f5e0; color: #2d6b25; border: 1px solid #bce0aa; }
+        .tag-timber      { background: #f5ecd9; color: #7a4e18; border: 1px solid #e8c98a; }
+        .tag-food        { background: #fff0e0; color: #9c5a10; border: 1px solid #f5c88a; }
+        .tag-fodder      { background: #e8f0ff; color: #2a4d9c; border: 1px solid #b0c8f0; }
+        .tag-ornamental  { background: #fce8f5; color: #8c2d6e; border: 1px solid #e8a8d8; }
+        .tag-default     { background: var(--pale-green); color: var(--text-mid); border: 1px solid var(--border); }
+
+        /* ── CARD BODY ── */
+        .card-body {
+            padding: 1.4rem 1.5rem;
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 1.1rem;
+        }
+
+        .use-section {
+            border-left: 3px solid var(--pale-green);
+            padding-left: 0.9rem;
+        }
+
+        .use-title {
+            font-weight: 600;
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            color: var(--text-muted);
+            margin-bottom: 0.4rem;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .use-text {
+            color: var(--text-mid);
+            font-size: 0.92rem;
+            line-height: 1.55;
+        }
+
+        .use-text ul {
+            margin-top: 0.3rem;
+            padding-left: 1.1rem;
+        }
+
+        .use-text li {
+            margin-bottom: 0.25rem;
+        }
+
+        /* ── SPECIAL NOTES ── */
+        .eco-note {
+            background: #f0f8ec;
+            border-radius: 10px;
+            padding: 0.65rem 0.9rem;
+            font-size: 0.83rem;
+            color: #2b5c28;
+            font-weight: 500;
+            line-height: 1.4;
+        }
+
+        .warning-note {
+            background: var(--warning-bg);
+            border-radius: 10px;
+            padding: 0.65rem 0.9rem;
+            font-size: 0.83rem;
+            color: var(--warning);
+            font-weight: 500;
+            line-height: 1.4;
+        }
+
+        .correction-note {
+            background: #fff8e0;
+            border: 1px solid #e8cc80;
+            border-radius: 10px;
+            padding: 0.55rem 0.85rem;
+            font-size: 0.78rem;
+            color: #7a5a10;
+            font-style: italic;
+            line-height: 1.4;
+        }
+
+        /* ── DIVIDER ── */
+        .card-divider {
+            height: 1px;
+            background: var(--border);
+            margin: 0.2rem 0;
+        }
+
+        /* ── FOOTER ── */
+        .footer {
+            background: var(--forest-deep);
+            color: #a8c8a8;
+            text-align: center;
+            padding: 2.5rem 2rem;
+            margin-top: 4rem;
+            font-size: 0.85rem;
+        }
+
+        .footer-logo {
+            font-family: 'Playfair Display', serif;
+            font-size: 1.2rem;
+            color: white;
+            margin-bottom: 0.5rem;
+        }
+
+        .footer-links {
+            display: flex;
+            gap: 1.5rem;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin: 1rem 0;
+            opacity: 0.7;
+        }
+
+        .count-badge {
+            display: inline-block;
+            background: var(--forest-light);
+            color: white;
+            padding: 0.2rem 0.8rem;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            margin-left: 0.5rem;
+        }
+
+        /* Hidden when filtered */
+        .tree-card.hidden { display: none; }
+
+        @media (max-width: 700px) {
+            .hero h1 { font-size: 2rem; }
+            .trees-grid { grid-template-columns: 1fr; }
+            .filter-bar { gap: 0.4rem; padding: 0.75rem 1rem; }
+            .filter-btn { padding: 0.4rem 0.85rem; font-size: 0.75rem; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- KAI Nuvari Ecosystem Integration Bar -->
+    <div style="background: #0B1C14; color: #F6F2E7; font-size: 12px; padding: 7px 20px; border-bottom: 1px solid rgba(200, 155, 60, 0.25); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; font-family: 'DM Sans', sans-serif;">
+        <div style="display: flex; align-items: center; gap: 8px;">
+            <span style="color: #E4C878; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;">KAI Nuvari Ecosystem</span>
+            <span style="opacity: 0.4;">·</span>
+            <span>Pilot CFA Nursery Catalog (Jaza Miti & GTCI Standard)</span>
+        </div>
+        <div style="display: flex; align-items: center; gap: 14px;">
+            <a href="http://localhost:3000/conservation/methodologies/jaza-miti" target="_blank" style="color: #E4C878; text-decoration: none; font-weight: 600;">Jaza Miti Protocol →</a>
+            <a href="http://localhost:3000/conservation/methodologies/green-tree-commodities-initiative" target="_blank" style="color: #A0C4B4; text-decoration: none;">GTCI Lifecycle</a>
+            <a href="http://localhost:3000/cfa" target="_blank" style="color: #A0C4B4; text-decoration: none;">CFA Dashboard</a>
+            <a href="member-dashboard.html" style="background: #27ae60; color: white; padding: 2px 10px; border-radius: 4px; text-decoration: none; font-weight: bold;">Guardian Portal</a>
+        </div>
+    </div>
+
+    <nav class="simple-nav">
+        <a href="index.html" class="logo">
+            🌳 Oloolua Youth Guardians CFA
+        </a>
+        <div style="display: flex; gap: 1.5rem; align-items: center;">
+            <a href="member-dashboard.html"><i class="fas fa-seedling"></i> Log Planting Batch</a>
+            <a href="index.html"><i class="fas fa-arrow-left"></i> Back to Home</a>
+        </div>
+    </nav>
+
+    <!-- ═══ HERO ═══ -->
+    <div class="hero">
+        <div class="hero-eyebrow">Oloolua Forest · Ngong Hills, Kenya · KAI Nuvari CFA Network</div>
+        <h1>Forest Nursery<br><em>Species & Uses</em></h1>
+        <p class="hero-sub">
+            Indigenous and multipurpose trees bridging conservation, traditional knowledge, and sustainable livelihoods — verified under Jaza Miti and the Green Tree Commodities Initiative (GTCI).
+        </p>
+        <div class="hero-badges">
+            <span class="hero-badge gold">15 Keystone Species</span>
+            <span class="hero-badge">🌍 Jaza Miti Compliant</span>
+            <span class="hero-badge">🌳 GTCI Commodity Life-Cycle</span>
+            <span class="hero-badge">🌿 Oloolua CFA Pilot</span>
+            <span class="hero-badge">📋 Ready for Avalanche Anchoring</span>
+        </div>
+    </div>
+
+    <!-- ═══ FILTER BAR ═══ -->
+    <div class="filter-bar">
+        <button class="filter-btn active" data-filter="all">🌿 All <span class="count-badge" id="countAll">15</span></button>
+        <button class="filter-btn" data-filter="medicinal">💊 Medicinal</button>
+        <button class="filter-btn" data-filter="timber">🪵 Timber / Wood</button>
+        <button class="filter-btn" data-filter="food">🍎 Food & Nutrition</button>
+        <button class="filter-btn" data-filter="ornamental">🎨 Ornamental / Cultural</button>
+        <button class="filter-btn" data-filter="fodder">🐐 Fodder & Forage</button>
+    </div>
+
+    <!-- ═══ GRID ═══ -->
+    <div class="container">
+        <div class="section-label">
+            <h2>Nursery Species Profiles</h2>
+            <p>Tap a category above to filter · Hover a card for details</p>
+        </div>
+
+        <div class="trees-grid" id="treesGrid">
+
+                <div class="tree-card" data-category="medicinal,timber,ornamental">
+                <div class="card-header">
+                    <div class="card-header-bg"></div>
+                    <img src="assets/images/silver.jpeg" alt="Silver Oak" loading="lazy" style="width: 100%; height: 200px; object-fit: cover; border-bottom: 1px solid var(--border); margin: -1.4rem -1.5rem 1rem -1.5rem; width: calc(100% + 3rem);">
+                    <div class="common-name">Silver Oak · Silky Oak</div>
+                    <div class="scientific-name">Grevillea robusta A.Cunn. ex R.Br. · Family: Proteaceae</div>
+                    <div class="tag-group">
+                        <span class="tag tag-medicinal">Medicinal</span>
+                        <span class="tag tag-timber">Timber</span>
+                        <span class="tag tag-ornamental">Ornamental</span>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="use-section">
+                        <div class="use-title">🌿 Traditional Medicine</div>
+                        <div class="use-text">Documented Kenyan uses (Kakamega Forest) include treatment of sore throat, earache, chest complaints, flu, and toothache. Bark and leaf extracts show anti-inflammatory and hepatoprotective properties in pharmacological studies. Flowers are a rich nectar source.</div>
+                    </div>
+                    <div class="correction-note">
+                        ⚠️ Correction: The original galactagogue/breastmilk claim for this species has no verified ethnobotanical source in Kenyan literature and has been removed.
+                    </div>
+                    <div class="use-section">
+                        <div class="use-title">🪵 Timber & Craft</div>
+                        <div class="use-text">Valued for furniture, cabinetry, plywood, and turnery. Attractive, durable wood used for decorative paneling and musical instruments.</div>
+                    </div>
+                    <div class="eco-note">🌱 Excellent coffee-shade tree and erosion-control species in highland agroforestry systems. Note: not nitrogen-fixing. Native to SE Queensland–NE New South Wales, Australia.</div>
+                </div>
+            </div>
+
+            <!-- 2. Doum Palm -->
+            <div class="tree-card" data-category="food,medicinal,fodder,timber">
+                <div class="card-header">
+                    <div class="card-header-bg"></div>
+                    <img src="https://static.wixstatic.com/media/b9a05c_91ee3415c69a4fa0ac093a946c2c3f5f~mv2.jpg/v1/fill/w_427,h_542,al_c,q_80,usm_0.66_1.00_0.01,enc_avif,quality_auto/b9a05c_91ee3415c69a4fa0ac093a946c2c3f5f~mv2.jpg" alt="Doum Palm" loading="lazy" style="width: 100%; height: 200px; object-fit: cover; border-bottom: 1px solid var(--border); margin: -1.4rem -1.5rem 1rem -1.5rem; width: calc(100% + 3rem);">
+                    <div class="common-name">Doum Palm · Thika Palm</div>
+                    <div class="scientific-name">Hyphaene compressa H.Wendl. · Family: Arecaceae</div>
+                    <div class="tag-group">
+                        <span class="tag tag-food">Food</span>
+                        <span class="tag tag-medicinal">Medicinal</span>
+                        <span class="tag tag-default">Fibre</span>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="use-section">
+                        <div class="use-title">🍎 Edible & Nutrition</div>
+                        <div class="use-text">Fibrous, sweet fruit pulp eaten fresh or made into a drink. The unripe endosperm (vegetable ivory) is edible; the kernel provides a nutritious snack. A staple food in Kenya's arid and semi-arid regions.</div>
+                    </div>
+                    <div class="use-section">
+                        <div class="use-title">💊 Traditional Medicine</div>
+                        <div class="use-text">Fruit pulp used as a remedy for intestinal worms and digestive complaints. Applied in anti-inflammatory preparations.</div>
+                    </div>
+                    <div class="use-section">
+                        <div class="use-title">🧺 Handicrafts & Construction</div>
+                        <div class="use-text">Leaves woven into baskets, mats, brooms, and roofing thatch. The trunk provides building poles, beehives, and cabinet-making material. A true multipurpose palm of the ASALs.</div>
+                    </div>
+                    <div class="eco-note">🐘 Fruits consumed by elephants and baboons — critical for seed dispersal and ecosystem services.</div>
+                </div>
+            </div>
+
+            <!-- 3. African Cherry / Pygeum -->
+            <div class="tree-card" data-category="medicinal,timber">
+                <div class="card-header">
+                    <div class="card-header-bg"></div>
+                    <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/5/50/Prunus_africana_MS_3588.jpg/330px-Prunus_africana_MS_3588.jpg" alt="African Cherry" loading="lazy" style="width: 100%; height: 200px; object-fit: cover; border-bottom: 1px solid var(--border); margin: -1.4rem -1.5rem 1rem -1.5rem; width: calc(100% + 3rem);">
+                    <div class="common-name">African Cherry · Red Stinkwood</div>
+                    <div class="scientific-name">Prunus africana (Hook.f.) Kalkman · Family: Rosaceae</div>
+                    <div class="tag-group">
+                        <span class="tag tag-medicinal">Medicinal</span>
+                        <span class="tag tag-timber">Timber</span>
+                        <span class="tag tag-default">Conservation</span>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="use-section">
+                        <div class="use-title">💊 Critical Medicinal Tree</div>
+                        <div class="use-text">Bark extract (marketed as "pygeum") is globally recognised for treating benign prostatic hyperplasia (BPH). Used for generations in African traditional medicine; also shows anti-inflammatory, antimicrobial, and hepatoprotective activities in pharmacological research.</div>
+                    </div>
+                    <div class="use-section">
+                        <div class="use-title">🪵 Durable Timber</div>
+                        <div class="use-text">Hard, heavy heartwood with a distinctive reddish-brown colour; used for construction, flooring, and tool handles. The bruised bark, leaves, and fruit have a characteristic smell.</div>
+                    </div>
+                    <div class="warning-note">⚠️ IUCN Red List: Vulnerable (VU). Bark over-harvesting for the European herbal market is the primary threat. Nursery propagation is essential — Oloolua CFA plays a direct conservation role.</div>
+                </div>
+            </div>
+
+            <!-- 4. Avocado -->
+            <div class="tree-card" data-category="food,medicinal,timber">
+                <div class="card-header">
+                    <div class="card-header-bg"></div>
+                    <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/f/f2/Persea_americana_fruit_2.JPG/330px-Persea_americana_fruit_2.JPG" alt="Avocado" loading="lazy" style="width: 100%; height: 200px; object-fit: cover; border-bottom: 1px solid var(--border); margin: -1.4rem -1.5rem 1rem -1.5rem; width: calc(100% + 3rem);">
+                    <div class="common-name">Avocado</div>
+                    <div class="scientific-name">Persea americana Mill. · Family: Lauraceae</div>
+                    <div class="tag-group">
+                        <span class="tag tag-food">Superfood</span>
+                        <span class="tag tag-medicinal">Medicinal</span>
+                        <span class="tag tag-default">Cosmetic</span>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="use-section">
+                        <div class="use-title">🥑 Nutritional Powerhouse</div>
+                        <div class="use-text">Rich in monounsaturated fats (primarily oleic acid), potassium, magnesium, and bioactive polyphenols supporting cardiovascular health. Pulp, peel, and seeds provide antioxidants and anti-inflammatory compounds.</div>
+                    </div>
+                    <div class="use-section">
+                        <div class="use-title">🧴 Medicinal & Cosmetic Uses</div>
+                        <div class="use-text">Leaf and seed extracts used in traditional medicine for skin infections, digestive disorders, and blood-sugar regulation. Avocado oil is valued in skincare and hair products for its high penetration and regenerative lipid profile.</div>
+                    </div>
+                    <div class="eco-note">💚 Key agroforestry species — widely intercropped with coffee in Kenyan highlands, providing canopy shade and a high-value cash fruit.</div>
+                </div>
+            </div>
+
+            <!-- 5. Common Wild Fig -->
+            <div class="tree-card" data-category="medicinal,fodder,ornamental">
+                <div class="card-header">
+                    <div class="card-header-bg"></div>
+                    <img src="https://imgs.search.brave.com/jPfzsb_v6uibUBuLSwzLPmrVFz0JAyTuUyzCqQy2bDA/rs:fit:500:0:1:0/g:ce/aHR0cHM6Ly93d3cu/c2VsaW5hd2FtdWNp/aS5jb20vd3AtY29u/dGVudC91cGxvYWRz/LzIwMTQvMDgvbWF0/b21va28uanBn" alt="Common Wild Fig" loading="lazy" style="width: 100%; height: 200px; object-fit: cover; border-bottom: 1px solid var(--border); margin: -1.4rem -1.5rem 1rem -1.5rem; width: calc(100% + 3rem);">
+                    <div class="common-name">Matomoko · Common Wild Fig</div>
+                    <div class="scientific-name">Ficus thonningii Blume · Family: Moraceae</div>
+                    <div class="tag-group">
+                        <span class="tag tag-fodder">Fodder</span>
+                        <span class="tag tag-medicinal">Medicinal</span>
+                        <span class="tag tag-ornamental">Shade</span>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="use-section">
+                        <div class="use-title">🐐 Fodder & Livestock Feed</div>
+                        <div class="use-text">Leaves and young figs are excellent dry-season fodder. Research shows inclusion of <i>F. thonningii</i> leaves can replace a significant portion of commercial concentrate in goat diets while supporting weight gain.</div>
+                    </div>
+                    <div class="use-section">
+                        <div class="use-title">💊 Bark & Latex Medicine</div>
+                        <div class="use-text">Bark decoction used for colds, sore throat, dysentery, and constipation. Latex applied topically for wound healing. Also used traditionally as a galactagogue (to stimulate milk production).</div>
+                    </div>
+                    <div class="use-section">
+                        <div class="use-title">🌿 Shade & Soil Stabilisation</div>
+                        <div class="use-text">Ideal live fence, soil stabiliser, and shade tree. Fig fruits support birds and frugivorous wildlife, enhancing forest biodiversity.</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 6. Nile Tulip / Markhamia -->
+            <div class="tree-card" data-category="medicinal,timber,ornamental">
+                <div class="card-header">
+                    <div class="card-header-bg"></div>
+                    <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/f/fc/Markhamia_lutea_blossoms_closeup.jpg/330px-Markhamia_lutea_blossoms_closeup.jpg" alt="Markhamia" loading="lazy" style="width: 100%; height: 200px; object-fit: cover; border-bottom: 1px solid var(--border); margin: -1.4rem -1.5rem 1rem -1.5rem; width: calc(100% + 3rem);">
+                    <div class="common-name">Markhamia · Nile Tulip Tree</div>
+                    <div class="scientific-name">Markhamia lutea (Benth.) K.Schum. · Family: Bignoniaceae</div>
+                    <div class="tag-group">
+                        <span class="tag tag-timber">Timber</span>
+                        <span class="tag tag-medicinal">Medicinal</span>
+                        <span class="tag tag-default">Bee Forage</span>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="use-section">
+                        <div class="use-title">🪵 Versatile Timber</div>
+                        <div class="use-text">Light but durable wood used for light construction, furniture, tool handles, and beehives. Fast-growing; well-suited to agroforestry boundary planting.</div>
+                    </div>
+                    <div class="use-section">
+                        <div class="use-title">💊 Traditional Remedies</div>
+                        <div class="use-text">Root bark used for anaemia, diarrhoea, and back pain. Leaf preparations applied for oedema and rheumatic complaints. Extracts show documented antimicrobial, anticancer, and anti-inflammatory activity in pharmacological studies.</div>
+                    </div>
+                    <div class="use-section">
+                        <div class="use-title">🐝 Ornamental & Bee Forage</div>
+                        <div class="use-text">Vivid yellow trumpet-shaped flowers are highly attractive to bees — an important species for honey production alongside ornamental and soil-conservation planting.</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 7. Acacia / Vachellia -->
+            <div class="tree-card" data-category="medicinal,timber,fodder">
+                <div class="card-header">
+                    <div class="card-header-bg"></div>
+                    <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/c/ca/Vachellia_%28ex_Acacia%29_tortilis.jpg/330px-Vachellia_%28ex_Acacia%29_tortilis.jpg" alt="Acacia" loading="lazy" style="width: 100%; height: 200px; object-fit: cover; border-bottom: 1px solid var(--border); margin: -1.4rem -1.5rem 1rem -1.5rem; width: calc(100% + 3rem);">
+                    <div class="common-name">Acacia (Vachellia)</div>
+                    <div class="scientific-name">Vachellia spp. (formerly Acacia) · Family: Fabaceae</div>
+                    <div class="tag-group">
+                        <span class="tag tag-default">Gum</span>
+                        <span class="tag tag-fodder">Fodder</span>
+                        <span class="tag tag-medicinal">Tannin</span>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="use-section">
+                        <div class="use-title">🌱 Edible Gum & Fodder</div>
+                        <div class="use-text">Pods and leaves are highly palatable livestock fodder. Gum arabic (from <i>V. senegal</i>) has food-grade and pharmaceutical applications. Bark fibres used for rope and tannin extraction.</div>
+                    </div>
+                    <div class="use-section">
+                        <div class="use-title">💊 Medicinal Bark</div>
+                        <div class="use-text">Bark decoction used for diarrhoea, gingivitis, and skin irritation. Applied as an astringent and for wound healing. Chewing twigs strengthens gum tissue.</div>
+                    </div>
+                    <div class="use-section">
+                        <div class="use-title">🪵 Dense Timber & Fuelwood</div>
+                        <div class="use-text">Extremely hard, dense wood prized for furniture, carving, fencing posts, and high-quality firewood and charcoal. Nitrogen-fixing root nodules improve soil fertility.</div>
+                    </div>
+                    <div class="eco-note">🌍 Note: the genus Acacia was split in 2005 — African species are now correctly classified as <em>Vachellia</em> or <em>Senegalia</em>.</div>
+                </div>
+            </div>
+
+            <!-- 8. Teclea nobilis -->
+            <div class="tree-card" data-category="medicinal">
+                <div class="card-header">
+                    <div class="card-header-bg"></div>
+                    <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/9/98/Vepris_lanceolata_-_White_Ironwood_Tree_-_South_Africa_22.jpg/330px-Vepris_lanceolata_-_White_Ironwood_Tree_-_South_Africa_22.jpg" alt="Teclea" loading="lazy" style="width: 100%; height: 200px; object-fit: cover; border-bottom: 1px solid var(--border); margin: -1.4rem -1.5rem 1rem -1.5rem; width: calc(100% + 3rem);">
+                    <div class="common-name">Teclea · Small Fruited Teclea</div>
+                    <div class="scientific-name">Teclea nobilis Del. · Family: Rutaceae</div>
+                    <div class="tag-group">
+                        <span class="tag tag-medicinal">Analgesic</span>
+                        <span class="tag tag-medicinal">Antipyretic</span>
+                        <span class="tag tag-default">Anti-inflammatory</span>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="use-section">
+                        <div class="use-title">💊 Potent Medicinal Tree</div>
+                        <div class="use-text">Leaves, bark, and roots used across East Africa to treat malaria, rheumatism, arthritis, pneumonia, cough, fever, and headache. The triterpenoid compound lupeol is responsible for strong analgesic, antipyretic, and anti-inflammatory effects documented in pharmacological studies.</div>
+                    </div>
+                    <div class="use-section">
+                        <div class="use-title">🌡️ Traditional Applications</div>
+                        <div class="use-text">Leaf decoction taken for chest pain and as an anthelmintic. Root infusions used for stomach-ache, backache, and respiratory complaints. Steam baths using heated leaf preparations used to treat fevers.</div>
+                    </div>
+                    <div class="eco-note">🧪 Pharmacological studies confirm CNS depressant activity and low acute toxicity at therapeutic doses.</div>
+                </div>
+            </div>
+
+            <!-- 9. Chestnut -->
+            <div class="tree-card" data-category="food,medicinal,timber">
+                <div class="card-header">
+                    <div class="card-header-bg"></div>
+                    <img src="https://imgs.search.brave.com/SjMxyBDbeaSk8BXQwgnQeh6haH0sHwmrY6dwLhUg3jA/rs:fit:500:0:1:0/g:ce/aHR0cHM6Ly91cGxv/YWQud2lraW1lZGlh/Lm9yZy93aWtpcGVk/aWEvY29tbW9ucy90/aHVtYi8yLzJjL0No/JUMzJUEydGFpZ25p/ZXJfMTIwODA3XzEu/anBnLzUxMnB4LUNo/JUMzJUEydGFpZ25p/ZXJfMTIwODA3XzEu/anBn" alt="Chestnut" loading="lazy" style="width: 100%; height: 200px; object-fit: cover; border-bottom: 1px solid var(--border); margin: -1.4rem -1.5rem 1rem -1.5rem; width: calc(100% + 3rem);">
+                    <div class="common-name">Chestnut</div>
+                    <div class="scientific-name">Castanea sativa Mill. (European/introduced) · Family: Fagaceae</div>
+                    <div class="tag-group">
+                        <span class="tag tag-food">Edible Nut</span>
+                        <span class="tag tag-timber">Timber</span>
+                        <span class="tag tag-medicinal">Astringent</span>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="use-section">
+                        <div class="use-title">🍽️ Nutritious Staple</div>
+                        <div class="use-text">Nuts are rich in complex carbohydrates and low in fat compared to other tree nuts. Eaten roasted, boiled, or ground into gluten-free flour. Historically resilient as a famine-period crop in European and Asian highlands.</div>
+                    </div>
+                    <div class="use-section">
+                        <div class="use-title">💊 Traditional Medicine</div>
+                        <div class="use-text">Leaves have mild sedative properties; bark and leaf tannins used as an astringent for diarrhoea and whooping cough. Chestnut wood and leaf extracts show antimicrobial and anti-inflammatory activity in research.</div>
+                    </div>
+                    <div class="use-section">
+                        <div class="use-title">🪵 Durable Timber</div>
+                        <div class="use-text">Naturally rot-resistant due to high tannin content; used for fencing posts, furniture, and outdoor construction. Also used as a substrate for shiitake mushroom cultivation.</div>
+                    </div>
+                    <div class="correction-note">📌 Note: <em>Castanea</em> species are introduced to Kenya. If this nursery holds an African equivalent, it may be <em>Calophyllum inophyllum</em> (Alexandrian Laurel) or another highland species — please verify against nursery records.</div>
+                </div>
+            </div>
+
+            <!-- 10. Drypetes -->
+            <div class="tree-card" data-category="medicinal">
+                <div class="card-header">
+                    <div class="card-header-bg"></div>
+                    <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/1/1d/Drypetes_deplanchei_Greybark_Mt_Eliza_track_Lord_Howe_Island_6June2011.jpg/330px-Drypetes_deplanchei_Greybark_Mt_Eliza_track_Lord_Howe_Island_6June2011.jpg" alt="Drypetes" loading="lazy" style="width: 100%; height: 200px; object-fit: cover; border-bottom: 1px solid var(--border); margin: -1.4rem -1.5rem 1rem -1.5rem; width: calc(100% + 3rem);">
+                    <div class="common-name">Drypetes</div>
+                    <div class="scientific-name">Drypetes spp. · Family: Putranjivaceae</div>
+                    <div class="tag-group">
+                        <span class="tag tag-medicinal">Ethnomedicine</span>
+                        <span class="tag tag-default">Pest Control</span>
+                        <span class="tag tag-default">Fish Poison</span>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="use-section">
+                        <div class="use-title">💊 Ethnomedicine & Ritual Use</div>
+                        <div class="use-text">Various <i>Drypetes</i> species are used across Africa to treat fevers, insect bites, and as a general restorative. Some species serve as stimulants. Root and stem bark are used to protect stored grain from pest insects.</div>
+                    </div>
+                    <div class="use-section">
+                        <div class="use-title">🌱 Reproductive & Antifungal</div>
+                        <div class="use-text">Employed traditionally to support fertility and treat reproductive complaints. Stem bark extracts of East African species show antifungal activity including against <em>Candida</em> strains in in-vitro studies.</div>
+                    </div>
+                    <div class="warning-note">⚠️ Several <em>Drypetes</em> species contain potent bioactive compounds — traditional use requires expert guidance. Verify the specific local species in nursery records for accurate use documentation.</div>
+                </div>
+            </div>
+
+            <!-- 11. Croton megalocarpus -->
+            <div class="tree-card" data-category="medicinal,timber">
+                <div class="card-header">
+                    <div class="card-header-bg"></div>
+                    <img src="assets/images/croton.jpeg" alt="Croton" loading="lazy" style="width: 100%; height: 200px; object-fit: cover; border-bottom: 1px solid var(--border); margin: -1.4rem -1.5rem 1rem -1.5rem; width: calc(100% + 3rem);">
+                    <div class="common-name">Croton · Musine</div>
+                    <div class="scientific-name">Croton megalocarpus Hutch. · Family: Euphorbiaceae</div>
+                    <div class="tag-group">
+                        <span class="tag tag-default">Biofuel</span>
+                        <span class="tag tag-medicinal">Medicinal</span>
+                        <span class="tag tag-default">Mulch</span>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="use-section">
+                        <div class="use-title">🛢️ Biodiesel & Animal Feed</div>
+                        <div class="use-text">Seeds contain 30–40% oil (EATEC Kenya data: 30–32% for non-edible seeds), suitable for biodiesel via transesterification. The residual seed cake contains 25–30% protein and is used as a poultry and livestock feed supplement — comparable to canola cake.</div>
+                    </div>
+                    <div class="correction-note">📌 Correction: The original "50% protein" figure refers to one outlier dataset. Confirmed protein content in seed cake is 25–30% (Wikipedia / CIFOR / Croton seed cake studies).</div>
+                    <div class="use-section">
+                        <div class="use-title">💊 Traditional Healing</div>
+                        <div class="use-text">Bark decoction used against intestinal worms, whooping cough, pneumonia, malaria, stomach ailments, and spleen and gall bladder complaints. Leaves used for wound healing and fever management.</div>
+                    </div>
+                    <div class="use-section">
+                        <div class="use-title">🌿 Mulch & Soil Health</div>
+                        <div class="use-text">High-nitrogen leaves make excellent mulch for crops, especially coffee. Fast-growing pioneer species ideal for forest restoration and carbon sequestration (estimated 400 kg CO₂ over its lifespan).</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 12. Toothbrush Tree / Miswak -->
+            <div class="tree-card" data-category="medicinal">
+                <div class="card-header">
+                    <div class="card-header-bg"></div>
+                    <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/e/e4/Peelo_10.jpg/330px-Peelo_10.jpg" alt="Toothbrush Tree" loading="lazy" style="width: 100%; height: 200px; object-fit: cover; border-bottom: 1px solid var(--border); margin: -1.4rem -1.5rem 1rem -1.5rem; width: calc(100% + 3rem);">
+                    <div class="common-name">Toothbrush Tree · Miswak</div>
+                    <div class="scientific-name">Salvadora persica L. · Family: Salvadoraceae</div>
+                    <div class="tag-group">
+                        <span class="tag tag-medicinal">Oral Hygiene</span>
+                        <span class="tag tag-medicinal">Antibacterial</span>
+                        <span class="tag tag-default">Traditional</span>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="use-section">
+                        <div class="use-title">🪥 Natural Toothbrush</div>
+                        <div class="use-text">Twigs (miswak/siwak) used for centuries as a natural toothbrush with documented antibacterial, antiplaque, and anti-gingivitis properties. Rich in fluoride, silica, salvadorine, and tannins — components that support oral health.</div>
+                    </div>
+                    <div class="use-section">
+                        <div class="use-title">💊 Systemic Medicine</div>
+                        <div class="use-text">Root decoctions used for spleen conditions, stomach-ache, and kidney complaints. Leaves applied for cough, asthma, and rheumatism. Hypoglycaemic (blood-sugar lowering) effects confirmed in pharmacological studies.</div>
+                    </div>
+                    <div class="eco-note">🌿 Traditional dental use predates modern dentistry and is still widespread across East Africa, the Horn, and the Middle East.</div>
+                </div>
+            </div>
+
+            <!-- 13. East African Greenheart / Pepper-bark -->
+            <div class="tree-card" data-category="medicinal,timber">
+                <div class="card-header">
+                    <div class="card-header-bg"></div>
+                    <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/4/40/Uganda_Greenheart_imported_from_iNaturalist_photo_153670805_on_24_June_2024.jpg/330px-Uganda_Greenheart_imported_from_iNaturalist_photo_153670805_on_24_June_2024.jpg" alt="East African Greenheart" loading="lazy" style="width: 100%; height: 200px; object-fit: cover; border-bottom: 1px solid var(--border); margin: -1.4rem -1.5rem 1rem -1.5rem; width: calc(100% + 3rem);">
+                    <div class="common-name">East African Greenheart · Muthiga</div>
+                    <div class="scientific-name">Warburgia ugandensis Sprague · Family: Canellaceae</div>
+                    <div class="tag-group">
+                        <span class="tag tag-medicinal">Anti-malarial</span>
+                        <span class="tag tag-medicinal">Antifungal</span>
+                        <span class="tag tag-timber">Timber</span>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="use-section">
+                        <div class="use-title">💊 Highly Valued Medicinal Tree</div>
+                        <div class="use-text">Bark and root extracts used for pneumonia, asthma, malaria, candidiasis, diarrhoea, and skin infections. The peppery-bitter taste comes from an abundance of drimane-type sesquiterpenes including warburganal, mukaadial, and ugandensolide — responsible for strong antimicrobial, antifungal, and antiplasmodial activity.</div>
+                    </div>
+                    <div class="use-section">
+                        <div class="use-title">🍂 Traditional Applications</div>
+                        <div class="use-text">Bark chewed for stomach-ache and constipation. Leaves historically used as a curry spice in Kenya (early Indian railway workers used them before chilli became common). Smoke from burning bark inhaled for chest complaints; powdered bark snuffed for sinus complaints and colds.</div>
+                    </div>
+                    <div class="use-section">
+                        <div class="use-title">🪵 Timber & Resin</div>
+                        <div class="use-text">Yellow-green heartwood, very fragrant when freshly cut and highly resistant to insect attack. Resin used as glue for tool handles. Also planted as an ornamental shade tree.</div>
+                    </div>
+                    <div class="correction-note">📌 Note: The correct primary English trade name in Kenya is "East African Greenheart" (Kikuyu: Muthiga). "Pepper-bark tree" is a secondary common name shared with related <em>Warburgia</em> species.</div>
+                    <div class="warning-note">⚠️ Bark over-harvesting threatens wild populations — careful harvesting and nursery propagation are essential for conservation.</div>
+                </div>
+            </div>
+
+            <!-- 14. Jackfruit -->
+            <div class="tree-card" data-category="food,medicinal,timber">
+                <div class="card-header">
+                    <div class="card-header-bg"></div>
+                    <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/3/3b/The_jackfruit_is_holding_on_to_the_tree.jpg/330px-The_jackfruit_is_holding_on_to_the_tree.jpg" alt="Jackfruit" loading="lazy" style="width: 100%; height: 200px; object-fit: cover; border-bottom: 1px solid var(--border); margin: -1.4rem -1.5rem 1rem -1.5rem; width: calc(100% + 3rem);">
+                    <div class="common-name">Jackfruit</div>
+                    <div class="scientific-name">Artocarpus heterophyllus Lam. · Family: Moraceae</div>
+                    <div class="tag-group">
+                        <span class="tag tag-food">Giant Fruit</span>
+                        <span class="tag tag-timber">Timber</span>
+                        <span class="tag tag-medicinal">Antioxidant</span>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="use-section">
+                        <div class="use-title">🍈 World's Largest Tree Fruit</div>
+                        <div class="use-text">Nutritious pulp rich in carbohydrates, protein, vitamins A, B, and C, and minerals. Seeds are boiled or roasted as a snack. Unripe fruit used as a vegetable (widely used as a meat substitute); ripe fruit is sweet and aromatic.</div>
+                    </div>
+                    <div class="use-section">
+                        <div class="use-title">💊 Medicinal Uses</div>
+                        <div class="use-text">Bark, root, and leaf preparations used for skin disorders and wound healing. Documented antioxidant and anti-inflammatory activity. Latex has wound-healing properties and has been used to treat snakebite in traditional medicine.</div>
+                    </div>
+                    <div class="use-section">
+                        <div class="use-title">🪵 Durable Timber</div>
+                        <div class="use-text">Heartwood is naturally termite-resistant and valued for high-quality furniture, musical instruments (e.g. veena, tabla shells), and construction. Leaves and by-products provide cattle fodder.</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 15. Sisal -->
+            <div class="tree-card" data-category="ornamental">
+                <div class="card-header">
+                    <div class="card-header-bg"></div>
+                    <img src="https://upload.wikimedia.org/wikipedia/commons/b/b7/Plantsisal.jpg" alt="Sisal" loading="lazy" style="width: 100%; height: 200px; object-fit: cover; border-bottom: 1px solid var(--border); margin: -1.4rem -1.5rem 1rem -1.5rem; width: calc(100% + 3rem);">
+                    <div class="common-name">Sisal</div>
+                    <div class="scientific-name">Agave sisalana Perrine · Family: Asparagaceae</div>
+                    <div class="tag-group">
+                        <span class="tag tag-default">Hard Fibre</span>
+                        <span class="tag tag-ornamental">Ornamental</span>
+                        <span class="tag tag-default">Erosion Control</span>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="use-section">
+                        <div class="use-title">工業 Rope & Fibre Industry</div>
+                        <div class="use-text">One of the world's primary sources of hard natural fibre, used for rope, twine, carpets, and handicrafts. Leaf fibres resist saltwater corrosion, making sisal invaluable for marine and agricultural applications.</div>
+                    </div>
+                    <div class="use-section">
+                        <div class="use-title">🎨 Ornamental & Erosion Control</div>
+                        <div class="use-text">Architectural succulent used for landscaping, live fencing, and slope stabilisation. Drought-tolerant and able to grow on degraded or marginal soils — strong fit for ASAL restoration.</div>
+                    </div>
+                    <div class="use-section">
+                        <div class="use-title">💊 Minor Medicinal Use</div>
+                        <div class="use-text">Sap and leaf extracts used in traditional preparations for skin ailments and as a diuretic, though this is secondary to its fibre applications.</div>
+                    </div>
+                    <div class="correction-note">📌 Note: Sisal is an agave/succulent, not a tree. It is correctly listed as a nursery plant but the "tree" classification in this catalogue should be updated to "multipurpose plant".</div>
+                    <div class="eco-note">♻️ Natural, biodegradable fibre — a sustainable alternative to synthetic nylon and polypropylene ropes. Kenya is a significant sisal exporter.</div>
+                </div>
+            </div>
+
+        </div><!-- /trees-grid -->
+    </div><!-- /container -->
+
+    <!-- ═══ FOOTER ═══ -->
+    <div class="footer">
+        <div class="footer-logo">🌳 Oloolua Forest Nursery</div>
+        <p>Oloolua Community Forest Association · Ngong Hills, Kenya</p>
+        <div class="footer-links">
+            <span>Kenya 15 Billion Trees Initiative</span>
+            <span>·</span>
+            <span>HISA People Chain · Conservation Finance</span>
+            <span>·</span>
+            <span>Species data: fact-verified 2025</span>
+        </div>
+        <p style="opacity: 0.55; margin-top: 0.5rem; font-size: 0.78rem;">
+            Each tree supports SDG 13 (Climate Action), SDG 15 (Life on Land), and SDG 1 (No Poverty) through community livelihoods.<br>
+            Corrections applied: Grevillea galactagogue claim removed · Croton protein figure corrected · Warburgia primary name updated · Sisal classification noted.
+        </p>
+    </div>
+
+    <script>
+        // ── Filter logic ──
+        const filterBtns = document.querySelectorAll('.filter-btn');
+        const cards = document.querySelectorAll('.tree-card');
+
+        filterBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                filterBtns.forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                const filterValue = btn.getAttribute('data-filter');
+
+                cards.forEach(card => {
+                    if (filterValue === 'all') {
+                        card.classList.remove('hidden');
+                        return;
+                    }
+                    const cats = card.getAttribute('data-category').split(',').map(c => c.trim());
+                    if (cats.includes(filterValue)) {
+                        card.classList.remove('hidden');
+                    } else {
+                        card.classList.add('hidden');
+                    }
+                });
+            });
+        });
+
+        // ── Entrance animation ──
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach((entry, i) => {
+                if (entry.isIntersecting) {
+                    entry.target.style.animationDelay = `${(i % 3) * 60}ms`;
+                    entry.target.style.opacity = '1';
+                    entry.target.style.transform = 'translateY(0)';
+                    observer.unobserve(entry.target);
+                }
+            });
+        }, { threshold: 0.08 });
+
+        cards.forEach(card => {
+            card.style.opacity = '0';
+            card.style.transform = 'translateY(18px)';
+            card.style.transition = 'opacity 0.4s ease, transform 0.4s ease';
+            observer.observe(card);
+        });
+    </script>
+</body>
+</html>

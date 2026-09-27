@@ -1,5 +1,6 @@
 # ============================================================
-#  KAI App Launcher - starts AI Agent + Next.js
+#  KAI Unified Ecosystem Launcher
+#  Starts AI Agent + KAI Nuvari App + SIHU Hub + Oloolua Hub
 #  Usage:  .\start.ps1
 # ============================================================
 
@@ -8,26 +9,21 @@ $Root = $PSScriptRoot
 
 Write-Host ""
 Write-Host "===============================================" -ForegroundColor Cyan
-Write-Host "       KAI Nuvari App Launcher v1.0           " -ForegroundColor Cyan
+Write-Host "     KAI Ecosystem & Dual Hubs Launcher v2.0   " -ForegroundColor Cyan
 Write-Host "===============================================" -ForegroundColor Cyan
 Write-Host ""
 
-# -- 1. Set up Python venv if needed ------------------------
-$AgentDir = Join-Path $Root "ai-agent"
-$VenvPy   = Join-Path $AgentDir ".venv\Scripts\python.exe"
-$VenvPip  = Join-Path $AgentDir ".venv\Scripts\pip.exe"
-
+# -- 1. Check Python environment ----------------------------
 Write-Host ">> Python environment..." -ForegroundColor Yellow
-if (-not (Test-Path $VenvPy)) {
-    Write-Host "   Creating virtual environment..." -ForegroundColor Yellow
-    py -m venv (Join-Path $AgentDir ".venv")
-    Write-Host "   OK venv created." -ForegroundColor Green
+$PythonExe = "python"
+try {
+    & $PythonExe -c "import fastapi, uvicorn; print('   OK FastAPI ready')"
+} catch {
+    Write-Host "   Installing FastAPI and dependencies..." -ForegroundColor Yellow
+    & $PythonExe -m pip install -q -r (Join-Path $Root "requirements.txt")
 }
-Write-Host "   Installing / updating dependencies..." -ForegroundColor Yellow
-& $VenvPip install -q -r (Join-Path $AgentDir "requirements.txt") --upgrade
-Write-Host "   OK Dependencies ready." -ForegroundColor Green
 
-# -- 2. Check for GROQ_API_KEY --------------------------------
+# -- 2. Check for .env / GROQ_API_KEY -------------------------
 Write-Host ">> Checking environment..." -ForegroundColor Yellow
 $envFile = Join-Path $Root ".env"
 if (Test-Path $envFile) {
@@ -35,54 +31,50 @@ if (Test-Path $envFile) {
     if ($envContent -match "GROQ_API_KEY=(.+)") {
         $key = $Matches[1].Trim()
         if ($key -and $key -ne "" -and $key -ne "your_groq_api_key_here") {
-            Write-Host "   OK GROQ_API_KEY is set." -ForegroundColor Green
+            Write-Host "   OK GROQ_API_KEY is configured." -ForegroundColor Green
         } else {
-            Write-Host "   WARNING: GROQ_API_KEY is not set in .env" -ForegroundColor Red
-            Write-Host "   Get a key from https://console.groq.com" -ForegroundColor Yellow
+            Write-Host "   NOTE: Groq key not set (Needle local engine will run by default)." -ForegroundColor Gray
         }
-    } else {
-        Write-Host "   WARNING: GROQ_API_KEY not found in .env" -ForegroundColor Red
     }
-} else {
-    Write-Host "   WARNING: .env file not found. Copy .env.example to .env" -ForegroundColor Red
 }
 
-# -- 3. Launch AI Agent in new window ---------------------
-Write-Host ">> Starting KAI AI Agent on port 8000..." -ForegroundColor Yellow
-$agentCmd = "Set-Location '$AgentDir'; & '$VenvPy' -m uvicorn server:app --host 127.0.0.1 --port 8000 --reload"
+# -- 3. Launch AI Agent on port 8000 -------------------------
+Write-Host ">> [1/4] Starting KAI AI Agent on port 8000..." -ForegroundColor Yellow
+$agentCmd = "Set-Location '$Root'; python -m uvicorn server:app --host 127.0.0.1 --port 8000 --reload"
 Start-Process powershell -ArgumentList "-NoExit", "-Command", $agentCmd -WindowStyle Normal
 
-# Wait up to 90s for agent to be healthy
-Write-Host "   Waiting for agent to start (index build may take a minute)..." -ForegroundColor Yellow
-$waited = 0
-do {
-    Start-Sleep -Seconds 3
-    $waited += 3
-    try {
-        $h = Invoke-RestMethod "http://127.0.0.1:8000/health" -TimeoutSec 2
-        Write-Host "   OK AI Agent running - model: $($h.model)" -ForegroundColor Green
-        break
-    } catch {
-        # retry
-    }
-} while ($waited -lt 90)
-
-if ($waited -ge 90) {
-    Write-Host "   WARNING: Agent did not respond in 90s - check the AI Agent window." -ForegroundColor Red
-}
-
-# -- 4. Launch Next.js frontend in new window --------------
-Write-Host ">> Starting Next.js frontend on port 3000..." -ForegroundColor Yellow
+# -- 4. Launch KAI Nuvari Main App on port 3000 --------------
+Write-Host ">> [2/4] Starting KAI Nuvari App on port 3000..." -ForegroundColor Yellow
 $FrontendDir = Join-Path $Root "avax-frontend"
 $frontCmd = "Set-Location '$FrontendDir'; npm run dev"
 Start-Process powershell -ArgumentList "-NoExit", "-Command", $frontCmd -WindowStyle Normal
 
+# -- 5. Launch SIHU News Hub on port 3001 --------------------
+Write-Host ">> [3/4] Starting SIHU News Hub on port 3001..." -ForegroundColor Yellow
+$SihuDir = Join-Path $Root "SIHU.COM"
+$sihuCmd = "Set-Location '$SihuDir'; npx next dev -p 3001"
+Start-Process powershell -ArgumentList "-NoExit", "-Command", $sihuCmd -WindowStyle Normal
+
+# -- 6. Launch Oloolua Conservation Hub on port 3002 ---------
+Write-Host ">> [4/4] Starting Oloolua Conservation Hub on port 3002..." -ForegroundColor Yellow
+$OlooluaDir = Join-Path $Root "oloolua-youth-guardians"
+$olooluaCmd = "Set-Location '$OlooluaDir'; npx next dev -p 3002"
+Start-Process powershell -ArgumentList "-NoExit", "-Command", $olooluaCmd -WindowStyle Normal
+
+# Health Check
+Write-Host "   Waiting for services to become responsive..." -ForegroundColor Yellow
+Start-Sleep -Seconds 4
+
 Write-Host ""
 Write-Host "===============================================" -ForegroundColor Green
-Write-Host "  All services launched!                      " -ForegroundColor Green
-Write-Host "  Frontend : http://localhost:3000            " -ForegroundColor Green
-Write-Host "  AI Agent : http://127.0.0.1:8000/health     " -ForegroundColor Green
-Write-Host "  Provider : Groq (cloud API)                 " -ForegroundColor Green
+Write-Host "  All Ecosystem Services & Hubs Running!       " -ForegroundColor Green
+Write-Host "===============================================" -ForegroundColor Green
+Write-Host "  * Main KAI App       : http://localhost:3000 " -ForegroundColor Cyan
+Write-Host "    - SIHU News Hub    : http://localhost:3000/hub" -ForegroundColor White
+Write-Host "    - Conservation Hub : http://localhost:3000/conservation" -ForegroundColor White
+Write-Host "  * SIHU Portal        : http://localhost:3001 " -ForegroundColor Cyan
+Write-Host "  * Oloolua Hub        : http://localhost:3002 " -ForegroundColor Cyan
+Write-Host "  * AI Agent Backend   : http://127.0.0.1:8000 " -ForegroundColor Cyan
 Write-Host "===============================================" -ForegroundColor Green
 Write-Host ""
 Write-Host "Close individual windows to stop each service." -ForegroundColor Gray

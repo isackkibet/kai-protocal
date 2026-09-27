@@ -1,0 +1,63 @@
+@import "tailwindcss/base";
+@import "tailwindcss/components";
+@import "tailwindcss/utilities";
+
+:root {
+  --font-roboto: 'Roboto', -apple-system, BlinkMacSystemFont, sans-serif;
+  --bg-primary: #0b1c14;
+  --bg-card: rgba(18, 43, 31, 0.85);
+  --border-color: rgba(228, 200, 120, 0.2);
+  --text-main: #f6f2e7;
+  --accent-gold: #e4c878;
+  --accent-green: #27ae60;
+}
+
+body {
+  font-family: var(--font-roboto);
+  background-color: #0b1c14;
+  color: #f6f2e7;
+  min-height: 100vh;
+  margin: 0;
+  padding: 0;
+}
+
+/* Glassmorphism Card Utilities */
+.glass-panel {
+  background: rgba(18, 43, 31, 0.75);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(228, 200, 120, 0.2);
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+}
+
+.glass-card {
+  background: linear-gradient(135deg, rgba(27, 63, 47, 0.8) 0%, rgba(11, 28, 20, 0.9) 100%);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(200, 155, 60, 0.25);
+  transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease;
+}
+
+.glass-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.5);
+  border-color: rgba(228, 200, 120, 0.5);
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #0b1c14;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #2c7651;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #e4c878;
+}

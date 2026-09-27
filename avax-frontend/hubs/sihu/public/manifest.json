@@ -1,0 +1,17 @@
+{
+  "name": "Sango Information Hub",
+  "short_name": "Sango",
+  "description": "Elite community media network established for knowledge management and environmental protection across the Lake Victoria Basin.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#020617",
+  "theme_color": "#0f172a",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "/favicon.ico",
+      "sizes": "192x192",
+      "type": "image/x-icon"
+    }
+  ]
+}

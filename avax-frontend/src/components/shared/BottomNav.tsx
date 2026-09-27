@@ -18,30 +18,31 @@ const itemStyle = (active: boolean): React.CSSProperties => ({
   border: 'none', cursor: 'pointer', font: 'inherit',
 });
 
-const SIHU_APP_URL = process.env.NEXT_PUBLIC_SIHU_URL || 'http://localhost:3000';
-const OLOOLUA_APP_URL = process.env.NEXT_PUBLIC_OLOOLUA_URL || 'http://localhost:3002';
-
 const HUB_OPTIONS = [
   {
     id: 'sihu',
-    name: 'SIHU News Hub',
-    badge: 'Real SIHU App',
-    desc: 'Pre-built Next.js news portal from SIHU.COM with articles, portal, podcasts, and AI stories.',
-    href: SIHU_APP_URL,
+    name: 'SIHU.COM Information Hub',
+    badge: 'The Blue Hub · :3001',
+    desc: 'Sango Information Hub & media network for Lake Victoria Basin news, verified environmental articles, and audio studio.',
+    href: '/hub',
+    portalUrl: process.env.NEXT_PUBLIC_SIHU_PORTAL_URL || 'http://localhost:3001',
+    portalLabel: 'SIHU Portal :3001',
     icon: Newspaper,
-    accent: '#C89B3C',
-    bg: 'linear-gradient(135deg, rgba(200, 155, 60, 0.16) 0%, rgba(15, 36, 25, 0.95) 100%)',
-    border: 'rgba(200, 155, 60, 0.35)',
+    accent: '#38BDF8',
+    bg: 'linear-gradient(135deg, rgba(56, 189, 248, 0.16) 0%, rgba(2, 6, 23, 0.95) 100%)',
+    border: 'rgba(56, 189, 248, 0.35)',
   },
   {
     id: 'oloolua',
-    name: 'Oloolua Conservation Hub',
-    badge: 'Real Oloolua Site',
-    desc: 'Oloolua Youth Guardians site with forest nursery species, seedlings, activities, and gallery.',
-    href: OLOOLUA_APP_URL,
+    name: 'Oloolua Youth Guardians',
+    badge: 'The Green Hub · :3002',
+    desc: 'Community Forest Association (CFA) youth hub with indigenous seedlings nursery, beekeeping, patrol logs, and MRV.',
+    href: '/conservation',
+    portalUrl: process.env.NEXT_PUBLIC_OLOOLUA_PORTAL_URL || 'http://localhost:3002',
+    portalLabel: 'Oloolua Hub :3002',
     icon: TreePine,
     accent: '#10B981',
-    bg: 'linear-gradient(135deg, rgba(16, 185, 129, 0.16) 0%, rgba(10, 42, 32, 0.95) 100%)',
+    bg: 'linear-gradient(135deg, rgba(16, 185, 129, 0.16) 0%, rgba(4, 21, 14, 0.95) 100%)',
     border: 'rgba(16, 185, 129, 0.35)',
   },
 ];
@@ -217,9 +218,34 @@ export default function BottomNav() {
                         </p>
                       </div>
 
-                      {/* Arrow */}
-                      <div style={{ color: opt.accent, opacity: 0.85 }}>
-                        <ChevronRight size={18} />
+                      {/* Actions */}
+                      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 6, flexShrink: 0 }}>
+                        <a
+                          href={opt.portalUrl}
+                          target="_blank"
+                          rel="noreferrer"
+                          onClick={(e) => e.stopPropagation()}
+                          style={{
+                            fontSize: 10,
+                            fontWeight: 700,
+                            fontFamily: "'IBM Plex Mono', monospace",
+                            color: opt.accent,
+                            background: 'rgba(0,0,0,0.4)',
+                            border: `1px solid ${opt.accent}50`,
+                            padding: '3px 8px',
+                            borderRadius: 6,
+                            textDecoration: 'none',
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: 3,
+                          }}
+                          title={`Open standalone portal at ${opt.portalUrl}`}
+                        >
+                          {opt.portalLabel} ↗
+                        </a>
+                        <div style={{ color: opt.accent, opacity: 0.85 }}>
+                          <ChevronRight size={18} />
+                        </div>
                       </div>
                     </motion.div>
                   );

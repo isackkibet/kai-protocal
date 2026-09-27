@@ -1,0 +1,603 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>Oloolua Projects | Digital Conservation Ecosystem</title>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;1,400&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        :root {
+            --forest-deep: #0b2e14;
+            --forest-mid: #174823;
+            --forest-light: #2a6040;
+            --canopy: #3d7a52;
+            --leaf: #5da06e;
+            --pale-green: #d6ead9;
+            --cream: #faf5e8;
+            --gold: #c9a227;
+            --gold-light: #e8c96a;
+            --text-dark: #131f14;
+            --text-mid: #334a34;
+            --text-muted: #617060;
+            --card-bg: #ffffff;
+            --border: #daebd9;
+            --accent-blue: #1d3557;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'DM Sans', sans-serif;
+            background: var(--cream);
+            color: var(--text-dark);
+            line-height: 1.7;
+            overflow-x: hidden;
+        }
+
+        /* ── NAVIGATION ── */
+        .navbar {
+            background: var(--forest-deep);
+            padding: 1.2rem 2rem;
+            position: fixed;
+            width: 100%;
+            top: 0;
+            z-index: 1000;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+        }
+
+        .navbar .logo {
+            color: white;
+            font-family: 'Playfair Display', serif;
+            font-size: 1.4rem;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .nav-links {
+            list-style: none;
+            display: flex;
+            gap: 2rem;
+        }
+
+        .nav-links a {
+            color: rgba(255,255,255,0.8);
+            text-decoration: none;
+            font-weight: 500;
+            font-size: 0.95rem;
+            transition: color 0.3s;
+        }
+
+        .nav-links a:hover, .nav-links a.active {
+            color: var(--gold-light);
+        }
+
+        /* ── HERO ── */
+        .hero {
+            background: linear-gradient(rgba(11, 46, 20, 0.85), rgba(11, 46, 20, 0.95)), url('assets/images/forest5.jpeg') center/cover;
+            color: white;
+            padding: 10rem 2rem 6rem;
+            text-align: center;
+            position: relative;
+        }
+
+        .hero-badge {
+            display: inline-block;
+            background: rgba(232, 201, 106, 0.15);
+            color: var(--gold-light);
+            border: 1px solid var(--gold-light);
+            padding: 0.5rem 1.5rem;
+            border-radius: 50px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            margin-bottom: 1.5rem;
+        }
+
+        .hero h1 {
+            font-family: 'Playfair Display', serif;
+            font-size: clamp(2.5rem, 6vw, 4.5rem);
+            font-weight: 700;
+            line-height: 1.1;
+            margin-bottom: 1.5rem;
+        }
+
+        .hero h1 em { color: var(--gold-light); font-style: italic; }
+
+        .hero-sub {
+            max-width: 800px;
+            margin: 0 auto;
+            font-size: 1.2rem;
+            opacity: 0.9;
+            font-weight: 300;
+        }
+
+        /* ── FRAMEWORK STATS ── */
+        .framework-bar {
+            background: var(--forest-mid);
+            padding: 2rem;
+            display: flex;
+            justify-content: center;
+            gap: 4rem;
+            flex-wrap: wrap;
+            border-top: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .fw-item {
+            text-align: center;
+            color: white;
+        }
+
+        .fw-item i {
+            color: var(--gold-light);
+            font-size: 1.8rem;
+            margin-bottom: 0.5rem;
+        }
+        
+        .fw-item span {
+            display: block;
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            opacity: 0.8;
+        }
+
+        /* ── SECTION STYLING ── */
+        .section {
+            padding: 6rem 2rem;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .section-header {
+            text-align: center;
+            margin-bottom: 4rem;
+        }
+
+        .section-header .eyebrow {
+            color: var(--forest-light);
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            font-size: 0.85rem;
+            margin-bottom: 0.5rem;
+            display: block;
+        }
+
+        .section-header h2 {
+            font-family: 'Playfair Display', serif;
+            font-size: 2.5rem;
+            color: var(--forest-deep);
+        }
+
+        /* ── GRID LAYOUTS ── */
+        .split-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 4rem;
+            align-items: center;
+        }
+
+        .split-grid.reverse {
+            direction: rtl;
+        }
+        .split-grid.reverse > * {
+            direction: ltr;
+        }
+
+        .content-block h3 {
+            font-family: 'Playfair Display', serif;
+            font-size: 2rem;
+            color: var(--forest-deep);
+            margin-bottom: 1.5rem;
+        }
+
+        .content-block p {
+            margin-bottom: 1.5rem;
+            font-size: 1.05rem;
+            color: var(--text-mid);
+        }
+
+        .feature-list {
+            list-style: none;
+            margin-top: 2rem;
+        }
+
+        .feature-list li {
+            display: flex;
+            align-items: flex-start;
+            gap: 1rem;
+            margin-bottom: 1.2rem;
+            background: white;
+            padding: 1.2rem;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.03);
+            border: 1px solid var(--border);
+        }
+
+        .feature-list i {
+            color: var(--canopy);
+            font-size: 1.4rem;
+            margin-top: 0.2rem;
+        }
+
+        .feature-list h4 {
+            color: var(--forest-deep);
+            margin-bottom: 0.3rem;
+            font-size: 1.1rem;
+        }
+        
+        .feature-list p {
+            margin-bottom: 0;
+            font-size: 0.95rem;
+        }
+
+        /* ── CARDS GRID ── */
+        .cards-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+        }
+
+        .info-card {
+            background: white;
+            padding: 2.5rem;
+            border-radius: 20px;
+            border: 1px solid var(--border);
+            box-shadow: 0 10px 30px rgba(11, 46, 20, 0.05);
+            transition: transform 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .info-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .info-card::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 4px;
+            background: var(--gold-light);
+        }
+
+        .info-card i {
+            font-size: 2.5rem;
+            color: var(--forest-light);
+            margin-bottom: 1.5rem;
+        }
+
+        .info-card h4 {
+            font-family: 'Playfair Display', serif;
+            font-size: 1.4rem;
+            margin-bottom: 1rem;
+            color: var(--forest-deep);
+        }
+
+        .info-card ul {
+            padding-left: 1.2rem;
+            color: var(--text-mid);
+        }
+        .info-card ul li { margin-bottom: 0.5rem; }
+
+        /* ── ECOSYSTEM FLOW ── */
+        .flow-container {
+            background: var(--forest-deep);
+            border-radius: 30px;
+            padding: 4rem 2rem;
+            color: white;
+            text-align: center;
+            position: relative;
+            margin: 4rem 0;
+        }
+
+        .flow-container h2 {
+            font-family: 'Playfair Display', serif;
+            color: var(--gold-light);
+            margin-bottom: 3rem;
+            font-size: 2.5rem;
+        }
+
+        .pipeline {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: relative;
+            max-width: 1000px;
+            margin: 0 auto;
+            flex-wrap: wrap;
+            gap: 2rem;
+        }
+
+        .pipeline::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 0;
+            width: 100%;
+            height: 2px;
+            background: rgba(255,255,255,0.2);
+            z-index: 1;
+            display: none; /* Hide on mobile */
+        }
+
+        @media (min-width: 900px) {
+            .pipeline::before { display: block; }
+        }
+
+        .flow-step {
+            background: var(--forest-mid);
+            border: 2px solid var(--gold);
+            padding: 1.5rem;
+            border-radius: 50%;
+            width: 140px;
+            height: 140px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 2;
+            position: relative;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        }
+
+        .flow-step i {
+            font-size: 2rem;
+            color: var(--gold-light);
+            margin-bottom: 0.5rem;
+        }
+
+        .flow-step span {
+            font-size: 0.8rem;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .flow-outcome {
+            background: white;
+            color: var(--forest-deep);
+            padding: 2rem;
+            border-radius: 15px;
+            max-width: 600px;
+            margin: 3rem auto 0;
+            font-weight: 500;
+        }
+
+        .flow-outcome strong { color: var(--canopy); }
+
+        /* ── FOOTER ── */
+        .footer {
+            background: var(--forest-deep);
+            color: #a8c8a8;
+            text-align: center;
+            padding: 3rem 2rem;
+            border-top: 1px solid rgba(255,255,255,0.1);
+        }
+
+        @media (max-width: 768px) {
+            .split-grid { grid-template-columns: 1fr; gap: 2rem; }
+            .hero { padding: 8rem 1rem 4rem; }
+            .hero h1 { font-size: 2.2rem; }
+            .pipeline { flex-direction: column; }
+            .nav-links { display: none; } /* Add hamburger logic if needed */
+        }
+    </style>
+</head>
+<body>
+
+    <nav class="navbar">
+        <a href="index.html" class="logo">
+            <i class="fas fa-leaf" style="color: var(--gold-light);"></i> Oloolua Guardians
+        </a>
+        <ul class="nav-links">
+            <li><a href="index.html">Home</a></li>
+            <li><a href="activities.html">Activities</a></li>
+                        <li><a href="seedlings.html">Nursery</a></li>
+            <li><a href="projects.html" class="active">Projects</a></li>
+        </ul>
+    </nav>
+
+    <div class="hero">
+        <div class="hero-badge">Digital Conservation Ecosystem</div>
+        <h1>Data-Driven, Blockchain-Enabled<br><em>Conservation</em></h1>
+        <p class="hero-sub">
+            Transforming environmental stewardship into a transparent, scalable, and economically viable model. We convert conservation actions into verified data, tokenized assets, and true economic value.
+        </p>
+    </div>
+
+    <div class="framework-bar">
+        <div class="fw-item">
+            <i class="fas fa-globe"></i>
+            <span>ESG Aligned</span>
+        </div>
+        <div class="fw-item">
+            <i class="fas fa-bullseye"></i>
+            <span>SDG Goals</span>
+        </div>
+        <div class="fw-item">
+            <i class="fas fa-link"></i>
+            <span>Hedera Guardian</span>
+        </div>
+        <div class="fw-item">
+            <i class="fas fa-microscope"></i>
+            <span>Science-Backed</span>
+        </div>
+    </div>
+
+    <!-- JAZA MITI SECTION -->
+    <div class="section">
+        <div class="split-grid">
+            <div class="content-block">
+                <span class="eyebrow">Flagship Initiative</span>
+                <h3>Jaza Miti: Tokenized Tree Planting</h3>
+                <p>Jaza Miti goes beyond traditional tree planting by creating measurable, verifiable, and monetizable environmental impact. We solve the lack of transparency in traditional reforestation by assigning local youth as guardians and geo-tagging every sapling.</p>
+                <ul class="feature-list">
+                    <li>
+                        <i class="fas fa-satellite"></i>
+                        <div>
+                            <h4>Data Capture</h4>
+                            <p>We log GPS coordinates, species types, growth metrics, and survival rates into structured datasets.</p>
+                        </div>
+                    </li>
+                    <li>
+                        <i class="fas fa-coins"></i>
+                        <div>
+                            <h4>Tokenization</h4>
+                            <p>Each living tree is minted as a Conservation NFT on Hedera, serving as a transparent digital asset representing real-world ecological impact.</p>
+                        </div>
+                    </li>
+                </ul>
+            </div>
+            <div style="border-radius: 20px; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.1);">
+                <img src="https://images.unsplash.com/photo-1542601906990-b4d3fb778b09?auto=format&fit=crop&w=800&q=80" alt="Tree planting" style="width: 100%; height: 100%; object-fit: cover; display: block;">
+            </div>
+        </div>
+    </div>
+
+    <!-- ICRAF / CIFOR SECTION -->
+    <div class="section" style="background: white; border-radius: 40px; margin-bottom: 2rem; box-shadow: 0 4px 20px rgba(0,0,0,0.03);">
+        <div class="section-header">
+            <span class="eyebrow">Scientific Credibility</span>
+            <h2>ICRAF / CIFOR Integration</h2>
+            <p style="max-width: 600px; margin: 0 auto; color: var(--text-muted);">Grounding our conservation model in rigorous scientific research to ensure ecological accuracy and prepare for global green finance markets.</p>
+        </div>
+        <div class="cards-grid">
+            <div class="info-card">
+                <i class="fas fa-seedling"></i>
+                <h4>Agroforestry Models</h4>
+                <ul>
+                    <li>Climate-resilient species selection</li>
+                    <li>Advanced soil restoration strategies</li>
+                    <li>Biodiversity enhancement planning</li>
+                </ul>
+            </div>
+            <div class="info-card">
+                <i class="fas fa-database"></i>
+                <h4>Data Integration</h4>
+                <ul>
+                    <li>Predictive tree growth models</li>
+                    <li>Accurate carbon sequestration estimates</li>
+                    <li>Comprehensive land-use data processing</li>
+                </ul>
+            </div>
+            <div class="info-card">
+                <i class="fas fa-chart-line"></i>
+                <h4>Value Creation</h4>
+                <ul>
+                    <li>Scientific Data + Field Data</li>
+                    <li>= Verified Impact Assets</li>
+                    <li>Attracting ESG and Impact Investors</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <!-- REGENERATIVE STRATEGIES -->
+    <div class="section">
+        <div class="section-header">
+            <span class="eyebrow">Holistic Approach</span>
+            <h2>Regenerative Ecosystem Strategies</h2>
+        </div>
+        <div class="split-grid">
+            <div class="info-card" style="border-top-color: #fca311;">
+                <i class="fas fa-archive" style="color: #fca311;"></i>
+                <h4>Beekeeping Initiative</h4>
+                <p>Integrated with reforestation to create a self-reinforcing ecological system. "Helping bees help us."</p>
+                <ul style="margin-top: 1rem;">
+                    <li><strong>Ecosystem:</strong> Enhances pollination and forest regeneration.</li>
+                    <li><strong>Economy:</strong> Youth harvest honey and beeswax.</li>
+                    <li><strong>Blockchain:</strong> Tokenizing honey batches to trace origins back to the specific forest zones.</li>
+                </ul>
+            </div>
+            <div class="info-card" style="border-top-color: #9b5de5;">
+                <i class="fas fa-palette" style="color: #9b5de5;"></i>
+                <h4>Arts in Nature</h4>
+                <p>Transforming conservation into a cultural experience. Artists become storytellers of the ecosystem.</p>
+                <ul style="margin-top: 1rem;">
+                    <li><strong>Creative:</strong> Forest murals and sculpture installations.</li>
+                    <li><strong>Data-Linked:</strong> Art connected to specific tree clusters.</li>
+                    <li><strong>Blockchain:</strong> Minting Art NFTs embedded with real environmental metrics.</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <!-- HEDERA GUARDIAN -->
+    <div class="section">
+        <div class="split-grid reverse">
+            <div class="content-block">
+                <span class="eyebrow">Trust Infrastructure</span>
+                <h3>Hedera Guardian Model</h3>
+                <p>Conservation has historically suffered from poor data verification and lack of trust. We use Hedera Guardian as a policy-driven, verifiable data system to solve this.</p>
+                <ul class="feature-list">
+                    <li>
+                        <i class="fas fa-shield-alt"></i>
+                        <div>
+                            <h4>MRV System</h4>
+                            <p>Measurement, Reporting, and Verification that is standardized, auditable, and completely transparent.</p>
+                        </div>
+                    </li>
+                    <li>
+                        <i class="fas fa-file-contract"></i>
+                        <div>
+                            <h4>Policy Driven</h4>
+                            <p>Automated rules for tree validation, data integrity, and ESG compliance ensure that every minted asset has real-world backing.</p>
+                        </div>
+                    </li>
+                </ul>
+            </div>
+            <div style="background: var(--forest-deep); border-radius: 20px; padding: 3rem; color: white; display: flex; flex-direction: column; justify-content: center; position: relative; overflow: hidden;">
+                <i class="fas fa-link" style="position: absolute; right: -20px; bottom: -20px; font-size: 15rem; opacity: 0.05;"></i>
+                <h3 style="font-family: 'Playfair Display'; font-size: 2rem; margin-bottom: 1rem;">The Strategic Advantage</h3>
+                <p style="opacity: 0.9; margin-bottom: 1rem;">By building on an immutable ledger, we provide absolute investor trust, create a highly scalable model, and align completely with global ESG frameworks.</p>
+                <p style="opacity: 0.9;"><strong>Vision:</strong> To become the definitive source of truth for conservation in Africa.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- ECOSYSTEM FLOW -->
+    <div class="section" style="padding-top: 0;">
+        <div class="flow-container">
+            <h2>The Integrated Conservation Pipeline</h2>
+            <div class="pipeline">
+                <div class="flow-step">
+                    <i class="fas fa-seedling"></i>
+                    <span>1. Plant</span>
+                </div>
+                <div class="flow-step">
+                    <i class="fas fa-mobile-alt"></i>
+                    <span>2. Data</span>
+                </div>
+                <div class="flow-step">
+                    <i class="fas fa-flask"></i>
+                    <span>3. Science</span>
+                </div>
+                <div class="flow-step">
+                    <i class="fas fa-cubes"></i>
+                    <span>4. Verify</span>
+                </div>
+                <div class="flow-step">
+                    <i class="fas fa-wallet"></i>
+                    <span>5. Value</span>
+                </div>
+            </div>
+            <div class="flow-outcome">
+                A regenerative system where <strong>Nature thrives</strong>, <strong>Youth earn</strong>, <strong>Data builds trust</strong>, and <strong>Investors participate</strong>.<br>
+                <span style="font-size: 0.85rem; color: var(--text-muted); display: block; margin-top: 0.5rem; text-transform: uppercase; letter-spacing: 1px;">A Replicable ESG-Aligned Green Economy Model</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="footer">
+        <h3 style="font-family: 'Playfair Display'; font-size: 1.5rem; margin-bottom: 0.5rem; color: white;">Oloolua Forest Youth Guardians</h3>
+        <p style="opacity: 0.7; font-size: 0.9rem;">Conservation must pay to sustain itself.</p>
+    </div>
+
+</body>
+</html>

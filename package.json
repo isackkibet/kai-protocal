@@ -8,7 +8,11 @@
     "test": "hardhat test",
     "deploy:localhost": "hardhat run scripts/deploy.ts --network localhost",
     "deploy:fuji": "hardhat run scripts/deploy.ts --network fuji",
-    "balance:fuji": "hardhat run scripts/balance.ts --network fuji"
+    "balance:fuji": "hardhat run scripts/balance.ts --network fuji",
+    "dev:app": "npm --prefix ./avax-frontend run dev",
+    "dev:sihu": "npx --prefix ./SIHU.COM next dev -p 3001",
+    "dev:oloolua": "npx --prefix ./oloolua-youth-guardians next dev -p 3002",
+    "start:all": "powershell -ExecutionPolicy Bypass -File ./start.ps1"
   },
   "keywords": [],
   "author": "",

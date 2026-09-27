@@ -1,4 +1,4 @@
-﻿# Python
+# Python
 __pycache__/
 *.pyc
 *.pyo
@@ -36,3 +36,16 @@ avax-frontend/node_modules/
 
 # Nested ai-agent repo — managed separately
 ai-agent/
+
+# Hubs & Next.js builds
+*/node_modules/
+*/*-report.json
+*.tsbuildinfo
+*/.next/
+hubs/**/.next/
+hubs/**/node_modules/
+avax-frontend/hubs/**/.next/
+avax-frontend/hubs/**/node_modules/
+# Standalone repos at root (now merged into avax-frontend/hubs)
+SIHU.COM/
+oloolua-youth-guardians/

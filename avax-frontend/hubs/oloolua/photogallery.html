@@ -1,0 +1,476 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Photo Stream - Oloolua Youth Guardians</title>
+    <link rel="stylesheet" href="assets/css/styles.css">
+    <link rel="icon" href="favicon.ico" type="image/x-icon">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            height: 100%;
+            width: 100%;
+            overflow: hidden;
+            background: #000;
+        }
+
+        .stream-container {
+            height: 100vh;
+            width: 100vw;
+            overflow-x: auto;
+            overflow-y: hidden;
+            display: flex;
+            scroll-snap-type: x mandatory;
+            scroll-behavior: smooth;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        /* Hide scrollbar but keep functionality */
+        .stream-container::-webkit-scrollbar {
+            display: none;
+        }
+        .stream-container {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+
+        .stream-slide {
+            flex: 0 0 100vw;
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            scroll-snap-align: center;
+            position: relative;
+        }
+
+        .stream-slide img {
+            max-width: 95%;
+            max-height: 90vh;
+            width: auto;
+            height: auto;
+            object-fit: contain;
+            box-shadow: 0 0 50px rgba(0,0,0,0.5);
+            border-radius: 8px;
+            background: #111; /* Dark placeholder */
+        }
+
+        .nav-controls {
+            position: fixed;
+            top: 50%;
+            width: 100%;
+            display: flex;
+            justify-content: space-between;
+            padding: 0 20px;
+            pointer-events: none;
+            z-index: 1000;
+            transform: translateY(-50%);
+        }
+
+        .nav-btn {
+            pointer-events: auto;
+            color: rgba(255, 255, 255, 0.6);
+            font-size: 3rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background: rgba(0,0,0,0.2);
+            border-radius: 50%;
+            width: 60px;
+            height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .nav-btn:hover {
+            color: #27ae60;
+            background: rgba(0,0,0,0.5);
+        }
+
+        .stream-info {
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: white;
+            z-index: 1000;
+            background: rgba(0,0,0,0.6);
+            padding: 8px 20px;
+            border-radius: 30px;
+            backdrop-filter: blur(5px);
+            font-family: 'Roboto', sans-serif;
+        }
+
+        .back-btn {
+            position: fixed;
+            top: 30px;
+            left: 30px;
+            z-index: 1001;
+            color: white;
+            text-decoration: none;
+            background: rgba(0,0,0,0.6);
+            padding: 10px 20px;
+            border-radius: 30px;
+            font-weight: bold;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .back-btn:hover {
+            background: #27ae60;
+        }
+
+        @media (max-width: 768px) {
+            .nav-controls {
+                display: none;
+            }
+            .stream-slide img {
+                max-width: 100%;
+                max-height: 85vh;
+                border-radius: 0;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <a href="index.html" class="back-btn"><i class="fas fa-arrow-left"></i> Back to Home</a>
+
+    <div class="nav-controls">
+        <div class="nav-btn" id="prevBtn"><i class="fas fa-chevron-left"></i></div>
+        <div class="nav-btn" id="nextBtn"><i class="fas fa-chevron-right"></i></div>
+    </div>
+
+    <div class="stream-container" id="streamContainer">
+        <!-- Images will be inserted here -->
+    </div>
+
+    <div class="stream-info">
+        <span id="currentIndex">1</span> / <span id="totalImages">0</span>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const container = document.getElementById('streamContainer');
+            const currentEl = document.getElementById('currentIndex');
+            const totalEl = document.getElementById('totalImages');
+            const nextBtn = document.getElementById('nextBtn');
+            const prevBtn = document.getElementById('prevBtn');
+
+            const imagePaths = [
+                
+                  "assets/images/act0.jpeg",
+                  "assets/images/act1.jpeg",
+                  "assets/images/act10.jpeg",
+                  "assets/images/act11.jpeg",
+                  "assets/images/act12.jpeg",
+                  "assets/images/act13.jpeg",
+                  "assets/images/act14.jpeg",
+                  "assets/images/act15.jpeg",
+                  "assets/images/act16.jpeg",
+                  "assets/images/act2.jpeg",
+                  "assets/images/act20.jpeg",
+                  "assets/images/act21.jpeg",
+                  "assets/images/act22.jpeg",
+                  "assets/images/act23.jpeg",
+                  "assets/images/act24.jpeg",
+                  "assets/images/act25.jpeg",
+                  "assets/images/act26.jpeg",
+                  "assets/images/act27.jpeg",
+                  "assets/images/act28.jpeg",
+                  "assets/images/act3.jpeg",
+                  "assets/images/act30.jpeg",
+                  "assets/images/act31.jpeg",
+                  "assets/images/act34.jpeg",
+                  "assets/images/act35.jpeg",
+                  "assets/images/act36.jpeg",
+                  "assets/images/act37.jpeg",
+                  "assets/images/act38.jpeg",
+                  "assets/images/act39.jpeg",
+                  "assets/images/act4.jpeg",
+                  "assets/images/act40.jpeg",
+                  "assets/images/act41.jpeg",
+                  "assets/images/act42.jpeg",
+                  "assets/images/act44.jpeg",
+                  "assets/images/act45.jpeg",
+                  "assets/images/act5.jpeg",
+                  "assets/images/act6.jpeg",
+                  "assets/images/act7.jpeg",
+                  "assets/images/act8.jpeg",
+                  "assets/images/act9.jpeg",
+                  "assets/images/tur1.jpeg",
+                  "assets/images/tur10.jpeg",
+                  "assets/images/tur11.jpeg",
+                  "assets/images/tur12.jpeg",
+                  "assets/images/tur13.jpeg",
+                  "assets/images/tur15.jpeg",
+                  "assets/images/tur16.jpeg",
+                  "assets/images/tur17.jpeg",
+                  "assets/images/tur18.jpeg",
+                  "assets/images/tur19.jpeg",
+                  "assets/images/tur2.jpeg",
+                  "assets/images/tur20.jpeg",
+                  "assets/images/tur21.jpeg",
+                  "assets/images/tur22.jpeg",
+                  "assets/images/tur23.jpeg",
+                  "assets/images/tur24.jpeg",
+                  "assets/images/tur25.jpeg",
+                  "assets/images/tur26.jpeg",
+                  "assets/images/tur27.jpeg",
+                  "assets/images/tur28.jpeg",
+                  "assets/images/tur29.jpeg",
+                  "assets/images/tur3.jpeg",
+                  "assets/images/tur30.jpeg",
+                  "assets/images/tur31.jpeg",
+                  "assets/images/tur32.jpeg",
+                  "assets/images/tur33.jpeg",
+                  "assets/images/tur34.jpeg",
+                  "assets/images/tur35.jpeg",
+                  "assets/images/tur36.jpeg",
+                  "assets/images/tur37.jpeg",
+                  "assets/images/tur39.jpeg",
+                  "assets/images/tur4.jpeg",
+                  "assets/images/tur40.jpeg",
+                  "assets/images/tur41.jpeg",
+                  "assets/images/tur42.jpeg",
+                  "assets/images/tur43.jpeg",
+                  "assets/images/tur44.jpeg",
+                  "assets/images/tur45.jpeg",
+                  "assets/images/tur46.jpeg",
+                  "assets/images/tur47.jpeg",
+                  "assets/images/tur48.jpeg",
+                  "assets/images/tur49.jpeg",
+                  "assets/images/tur5.jpeg",
+                  "assets/images/tur50.jpeg",
+                  "assets/images/tur51.jpeg",
+                  "assets/images/tur53.jpeg",
+                  "assets/images/tur54.jpeg",
+                  "assets/images/tur55.jpeg",
+                  "assets/images/tur56.jpeg",
+                  "assets/images/tur57.jpeg",
+                  "assets/images/tur58.jpeg",
+                  "assets/images/tur59.jpeg",
+                  "assets/images/tur6.jpeg",
+                  "assets/images/tur60.jpeg",
+                  "assets/images/tur61.jpeg",
+                  "assets/images/tur62.jpeg",
+                  "assets/images/tur64.jpeg",
+                  "assets/images/tur65.jpeg",
+                  "assets/images/tur66.jpeg",
+                  "assets/images/tur67.jpeg",
+                  "assets/images/tur68.jpeg",
+                  "assets/images/tur69.jpeg",
+                  "assets/images/tur7.jpeg",
+                  "assets/images/tur70.jpeg",
+                  "assets/images/tur71.jpeg",
+                  "assets/images/tur72.jpeg",
+                  "assets/images/tur73.jpeg",
+                  "assets/images/tur75.jpeg",
+                  "assets/images/tur76.jpeg",
+                  "assets/images/tur79.jpeg",
+                  "assets/images/tur8.jpeg",
+                  "assets/images/tur80.jpeg",
+                  "assets/images/tur82.jpeg",
+                  "assets/images/tur9.jpeg",
+                  "assets/images/fin1.jpeg",
+                  "assets/images/fin10.jpeg",
+                  "assets/images/fin11.jpeg",
+                  "assets/images/fin12.jpeg",
+                  "assets/images/fin13.jpeg",
+                  "assets/images/fin14.jpeg",
+                  "assets/images/fin15.jpeg",
+                  "assets/images/fin16.jpeg",
+                  "assets/images/fin17.jpeg",
+                  "assets/images/fin18.jpeg",
+                  "assets/images/fin2.jpeg",
+                  "assets/images/fin20.jpeg",
+                  "assets/images/fin21.jpeg",
+                  "assets/images/fin22.jpeg",
+                  "assets/images/fin23.jpeg",
+                  "assets/images/fin24.jpeg",
+                  "assets/images/fin25.jpeg",
+                  "assets/images/fin26.jpeg",
+                  "assets/images/fin27.jpeg",
+                  "assets/images/fin28.jpeg",
+                  "assets/images/fin29.jpeg",
+                  "assets/images/fin3.jpeg",
+                  "assets/images/fin30.jpeg",
+                  "assets/images/fin31.jpeg",
+                  "assets/images/fin32.jpeg",
+                  "assets/images/fin33.jpeg",
+                  "assets/images/fin34.jpeg",
+                  "assets/images/fin36.jpeg",
+                  "assets/images/fin37.jpeg",
+                  "assets/images/fin38.jpeg",
+                  "assets/images/fin4.jpeg",
+                  "assets/images/fin40.jpeg",
+                  "assets/images/fin5.jpeg",
+                  "assets/images/fin6.jpeg",
+                  "assets/images/fin7.jpeg",
+                  "assets/images/fin8.jpeg",
+                  "assets/images/fin9.jpeg",
+                  "assets/images/gal1.jpeg",
+                  "assets/images/gal10.jpeg",
+                  "assets/images/gal12.jpeg",
+                  "assets/images/gal13.jpeg",
+                  "assets/images/gal14.jpeg",
+                  "assets/images/gal15.jpeg",
+                  "assets/images/gal16.jpeg",
+                  "assets/images/gal17.jpeg",
+                  "assets/images/gal18.jpeg",
+                  "assets/images/gal19.jpeg",
+                  "assets/images/gal2.jpeg",
+                  "assets/images/gal20.jpeg",
+                  "assets/images/gal21.jpeg",
+                  "assets/images/gal22.jpeg",
+                  "assets/images/gal23.jpeg",
+                  "assets/images/gal24.jpeg",
+                  "assets/images/gal25.jpeg",
+                  "assets/images/gal26.jpeg",
+                  "assets/images/gal27.jpeg",
+                  "assets/images/gal28.jpeg",
+                  "assets/images/gal29.jpeg",
+                  "assets/images/gal3.jpeg",
+                  "assets/images/gal31.jpeg",
+                  "assets/images/gal33.jpeg",
+                  "assets/images/gal34.jpeg",
+                  "assets/images/gal36.jpeg",
+                  "assets/images/gal37.jpeg",
+                  "assets/images/gal38.jpeg",
+                  "assets/images/gal4.jpeg",
+                  "assets/images/gal41.jpeg",
+                  "assets/images/gal42.jpeg",
+                  "assets/images/gal43.jpeg",
+                  "assets/images/gal44.jpeg",
+                  "assets/images/gal45.jpeg",
+                  "assets/images/gal46.jpeg",
+                  "assets/images/gal47.jpeg",
+                  "assets/images/gal48.jpeg",
+                  "assets/images/gal49.jpeg",
+                  "assets/images/gal50.jpeg",
+                  "assets/images/gal51.jpeg",
+                  "assets/images/gal52.jpeg",
+                  "assets/images/gal53.jpeg",
+                  "assets/images/gal54.jpeg",
+                  "assets/images/gal55.jpeg",
+                  "assets/images/gal56.jpeg",
+                  "assets/images/gal57.jpeg",
+                  "assets/images/gal58.jpeg",
+                  "assets/images/gal59.jpeg",
+                  "assets/images/gal6.jpeg",
+                  "assets/images/gal60.jpeg",
+                  "assets/images/gal61.jpeg",
+                  "assets/images/gal62.jpeg",
+                  "assets/images/gal64.jpeg",
+                  "assets/images/gal65.jpeg",
+                  "assets/images/gal66.jpeg",
+                  "assets/images/gal67.jpeg",
+                  "assets/images/gal68.jpeg",
+                  "assets/images/gal69.jpeg",
+                  "assets/images/gal70.jpeg",
+                  "assets/images/gal71.jpeg",
+                  "assets/images/gal72.jpeg",
+                  "assets/images/gal73.jpeg",
+                  "assets/images/gal74.jpeg",
+                  "assets/images/gal75.jpeg",
+                  "assets/images/gal76.jpeg",
+                  "assets/images/gal77.jpeg",
+                  "assets/images/gal78.jpeg",
+                  "assets/images/gal8.jpeg",
+                  "assets/images/gal80.jpeg",
+                  "assets/images/gal81.jpeg",
+                  "assets/images/gal82.jpeg",
+                  "assets/images/gal83.jpeg",
+                  "assets/images/gal84.jpeg",
+                  "assets/images/gal85.jpeg",
+                  "assets/images/gal86.jpeg",
+                  "assets/images/gal87.jpeg",
+                  "assets/images/gal88.jpeg",
+                  "assets/images/gal89.jpeg",
+                  "assets/images/gal90.jpeg",
+                  "assets/images/gal91.jpeg",
+                  "assets/images/gal92.jpeg",
+                  "assets/images/gal93.jpeg",
+                  "assets/images/gal94.jpeg",
+                  "assets/images/gal95.jpeg",
+                  "assets/images/gal96.jpeg",
+                  "assets/images/acacia.jpg",
+                  "assets/images/african_cherry.jpg",
+                  "assets/images/avocado.JPG",
+                  "assets/images/chestnut.jpg",
+                  "assets/images/croton_megalocarpus.jpg",
+                  "assets/images/drypetes.jpg",
+                  "assets/images/jackfruit.jpg",
+                  "assets/images/makhamia.jpg",
+                  "assets/images/matomoko.jpg",
+                  "assets/images/pepper_bark.jpg",
+                  "assets/images/silver_oak.jpg",
+                  "assets/images/sisal.jpg",
+                  "assets/images/teclea.jpg",
+                  "assets/images/thika_palm.jpg",
+                  "assets/images/toothbrush_tree.jpg",
+                  "assets/images/future1.jpeg",
+                  "assets/images/future11.jpeg",
+                  "assets/images/future12.jpeg",
+                  "assets/images/future13.jpeg",
+                  "assets/images/future14.jpeg",
+                  "assets/images/future15.jpeg",
+                  "assets/images/future16.jpeg",
+                  "assets/images/future2.jpeg",
+                  "assets/images/future4.jpeg",
+                  "assets/images/future5.jpeg",
+                  "assets/images/future6.jpeg",
+                  "assets/images/future7.jpeg",
+                  "assets/images/future8.jpeg",
+                  "assets/images/future9.jpeg"
+                
+            ];
+
+            function init() {
+                totalEl.textContent = imagePaths.length;
+                
+                imagePaths.forEach((path, index) => {
+                    const slide = document.createElement('div');
+                    slide.className = 'stream-slide';
+                    const img = document.createElement('img');
+                    img.src = path;
+                    img.alt = 'Oloolua Photo';
+                    img.loading = 'lazy';
+                    slide.appendChild(img);
+                    container.appendChild(slide);
+                });
+
+                // Update counter on scroll
+                container.addEventListener('scroll', () => {
+                    const index = Math.round(container.scrollLeft / window.innerWidth);
+                    currentEl.textContent = index + 1;
+                });
+            }
+
+            nextBtn.addEventListener('click', () => {
+                container.scrollBy({ left: window.innerWidth, behavior: 'smooth' });
+            });
+
+            prevBtn.addEventListener('click', () => {
+                container.scrollBy({ left: -window.innerWidth, behavior: 'smooth' });
+            });
+
+            // Keyboard Support
+            document.addEventListener('keydown', e => {
+                if (e.key === 'ArrowRight') nextBtn.click();
+                if (e.key === 'ArrowLeft') prevBtn.click();
+            });
+
+            init();
+        });
+    </script>
+</body>
+
+</html>

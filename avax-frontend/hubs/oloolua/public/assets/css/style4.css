@@ -1,0 +1,100 @@
+/* General Styles */
+body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+    background-color: #F0FFF0; /* Pale Green */
+    color: #2E8B57; /* Seafoam Green */
+    line-height: 1.6;
+}
+
+/* Header */
+.main-header {
+    background-color: #228B22; /* Forest Green */
+    color: white;
+    padding: 20px;
+    text-align: center;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+}
+
+.main-nav {
+    list-style: none;
+    padding: 0;
+    display: flex;
+    justify-content: center;
+    gap: 15px;
+}
+
+.main-nav li a {
+    text-decoration: none;
+    color: #98FF98; /* Mint Green */
+    font-weight: bold;
+    padding: 8px 12px;
+    transition: background-color 0.3s, color 0.3s;
+}
+
+.main-nav li a:hover {
+    background-color: #50C878; /* Emerald Green */
+    color: white;
+    border-radius: 5px;
+}
+
+/* Section Styles */
+.cfa-section {
+    padding: 20px;
+    background-color: #F5FFF5; /* Slight Pale Green tint */
+    margin: 20px auto;
+    max-width: 800px;
+    border-radius: 10px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.cfa-section h2 {
+    color: #00A86B; /* Jade Green */
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+.intro-text {
+    background-color: #98FB98; /* Pale Green */
+    padding: 15px;
+    border-left: 5px solid #32CD32; /* Lime Green */
+    border-radius: 5px;
+    margin-bottom: 20px;
+}
+
+.cfa-article {
+    margin-bottom: 20px;
+    background-color: #556B2F; /* Olive Green */
+    padding: 15px;
+    color: white;
+    border-radius: 8px;
+    transition: transform 0.3s;
+}
+
+.cfa-article:hover {
+    transform: translateY(-5px);
+}
+
+.cfa-article h3 {
+    color: #98FF98; /* Mint Green */
+}
+
+.cfa-article ul {
+    list-style: disc inside;
+    padding-left: 20px;
+}
+
+/* Footer */
+footer {
+    background-color: #228B22; /* Forest Green */
+    color: white;
+    text-align: center;
+    padding: 10px;
+    position: relative;
+}
+
+footer em {
+    font-style: italic;
+    color: #98FF98; /* Mint Green */
+}
