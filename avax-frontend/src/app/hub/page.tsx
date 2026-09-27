@@ -15,8 +15,8 @@ import {
   MONO, SERIF, SANS, labelStyle, sihuLabelStyle, olooluaLabelStyle
 } from '@/lib/hub-theme';
 
-const SIHU_PORTAL_URL = process.env.NEXT_PUBLIC_SIHU_PORTAL_URL || 'http://localhost:3001';
-const OLOOLUA_PORTAL_URL = process.env.NEXT_PUBLIC_OLOOLUA_PORTAL_URL || 'http://localhost:3002';
+const SIHU_PORTAL_URL = process.env.NEXT_PUBLIC_SIHU_PORTAL_URL || '/hub';
+const OLOOLUA_PORTAL_URL = process.env.NEXT_PUBLIC_OLOOLUA_PORTAL_URL || '/conservation';
 
 const TICKER_ITEMS = [
   '🚨 Sango Basin Watch: Wetland conservation protocols active across 42 Lake Victoria catchment zones',
@@ -42,7 +42,7 @@ interface HubModel {
   badge: string;
   tagline: string;
   desc: string;
-  port: number;
+  port?: number;
   portalUrl: string;
   theme: typeof SIHU_THEME | typeof OLOOLUA_THEME;
   accent: string;
@@ -57,10 +57,9 @@ const HUBS: HubModel[] = [
     id: 'sihu',
     name: 'SIHU.COM Information Hub',
     brandTitle: 'Sango Information Hub & Media Network',
-    badge: 'The Blue Hub · Port 3001',
+    badge: 'The Blue Hub · Media Network',
     tagline: 'Lake Victoria Basin Knowledge Management & Environmental Journalism',
     desc: 'Elite community media network and technical knowledge portal for natural resource management, environmental protection, Lake Victoria Basin investigations, Sango podcasts, and automated AI editorial verification.',
-    port: 3001,
     portalUrl: SIHU_PORTAL_URL,
     theme: SIHU_THEME,
     accent: SIHU_THEME.blue,
@@ -104,7 +103,7 @@ const HUBS: HubModel[] = [
       },
     ],
     actions: [
-      { label: 'Launch SIHU Portal (:3001)', url: SIHU_PORTAL_URL, primary: true, external: true },
+      { label: 'Explore SIHU Portal', url: SIHU_PORTAL_URL, primary: true, external: true },
       { label: 'Write Story', url: `${SIHU_PORTAL_URL}/portal/submit`, external: true },
       { label: 'Audio Studio', url: `${SIHU_PORTAL_URL}/studio`, external: true },
       { label: 'Document Archive', url: `${SIHU_PORTAL_URL}/documents`, external: true },
@@ -114,10 +113,9 @@ const HUBS: HubModel[] = [
     id: 'oloolua',
     name: 'Oloolua Youth Guardians Hub',
     brandTitle: 'Community Forest Association (CFA) Conservation Hub',
-    badge: 'The Green Hub · Port 3002',
+    badge: 'The Green Hub · Forest CFA',
     tagline: 'Forest Nursery, Indigenous Seedlings & Community Reforestation MRV',
     desc: 'Hands-on community conservation management platform. Tracks indigenous tree seedlings, Ngong Hills forest patrols, youth workshops, apiary beekeeping, and verified carbon methodologies.',
-    port: 3002,
     portalUrl: OLOOLUA_PORTAL_URL,
     theme: OLOOLUA_THEME,
     accent: OLOOLUA_THEME.emerald,
@@ -162,7 +160,7 @@ const HUBS: HubModel[] = [
       },
     ],
     actions: [
-      { label: 'Launch Oloolua Hub (:3002)', url: OLOOLUA_PORTAL_URL, primary: true, external: true },
+      { label: 'Explore Oloolua Hub', url: OLOOLUA_PORTAL_URL, primary: true, external: true },
       { label: 'Seedlings Registry', url: `${OLOOLUA_PORTAL_URL}/seedlings.html`, external: true },
       { label: 'Member Dashboard', url: `${OLOOLUA_PORTAL_URL}/member-dashboard.html`, external: true },
       { label: 'In-App Conservation Layer', url: '/conservation', internal: true },
@@ -303,24 +301,24 @@ export default function HubPage() {
               background: 'rgba(15, 23, 42, 0.8)',
               border: '1px solid rgba(255,255,255,0.1)',
             }}>
-              {/* SIHU Port Status */}
+              {/* SIHU Status */}
               <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, color: '#E2E8F0' }}>
                 <span style={{
                   width: 8, height: 8, borderRadius: '50%',
                   background: serverStatus[3001] === false ? '#EF4444' : '#38BDF8',
                   boxShadow: '0 0 8px rgba(56, 189, 248, 0.6)',
                 }} />
-                <span>SIHU (:3001)</span>
+                <span>SIHU Media</span>
               </div>
               <span style={{ width: 1, height: 16, background: 'rgba(255,255,255,0.12)' }} />
-              {/* Oloolua Port Status */}
+              {/* Oloolua Status */}
               <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, color: '#E2E8F0' }}>
                 <span style={{
                   width: 8, height: 8, borderRadius: '50%',
                   background: serverStatus[3002] === false ? '#EF4444' : '#10B981',
                   boxShadow: '0 0 8px rgba(16, 185, 129, 0.6)',
                 }} />
-                <span>Oloolua (:3002)</span>
+                <span>Oloolua CFA</span>
               </div>
             </div>
 
@@ -345,8 +343,8 @@ export default function HubPage() {
         <section style={{ margin: '26px 0 28px', display: 'flex', gap: 10, flexWrap: 'wrap' }}>
           {[
             { id: 'all', label: 'All Information Hubs', count: '2 Hubs Synchronized', accent: '#7DD3FC' },
-            { id: 'sihu', label: '📰 SIHU.COM (The Blue Hub)', count: 'Port 3001', accent: '#38BDF8' },
-            { id: 'oloolua', label: '🌲 Oloolua Youth Guardians (The Green Hub)', count: 'Port 3002', accent: '#10B981' },
+            { id: 'sihu', label: '📰 SIHU.COM (The Blue Hub)', count: 'Media & Journalism', accent: '#38BDF8' },
+            { id: 'oloolua', label: '🌲 Oloolua Youth Guardians (The Green Hub)', count: 'Conservation & Forestry', accent: '#10B981' },
           ].map((tab) => {
             const active = selectedHub === tab.id;
             return (
@@ -385,7 +383,7 @@ export default function HubPage() {
           gap: 26,
         }}>
           {HUBS.filter(h => selectedHub === 'all' || selectedHub === h.id).map((hub) => {
-            const isOnline = serverStatus[hub.port] !== false;
+            const isOnline = hub.port ? serverStatus[hub.port] !== false : true;
             const isSihu = hub.id === 'sihu';
 
             return (
@@ -607,18 +605,16 @@ export default function HubPage() {
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
               <Sparkles size={14} color="#38BDF8" />
               <p style={{ ...MONO, fontSize: 10, letterSpacing: 1.4, textTransform: 'uppercase', color: '#7DD3FC', fontWeight: 700, margin: 0 }}>
-                Unified Frontend Architecture
+                Unified Ecosystem Architecture
               </p>
             </div>
             <p style={{ margin: 0, fontSize: 13, color: '#94A3B8' }}>
-              Both SIHU.COM and Oloolua Youth Guardians are copied into <code style={{ color: '#F8FAFC', background: 'rgba(255,255,255,0.1)', padding: '2px 6px', borderRadius: 4 }}>avax-frontend/hubs/</code> and run as synchronized services on ports <strong>3001</strong> and <strong>3002</strong>.
+              Both SIHU.COM and Oloolua Youth Guardians operate as synchronized knowledge nodes within the broader KAI ecosystem.
             </p>
           </div>
           <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
             <a
               href={`${SIHU_PORTAL_URL}/portal`}
-              target="_blank"
-              rel="noreferrer"
               style={{
                 ...MONO, fontSize: 11, padding: '9px 16px', borderRadius: 8,
                 background: '#0284C7', color: '#FFFFFF', fontWeight: 700,
@@ -626,12 +622,10 @@ export default function HubPage() {
               }}
             >
               <Newspaper size={14} />
-              Open SIHU.COM ↗
+              Open SIHU Portal ↗
             </a>
             <a
               href={OLOOLUA_PORTAL_URL}
-              target="_blank"
-              rel="noreferrer"
               style={{
                 ...MONO, fontSize: 11, padding: '9px 16px', borderRadius: 8,
                 background: '#059669', color: '#FFFFFF', fontWeight: 700,

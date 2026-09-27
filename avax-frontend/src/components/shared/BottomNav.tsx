@@ -11,22 +11,24 @@ import { useAIChatStore } from '@/store/useAIChatStore';
 
 const itemStyle = (active: boolean): React.CSSProperties => ({
   display: 'flex', flexDirection: 'column', alignItems: 'center',
-  justifyContent: 'center', gap: 4, textDecoration: 'none',
-  position: 'relative', padding: '6px 14px', borderRadius: 14,
-  minWidth: 56, transition: 'all 0.2s ease',
-  background: active ? 'rgba(16,185,129,0.10)' : 'transparent',
+  justifyContent: 'center', gap: 3, textDecoration: 'none',
+  position: 'relative', padding: '6px clamp(4px, 2vw, 12px)', borderRadius: 12,
+  minWidth: 48, flex: 1, transition: 'all 0.2s ease',
+  background: active ? 'rgba(16,185,129,0.12)' : 'transparent',
   border: 'none', cursor: 'pointer', font: 'inherit',
+  WebkitTapHighlightColor: 'transparent',
+  userSelect: 'none',
 });
 
 const HUB_OPTIONS = [
   {
     id: 'sihu',
     name: 'SIHU.COM Information Hub',
-    badge: 'The Blue Hub · :3001',
+    badge: 'The Blue Hub · Media Network',
     desc: 'Sango Information Hub & media network for Lake Victoria Basin news, verified environmental articles, and audio studio.',
     href: '/hub',
-    portalUrl: process.env.NEXT_PUBLIC_SIHU_PORTAL_URL || 'http://localhost:3001',
-    portalLabel: 'SIHU Portal :3001',
+    portalUrl: process.env.NEXT_PUBLIC_SIHU_PORTAL_URL || '/hub',
+    portalLabel: 'Explore SIHU Portal',
     icon: Newspaper,
     accent: '#38BDF8',
     bg: 'linear-gradient(135deg, rgba(56, 189, 248, 0.16) 0%, rgba(2, 6, 23, 0.95) 100%)',
@@ -35,11 +37,11 @@ const HUB_OPTIONS = [
   {
     id: 'oloolua',
     name: 'Oloolua Youth Guardians',
-    badge: 'The Green Hub · :3002',
+    badge: 'The Green Hub · Forest CFA',
     desc: 'Community Forest Association (CFA) youth hub with indigenous seedlings nursery, beekeeping, patrol logs, and MRV.',
     href: '/conservation',
-    portalUrl: process.env.NEXT_PUBLIC_OLOOLUA_PORTAL_URL || 'http://localhost:3002',
-    portalLabel: 'Oloolua Hub :3002',
+    portalUrl: process.env.NEXT_PUBLIC_OLOOLUA_PORTAL_URL || '/conservation',
+    portalLabel: 'Explore Oloolua Hub',
     icon: TreePine,
     accent: '#10B981',
     bg: 'linear-gradient(135deg, rgba(16, 185, 129, 0.16) 0%, rgba(4, 21, 14, 0.95) 100%)',

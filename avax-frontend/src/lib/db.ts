@@ -1,4 +1,4 @@
-import { prisma } from '@/lib/prisma';
+import { prisma } from './prisma.ts';
 
 /**
  * Shared DB accessor for API routes.

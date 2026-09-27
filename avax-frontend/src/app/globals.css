@@ -76,9 +76,21 @@
 }
 
 /* ── Reset ────────────────────────────────────────────────── */
-*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-html, body { height: 100%; }
-html { scroll-behavior: smooth; }
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  -webkit-tap-highlight-color: transparent;
+}
+html, body {
+  height: 100%;
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+html {
+  scroll-behavior: smooth;
+  touch-action: manipulation;
+}
 
 /* ══════════════════════════════════════════════════════════════
    BODY — background image shows through at full richness.
@@ -714,6 +726,24 @@ body {
 .airdrop-summary-grid,
 .airdrop-token-grid,
 .airdrop-task-grid { width: 100%; }
+
+/* Mobile Touch & Scroll Utilities */
+.no-scrollbar::-webkit-scrollbar { display: none; }
+.no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+.scroll-touch {
+  -webkit-overflow-scrolling: touch;
+  scroll-behavior: smooth;
+  overscroll-behavior-x: contain;
+}
+
+.tap-scale {
+  transition: transform 0.15s cubic-bezier(0.2, 0.8, 0.2, 1), opacity 0.15s ease;
+}
+.tap-scale:active {
+  transform: scale(0.96);
+  opacity: 0.9;
+}
 
 @media (max-width: 760px) {
   .airdrop-summary-grid { grid-template-columns: 1fr 1fr !important; }
