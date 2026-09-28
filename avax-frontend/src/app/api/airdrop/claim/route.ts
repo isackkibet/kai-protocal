@@ -1,18 +1,22 @@
 import { NextResponse } from 'next/server';
-import { verifyPrivyUserId } from '@/lib/privy-server';
+import { resolveAirdropUser } from '@/lib/airdrop-auth';
 import { claimDailyDropRitual } from '@/lib/airdrop-engine';
 
 export async function POST(req: Request) {
   try {
-    const privyUserId = await verifyPrivyUserId(req.headers.get('authorization'));
-    const userId = privyUserId || 'did:privy:demo_user_austin';
+    const auth = await resolveAirdropUser(req);
+    if (auth.error) return auth.error;
+    const { userId } = auth;
     const result = await claimDailyDropRitual(userId);
     if (!result.ok) {
-      return NextResponse.json({ ok: false, error: result.error || 'Failed to claim daily drop' }, { status: 400 });
+      return NextResponse.json(
+        { ok: false, error: result.error || 'Failed to claim daily drop', cooldown: !!result.cooldown, remainingSeconds: result.remainingSeconds ?? 0 },
+        { status: result.cooldown ? 409 : 400 },
+      );
     }
     return NextResponse.json({ ok: true, data: result });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('[/api/airdrop/claim] error:', error);
-    return NextResponse.json({ ok: false, error: error.message || 'Server error claiming daily drop' }, { status: 500 });
+    return NextResponse.json({ ok: false, error: 'Server error claiming daily drop' }, { status: 500 });
   }
 }

@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { verifyPrivyUserId } from '@/lib/privy-server';
+import { resolveAirdropUser } from '@/lib/airdrop-auth';
 import { claimMissionReward } from '@/lib/airdrop-engine';
 
 export async function POST(
@@ -8,15 +8,16 @@ export async function POST(
 ) {
   try {
     const { id } = await params;
-    const privyUserId = await verifyPrivyUserId(req.headers.get('authorization'));
-    const userId = privyUserId || 'did:privy:demo_user_austin';
+    const auth = await resolveAirdropUser(req);
+    if (auth.error) return auth.error;
+    const { userId } = auth;
     const result = await claimMissionReward(userId, id);
     if (!result.ok) {
       return NextResponse.json({ ok: false, error: result.error || 'Failed to claim mission reward' }, { status: 400 });
     }
     return NextResponse.json({ ok: true, data: result });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('[/api/airdrop/missions/[id]/claim] error:', error);
-    return NextResponse.json({ ok: false, error: error.message || 'Server error claiming mission' }, { status: 500 });
+    return NextResponse.json({ ok: false, error: 'Server error claiming mission' }, { status: 500 });
   }
 }

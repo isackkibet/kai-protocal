@@ -1,11 +1,12 @@
 import { NextResponse } from 'next/server';
-import { verifyPrivyUserId } from '@/lib/privy-server';
+import { resolveAirdropUser } from '@/lib/airdrop-auth';
 import { linkUserWallet } from '@/lib/airdrop-engine';
 
 export async function POST(req: Request) {
   try {
-    const privyUserId = await verifyPrivyUserId(req.headers.get('authorization'));
-    const userId = privyUserId || 'did:privy:demo_user_austin';
+    const auth = await resolveAirdropUser(req);
+    if (auth.error) return auth.error;
+    const { userId } = auth;
     const body = await req.json();
     const { walletAddress } = body;
 
@@ -19,8 +20,8 @@ export async function POST(req: Request) {
     }
 
     return NextResponse.json({ ok: true, data: result });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('[/api/airdrop/link-wallet] error:', error);
-    return NextResponse.json({ ok: false, error: error.message || 'Server error linking wallet' }, { status: 500 });
+    return NextResponse.json({ ok: false, error: 'Server error linking wallet' }, { status: 500 });
   }
 }
