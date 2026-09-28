@@ -1,7 +1,7 @@
 import type { PrismaClient } from '@prisma/client';
 import { getPrisma } from './db.ts';
 import { MINING_CONFIG } from './mining-config.ts';
-import { decayHashPower, gainHashPower, claimMultiplier, applyTreasuryCut } from './mining-engine-math.ts';
+import { decayHashPower, gainHashPower, claimMultiplier, applyTreasuryCut, claimStreak } from './mining-engine-math.ts';
 
 /**
  * KAI Airdrop & Referral Power Engine (PRD v1.2 Implementation)
@@ -42,6 +42,58 @@ export interface AirdropSummary {
   isSnapshotEligible: boolean;
   rank: number;
   tier: 'BRONZE' | 'SILVER' | 'GOLD' | 'DIAMOND';
+  /** Consecutive days with a daily claim (48h grace between claims). */
+  streak: number;
+}
+
+export interface LeaderboardEntry {
+  rank: number;
+  name: string;
+  totalPower: number;
+  activePower: number;
+  referrals: number;
+  tier: string;
+  isYou: boolean;
+}
+
+/** Thrown when a signed-in caller has no KaiUser row yet (onboarding not finished). */
+export class AirdropUserNotFoundError extends Error {
+  constructor() {
+    super('Finish signing up to start earning airdrop points.');
+    this.name = 'AirdropUserNotFoundError';
+  }
+}
+
+const DAILY_COOLDOWN_MS = 86_400_000;
+/** A streak survives while no more than two cooldowns pass between claims. */
+const STREAK_GRACE_MS = DAILY_COOLDOWN_MS * 2;
+const BASE_DAILY = 10;
+const CAMPAIGN_BONUS_POWER = 50;
+const MAX_CLAIM_MULTIPLIER = 3.0;
+
+export function tierFor(totalPower: number): AirdropSummary['tier'] {
+  return totalPower >= 1000 ? 'DIAMOND' : totalPower >= 500 ? 'GOLD' : totalPower >= 200 ? 'SILVER' : 'BRONZE';
+}
+
+function multiplierFor(activePower: number): number {
+  return +Math.min(1 + activePower / 100, MAX_CLAIM_MULTIPLIER).toFixed(3);
+}
+
+/**
+ * The daily drop credits whole points to the ledger, so the projection shown
+ * to the user is rounded the same way: what you see is what you get.
+ */
+function dailyPointsFor(multiplier: number): number {
+  return Math.round(BASE_DAILY * multiplier);
+}
+
+/** "5h 12m" / "12m" / "under a minute" */
+export function formatWait(ms: number): string {
+  const totalMin = Math.floor(ms / 60000);
+  if (totalMin < 1) return 'under a minute';
+  const h = Math.floor(totalMin / 60);
+  const m = totalMin % 60;
+  return h > 0 ? `${h}h ${m}m` : `${m}m`;
 }
 
 export interface ReferralItem {
@@ -184,6 +236,7 @@ const inMemoryStore = new Map<string, {
   activePower: number;
   lastActiveAt: Date;
   lastDailyClaimAt: Date | null;
+  streak: number;
   referrals: {
     id: string;
     nameMasked: string;
@@ -218,6 +271,7 @@ function getOrCreateInMemoryUser(userId: string, email = 'contributor@kai.networ
       activePower: 82.5,
       lastActiveAt: new Date(Date.now() - 3600000),
       lastDailyClaimAt: new Date(Date.now() - 25 * 3600000), // > 24h ago -> claimable now!
+      streak: 1,
       referrals: [
         { id: 'ref_1', nameMasked: 'Al***e M.', status: 'ACTIVE', riskStatus: 'NORMAL', joinedAt: new Date(Date.now() - 10 * 86400000), qualifyingPower: 500 },
         { id: 'ref_2', nameMasked: 'Bo***b K.', status: 'ACTIVE', riskStatus: 'NORMAL', joinedAt: new Date(Date.now() - 7 * 86400000), qualifyingPower: 300 },
@@ -251,14 +305,14 @@ export function maskName(name: string): string {
 /**
  * Get the full user airdrop summary matching PRD v1.2 §5, §14, §18
  */
-export async function getAirdropSummary(userIdOrPrivyId: string, emailFallback?: string): Promise<AirdropSummary> {
+export async function getAirdropSummary(userIdOrPrivyId: string): Promise<AirdropSummary> {
   const prisma = await getPrisma();
   const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 
     (process.env.NEXT_PUBLIC_VERCEL_URL ? `https://${process.env.NEXT_PUBLIC_VERCEL_URL}` : 
     (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'https://kai.network'));
 
   if (!prisma) {
-    const mem = getOrCreateInMemoryUser(userIdOrPrivyId, emailFallback);
+    const mem = getOrCreateInMemoryUser(userIdOrPrivyId);
     const personalPoints = mem.ledger.reduce((acc, ev) => acc + ev.points, 0);
     const personalPower = personalPoints;
 
@@ -273,15 +327,14 @@ export async function getAirdropSummary(userIdOrPrivyId: string, emailFallback?:
     // Active power decay per §5.5
     const daysSinceLastUpdate = Math.max(0, (Date.now() - mem.lastActiveAt.getTime()) / 86400000);
     const activePower = +(mem.activePower * Math.pow(0.95, daysSinceLastUpdate)).toFixed(2);
-    const claimMult = +Math.min(1 + activePower / 100, 3.0).toFixed(3);
-    const baseDaily = 10;
-    const projectedClaim = +(baseDaily * claimMult).toFixed(2);
+    const claimMult = multiplierFor(activePower);
+    const baseDaily = BASE_DAILY;
+    const projectedClaim = dailyPointsFor(claimMult);
 
     const lastClaimMs = mem.lastDailyClaimAt ? mem.lastDailyClaimAt.getTime() : 0;
-    const cooldownMs = 86400000;
     const elapsedMs = Date.now() - lastClaimMs;
-    const canClaim = elapsedMs >= cooldownMs;
-    const remainingSec = canClaim ? 0 : Math.ceil((cooldownMs - elapsedMs) / 1000);
+    const canClaim = elapsedMs >= DAILY_COOLDOWN_MS;
+    const remainingSec = canClaim ? 0 : Math.ceil((DAILY_COOLDOWN_MS - elapsedMs) / 1000);
 
     return {
       userId: mem.user.id,
@@ -308,12 +361,13 @@ export async function getAirdropSummary(userIdOrPrivyId: string, emailFallback?:
       riskStatus: mem.user.status,
       isSnapshotEligible: totalPower >= 250 && mem.user.status === 'NORMAL',
       rank: totalPower > 1000 ? 14 : totalPower > 500 ? 48 : 124,
-      tier: totalPower >= 1000 ? 'DIAMOND' : totalPower >= 500 ? 'GOLD' : totalPower >= 200 ? 'SILVER' : 'BRONZE',
+      tier: tierFor(totalPower),
+      streak: mem.lastDailyClaimAt && elapsedMs <= STREAK_GRACE_MS ? mem.streak : 0,
     };
   }
 
   // Real Database Flow with Prisma
-  let user = await prisma.kaiUser.findFirst({
+  const user = await prisma.kaiUser.findFirst({
     where: {
       OR: [
         { id: userIdOrPrivyId },
@@ -321,92 +375,52 @@ export async function getAirdropSummary(userIdOrPrivyId: string, emailFallback?:
       ],
     },
     include: {
-      kaiBarLedger: true,
-      sentReferrals: { include: { referred: { include: { kaiBarLedger: true } } } },
       miningStat: true,
-      dailyClaims: { orderBy: { claimedAt: 'desc' }, take: 1 },
+      dailyClaims: { orderBy: { claimedAt: 'desc' }, take: 366, select: { claimedAt: true } },
       wallets: true,
+      sentReferrals: { select: { status: true } },
     },
   });
 
-  if (!user && emailFallback) {
-    const refCode = `KAI-${Math.random().toString(36).substring(2, 6).toUpperCase()}`;
-    user = await prisma.kaiUser.create({
-      data: {
-        name: 'KAI Contributor',
-        email: emailFallback,
-        privyUserId: userIdOrPrivyId.startsWith('did:') ? userIdOrPrivyId : null,
-        referralCode: refCode,
-        kaiBarLedger: {
-          create: {
-            type: 'WELCOME_BONUS',
-            amount: 100,
-            description: 'Account registration bonus',
-          },
-        },
-      },
-      include: {
-        kaiBarLedger: true,
-        sentReferrals: { include: { referred: { include: { kaiBarLedger: true } } } },
-        miningStat: true,
-        dailyClaims: { orderBy: { claimedAt: 'desc' }, take: 1 },
-        wallets: true,
-      },
-    });
-  }
+  // Accounts are created by the onboarding pipeline, never here: silently
+  // inventing a KaiUser with a placeholder email bypassed onboarding and
+  // collided on the unique email for the second such user.
+  if (!user) throw new AirdropUserNotFoundError();
 
-  if (!user) {
-    // Return fallback summary if user not created yet
-    return getAirdropSummary(userIdOrPrivyId, emailFallback || 'contributor@kai.network');
-  }
-
-  const personalPoints = user.kaiBarLedger.reduce((acc, entry) => acc + entry.amount, 0);
+  const referralCode = user.referralCode ?? (await ensureReferralCode(prisma, user.id));
+  const table = await computePowerTable(prisma);
+  const mine = table.get(user.id) ?? { points: 0, referralPower: 0, activeRefs: 0, totalPower: CAMPAIGN_BONUS_POWER, activePower: 0 };
+  const personalPoints = mine.points;
   const personalPower = personalPoints;
-
-  // Compute Referral Power per PRD §5.3
-  let referralPower = 0;
-  let activeReferralCount = 0;
-  let pendingReferralCount = 0;
-
-  for (const ref of user.sentReferrals) {
-    if (ref.status === 'VALID' || ref.status === 'REWARDED') {
-      const refQualifying = ref.referred.kaiBarLedger.reduce((acc, l) => acc + l.amount, 0);
-      if (ref.referred.status === 'NORMAL') {
-        referralPower += Math.round(refQualifying * 0.2); // 20%
-        activeReferralCount++;
-      }
-    } else {
-      pendingReferralCount++;
-    }
-  }
-
-  const bonusPower = 50;
+  const referralPower = mine.referralPower;
+  const bonusPower = CAMPAIGN_BONUS_POWER;
   const totalPower = personalPower + referralPower + bonusPower;
+  const activeReferralCount = mine.activeRefs;
+  const pendingReferralCount = user.sentReferrals.filter(r => r.status === 'PENDING').length;
+
+  // Rank among accounts in good standing (1 = highest total power).
+  let rank = 1;
+  for (const [id, row] of table) {
+    if (id !== user.id && !row.blocked && row.totalPower > totalPower) rank++;
+  }
 
   // Active Power decay & claim multiplier per §5.5
   const rawHp = user.miningStat?.hashPower ? Number(user.miningStat.hashPower) : 0;
   const lastActive = user.miningStat?.lastActiveAt || user.createdAt;
-  const daysSinceLast = Math.max(0, (Date.now() - lastActive.getTime()) / 86400000);
-  const activePower = +(rawHp * Math.pow(0.95, daysSinceLast)).toFixed(2);
-  const claimMult = +Math.min(1 + activePower / 100, 3.0).toFixed(3);
-  const baseDaily = 10;
-  const projectedClaim = +(baseDaily * claimMult).toFixed(2);
+  const activePower = decayedActivePower(rawHp, lastActive);
+  const claimMult = multiplierFor(activePower);
+  const projectedClaim = dailyPointsFor(claimMult);
 
-  const lastClaim = user.dailyClaims[0];
-  const cooldownMs = 86400000;
-  const lastClaimMs = lastClaim ? lastClaim.claimedAt.getTime() : 0;
-  const elapsedMs = Date.now() - lastClaimMs;
-  const canClaim = elapsedMs >= cooldownMs;
-  const remainingSec = canClaim ? 0 : Math.ceil((cooldownMs - elapsedMs) / 1000);
-
-  const wallet = user.wallets[0]?.address || null;
+  const claimTimes = user.dailyClaims.map(c => c.claimedAt.getTime());
+  const now = Date.now();
+  const remainingMs = claimTimes.length ? Math.max(0, DAILY_COOLDOWN_MS - (now - claimTimes[0])) : 0;
 
   return {
     userId: user.id,
     username: user.name,
     emailMasked: maskEmail(user.email),
-    referralCode: user.referralCode || `KAI-${user.id.slice(-4).toUpperCase()}`,
-    referralLink: `${baseUrl}/mine?ref=${user.referralCode || user.id}`,
+    referralCode,
+    referralLink: `${baseUrl}/mine?ref=${referralCode}`,
     totalPoints: personalPoints,
     lifetimePoints: personalPoints,
     totalPower,
@@ -415,19 +429,96 @@ export async function getAirdropSummary(userIdOrPrivyId: string, emailFallback?:
     bonusPower,
     activePower,
     claimMultiplier: claimMult,
-    baseDailyClaim: baseDaily,
+    baseDailyClaim: BASE_DAILY,
     projectedNextClaim: projectedClaim,
-    canClaimDaily: canClaim,
-    dailyClaimCooldownSeconds: remainingSec,
+    canClaimDaily: remainingMs === 0,
+    dailyClaimCooldownSeconds: Math.ceil(remainingMs / 1000),
     totalReferrals: user.sentReferrals.length,
     activeReferrals: activeReferralCount,
     pendingReferrals: pendingReferralCount,
-    walletAddress: wallet,
-    riskStatus: user.status as any,
+    walletAddress: user.wallets[0]?.address || null,
+    riskStatus: user.status === 'BLOCKED' ? 'RESTRICTED' : user.status,
     isSnapshotEligible: totalPower >= 250 && user.status === 'NORMAL',
-    rank: totalPower > 1000 ? 14 : totalPower > 500 ? 48 : 124,
-    tier: totalPower >= 1000 ? 'DIAMOND' : totalPower >= 500 ? 'GOLD' : totalPower >= 200 ? 'SILVER' : 'BRONZE',
+    rank,
+    tier: tierFor(totalPower),
+    streak: claimStreak(claimTimes, now, STREAK_GRACE_MS),
   };
+}
+
+function decayedActivePower(rawHp: number, lastActive: Date): number {
+  const days = Math.max(0, (Date.now() - lastActive.getTime()) / 86400000);
+  return +(rawHp * Math.pow(0.95, days)).toFixed(2);
+}
+
+/** Give a pre-existing account a shareable code so its referral link resolves. */
+async function ensureReferralCode(prisma: PrismaClient, userId: string): Promise<string> {
+  for (let attempt = 0; attempt < 5; attempt++) {
+    const code = `KAI-${Math.random().toString(36).slice(2, 7).toUpperCase()}`;
+    try {
+      await prisma.kaiUser.update({ where: { id: userId }, data: { referralCode: code } });
+      return code;
+    } catch (e: unknown) {
+      if ((e as { code?: string }).code !== 'P2002') throw e; // unique clash: try another code
+    }
+  }
+  throw new Error('Could not allocate a referral code');
+}
+
+interface PowerRow {
+  name: string;
+  blocked: boolean;
+  /** NORMAL standing: only these pass referral power up to their referrer. */
+  normal: boolean;
+  points: number;
+  referralPower: number;
+  activeRefs: number;
+  totalPower: number;
+  activePower: number;
+}
+
+/**
+ * Total Power for every account, computed the same way for the summary,
+ * the rank and the leaderboard (PRD §5.2/§5.3): ledger points + 20% of each
+ * valid referral's points (referred account in good standing) + campaign bonus.
+ * Aggregated in the database, so it does not load every ledger row.
+ */
+async function computePowerTable(prisma: PrismaClient): Promise<Map<string, PowerRow>> {
+  const [sums, refs, users] = await Promise.all([
+    prisma.kaiBarLedger.groupBy({ by: ['userId'], _sum: { amount: true } }),
+    prisma.referral.findMany({
+      where: { status: { in: ['VALID', 'REWARDED'] } },
+      select: { referrerUserId: true, referredUserId: true },
+    }),
+    prisma.kaiUser.findMany({
+      select: { id: true, name: true, status: true, createdAt: true, miningStat: { select: { hashPower: true, lastActiveAt: true } } },
+    }),
+  ]);
+
+  const points = new Map(sums.map(r => [r.userId, r._sum.amount ?? 0]));
+  const table = new Map<string, PowerRow>();
+  for (const u of users) {
+    table.set(u.id, {
+      name: u.name,
+      blocked: u.status === 'BLOCKED',
+      normal: u.status === 'NORMAL',
+      points: points.get(u.id) ?? 0,
+      referralPower: 0,
+      activeRefs: 0,
+      totalPower: 0,
+      activePower: decayedActivePower(u.miningStat?.hashPower ? Number(u.miningStat.hashPower) : 0, u.miningStat?.lastActiveAt ?? u.createdAt),
+    });
+  }
+  for (const r of refs) {
+    const referrer = table.get(r.referrerUserId);
+    const referred = table.get(r.referredUserId);
+    if (!referrer || !referred || !referred.normal) continue;
+    referrer.referralPower += Math.round(referred.points * 0.2);
+    referrer.activeRefs++;
+  }
+  for (const row of table.values()) {
+    row.totalPower = row.points + row.referralPower + CAMPAIGN_BONUS_POWER;
+  }
+  return table;
 }
 
 /**
@@ -471,7 +562,7 @@ export async function getUserReferrals(userIdOrPrivyId: string): Promise<Referra
       id: ref.id,
       nameMasked: maskName(ref.referred.name),
       status: isActive ? 'ACTIVE' : 'REGISTERED',
-      riskStatus: ref.referred.status as any,
+      riskStatus: ref.referred.status === 'BLOCKED' ? 'RESTRICTED' : ref.referred.status,
       joinedAt: ref.createdAt.toISOString(),
       activatedAt: ref.rewardedAt ? ref.rewardedAt.toISOString() : null,
       qualifyingPower: qualifying,
@@ -533,52 +624,149 @@ export async function getMissions(userIdOrPrivyId: string): Promise<MissionItem[
     });
   }
 
-  const user = await prisma.kaiUser.findFirst({
-    where: { OR: [{ id: userIdOrPrivyId }, { privyUserId: userIdOrPrivyId }] },
-    include: { taskCompletions: true },
-  });
+  const facts = await loadMissionFacts(prisma, userIdOrPrivyId);
+  const completedSet = new Set(facts?.claimed ?? []);
 
-  const completedSet = new Set(user?.taskCompletions.map(tc => tc.taskId) || []);
-
+  // CLAIMED = reward already paid; COMPLETED = the work is verified and the
+  // reward is waiting; AVAILABLE = not done yet.
   return CANONICAL_MISSIONS.map(m => ({
     ...m,
-    status: completedSet.has(m.id) ? 'CLAIMED' : 'AVAILABLE',
+    status: completedSet.has(m.id) ? 'CLAIMED' : facts && missionBlocker(m.id, facts) === null ? 'COMPLETED' : 'AVAILABLE',
   }));
 }
 
+interface MissionFacts {
+  userId: string;
+  name: string;
+  email: string;
+  blocked: boolean;
+  checkedIn: boolean;
+  wallets: number;
+  dailyClaims: number;
+  invites: number;
+  activeInvites: number;
+  plantingRecords: number;
+  survivalRecords: number;
+  claimed: string[];
+}
+
+/** Everything the mission verifiers need, fetched in one round of queries. */
+async function loadMissionFacts(prisma: PrismaClient, userIdOrPrivyId: string): Promise<MissionFacts | null> {
+  const user = await prisma.kaiUser.findFirst({
+    where: { OR: [{ id: userIdOrPrivyId }, { privyUserId: userIdOrPrivyId }] },
+    select: {
+      id: true, name: true, email: true, status: true, lastCheckInAt: true,
+      taskCompletions: { select: { taskId: true } },
+      _count: { select: { wallets: true, dailyClaims: true } },
+    },
+  });
+  if (!user) return null;
+
+  const [invites, activeInvites, xpSources] = await Promise.all([
+    prisma.referral.count({ where: { referrerUserId: user.id, status: { not: 'INVALID' } } }),
+    prisma.referral.count({ where: { referrerUserId: user.id, status: { in: ['VALID', 'REWARDED'] } } }),
+    prisma.miningXpEvent.groupBy({
+      by: ['source'],
+      where: { userId: user.id, source: { in: ['PLANTING', 'SURVIVAL'] } },
+      _count: { _all: true },
+    }),
+  ]);
+  const xp = (src: string) => xpSources.find(r => r.source === src)?._count._all ?? 0;
+
+  return {
+    userId: user.id,
+    name: user.name,
+    email: user.email,
+    blocked: user.status === 'BLOCKED',
+    checkedIn: !!user.lastCheckInAt,
+    wallets: user._count.wallets,
+    dailyClaims: user._count.dailyClaims,
+    invites,
+    activeInvites,
+    plantingRecords: xp('PLANTING'),
+    survivalRecords: xp('SURVIVAL'),
+    claimed: user.taskCompletions.map(tc => tc.taskId),
+  };
+}
+
+const PLACEHOLDER_NAMES = new Set(['', 'kai contributor', 'guardian', 'user']);
+
 /**
- * Claim Daily Drop with Active Power multiplier & decay (§5.5 & §33)
+ * Server-side verification (§17 & §21): returns null when the mission's work
+ * is really done, otherwise a short, friendly reason the reward is locked.
  */
-export async function claimDailyDropRitual(userIdOrPrivyId: string): Promise<{
+function missionBlocker(missionId: string, f: MissionFacts): string | null {
+  switch (missionId) {
+    case 'verify_email':
+      return f.email.includes('@') ? null : 'Add and verify an email address first.';
+    case 'complete_profile':
+      return PLACEHOLDER_NAMES.has(f.name.trim().toLowerCase()) ? 'Set your display name in your profile first.' : null;
+    case 'link_wallet':
+      return f.wallets > 0 ? null : 'Link an Avalanche wallet on the Rewards tab first.';
+    case 'daily_checkin':
+      return f.checkedIn ? null : 'Do your daily check-in on the Kai Bar first.';
+    case 'daily_claim':
+      return f.dailyClaims > 0 ? null : 'Claim your first daily drop first.';
+    case 'invite_first_friend':
+      return f.invites > 0 ? null : 'Nobody has joined with your referral link yet.';
+    case 'friend_activates':
+      return f.activeInvites > 0 ? null : 'None of your invited friends is active yet.';
+    case 'conservation_submission':
+      return f.plantingRecords + f.survivalRecords > 0 ? null : 'Log a planting or survival record in the Oloolua Hub first.';
+    case 'cfa_verification':
+      return f.survivalRecords > 0 ? null : 'Take part in a CFA survival verification first.';
+    case 'sihu_read_articles':
+      return 'Article reading is not tracked yet, so this mission unlocks soon.';
+    default:
+      return 'This mission cannot be verified yet.';
+  }
+}
+
+export interface DailyClaimResult {
   ok: boolean;
   claimPoints: number;
   multiplier: number;
   activePower: number;
   error?: string;
-}> {
+  /** True when the claim was refused only because the 24h cooldown is running. */
+  cooldown?: boolean;
+  remainingSeconds?: number;
+  streak?: number;
+  totalPoints?: number;
+}
+
+/**
+ * Claim Daily Drop with Active Power multiplier & decay (§5.5 & §33)
+ */
+export async function claimDailyDropRitual(userIdOrPrivyId: string): Promise<DailyClaimResult> {
   const prisma = await getPrisma();
 
   if (!prisma) {
     const mem = getOrCreateInMemoryUser(userIdOrPrivyId);
-    const cooldownMs = 86400000;
-    if (mem.lastDailyClaimAt && Date.now() - mem.lastDailyClaimAt.getTime() < cooldownMs) {
-      const remainingSec = Math.ceil((cooldownMs - (Date.now() - mem.lastDailyClaimAt.getTime())) / 1000);
-      return { ok: false, claimPoints: 0, multiplier: 1, activePower: mem.activePower, error: `Daily claim on cooldown. Try again in ${Math.ceil(remainingSec / 60)} minutes.` };
+    const now = Date.now();
+    if (mem.lastDailyClaimAt && now - mem.lastDailyClaimAt.getTime() < DAILY_COOLDOWN_MS) {
+      const remainingMs = DAILY_COOLDOWN_MS - (now - mem.lastDailyClaimAt.getTime());
+      return {
+        ok: false, claimPoints: 0, multiplier: 1, activePower: mem.activePower, cooldown: true,
+        remainingSeconds: Math.ceil(remainingMs / 1000),
+        error: `Already claimed. Your next drop unlocks in ${formatWait(remainingMs)}.`,
+      };
     }
 
-    const mult = +Math.min(1 + mem.activePower / 100, 3.0).toFixed(3);
-    const points = +(10 * mult).toFixed(2);
+    const mult = multiplierFor(mem.activePower);
+    const points = dailyPointsFor(mult);
 
-    mem.lastDailyClaimAt = new Date();
+    mem.streak = mem.lastDailyClaimAt && now - mem.lastDailyClaimAt.getTime() <= STREAK_GRACE_MS ? mem.streak + 1 : 1;
+    mem.lastDailyClaimAt = new Date(now);
     mem.activePower = +(mem.activePower + 10).toFixed(2); // daily claim boosts active power
-    mem.lastActiveAt = new Date();
+    mem.lastActiveAt = new Date(now);
     mem.ledger.unshift({
-      id: `claim_${Date.now()}`,
+      id: `claim_${now}`,
       eventType: 'DAILY_CLAIM',
       title: `Daily Claim Drop (${mult}x Multiplier)`,
       points,
-      sourceId: `daily_${new Date().toISOString().split('T')[0]}`,
-      createdAt: new Date(),
+      sourceId: `daily_${new Date(now).toISOString().split('T')[0]}`,
+      createdAt: new Date(now),
     });
 
     return {
@@ -586,69 +774,77 @@ export async function claimDailyDropRitual(userIdOrPrivyId: string): Promise<{
       claimPoints: points,
       multiplier: mult,
       activePower: mem.activePower,
+      streak: mem.streak,
+      totalPoints: mem.ledger.reduce((acc, ev) => acc + ev.points, 0),
+      remainingSeconds: DAILY_COOLDOWN_MS / 1000,
     };
   }
 
-  const user = await prisma.kaiUser.findFirst({
-    where: { OR: [{ id: userIdOrPrivyId }, { privyUserId: userIdOrPrivyId }] },
-    include: {
-      miningStat: true,
-      dailyClaims: { orderBy: { claimedAt: 'desc' }, take: 1 },
-    },
-  });
+  // One transaction holding a row lock on the user: two taps or two tabs at
+  // once can no longer both pass the cooldown check and double-claim.
+  return prisma.$transaction(async (tx): Promise<DailyClaimResult> => {
+    const user = await tx.kaiUser.findFirst({
+      where: { OR: [{ id: userIdOrPrivyId }, { privyUserId: userIdOrPrivyId }] },
+      include: { miningStat: true },
+    });
 
-  if (!user) return { ok: false, claimPoints: 0, multiplier: 1, activePower: 0, error: 'User not found' };
-  if (user.status === 'BLOCKED') return { ok: false, claimPoints: 0, multiplier: 1, activePower: 0, error: 'Account blocked by anti-abuse' };
+    if (!user) return { ok: false, claimPoints: 0, multiplier: 1, activePower: 0, error: 'Finish signing up to start claiming.' };
+    if (user.status === 'BLOCKED') return { ok: false, claimPoints: 0, multiplier: 1, activePower: 0, error: 'This account is restricted from claiming.' };
 
-  const lastClaim = user.dailyClaims[0];
-  const cooldownMs = 86400000;
-  if (lastClaim && Date.now() - lastClaim.claimedAt.getTime() < cooldownMs) {
-    return { ok: false, claimPoints: 0, multiplier: 1, activePower: 0, error: 'Already claimed within the last 24 hours' };
-  }
+    await tx.$queryRaw`SELECT id FROM kai_users WHERE id = ${user.id} FOR UPDATE`;
 
-  const rawHp = user.miningStat?.hashPower ? Number(user.miningStat.hashPower) : 0;
-  const lastActive = user.miningStat?.lastActiveAt || user.createdAt;
-  const daysSinceLast = Math.max(0, (Date.now() - lastActive.getTime()) / 86400000);
-  const decayedHp = +(rawHp * Math.pow(0.95, daysSinceLast)).toFixed(2);
-  const mult = +Math.min(1 + decayedHp / 100, 3.0).toFixed(3);
-  const claimPoints = +(10 * mult).toFixed(2);
-  const newHp = +(decayedHp + 10).toFixed(2);
+    const recent = await tx.dailyClaim.findMany({
+      where: { userId: user.id },
+      orderBy: { claimedAt: 'desc' },
+      take: 366,
+      select: { claimedAt: true },
+    });
+    const claimTimes = recent.map(c => c.claimedAt.getTime());
+    const now = new Date();
+    if (claimTimes.length && now.getTime() - claimTimes[0] < DAILY_COOLDOWN_MS) {
+      const remainingMs = DAILY_COOLDOWN_MS - (now.getTime() - claimTimes[0]);
+      return {
+        ok: false, claimPoints: 0, multiplier: 1, activePower: 0, cooldown: true,
+        remainingSeconds: Math.ceil(remainingMs / 1000),
+        error: `Already claimed. Your next drop unlocks in ${formatWait(remainingMs)}.`,
+      };
+    }
 
-  await prisma.$transaction([
-    prisma.dailyClaim.create({
-      data: {
-        userId: user.id,
-        claimAmount: claimPoints,
-        multiplier: mult,
-        hashPower: newHp,
-      },
-    }),
-    prisma.kaiBarLedger.create({
+    const rawHp = user.miningStat?.hashPower ? Number(user.miningStat.hashPower) : 0;
+    const decayedHp = decayedActivePower(rawHp, user.miningStat?.lastActiveAt || user.createdAt);
+    const mult = multiplierFor(decayedHp);
+    const claimPoints = dailyPointsFor(mult);
+    const newHp = +(decayedHp + 10).toFixed(2);
+
+    await tx.dailyClaim.create({
+      data: { userId: user.id, claimAmount: claimPoints, multiplier: mult, hashPower: newHp, claimedAt: now },
+    });
+    await tx.kaiBarLedger.create({
       data: {
         userId: user.id,
         type: 'CAMPAIGN',
-        amount: Math.round(claimPoints),
+        amount: claimPoints,
         description: `Daily Claim Drop (${mult}x Multiplier)`,
-        referenceId: `daily_${new Date().toISOString().split('T')[0]}`,
+        referenceId: `daily_${now.toISOString().split('T')[0]}`,
       },
-    }),
-    prisma.userMiningStat.upsert({
+    });
+    await tx.userMiningStat.upsert({
       where: { userId: user.id },
-      update: {
-        hashPower: newHp,
-        lifetimeXP: { increment: claimPoints },
-        lastActiveAt: new Date(),
-      },
-      create: {
-        userId: user.id,
-        hashPower: newHp,
-        lifetimeXP: claimPoints,
-        lastActiveAt: new Date(),
-      },
-    }),
-  ]);
+      update: { hashPower: newHp, lifetimeXP: { increment: claimPoints }, lastActiveAt: now },
+      create: { userId: user.id, hashPower: newHp, lifetimeXP: claimPoints, lastActiveAt: now },
+    });
+    const total = await tx.kaiBarLedger.aggregate({ where: { userId: user.id }, _sum: { amount: true } });
 
-  return { ok: true, claimPoints, multiplier: mult, activePower: newHp };
+    return {
+      ok: true,
+      claimPoints,
+      multiplier: mult,
+      activePower: newHp,
+      streak: claimStreak([now.getTime(), ...claimTimes], now.getTime(), STREAK_GRACE_MS),
+      totalPoints: total._sum.amount ?? 0,
+      remainingSeconds: DAILY_COOLDOWN_MS / 1000,
+    };
+  });
 }
 
 /**
@@ -683,17 +879,15 @@ export async function claimMissionReward(userIdOrPrivyId: string, missionId: str
     return { ok: true, rewardPoints: mission.rewardPoints, missionName: mission.name };
   }
 
-  const user = await prisma.kaiUser.findFirst({
-    where: { OR: [{ id: userIdOrPrivyId }, { privyUserId: userIdOrPrivyId }] },
-    include: { taskCompletions: true },
-  });
-
-  if (!user) return { ok: false, rewardPoints: 0, missionName: '', error: 'User not found' };
-
-  const alreadyClaimed = user.taskCompletions.some(tc => tc.taskId === missionId);
-  if (alreadyClaimed) {
+  const facts = await loadMissionFacts(prisma, userIdOrPrivyId);
+  if (!facts) return { ok: false, rewardPoints: 0, missionName: '', error: 'Finish signing up to start earning.' };
+  if (facts.blocked) return { ok: false, rewardPoints: 0, missionName: mission.name, error: 'This account is restricted from claiming.' };
+  if (facts.claimed.includes(missionId)) {
     return { ok: false, rewardPoints: 0, missionName: mission.name, error: 'Mission already completed' };
   }
+
+  const blocker = missionBlocker(missionId, facts);
+  if (blocker) return { ok: false, rewardPoints: 0, missionName: mission.name, error: blocker };
 
   // Ensure RewardTask exists in DB
   const dbTask = await prisma.rewardTask.upsert({
@@ -709,37 +903,40 @@ export async function claimMissionReward(userIdOrPrivyId: string, missionId: str
     },
   });
 
-  await prisma.$transaction([
-    prisma.taskCompletion.create({
-      data: {
-        userId: user.id,
-        taskId: dbTask.id,
-      },
-    }),
-    prisma.kaiBarLedger.create({
-      data: {
-        userId: user.id,
-        type: 'TASK',
-        amount: mission.rewardPoints,
-        description: `Mission Reward: ${mission.name}`,
-        referenceId: `mission_${missionId}`,
-      },
-    }),
-    prisma.userMiningStat.upsert({
-      where: { userId: user.id },
-      update: {
-        hashPower: { increment: mission.rewardPoints * 0.1 },
-        lifetimeXP: { increment: mission.rewardPoints },
-        lastActiveAt: new Date(),
-      },
-      create: {
-        userId: user.id,
-        hashPower: mission.rewardPoints * 0.1,
-        lifetimeXP: mission.rewardPoints,
-        lastActiveAt: new Date(),
-      },
-    }),
-  ]);
+  try {
+    await prisma.$transaction([
+      // Unique (userId, taskId): a double tap fails here instead of paying twice.
+      prisma.taskCompletion.create({ data: { userId: facts.userId, taskId: dbTask.id } }),
+      prisma.kaiBarLedger.create({
+        data: {
+          userId: facts.userId,
+          type: 'TASK',
+          amount: mission.rewardPoints,
+          description: `Mission Reward: ${mission.name}`,
+          referenceId: `mission_${missionId}`,
+        },
+      }),
+      prisma.userMiningStat.upsert({
+        where: { userId: facts.userId },
+        update: {
+          hashPower: { increment: mission.rewardPoints * 0.1 },
+          lifetimeXP: { increment: mission.rewardPoints },
+          lastActiveAt: new Date(),
+        },
+        create: {
+          userId: facts.userId,
+          hashPower: mission.rewardPoints * 0.1,
+          lifetimeXP: mission.rewardPoints,
+          lastActiveAt: new Date(),
+        },
+      }),
+    ]);
+  } catch (e: unknown) {
+    if ((e as { code?: string }).code === 'P2002') {
+      return { ok: false, rewardPoints: 0, missionName: mission.name, error: 'Mission already completed' };
+    }
+    throw e;
+  }
 
   return { ok: true, rewardPoints: mission.rewardPoints, missionName: mission.name };
 }
@@ -759,25 +956,32 @@ export async function registerReferralCode(newUserId: string, referralCode: stri
     return { ok: true, referrerName: 'Austin Kai' };
   }
 
+  // Callers pass the Privy DID; Referral rows reference KaiUser.id.
+  const newUser = await prisma.kaiUser.findFirst({
+    where: { OR: [{ id: newUserId }, { privyUserId: newUserId }] },
+    select: { id: true },
+  });
+  if (!newUser) return { ok: false, error: 'Finish signing up before adding a referral code.' };
+
   const referrer = await prisma.kaiUser.findFirst({
     where: { referralCode: code },
   });
 
-  if (!referrer) return { ok: false, error: 'Invalid referral code' };
-  if (referrer.id === newUserId) return { ok: false, error: 'Self-referral prohibited (§7 Rule 2)' };
+  if (!referrer) return { ok: false, error: 'That referral code does not exist.' };
+  if (referrer.id === newUser.id) return { ok: false, error: 'You cannot use your own referral code.' };
 
   const existingRef = await prisma.referral.findFirst({
-    where: { referredUserId: newUserId },
+    where: { referredUserId: newUser.id },
   });
 
   if (existingRef) {
-    return { ok: false, error: 'Referrer already bound permanently at registration (§7 Rule 1)' };
+    return { ok: false, error: 'Your account is already linked to a referrer.' };
   }
 
   await prisma.referral.create({
     data: {
       referrerUserId: referrer.id,
-      referredUserId: newUserId,
+      referredUserId: newUser.id,
       referralCode: code,
       status: 'VALID',
     },
@@ -827,66 +1031,43 @@ export async function linkUserWallet(userIdOrPrivyId: string, walletAddress: str
 }
 
 /**
- * Get Community Leaderboard by Total Power
+ * Community Leaderboard by Total Power: the real top 10 from the database,
+ * masked for privacy (§19a), with the caller's own row flagged.
  */
-export async function getPowerLeaderboard(): Promise<{
-  rank: number;
-  name: string;
-  totalPower: number;
-  activePower: number;
-  referrals: number;
-  tier: string;
-}[]> {
+export async function getPowerLeaderboard(viewerIdOrPrivyId?: string): Promise<LeaderboardEntry[]> {
   const prisma = await getPrisma();
-  if (prisma) {
-    try {
-      const topUsers = await prisma.kaiUser.findMany({
-        take: 10,
-        orderBy: { createdAt: 'desc' },
-        include: {
-          kaiBarLedger: true,
-          miningStat: true,
-          sentReferrals: true,
-        },
-      });
-
-      if (topUsers.length > 0) {
-        return topUsers.map((u: any, i: number) => {
-          const personalPoints = (u.kaiBarLedger || []).reduce((acc: number, e: any) => acc + (e.amount || 0), 0);
-          const personalPower = personalPoints;
-          const activeRefs = (u.sentReferrals || []).filter((r: any) => r.status === 'VALID' || r.status === 'REWARDED').length;
-          const referralPower = activeRefs * 150;
-          const totalPower = personalPower + referralPower;
-          const activePower = u.miningStat?.hashPower ? Number(u.miningStat.hashPower) : 80.0;
-          const tier = totalPower >= 4000 ? 'DIAMOND' : totalPower >= 1200 ? 'GOLD' : totalPower >= 600 ? 'SILVER' : 'BRONZE';
-          
-          let name = u.name || (u.email ? u.email.split('@')[0] : `Contributor #${u.id.slice(-4)}`);
-          if (u.privyUserId?.includes('demo_user_austin') || u.email?.includes('austin')) {
-            name = 'Austin K. (You)';
-          }
-
-          return {
-            rank: i + 1,
-            name,
-            totalPower,
-            activePower: Math.round(activePower * 10) / 10,
-            referrals: activeRefs,
-            tier,
-          };
-        });
-      }
-    } catch (err) {
-      console.warn('Failed to query DB leaderboard, using curated fallback:', err);
-    }
+  if (!prisma) {
+    // Mock mode only: sample rows so the screen can be explored locally.
+    return [
+      { rank: 1, name: 'Sango Guardian Alpha', totalPower: 4820, activePower: 285.0, referrals: 38, tier: 'DIAMOND', isYou: false },
+      { rank: 2, name: 'Austin K. (You)', totalPower: 1420, activePower: 92.5, referrals: 14, tier: 'GOLD', isYou: true },
+      { rank: 3, name: 'Oloolua Ranger 07', totalPower: 1280, activePower: 88.0, referrals: 11, tier: 'GOLD', isYou: false },
+      { rank: 4, name: 'Kibera Youth Tree Lab', totalPower: 960, activePower: 74.0, referrals: 9, tier: 'SILVER', isYou: false },
+      { rank: 5, name: 'Kisumu Basin Watcher', totalPower: 840, activePower: 65.0, referrals: 7, tier: 'SILVER', isYou: false },
+      { rank: 6, name: 'Mau Restoration Team', totalPower: 710, activePower: 58.0, referrals: 6, tier: 'SILVER', isYou: false },
+      { rank: 7, name: 'Ngong Agroforestry', totalPower: 520, activePower: 46.0, referrals: 4, tier: 'BRONZE', isYou: false },
+    ];
   }
 
-  return [
-    { rank: 1, name: 'Sango Guardian Alpha', totalPower: 4820, activePower: 285.0, referrals: 38, tier: 'DIAMOND' },
-    { rank: 2, name: 'Austin K. (You)', totalPower: 1420, activePower: 92.5, referrals: 14, tier: 'GOLD' },
-    { rank: 3, name: 'Oloolua Ranger 07', totalPower: 1280, activePower: 88.0, referrals: 11, tier: 'GOLD' },
-    { rank: 4, name: 'Kibera Youth Tree Lab', totalPower: 960, activePower: 74.0, referrals: 9, tier: 'SILVER' },
-    { rank: 5, name: 'Kisumu Basin Watcher', totalPower: 840, activePower: 65.0, referrals: 7, tier: 'SILVER' },
-    { rank: 6, name: 'Mau Restoration Team', totalPower: 710, activePower: 58.0, referrals: 6, tier: 'SILVER' },
-    { rank: 7, name: 'Ngong Agroforestry', totalPower: 520, activePower: 46.0, referrals: 4, tier: 'BRONZE' },
-  ];
+  const viewer = viewerIdOrPrivyId
+    ? await prisma.kaiUser.findFirst({
+        where: { OR: [{ id: viewerIdOrPrivyId }, { privyUserId: viewerIdOrPrivyId }] },
+        select: { id: true },
+      })
+    : null;
+
+  const table = await computePowerTable(prisma);
+  return [...table.entries()]
+    .filter(([, row]) => !row.blocked)
+    .sort((a, b) => b[1].totalPower - a[1].totalPower)
+    .slice(0, 10)
+    .map(([id, row], i) => ({
+      rank: i + 1,
+      name: id === viewer?.id ? `${maskName(row.name)} (You)` : maskName(row.name),
+      totalPower: row.totalPower,
+      activePower: Math.round(row.activePower * 10) / 10,
+      referrals: row.activeRefs,
+      tier: tierFor(row.totalPower),
+      isYou: id === viewer?.id,
+    }));
 }
