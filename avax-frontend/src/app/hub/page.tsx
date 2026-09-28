@@ -1,640 +1,351 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { motion, AnimatePresence } from 'framer-motion';
 import {
-  Newspaper, TreePine, ExternalLink, ArrowRight,
-  ShieldCheck, PenTool, CheckCircle2,
-  Sparkles, RefreshCw, Radio, FileText, Layers,
-  Compass, Eye, Mic, BookOpen, HeartHandshake,
-  TrendingUp, Activity, Flame, ShieldAlert, Cpu
+  Newspaper, TreePine, ArrowRight, ExternalLink, PenTool, Sprout,
+  BookOpen, MessageCircle, Mic, FileText, ShieldCheck, Library,
+  Users, Coins, Gift, Search,
 } from 'lucide-react';
-import {
-  HUB_THEME, SIHU_THEME, OLOOLUA_THEME,
-  MONO, SERIF, SANS, labelStyle, sihuLabelStyle, olooluaLabelStyle
-} from '@/lib/hub-theme';
+import { SIHU_THEME, OLOOLUA_THEME, MONO, SERIF, SANS } from '@/lib/hub-theme';
 
-const SIHU_PORTAL_URL = process.env.NEXT_PUBLIC_SIHU_PORTAL_URL || '/hub';
-const OLOOLUA_PORTAL_URL = process.env.NEXT_PUBLIC_OLOOLUA_PORTAL_URL || '/conservation';
+/* Full external portals, only shown when they are actually deployed. */
+const SIHU_PORTAL_URL = process.env.NEXT_PUBLIC_SIHU_PORTAL_URL || '';
+const OLOOLUA_PORTAL_URL = process.env.NEXT_PUBLIC_OLOOLUA_PORTAL_URL || '';
 
-const TICKER_ITEMS = [
-  '🚨 Sango Basin Watch: Wetland conservation protocols active across 42 Lake Victoria catchment zones',
-  '🌲 Oloolua Youth Guardians: 14,800 indigenous seedlings registered in community forest nursery',
-  '🎙️ Sango Audio Studio: New episode on Sustainable Blue Economy & Riparian Protection live',
-  '📜 KAI Verification Engine: 8,420 community ecological proofs anchored on Avalanche C-Chain',
-  '🐝 Ngong Forest Apiary: Beekeeping & biodiversity monitoring yields 120kg raw forest honey',
-];
+const BLUE = SIHU_THEME.blue;
+const GREEN = OLOOLUA_THEME.emerald;
+const TEXT = '#F8FAFC';
+const DIM = '#94A3B8';
+const LINE = 'rgba(255,255,255,0.08)';
 
-interface HubCapability {
+interface FeedPost {
+  id: string;
+  slug: string;
   title: string;
-  desc: string;
-  tag: string;
-  url?: string;
-  internal?: boolean;
-  icon?: any;
+  summary: string;
+  contentType: string;
+  category: string;
+  creator: string;
+  publishedAt: string;
 }
 
-interface HubModel {
-  id: 'sihu' | 'oloolua';
-  name: string;
-  brandTitle: string;
-  badge: string;
-  tagline: string;
-  desc: string;
-  port?: number;
-  portalUrl: string;
-  theme: typeof SIHU_THEME | typeof OLOOLUA_THEME;
-  accent: string;
-  accentLight: string;
-  glow: string;
-  features: HubCapability[];
-  actions: { label: string; url: string; primary?: boolean; external?: boolean; internal?: boolean }[];
-}
+/* The four things a member can do here, most valuable first. */
+const ACTIONS = [
+  {
+    title: 'Log a tree planting',
+    desc: 'Record seedlings you planted with your Community Forest Association.',
+    reward: '+50 points',
+    rewardIcon: Gift,
+    href: '/cfa',
+    cta: 'Open CFA dashboard',
+    icon: Sprout,
+    accent: GREEN,
+  },
+  {
+    title: 'Write a story',
+    desc: 'Share news from your area. Readers can tip your stories in KES.',
+    reward: 'Earn tips',
+    rewardIcon: Coins,
+    href: '/hub/create',
+    cta: 'Start writing',
+    icon: PenTool,
+    accent: BLUE,
+  },
+  {
+    title: 'Learn a methodology',
+    desc: 'Step-by-step guides such as Jaza Miti and GTCI for your CFA.',
+    reward: 'Free guides',
+    rewardIcon: BookOpen,
+    href: '/conservation/methodologies',
+    cta: 'Browse guides',
+    icon: Library,
+    accent: GREEN,
+  },
+  {
+    title: 'Ask KAI',
+    desc: 'Get quick answers about trees, planting seasons and conservation.',
+    reward: 'Instant answers',
+    rewardIcon: MessageCircle,
+    href: '/conservation/ask',
+    cta: 'Ask a question',
+    icon: MessageCircle,
+    accent: BLUE,
+  },
+] as const;
 
-const HUBS: HubModel[] = [
+const HUBS = [
   {
     id: 'sihu',
-    name: 'SIHU.COM Information Hub',
-    brandTitle: 'Sango Information Hub & Media Network',
-    badge: 'The Blue Hub · Media Network',
-    tagline: 'Lake Victoria Basin Knowledge Management & Environmental Journalism',
-    desc: 'Elite community media network and technical knowledge portal for natural resource management, environmental protection, Lake Victoria Basin investigations, Sango podcasts, and automated AI editorial verification.',
-    portalUrl: SIHU_PORTAL_URL,
-    theme: SIHU_THEME,
-    accent: SIHU_THEME.blue,
-    accentLight: SIHU_THEME.blueLight,
-    glow: SIHU_THEME.blueGlow,
-    features: [
-      {
-        title: 'Lake Victoria News Portal & Deep Investigations',
-        desc: 'Curated articles, verified field journals, water basin analysis, and environmental science reporting.',
-        tag: 'Articles & News',
-        url: `${SIHU_PORTAL_URL}/portal`,
-        icon: Newspaper,
-      },
-      {
-        title: 'Sango Audio Studio & Environmental Podcasts',
-        desc: 'Community audio broadcasts, oral history recordings, expert panels, and field audio dispatch.',
-        tag: 'Audio Studio',
-        url: `${SIHU_PORTAL_URL}/studio`,
-        icon: Mic,
-      },
-      {
-        title: 'Lake Victoria Basin Document Archive',
-        desc: 'Open-access environmental policy repository, water quality datasets, and ecological legal guides.',
-        tag: 'Policy Archive',
-        url: `${SIHU_PORTAL_URL}/documents`,
-        icon: FileText,
-      },
-      {
-        title: 'Automated AI Pre-Review & Fact Verification',
-        desc: 'Pre-flight integrity engine for citation checks, duplication screening, and claim grounding.',
-        tag: 'AI Pre-Flight',
-        url: `${SIHU_PORTAL_URL}/portal/submit`,
-        icon: Cpu,
-      },
-      {
-        title: '7-Role Editorial Board & Governance Queue',
-        desc: 'Role-based access matrix for Chairperson, Secretary, Editor, Contributor, and Fact-Checkers.',
-        tag: 'Governance',
-        url: `${SIHU_PORTAL_URL}/admin/review`,
-        icon: ShieldCheck,
-      },
+    name: 'SIHU News',
+    label: 'Blue hub · Media',
+    desc: 'Community news and investigations from the Lake Victoria Basin, checked by an AI pre-review and a human editor before publishing.',
+    icon: Newspaper,
+    accent: BLUE,
+    bg: 'linear-gradient(180deg, #0B1934 0%, #020617 100%)',
+    links: [
+      { label: 'Latest stories', href: '#latest', icon: Newspaper },
+      { label: 'Write a story', href: '/hub/create', icon: PenTool },
+      { label: 'Editor desk', href: '/hub/review', icon: ShieldCheck },
     ],
-    actions: [
-      { label: 'Explore SIHU Portal', url: SIHU_PORTAL_URL, primary: true, external: true },
-      { label: 'Write Story', url: `${SIHU_PORTAL_URL}/portal/submit`, external: true },
-      { label: 'Audio Studio', url: `${SIHU_PORTAL_URL}/studio`, external: true },
-      { label: 'Document Archive', url: `${SIHU_PORTAL_URL}/documents`, external: true },
-    ],
+    portal: SIHU_PORTAL_URL
+      ? { label: 'Open full SIHU site', href: SIHU_PORTAL_URL, extras: [
+          { label: 'Audio studio', href: `${SIHU_PORTAL_URL}/studio`, icon: Mic },
+          { label: 'Document archive', href: `${SIHU_PORTAL_URL}/documents`, icon: FileText },
+        ] }
+      : null,
   },
   {
     id: 'oloolua',
-    name: 'Oloolua Youth Guardians Hub',
-    brandTitle: 'Community Forest Association (CFA) Conservation Hub',
-    badge: 'The Green Hub · Forest CFA',
-    tagline: 'Forest Nursery, Indigenous Seedlings & Community Reforestation MRV',
-    desc: 'Hands-on community conservation management platform. Tracks indigenous tree seedlings, Ngong Hills forest patrols, youth workshops, apiary beekeeping, and verified carbon methodologies.',
-    portalUrl: OLOOLUA_PORTAL_URL,
-    theme: OLOOLUA_THEME,
-    accent: OLOOLUA_THEME.emerald,
-    accentLight: OLOOLUA_THEME.emeraldLight,
-    glow: OLOOLUA_THEME.emeraldGlow,
-    features: [
-      {
-        title: 'Indigenous Seedlings & Nursery Operations',
-        desc: 'Real-time inventory tracking for Prunus africana, Warburgia, Markhamia, and Croton seedlings.',
-        tag: 'Seedling Registry',
-        url: `${OLOOLUA_PORTAL_URL}/seedlings.html`,
-        icon: TreePine,
-      },
-      {
-        title: 'Youth Guardian Member Dashboard & Patrols',
-        desc: 'Forest guard logs, anti-encroachment patrols, boundary markers, and live field activity monitoring.',
-        tag: 'Patrol & Members',
-        url: `${OLOOLUA_PORTAL_URL}/member-dashboard.html`,
-        icon: ShieldAlert,
-      },
-      {
-        title: 'Forest Beekeeping & Apiary Program',
-        desc: 'Sustainable honey harvesting, hive colony health records, and native pollinator habitat preservation.',
-        tag: 'Beekeeping',
-        url: `${OLOOLUA_PORTAL_URL}/beekeeping.html`,
-        icon: Sparkles,
-      },
-      {
-        title: 'Conservation Methodologies & Carbon Proofs',
-        desc: 'Integration with Kenya Jaza Miti and GTCI frameworks for verifiable Avalanche on-chain outcomes.',
-        tag: 'MRV & Methodology',
-        url: '/conservation/methodologies',
-        internal: true,
-        icon: Activity,
-      },
-      {
-        title: 'Community Workshops & Photo Evidence',
-        desc: 'Hands-on ecological education for local schools, tree nurseries, and high-resolution field galleries.',
-        tag: 'Workshops & Media',
-        url: `${OLOOLUA_PORTAL_URL}/photogallery.html`,
-        icon: BookOpen,
-      },
+    name: 'Oloolua Conservation',
+    label: 'Green hub · Forest CFA',
+    desc: 'Hands-on forest conservation with the Oloolua Youth Guardians: seedlings, patrols, beekeeping and verified planting records.',
+    icon: TreePine,
+    accent: GREEN,
+    bg: 'linear-gradient(180deg, #0A2D20 0%, #04150E 100%)',
+    links: [
+      { label: 'Conservation home', href: '/conservation', icon: TreePine },
+      { label: 'Knowledge base', href: '/conservation/knowledge', icon: BookOpen },
+      { label: 'Resources', href: '/conservation/resources', icon: Library },
+      { label: 'CFA dashboard', href: '/cfa', icon: Users },
     ],
-    actions: [
-      { label: 'Explore Oloolua Hub', url: OLOOLUA_PORTAL_URL, primary: true, external: true },
-      { label: 'Seedlings Registry', url: `${OLOOLUA_PORTAL_URL}/seedlings.html`, external: true },
-      { label: 'Member Dashboard', url: `${OLOOLUA_PORTAL_URL}/member-dashboard.html`, external: true },
-      { label: 'In-App Conservation Layer', url: '/conservation', internal: true },
-    ],
+    portal: OLOOLUA_PORTAL_URL
+      ? { label: 'Open full Oloolua site', href: OLOOLUA_PORTAL_URL, extras: [
+          { label: 'Seedling registry', href: `${OLOOLUA_PORTAL_URL}/seedlings.html`, icon: Sprout },
+          { label: 'Member dashboard', href: `${OLOOLUA_PORTAL_URL}/member-dashboard.html`, icon: Users },
+        ] }
+      : null,
   },
-];
+] as const;
+
+const TYPE_LABEL: Record<string, string> = {
+  ARTICLE: 'Article', NEWS_UPDATE: 'News', EDUCATIONAL_GUIDE: 'Guide', FIELD_JOURNAL: 'Field journal',
+  AUDIO_PODCAST: 'Podcast', VIDEO: 'Video', DOCUMENT: 'Document', REPORT: 'Report',
+};
+/** CONSERVATION_IMPACT -> Conservation impact */
+const humanize = (t: string) => (t ? t.charAt(0) + t.slice(1).toLowerCase().replace(/_/g, ' ') : '');
+const typeLabel = (t: string) => TYPE_LABEL[t] ?? humanize(t);
 
 export default function HubPage() {
-  const [selectedHub, setSelectedHub] = useState<'all' | 'sihu' | 'oloolua'>('all');
-  const [serverStatus, setServerStatus] = useState<{ [port: number]: boolean | null }>({
-    3001: null,
-    3002: null,
-  });
-  const [isChecking, setIsChecking] = useState(false);
-  const [tickerIdx, setTickerIdx] = useState(0);
+  const [posts, setPosts] = useState<FeedPost[] | null>(null);
+  const [q, setQ] = useState('');
 
-  const checkServers = async () => {
-    setIsChecking(true);
-    const updated: { [port: number]: boolean } = {};
-    for (const [port, base] of [[3001, SIHU_PORTAL_URL], [3002, OLOOLUA_PORTAL_URL]] as const) {
-      try {
-        await fetch(base, { mode: 'no-cors' });
-        updated[port] = true;
-      } catch {
-        updated[port] = false;
-      }
-    }
-    setServerStatus(updated);
-    setIsChecking(false);
-  };
+  useEffect(() => {
+    let cancelled = false;
+    fetch('/api/hub/feed')
+      .then(r => (r.ok ? r.json() : { posts: [] }))
+      .then(d => { if (!cancelled) setPosts(d.posts ?? []); })
+      .catch(() => { if (!cancelled) setPosts([]); });
+    return () => { cancelled = true; };
+  }, []);
+
+  const shown = (posts ?? []).filter(p =>
+    !q.trim() || `${p.title} ${p.summary} ${p.category}`.toLowerCase().includes(q.trim().toLowerCase()),
+  );
+  const headline = posts?.[0];
 
   return (
     <main style={{
       minHeight: '100dvh',
       background: 'linear-gradient(180deg, #020617 0%, #071510 50%, #020617 100%)',
-      color: '#F8FAFC',
-      fontFamily: "'IBM Plex Sans', sans-serif",
-      paddingBottom: 100,
+      color: TEXT, ...SANS, paddingBottom: 110,
     }}>
-      {/* Dynamic font inclusions */}
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300..700;1,9..144,300..700&family=IBM+Plex+Mono:wght@400;500;600;700&family=IBM+Plex+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&display=swap');
-        .hub-glass-card {
-          backdrop-filter: blur(16px);
-          transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+        @import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500..700&family=IBM+Plex+Mono:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap');
+        .hub-wrap { max-width: 1120px; margin: 0 auto; padding: 0 24px; }
+        .hub-actions { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
+        .hub-stories { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+        .hub-pair { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+        .hub-card { transition: transform 0.2s ease, border-color 0.2s ease; }
+        /* CSS-only entrance: cards are visible even before the page's JavaScript loads */
+        .hub-rise { animation: hub-rise 0.35s ease both; }
+        @keyframes hub-rise { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+        @media (prefers-reduced-motion: reduce) { .hub-rise { animation: none; } }
+        .hub-card:hover { transform: translateY(-2px); }
+        .hub-link:hover { background: rgba(255,255,255,0.07) !important; }
+        @media (max-width: 980px) {
+          .hub-actions { grid-template-columns: 1fr 1fr; }
+          .hub-stories { grid-template-columns: 1fr 1fr; }
         }
-        .hub-glass-card:hover {
-          transform: translateY(-2px);
+        @media (max-width: 720px) {
+          .hub-wrap { padding: 0 16px; }
+          .hub-pair, .hub-stories { grid-template-columns: 1fr; }
         }
-        .feature-item-hover:hover {
-          background: rgba(255, 255, 255, 0.05);
-          transform: translateX(4px);
-        }
+        @media (max-width: 420px) { .hub-actions { grid-template-columns: 1fr; } }
       `}</style>
 
-      <div style={{ maxWidth: 1160, margin: '0 auto', padding: '0 24px' }}>
-        
-        {/* ── Breaking News Ticker (SIHU Live Feed) ── */}
-        <div style={{
-          marginTop: 20,
-          background: 'rgba(2, 6, 23, 0.85)',
-          border: '1px solid rgba(56, 189, 248, 0.25)',
-          borderRadius: 12,
-          padding: '10px 16px',
-          display: 'flex',
-          alignItems: 'center',
-          gap: 12,
-          boxShadow: '0 4px 20px rgba(0,0,0,0.4), 0 0 15px rgba(56, 189, 248, 0.1)',
-        }}>
-          <div style={{
-            display: 'inline-flex', alignItems: 'center', gap: 6,
-            background: 'linear-gradient(90deg, #0284C7, #0369A1)',
-            padding: '3px 10px', borderRadius: 6,
-            fontSize: 10, fontWeight: 800, textTransform: 'uppercase',
-            letterSpacing: 1.2, color: '#FFFFFF',
-            ...MONO,
+      <div className="hub-wrap">
+
+        {/* Latest headline: a real, clickable story instead of a static ticker */}
+        {headline && (
+          <Link href={`/hub/${headline.slug}`} style={{
+            marginTop: 20, display: 'flex', alignItems: 'center', gap: 12, textDecoration: 'none',
+            background: 'rgba(2,6,23,0.85)', border: `1px solid ${BLUE}40`, borderRadius: 12, padding: '10px 14px',
           }}>
-            <Flame size={12} className="animate-pulse" />
-            LIVE DISPATCH
-          </div>
-          <div style={{ flex: 1, overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis' }}>
-            <span style={{ fontSize: 13, color: '#E2E8F0' }}>
-              {TICKER_ITEMS[tickerIdx]}
+            <span style={{ ...MONO, fontSize: 10, fontWeight: 700, letterSpacing: 1.2, textTransform: 'uppercase', color: '#FFFFFF', background: SIHU_THEME.blueDeep, padding: '3px 9px', borderRadius: 6, flexShrink: 0 }}>
+              Latest
             </span>
-          </div>
-          <div style={{ display: 'flex', gap: 4 }}>
-            <button
-              onClick={() => setTickerIdx((prev) => (prev - 1 + TICKER_ITEMS.length) % TICKER_ITEMS.length)}
-              style={{ background: 'rgba(255,255,255,0.06)', border: 'none', color: '#94A3B8', borderRadius: 4, width: 22, height: 22, cursor: 'pointer', fontSize: 12 }}
-            >
-              ‹
-            </button>
-            <button
-              onClick={() => setTickerIdx((prev) => (prev + 1) % TICKER_ITEMS.length)}
-              style={{ background: 'rgba(255,255,255,0.06)', border: 'none', color: '#94A3B8', borderRadius: 4, width: 22, height: 22, cursor: 'pointer', fontSize: 12 }}
-            >
-              ›
-            </button>
-          </div>
-        </div>
+            <span style={{ flex: 1, minWidth: 0, fontSize: 13, color: '#E2E8F0', overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis' }}>
+              {headline.title}
+            </span>
+            <ArrowRight size={15} color={BLUE} style={{ flexShrink: 0 }} />
+          </Link>
+        )}
 
-        {/* ── Masthead ── */}
-        <header style={{
-          display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-          padding: '32px 0 24px', borderBottom: '1px solid rgba(255,255,255,0.08)',
-          flexWrap: 'wrap', gap: 18,
-        }}>
-          <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8, flexWrap: 'wrap' }}>
-              <span style={{
-                ...MONO, fontSize: 11, letterSpacing: 1.6, textTransform: 'uppercase',
-                background: 'linear-gradient(90deg, rgba(56,189,248,0.15), rgba(16,185,129,0.15))',
-                color: '#7DD3FC',
-                padding: '4px 12px', borderRadius: 6,
-                border: '1px solid rgba(56, 189, 248, 0.3)',
-                fontWeight: 700,
-              }}>
-                Dual Information Ecosystem
-              </span>
-              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 12, color: '#94A3B8' }}>
-                <Radio size={13} color="#38BDF8" className="animate-pulse" />
-                Synchronized Frontends Active
-              </span>
-            </div>
-            <h1 style={{ ...SERIF, fontSize: 36, fontWeight: 700, color: '#F8FAFC', margin: 0, lineHeight: 1.15 }}>
-              KAI Information Hubs
-            </h1>
-            <p style={{ ...SANS, fontSize: 14, color: '#94A3B8', margin: '6px 0 0', maxWidth: 650 }}>
-              Direct access to both synchronized ecosystem nodes: <strong style={{ color: '#38BDF8' }}>SIHU.COM</strong> (Lake Victoria Basin Media) and <strong style={{ color: '#10B981' }}>Oloolua Youth Guardians</strong> (Community Forest Conservation).
-            </p>
-          </div>
-
-          {/* Quick Subsystem Telemetry */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-            <div style={{
-              display: 'flex', alignItems: 'center', gap: 12,
-              padding: '10px 16px', borderRadius: 12,
-              background: 'rgba(15, 23, 42, 0.8)',
-              border: '1px solid rgba(255,255,255,0.1)',
-            }}>
-              {/* SIHU Status */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, color: '#E2E8F0' }}>
-                <span style={{
-                  width: 8, height: 8, borderRadius: '50%',
-                  background: serverStatus[3001] === false ? '#EF4444' : '#38BDF8',
-                  boxShadow: '0 0 8px rgba(56, 189, 248, 0.6)',
-                }} />
-                <span>SIHU Media</span>
-              </div>
-              <span style={{ width: 1, height: 16, background: 'rgba(255,255,255,0.12)' }} />
-              {/* Oloolua Status */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, color: '#E2E8F0' }}>
-                <span style={{
-                  width: 8, height: 8, borderRadius: '50%',
-                  background: serverStatus[3002] === false ? '#EF4444' : '#10B981',
-                  boxShadow: '0 0 8px rgba(16, 185, 129, 0.6)',
-                }} />
-                <span>Oloolua CFA</span>
-              </div>
-            </div>
-
-            <button
-              onClick={checkServers}
-              disabled={isChecking}
-              title="Ping subsystem health"
-              style={{
-                width: 38, height: 38, borderRadius: 10,
-                border: '1px solid rgba(56,189,248,0.3)',
-                background: 'rgba(56,189,248,0.08)',
-                color: '#38BDF8', cursor: 'pointer',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-              }}
-            >
-              <RefreshCw size={15} className={isChecking ? 'animate-spin' : ''} />
-            </button>
-          </div>
+        {/* Masthead */}
+        <header style={{ padding: '34px 0 26px' }}>
+          <p style={{ ...MONO, fontSize: 11, letterSpacing: 1.6, textTransform: 'uppercase', color: '#7DD3FC', fontWeight: 700, margin: '0 0 10px' }}>
+            KAI Info Hub
+          </p>
+          <h1 style={{ ...SERIF, fontSize: 'clamp(28px, 5vw, 40px)', fontWeight: 700, margin: 0, lineHeight: 1.15, letterSpacing: '-0.5px' }}>
+            Learn, share and <span style={{ color: GREEN }}>protect</span> your environment
+          </h1>
+          <p style={{ fontSize: 15, color: DIM, margin: '10px 0 0', maxWidth: 620, lineHeight: 1.6 }}>
+            Local news from <strong style={{ color: BLUE }}>SIHU</strong> and hands-on forest work with the <strong style={{ color: GREEN }}>Oloolua Youth Guardians</strong>, in one place.
+          </p>
         </header>
 
-        {/* ── Subsystem Selector Tabs ── */}
-        <section style={{ margin: '26px 0 28px', display: 'flex', gap: 10, flexWrap: 'wrap' }}>
-          {[
-            { id: 'all', label: 'All Information Hubs', count: '2 Hubs Synchronized', accent: '#7DD3FC' },
-            { id: 'sihu', label: '📰 SIHU.COM (The Blue Hub)', count: 'Media & Journalism', accent: '#38BDF8' },
-            { id: 'oloolua', label: '🌲 Oloolua Youth Guardians (The Green Hub)', count: 'Conservation & Forestry', accent: '#10B981' },
-          ].map((tab) => {
-            const active = selectedHub === tab.id;
-            return (
-              <button
-                key={tab.id}
-                onClick={() => setSelectedHub(tab.id as typeof selectedHub)}
-                style={{
-                  padding: '11px 20px', borderRadius: 10,
-                  border: `1px solid ${active ? tab.accent : 'rgba(255,255,255,0.08)'}`,
-                  background: active ? `linear-gradient(135deg, ${tab.accent}20, rgba(2,6,23,0.8))` : 'rgba(255,255,255,0.02)',
-                  color: active ? '#FFFFFF' : '#94A3B8',
-                  cursor: 'pointer', fontFamily: 'inherit',
-                  display: 'flex', alignItems: 'center', gap: 10, transition: 'all 0.2s',
-                  boxShadow: active ? `0 0 20px ${tab.accent}20` : 'none',
-                }}
-              >
-                <span style={{ fontSize: 14, fontWeight: active ? 700 : 500 }}>{tab.label}</span>
-                <span style={{
-                  ...MONO, fontSize: 10, letterSpacing: 0.8,
-                  padding: '2px 8px', borderRadius: 4,
-                  background: active ? tab.accent : 'rgba(255,255,255,0.06)',
-                  color: active ? '#020617' : '#94A3B8',
-                  fontWeight: 700,
-                }}>
-                  {tab.count}
-                </span>
-              </button>
-            );
-          })}
-        </section>
-
-        {/* ── Hub Cards Grid ── */}
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: selectedHub === 'all' ? 'repeat(auto-fit, minmax(520px, 1fr))' : '1fr',
-          gap: 26,
-        }}>
-          {HUBS.filter(h => selectedHub === 'all' || selectedHub === h.id).map((hub) => {
-            const isOnline = hub.port ? serverStatus[hub.port] !== false : true;
-            const isSihu = hub.id === 'sihu';
-
-            return (
-              <motion.article
-                key={hub.id}
-                initial={{ opacity: 0, y: 14 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="hub-glass-card"
-                style={{
-                  background: isSihu
-                    ? 'linear-gradient(180deg, #0B1934 0%, #020617 100%)'
-                    : 'linear-gradient(180deg, #0A2D20 0%, #04150E 100%)',
-                  borderRadius: 20,
-                  border: `1px solid ${isSihu ? 'rgba(56, 189, 248, 0.35)' : 'rgba(16, 185, 129, 0.35)'}`,
-                  padding: '30px 28px',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  position: 'relative',
-                  overflow: 'hidden',
-                  boxShadow: `0 20px 40px -15px rgba(0,0,0,0.7), 0 0 30px ${hub.glow}`,
-                }}
-              >
-                {/* Accent Top Bar */}
-                <div style={{
-                  position: 'absolute', top: 0, left: 0, right: 0, height: 3,
-                  background: `linear-gradient(90deg, ${hub.accent}, transparent)`,
-                }} />
-
-                {/* Hub Header */}
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 16, gap: 14 }}>
-                  <div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8, flexWrap: 'wrap' }}>
-                      <span style={{
-                        ...MONO, fontSize: 10, letterSpacing: 1.2, textTransform: 'uppercase',
-                        color: hub.accent, fontWeight: 700,
-                        background: 'rgba(0,0,0,0.4)', padding: '3px 9px', borderRadius: 4,
-                        border: `1px solid ${hub.accent}40`,
-                      }}>
-                        {hub.badge}
+        {/* What you can do */}
+        <section aria-labelledby="hub-actions">
+          <h2 id="hub-actions" style={{ ...MONO, fontSize: 11, letterSpacing: 1.4, textTransform: 'uppercase', color: DIM, fontWeight: 700, margin: '0 0 14px' }}>
+            What you can do
+          </h2>
+          <div className="hub-actions">
+            {ACTIONS.map((a, i) => {
+              const Icon = a.icon;
+              const RewardIcon = a.rewardIcon;
+              return (
+                <div key={a.title} className="hub-rise" style={{ animationDelay: `${i * 50}ms` }}>
+                  <Link href={a.href} className="hub-card" style={{
+                    height: '100%', boxSizing: 'border-box', display: 'flex', flexDirection: 'column', textDecoration: 'none', color: TEXT,
+                    background: `linear-gradient(160deg, ${a.accent}1F 0%, rgba(2,6,23,0.9) 70%)`,
+                    border: `1px solid ${a.accent}45`, borderRadius: 18, padding: '20px 18px',
+                  }}>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
+                      <span style={{ width: 42, height: 42, borderRadius: 12, background: `${a.accent}26`, color: a.accent, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        <Icon size={21} />
                       </span>
-                      <span style={{
-                        display: 'inline-flex', alignItems: 'center', gap: 5,
-                        fontSize: 11, color: isOnline ? '#10B981' : '#EF4444',
-                        ...MONO,
-                      }}>
-                        <span style={{ width: 6, height: 6, borderRadius: '50%', background: isOnline ? '#10B981' : '#EF4444' }} />
-                        {isOnline ? 'Online' : 'Offline'}
+                      <span style={{ ...MONO, fontSize: 11, fontWeight: 700, color: '#020617', background: a.accent, padding: '4px 9px', borderRadius: 999, display: 'inline-flex', alignItems: 'center', gap: 5 }}>
+                        <RewardIcon size={12} /> {a.reward}
                       </span>
                     </div>
-
-                    <h2 style={{ ...SERIF, fontSize: 26, fontWeight: 700, color: '#F8FAFC', margin: 0, letterSpacing: '-0.3px' }}>
-                      {hub.name}
-                    </h2>
-                    <p style={{ ...MONO, fontSize: 12, color: hub.accentLight, margin: '4px 0 0', fontWeight: 600 }}>
-                      {hub.brandTitle}
-                    </p>
-                  </div>
-
-                  <div style={{
-                    width: 48, height: 48, borderRadius: 14,
-                    background: `${hub.accent}20`,
-                    border: `1px solid ${hub.accent}40`,
-                    color: hub.accent,
-                    display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
-                  }}>
-                    {isSihu ? <Newspaper size={24} /> : <TreePine size={24} />}
-                  </div>
+                    <h3 style={{ fontSize: 17, fontWeight: 700, margin: '0 0 6px' }}>{a.title}</h3>
+                    <p style={{ fontSize: 13, color: DIM, margin: '0 0 16px', lineHeight: 1.5, flex: 1 }}>{a.desc}</p>
+                    <span style={{ fontSize: 13, fontWeight: 700, color: a.accent, display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                      {a.cta} <ArrowRight size={14} />
+                    </span>
+                  </Link>
                 </div>
+              );
+            })}
+          </div>
+        </section>
 
-                <p style={{ fontSize: 14, color: 'rgba(248,250,252,0.75)', lineHeight: 1.6, margin: '0 0 22px' }}>
-                  {hub.desc}
-                </p>
+        {/* Latest stories from the real SIHU feed */}
+        <section id="latest" style={{ marginTop: 40, scrollMarginTop: 20 }} aria-labelledby="hub-latest">
+          <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap', marginBottom: 14 }}>
+            <div>
+              <h2 id="hub-latest" style={{ ...SERIF, fontSize: 24, fontWeight: 700, margin: 0 }}>Latest stories</h2>
+              <p style={{ fontSize: 13, color: DIM, margin: '4px 0 0' }}>Reviewed and published by the SIHU editors.</p>
+            </div>
+            <label style={{ display: 'flex', alignItems: 'center', gap: 8, background: 'rgba(255,255,255,0.04)', border: `1px solid ${LINE}`, borderRadius: 10, padding: '8px 12px', minWidth: 220 }}>
+              <Search size={14} color={DIM} />
+              <input value={q} onChange={e => setQ(e.target.value)} placeholder="Search stories" aria-label="Search stories"
+                style={{ background: 'none', border: 'none', outline: 'none', color: TEXT, fontSize: 13, fontFamily: 'inherit', width: '100%' }} />
+            </label>
+          </div>
 
-                {/* Features List */}
-                <div style={{
-                  borderTop: `1px solid rgba(255,255,255,0.08)`,
-                  padding: '18px 0 20px',
-                  flex: 1,
+          {posts === null ? (
+            <div className="hub-stories">
+              {[0, 1, 2].map(i => (
+                <div key={i} style={{ height: 150, borderRadius: 16, background: 'rgba(255,255,255,0.04)', border: `1px solid ${LINE}` }} />
+              ))}
+            </div>
+          ) : shown.length === 0 ? (
+            <div style={{ textAlign: 'center', padding: '32px 16px', border: `1px dashed ${LINE}`, borderRadius: 16, color: DIM }}>
+              <p style={{ margin: '0 0 10px', color: TEXT, fontWeight: 600 }}>{q ? 'No stories match your search.' : 'No stories yet.'}</p>
+              <Link href="/hub/create" style={{ color: BLUE, fontWeight: 700, textDecoration: 'none' }}>Be the first to write one</Link>
+            </div>
+          ) : (
+            <div className="hub-stories">
+              {shown.slice(0, 6).map(p => (
+                <Link key={p.id} href={`/hub/${p.slug}`} className="hub-card" style={{
+                  display: 'flex', flexDirection: 'column', textDecoration: 'none', color: TEXT,
+                  background: 'rgba(11,25,52,0.55)', border: `1px solid ${LINE}`, borderRadius: 16, padding: '16px 16px 14px',
                 }}>
-                  <p style={{
-                    ...MONO, fontSize: 10, letterSpacing: 1.4, textTransform: 'uppercase',
-                    color: hub.accentLight, fontWeight: 700, margin: '0 0 14px',
-                  }}>
-                    Synchronized Modules & Tools
-                  </p>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                    {hub.features.map((feat, idx) => {
-                      const FeatIcon = feat.icon || Layers;
-                      return (
-                        <div
-                          key={idx}
-                          className="feature-item-hover"
-                          style={{
-                            padding: '10px 14px',
-                            borderRadius: 10,
-                            background: 'rgba(255, 255, 255, 0.02)',
-                            border: '1px solid rgba(255, 255, 255, 0.04)',
-                            transition: 'all 0.18s ease',
-                            display: 'flex',
-                            alignItems: 'flex-start',
-                            justifyContent: 'space-between',
-                            gap: 12,
-                          }}
-                        >
-                          <div style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
-                            <div style={{ color: hub.accent, marginTop: 2 }}>
-                              <FeatIcon size={16} />
-                            </div>
-                            <div>
-                              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 2 }}>
-                                <span style={{ fontSize: 13, fontWeight: 700, color: '#F8FAFC' }}>
-                                  {feat.title}
-                                </span>
-                                <span style={{
-                                  ...MONO, fontSize: 9, textTransform: 'uppercase',
-                                  padding: '1px 6px', borderRadius: 3,
-                                  background: `${hub.accent}20`, color: hub.accentLight,
-                                  fontWeight: 600,
-                                }}>
-                                  {feat.tag}
-                                </span>
-                              </div>
-                              <p style={{ margin: 0, fontSize: 12, color: '#94A3B8', lineHeight: 1.4 }}>
-                                {feat.desc}
-                              </p>
-                            </div>
-                          </div>
+                  <div style={{ display: 'flex', gap: 6, marginBottom: 10, flexWrap: 'wrap' }}>
+                    <span style={{ ...MONO, fontSize: 10, fontWeight: 700, textTransform: 'uppercase', color: '#7DD3FC', background: `${BLUE}1F`, padding: '2px 8px', borderRadius: 4 }}>
+                      {typeLabel(p.contentType)}
+                    </span>
+                    <span style={{ ...MONO, fontSize: 10, color: DIM, padding: '2px 0' }}>{humanize(p.category)}</span>
+                  </div>
+                  <h3 style={{ fontSize: 15, fontWeight: 700, margin: '0 0 6px', lineHeight: 1.35 }}>{p.title}</h3>
+                  {p.summary && (
+                    <p style={{ fontSize: 12.5, color: DIM, margin: '0 0 12px', lineHeight: 1.5, flex: 1, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+                      {p.summary}
+                    </p>
+                  )}
+                  <p style={{ ...MONO, fontSize: 10.5, color: '#64748B', margin: 'auto 0 0' }}>{p.creator} · {p.publishedAt}</p>
+                </Link>
+              ))}
+            </div>
+          )}
+        </section>
 
-                          {feat.url && (
-                            feat.internal ? (
-                              <Link href={feat.url} style={{ color: hub.accent, textDecoration: 'none', display: 'flex', alignItems: 'center', paddingTop: 2 }}>
-                                <ArrowRight size={15} />
-                              </Link>
-                            ) : (
-                              <a href={feat.url} target="_blank" rel="noreferrer" style={{ color: hub.accent, textDecoration: 'none', display: 'flex', alignItems: 'center', paddingTop: 2 }}>
-                                <ExternalLink size={14} />
-                              </a>
-                            )
-                          )}
-                        </div>
+        {/* The two hubs, with only links that work */}
+        <section style={{ marginTop: 40 }} aria-labelledby="hub-pair">
+          <h2 id="hub-pair" style={{ ...MONO, fontSize: 11, letterSpacing: 1.4, textTransform: 'uppercase', color: DIM, fontWeight: 700, margin: '0 0 14px' }}>
+            Explore the hubs
+          </h2>
+          <div className="hub-pair">
+            {HUBS.map(hub => {
+              const Icon = hub.icon;
+              return (
+                <article key={hub.id} style={{ background: hub.bg, border: `1px solid ${hub.accent}45`, borderRadius: 20, padding: '24px 22px', position: 'relative', overflow: 'hidden' }}>
+                  <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 3, background: `linear-gradient(90deg, ${hub.accent}, transparent)` }} />
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 12 }}>
+                    <span style={{ width: 44, height: 44, borderRadius: 12, background: `${hub.accent}22`, color: hub.accent, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                      <Icon size={22} />
+                    </span>
+                    <div>
+                      <p style={{ ...MONO, fontSize: 10, letterSpacing: 1.2, textTransform: 'uppercase', color: hub.accent, fontWeight: 700, margin: 0 }}>{hub.label}</p>
+                      <h3 style={{ ...SERIF, fontSize: 22, fontWeight: 700, margin: '2px 0 0' }}>{hub.name}</h3>
+                    </div>
+                  </div>
+                  <p style={{ fontSize: 13.5, color: 'rgba(248,250,252,0.75)', lineHeight: 1.6, margin: '0 0 16px' }}>{hub.desc}</p>
+
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+                    {[...hub.links, ...(hub.portal?.extras ?? [])].map(l => {
+                      const LIcon = l.icon;
+                      const external = l.href.startsWith('http');
+                      const style: React.CSSProperties = {
+                        display: 'flex', alignItems: 'center', gap: 8, padding: '10px 12px', borderRadius: 10,
+                        background: 'rgba(255,255,255,0.04)', border: `1px solid ${LINE}`, color: TEXT,
+                        fontSize: 13, fontWeight: 600, textDecoration: 'none',
+                      };
+                      return external ? (
+                        <a key={l.label} href={l.href} target="_blank" rel="noreferrer" className="hub-link" style={style}>
+                          <LIcon size={15} color={hub.accent} /> {l.label} <ExternalLink size={12} style={{ marginLeft: 'auto', opacity: 0.6 }} />
+                        </a>
+                      ) : (
+                        <Link key={l.label} href={l.href} className="hub-link" style={style}>
+                          <LIcon size={15} color={hub.accent} /> {l.label}
+                        </Link>
                       );
                     })}
                   </div>
-                </div>
 
-                {/* Action Buttons */}
-                <div style={{
-                  borderTop: `1px solid rgba(255,255,255,0.08)`,
-                  paddingTop: 20,
-                  display: 'flex',
-                  gap: 10,
-                  flexWrap: 'wrap',
-                }}>
-                  {hub.actions.map((act, idx) => (
-                    act.internal ? (
-                      <Link
-                        key={idx}
-                        href={act.url}
-                        style={{
-                          padding: '10px 16px',
-                          borderRadius: 8,
-                          fontSize: 13,
-                          fontWeight: 700,
-                          textDecoration: 'none',
-                          display: 'inline-flex',
-                          alignItems: 'center',
-                          gap: 6,
-                          background: act.primary ? hub.accent : 'rgba(255,255,255,0.06)',
-                          color: act.primary ? '#020617' : '#F8FAFC',
-                          border: `1px solid ${act.primary ? hub.accent : 'rgba(255,255,255,0.1)'}`,
-                          transition: 'all 0.2s',
-                        }}
-                      >
-                        {act.label}
-                        <ArrowRight size={14} />
-                      </Link>
-                    ) : (
-                      <a
-                        key={idx}
-                        href={act.url}
-                        target="_blank"
-                        rel="noreferrer"
-                        style={{
-                          padding: '10px 16px',
-                          borderRadius: 8,
-                          fontSize: 13,
-                          fontWeight: 700,
-                          textDecoration: 'none',
-                          display: 'inline-flex',
-                          alignItems: 'center',
-                          gap: 6,
-                          background: act.primary ? hub.accent : 'rgba(255,255,255,0.06)',
-                          color: act.primary ? '#020617' : '#F8FAFC',
-                          border: `1px solid ${act.primary ? hub.accent : 'rgba(255,255,255,0.1)'}`,
-                          transition: 'all 0.2s',
-                        }}
-                      >
-                        {act.label}
-                        <ExternalLink size={13} />
-                      </a>
-                    )
-                  ))}
-                </div>
-              </motion.article>
-            );
-          })}
-        </div>
-
-        {/* ── Synchronized Ecosystem Banner ── */}
-        <section style={{
-          marginTop: 36, padding: '24px 28px',
-          background: 'linear-gradient(90deg, rgba(2, 6, 23, 0.95), rgba(7, 21, 16, 0.95))',
-          borderRadius: 16,
-          border: '1px solid rgba(56, 189, 248, 0.2)',
-          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-          flexWrap: 'wrap', gap: 16,
-        }}>
-          <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
-              <Sparkles size={14} color="#38BDF8" />
-              <p style={{ ...MONO, fontSize: 10, letterSpacing: 1.4, textTransform: 'uppercase', color: '#7DD3FC', fontWeight: 700, margin: 0 }}>
-                Unified Ecosystem Architecture
-              </p>
-            </div>
-            <p style={{ margin: 0, fontSize: 13, color: '#94A3B8' }}>
-              Both SIHU.COM and Oloolua Youth Guardians operate as synchronized knowledge nodes within the broader KAI ecosystem.
-            </p>
-          </div>
-          <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
-            <a
-              href={`${SIHU_PORTAL_URL}/portal`}
-              style={{
-                ...MONO, fontSize: 11, padding: '9px 16px', borderRadius: 8,
-                background: '#0284C7', color: '#FFFFFF', fontWeight: 700,
-                textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 6,
-              }}
-            >
-              <Newspaper size={14} />
-              Open SIHU Portal ↗
-            </a>
-            <a
-              href={OLOOLUA_PORTAL_URL}
-              style={{
-                ...MONO, fontSize: 11, padding: '9px 16px', borderRadius: 8,
-                background: '#059669', color: '#FFFFFF', fontWeight: 700,
-                textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 6,
-              }}
-            >
-              <TreePine size={14} />
-              Open Oloolua Hub ↗
-            </a>
+                  {hub.portal && (
+                    <a href={hub.portal.href} target="_blank" rel="noreferrer" style={{
+                      marginTop: 14, display: 'inline-flex', alignItems: 'center', gap: 6, padding: '10px 16px', borderRadius: 10,
+                      background: hub.accent, color: '#020617', fontSize: 13, fontWeight: 700, textDecoration: 'none',
+                    }}>
+                      {hub.portal.label} <ExternalLink size={13} />
+                    </a>
+                  )}
+                </article>
+              );
+            })}
           </div>
         </section>
       </div>
