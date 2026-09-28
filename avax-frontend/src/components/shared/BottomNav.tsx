@@ -5,7 +5,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Home, Bot, Gift, UserCircle2, Newspaper, TreePine,
-  ChevronRight, X, Sparkles, ShieldCheck
+  ChevronRight, X, BookOpen, PenTool, Sprout, ExternalLink, LayoutGrid,
 } from 'lucide-react';
 import { useAIChatStore } from '@/store/useAIChatStore';
 
@@ -20,53 +20,76 @@ const itemStyle = (active: boolean): React.CSSProperties => ({
   userSelect: 'none',
 });
 
+const ext = (u?: string) => (u && /^https?:\/\//.test(u) ? u : null);
+
+/* Plain-language choices: what each hub is for and what you can do there. */
 const HUB_OPTIONS = [
   {
     id: 'sihu',
-    name: 'SIHU.COM Information Hub',
-    badge: 'The Blue Hub · Media Network',
-    desc: 'Sango Information Hub & media network for Lake Victoria Basin news, verified environmental articles, and audio studio.',
+    name: 'News & stories',
+    source: 'SIHU',
+    desc: 'Read local news from the Lake Victoria Basin, or write your own story and earn tips.',
     href: '/hub',
-    portalUrl: process.env.NEXT_PUBLIC_SIHU_PORTAL_URL || '/hub',
-    portalLabel: 'Explore SIHU Portal',
+    match: (p: string) => p.startsWith('/hub'),
     icon: Newspaper,
     accent: '#38BDF8',
     bg: 'linear-gradient(135deg, rgba(56, 189, 248, 0.16) 0%, rgba(2, 6, 23, 0.95) 100%)',
     border: 'rgba(56, 189, 248, 0.35)',
+    quick: [
+      { label: 'Read news', href: '/hub#latest', icon: BookOpen },
+      { label: 'Write a story', href: '/hub/create', icon: PenTool, badge: 'Earn tips' },
+    ],
+    portal: ext(process.env.NEXT_PUBLIC_SIHU_PORTAL_URL),
   },
   {
     id: 'oloolua',
-    name: 'Oloolua Youth Guardians',
-    badge: 'The Green Hub · Forest CFA',
-    desc: 'Community Forest Association (CFA) youth hub with indigenous seedlings nursery, beekeeping, patrol logs, and MRV.',
+    name: 'Forest conservation',
+    source: 'Oloolua Youth Guardians',
+    desc: 'Plant trees with your community forest group, learn proven methods and record your work.',
     href: '/conservation',
-    portalUrl: process.env.NEXT_PUBLIC_OLOOLUA_PORTAL_URL || '/conservation',
-    portalLabel: 'Explore Oloolua Hub',
+    match: (p: string) => p.startsWith('/conservation') || p.startsWith('/cfa'),
     icon: TreePine,
     accent: '#10B981',
     bg: 'linear-gradient(135deg, rgba(16, 185, 129, 0.16) 0%, rgba(4, 21, 14, 0.95) 100%)',
     border: 'rgba(16, 185, 129, 0.35)',
+    quick: [
+      { label: 'Log a planting', href: '/cfa', icon: Sprout, badge: '+50 pts' },
+      { label: 'Guides', href: '/conservation/methodologies', icon: BookOpen },
+    ],
+    portal: ext(process.env.NEXT_PUBLIC_OLOOLUA_PORTAL_URL),
   },
 ];
 
 export default function BottomNav() {
   const path = usePathname();
   const router = useRouter();
-  const [hubMenuOpen, setHubMenuOpen] = useState(false);
+  // The picker is open only on the page it was opened from, so navigating
+  // anywhere closes it without an extra effect.
+  const [menuPath, setMenuPath] = useState<string | null>(null);
+  const hubMenuOpen = menuPath !== null && menuPath === path;
+  const setHubMenuOpen = (v: boolean | ((prev: boolean) => boolean)) => {
+    const next = typeof v === 'function' ? v(hubMenuOpen) : v;
+    setMenuPath(next ? path : null);
+  };
   const isChatOpen = useAIChatStore(s => s.isOpen);
   const toggleChat  = useAIChatStore(s => s.toggle);
 
-  const isInfoHubActive = path?.startsWith('/hub') || path?.startsWith('/conservation');
+  // /cfa is part of the Oloolua hub, so the indicator has to follow the same
+  // rule the picker's match() uses or the icon stays unlit on those pages.
+  const isInfoHubActive = !!path && HUB_OPTIONS.some(opt => opt.match(path));
 
-  // Close modal when path changes
+  // Escape closes the hub picker
   useEffect(() => {
-    setHubMenuOpen(false);
-  }, [path]);
+    if (!hubMenuOpen) return;
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setMenuPath(null); };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [hubMenuOpen]);
 
   const selectHub = (href: string) => {
     setHubMenuOpen(false);
     if (href.startsWith('http://') || href.startsWith('https://')) {
-      window.location.href = href;
+      window.location.assign(href);
     } else {
       router.push(href);
     }
@@ -103,6 +126,9 @@ export default function BottomNav() {
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: 24, scale: 0.95 }}
               transition={{ type: 'spring', damping: 28, stiffness: 350 }}
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="hub-picker-title"
               style={{
                 position: 'relative', width: '100%', maxWidth: 460,
                 margin: '0 16px',
@@ -114,37 +140,21 @@ export default function BottomNav() {
               }}
             >
               {/* Header */}
-              <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 18 }}>
+              <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 16, gap: 12 }}>
                 <div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 4 }}>
-                    <Sparkles size={14} color="#C89B3C" />
-                    <span style={{
-                      fontSize: 10, fontWeight: 700, letterSpacing: 1.2,
-                      textTransform: 'uppercase', color: '#E4C878',
-                      fontFamily: "'IBM Plex Mono', monospace",
-                    }}>
-                      KAI Knowledge Ecosystem
-                    </span>
-                  </div>
-                  <h3 style={{
-                    margin: 0, fontSize: 20, fontWeight: 700, color: '#F6F2E7',
-                    letterSpacing: '-0.3px',
-                  }}>
-                    Select Information Hub
+                  <h3 id="hub-picker-title" style={{ margin: 0, fontSize: 20, fontWeight: 700, color: '#F6F2E7', letterSpacing: '-0.3px' }}>
+                    What would you like to explore?
                   </h3>
                   <p style={{ margin: '4px 0 0', fontSize: 13, color: 'rgba(246, 242, 231, 0.65)' }}>
-                    Choose the community hub you want to explore:
+                    Pick one. You can switch at any time.
                   </p>
                 </div>
-
                 <button
                   onClick={() => setHubMenuOpen(false)}
                   style={{
-                    background: 'rgba(255, 255, 255, 0.08)',
-                    border: 'none', borderRadius: '50%',
-                    width: 32, height: 32, display: 'flex',
-                    alignItems: 'center', justifyContent: 'center',
-                    color: '#F6F2E7', cursor: 'pointer',
+                    background: 'rgba(255, 255, 255, 0.08)', border: 'none', borderRadius: '50%',
+                    width: 32, height: 32, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    color: '#F6F2E7', cursor: 'pointer', flexShrink: 0,
                   }}
                   aria-label="Close"
                 >
@@ -152,107 +162,110 @@ export default function BottomNav() {
                 </button>
               </div>
 
-              {/* 2 Hub Option Cards */}
+              {/* The two hubs */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
                 {HUB_OPTIONS.map((opt) => {
                   const Icon = opt.icon;
-                  const isCurrent = path?.startsWith(opt.href);
+                  const isCurrent = !!path && opt.match(path);
                   return (
-                    <motion.div
+                    <div
                       key={opt.id}
-                      whileHover={{ scale: 1.015, y: -1 }}
-                      whileTap={{ scale: 0.98 }}
-                      onClick={() => selectHub(opt.href)}
                       style={{
-                        display: 'flex', alignItems: 'center', gap: 14,
-                        padding: '16px 16px',
                         background: opt.bg,
                         border: `1px solid ${isCurrent ? opt.accent : opt.border}`,
                         borderRadius: 16,
-                        cursor: 'pointer',
-                        transition: 'border-color 0.2s, background 0.2s',
                         boxShadow: isCurrent ? `0 0 16px ${opt.accent}25` : 'none',
+                        overflow: 'hidden',
                       }}
                     >
-                      {/* Icon */}
-                      <div
+                      {/* Main choice: the whole row is one button */}
+                      <button
+                        onClick={() => selectHub(opt.href)}
                         style={{
-                          width: 46, height: 46, borderRadius: 12,
-                          background: `${opt.accent}20`,
-                          color: opt.accent,
-                          display: 'flex', alignItems: 'center', justifyContent: 'center',
-                          flexShrink: 0,
+                          width: '100%', display: 'flex', alignItems: 'center', gap: 14, padding: '16px 16px 12px',
+                          background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left', font: 'inherit', color: 'inherit',
                         }}
                       >
-                        <Icon size={24} strokeWidth={2} />
-                      </div>
+                        <span style={{
+                          width: 46, height: 46, borderRadius: 12, background: `${opt.accent}20`, color: opt.accent,
+                          display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+                        }}>
+                          <Icon size={24} strokeWidth={2} />
+                        </span>
+                        <span style={{ flex: 1, minWidth: 0 }}>
+                          <span style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                            <span style={{ fontSize: 16, fontWeight: 700, color: '#F6F2E7' }}>{opt.name}</span>
+                            {isCurrent && (
+                              <span style={{ fontSize: 10, fontWeight: 700, color: '#020617', background: opt.accent, padding: '2px 7px', borderRadius: 999 }}>
+                                You are here
+                              </span>
+                            )}
+                          </span>
+                          <span style={{ display: 'block', fontSize: 11, fontWeight: 600, color: opt.accent, margin: '1px 0 4px' }}>
+                            by {opt.source}
+                          </span>
+                          <span style={{ display: 'block', fontSize: 12.5, color: 'rgba(246, 242, 231, 0.72)', lineHeight: 1.45 }}>
+                            {opt.desc}
+                          </span>
+                        </span>
+                        <ChevronRight size={18} color={opt.accent} style={{ flexShrink: 0 }} />
+                      </button>
 
-                      {/* Content */}
-                      <div style={{ flex: 1, minWidth: 0 }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 2 }}>
-                          <span style={{ fontSize: 16, fontWeight: 700, color: '#F6F2E7' }}>
-                            {opt.name}
-                          </span>
-                          <span
-                            style={{
-                              fontSize: 9, fontWeight: 700,
-                              textTransform: 'uppercase', letterSpacing: 0.8,
-                              color: opt.accent,
-                              background: 'rgba(0,0,0,0.35)',
-                              padding: '2px 7px', borderRadius: 4,
-                            }}
-                          >
-                            {opt.badge}
-                          </span>
-                          {isCurrent && (
-                            <span
+                      {/* Quick actions: jump straight to the most useful thing */}
+                      <div style={{ display: 'flex', gap: 8, padding: '0 16px 14px 76px', flexWrap: 'wrap' }}>
+                        {opt.quick.map((q) => {
+                          const QIcon = q.icon;
+                          return (
+                            <button
+                              key={q.label}
+                              onClick={() => selectHub(q.href)}
                               style={{
-                                fontSize: 9, fontWeight: 600,
-                                color: '#10B981', marginLeft: 'auto',
+                                display: 'inline-flex', alignItems: 'center', gap: 6, padding: '6px 10px', borderRadius: 999,
+                                background: 'rgba(0,0,0,0.35)', border: `1px solid ${opt.accent}55`, color: '#F6F2E7',
+                                fontSize: 12, fontWeight: 600, cursor: 'pointer', font: 'inherit',
                               }}
                             >
-                              Current
-                            </span>
-                          )}
-                        </div>
-                        <p style={{ margin: 0, fontSize: 12, color: 'rgba(246, 242, 231, 0.65)', lineHeight: 1.4 }}>
-                          {opt.desc}
-                        </p>
+                              <QIcon size={13} color={opt.accent} />
+                              <span style={{ fontSize: 12, fontWeight: 600 }}>{q.label}</span>
+                              {q.badge && (
+                                <span style={{ fontSize: 10, fontWeight: 700, color: '#020617', background: opt.accent, padding: '1px 6px', borderRadius: 999 }}>
+                                  {q.badge}
+                                </span>
+                              )}
+                            </button>
+                          );
+                        })}
+                        {opt.portal && (
+                          <a
+                            href={opt.portal}
+                            target="_blank"
+                            rel="noreferrer"
+                            style={{
+                              display: 'inline-flex', alignItems: 'center', gap: 5, padding: '6px 10px', borderRadius: 999,
+                              color: opt.accent, fontSize: 12, fontWeight: 600, textDecoration: 'none',
+                            }}
+                          >
+                            Full website <ExternalLink size={12} />
+                          </a>
+                        )}
                       </div>
-
-                      {/* Actions */}
-                      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 6, flexShrink: 0 }}>
-                        <a
-                          href={opt.portalUrl}
-                          target="_blank"
-                          rel="noreferrer"
-                          onClick={(e) => e.stopPropagation()}
-                          style={{
-                            fontSize: 10,
-                            fontWeight: 700,
-                            fontFamily: "'IBM Plex Mono', monospace",
-                            color: opt.accent,
-                            background: 'rgba(0,0,0,0.4)',
-                            border: `1px solid ${opt.accent}50`,
-                            padding: '3px 8px',
-                            borderRadius: 6,
-                            textDecoration: 'none',
-                            display: 'inline-flex',
-                            alignItems: 'center',
-                            gap: 3,
-                          }}
-                          title={`Open standalone portal at ${opt.portalUrl}`}
-                        >
-                          {opt.portalLabel} ↗
-                        </a>
-                        <div style={{ color: opt.accent, opacity: 0.85 }}>
-                          <ChevronRight size={18} />
-                        </div>
-                      </div>
-                    </motion.div>
+                    </div>
                   );
                 })}
               </div>
+
+              {/* Overview of both hubs */}
+              <button
+                onClick={() => selectHub('/hub')}
+                style={{
+                  marginTop: 14, width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+                  padding: '11px 0', borderRadius: 12, border: '1px solid rgba(200, 155, 60, 0.30)', background: 'none',
+                  color: '#E4C878', fontSize: 13, fontWeight: 700, cursor: 'pointer', font: 'inherit',
+                }}
+              >
+                <LayoutGrid size={15} />
+                <span style={{ fontSize: 13, fontWeight: 700 }}>See everything you can do</span>
+              </button>
             </motion.div>
           </div>
         )}
