@@ -5,76 +5,83 @@
 **Community finance and conservation rewards on Avalanche.**
 
 [![Live demo](https://img.shields.io/badge/live%20demo-open%20app-10b981?logo=vercel&logoColor=white&style=for-the-badge)](https://avax-frontend-seven.vercel.app/)
-[![Network](https://img.shields.io/badge/network-Avalanche%20Fuji-e84142?logo=avalanche&logoColor=white&style=for-the-badge)](https://testnet.snowtrace.io)
+[![Network](https://img.shields.io/badge/network-Avalanche%20Fuji-e84142?logo=avalanche&style=for-the-badge)](https://testnet.snowtrace.io)
 [![License](https://img.shields.io/badge/license-ISC-6b7280?style=for-the-badge)](#license)
 
 <img src="docs/screenshots/home.png" alt="KAI Nuvari home screen" width="880" />
 
 </div>
 
-## What it does
+## What this is
 
-- **Save and grow money.** Yield vaults, liquidity pools and token swaps on Avalanche.
-- **Earn for real impact.** Daily claims, missions, referrals and tree planting earn points.
-- **Learn and ask.** News and conservation hubs, plus an AI agent you can talk to.
+A web app where you put crypto to work and get rewarded for real-world conservation work, on the Avalanche network. Three things happen here:
 
-## See it in action
+- **Put money to work.** Deposit into yield vaults, add liquidity to pools, or swap tokens. Real contracts, real transactions.
+- **Earn points daily.** Come back every 24 hours to claim points, finish missions, and invite friends. The more active you are, the more you claim.
+- **Learn and ask.** Read news and conservation guides, or talk to the built-in AI agent.
 
-**1. Connect a wallet.** Your address, balances and tokens appear on the home screen.
-
-<img src="docs/screenshots/wallet-connected.png" alt="Home screen with a connected wallet" width="600" /> <img src="docs/screenshots/wallet-connected-mobile.png" alt="Wallet profile with balances on a phone" width="210" />
-
-**2. Claim your daily points.** One claim every 24 hours. Come back daily to grow your streak.
-
-<img src="docs/screenshots/mine.png" alt="Airdrop page with the daily claim" width="600" /> <img src="docs/screenshots/mine-mobile.png" alt="Daily claim on a phone" width="210" />
-
-**3. Put tokens to work.** Deposit into vaults or add liquidity to pools.
-
-<img src="docs/screenshots/vaults.png" alt="Yield vaults" width="600" /> <img src="docs/screenshots/pools-mobile.png" alt="Liquidity pools on a phone" width="210" />
-
-**4. Learn about conservation.** Methodologies, guides and Ask KAI.
-
-<img src="docs/screenshots/conservation.png" alt="Conservation hub" width="600" />
+<img src="docs/screenshots/mine.png" alt="The daily points claim screen" width="600" />
 
 ## How points work
 
-| You do | You get |
+Points are an in-app score, not a token. Nothing is deposited to your wallet when you claim.
+
+| Action | Reward |
 |---|---|
-| Claim daily | 10 points or more. Being active raises it up to 3x. |
-| Complete missions | 10 to 100 points each, checked by the server |
-| Invite friends | 20% of each active friend's points |
-| Keep the page open | 0.05 points per second from the Auto-Miner |
+| Daily claim | 10 points, multiplied by your activity level (up to 5x) |
+| Missions | 10 to 100 points each, verified server-side |
+| Referrals | 20% of each active friend's points |
+| Auto-Miner | 0.05 points per second while the page is open |
 
-Points are saved to your account. **At the mainnet launch, points convert into NVR tokens.** Claiming does not send coins to your wallet today.
+Two things worth knowing:
 
-## Quick start
+- **One claim per 24 hours.** The timer starts when you claim, not at midnight.
+- **5% of every claim goes to a treasury**, so a 10-point claim credits you 9.5.
 
-```bash
-cp avax-frontend/.env.example avax-frontend/.env.local   # add your keys
-npm --prefix avax-frontend install
-npm run dev:app                                          # http://localhost:3000
-```
+**At the mainnet snapshot, points convert into NVR tokens.** Until then they are just a number in your account.
 
-Need the AI agent or the hubs as well? See [RUN_APP.md](RUN_APP.md).
+## Tech stack
 
-## Built with
-
-Next.js 16 · React 19 · Solidity · Hardhat · viem · wagmi · Privy · Prisma · Neon Postgres · Paystack · FastAPI · Groq · Gemini
+| Layer | What we use | For what |
+|---|---|---|
+| Framework | Next.js 16, React 19, TypeScript | The web app and its API routes |
+| Styling | Tailwind CSS 4, framer-motion, lucide-react | Design system and animation |
+| Blockchain | viem, wagmi, `@avalanche-sdk/chainkit` | Wallet connection, reads, writes |
+| Smart contracts | Solidity, Hardhat, OpenZeppelin | Vaults, AMM, pools, escrow, airdrop vault |
+| Auth | Privy | Google or email login, embedded wallet |
+| Database | Prisma, Neon Postgres | Users, wallets, claims, referrals |
+| Payments | Paystack | KES on-ramp and off-ramp |
+| AI | FastAPI, Groq, Gemini, cactus-needle | Agent API, RAG answers, voice |
+| State | TanStack Query, Zustand | Server cache and client state |
 
 ## Project layout
 
 | Folder | What's inside |
 |---|---|
-| [`avax-frontend/`](avax-frontend) | The web app and its API |
-| [`contracts/`](contracts) | Smart contracts (vaults, AMM, pools, escrow, airdrop vault) |
-| [`scripts/`](scripts) | Deploy and liquidity scripts for Fuji |
-| [`server.py`](server.py) | AI agent API |
+| [`avax-frontend/`](avax-frontend) | The Next.js app, its API routes, and the Prisma schema |
+| [`contracts/`](contracts) | Solidity contracts and their `*.t.sol` tests |
+| [`scripts/`](scripts) | Deploy and liquidity-seeding scripts for Fuji |
+| [`ignition/`](ignition) | Hardhat Ignition deployment modules |
+| `server.py` | The Python AI agent API |
+| `vector.py` | Builds the ChromaDB index the agent searches |
+
+## Quick start
+
+You need Node.js 20 or newer.
+
+```bash
+cp avax-frontend/.env.example avax-frontend/.env.local   # fill in your keys
+npm --prefix avax-frontend install
+npm run dev:app                                          # http://localhost:3000
+```
+
+To run the AI agent too, and to deploy the contracts, see [RUN_APP.md](RUN_APP.md).
 
 ## Status
 
-**Live:** vaults, pools, swaps, sign-in, points, missions, referrals, hubs, AI agent.
+**Live on Fuji testnet:** vaults, pools, swaps, sign-in, points, missions, referrals, hubs, AI agent.
 
-**Next:** converting points to tokens, and the on-chain airdrop claim.
+**Not built yet:** the points-to-NVR conversion, and claiming your airdrop on-chain.
 
 ## License
 
