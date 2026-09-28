@@ -83,7 +83,7 @@ export interface ClaimCelebrationProps {
   onClose: () => void;
 }
 
-export default function ClaimCelebration({ amount, unit = 'NVR', multiplier, streak, balance, onClose }: ClaimCelebrationProps) {
+export default function ClaimCelebration({ amount, unit = 'points', multiplier, streak, balance, onClose }: ClaimCelebrationProps) {
   const reduce = useReducedMotion() ?? false;
   const shown = useCountUp(amount, !reduce);
   const closeRef = useRef<HTMLButtonElement>(null);
@@ -155,6 +155,9 @@ export default function ClaimCelebration({ amount, unit = 'NVR', multiplier, str
           +{fmtAmount(reduce ? amount : shown)}
           <span style={{ fontSize: 16, fontWeight: 500, color: C.inkLight, marginLeft: 8 }}>{unit}</span>
         </p>
+        <p style={{ fontSize: 12, color: C.inkLight, margin: '10px 0 0' }}>
+          Saved to your account. Points convert to NVR tokens at the mainnet snapshot.
+        </p>
         {multiplier > 1 && (
           <p style={{ ...MONO, fontSize: 11.5, color: C.paper, margin: '10px 0 0' }}>
             Includes a {multiplier.toFixed(2)}x hash power bonus
@@ -166,7 +169,7 @@ export default function ClaimCelebration({ amount, unit = 'NVR', multiplier, str
         </p>
         {balance !== undefined && (
           <p style={{ fontSize: 12, color: C.inkLight, margin: '8px 0 0' }}>
-            Mining balance: <span style={{ ...MONO, color: C.paper, fontWeight: 700 }}>{fmtAmount(balance)} {unit}</span>
+            Total points: <span style={{ ...MONO, color: C.paper, fontWeight: 700 }}>{fmtAmount(balance)} {unit}</span>
           </p>
         )}
 

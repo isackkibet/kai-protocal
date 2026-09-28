@@ -1,7 +1,6 @@
 import type { PrismaClient } from '@prisma/client';
 import { getPrisma } from './db.ts';
-import { MINING_CONFIG } from './mining-config.ts';
-import { decayHashPower, gainHashPower, claimMultiplier, applyTreasuryCut, claimStreak } from './mining-engine-math.ts';
+import { claimStreak } from './mining-engine-math.ts';
 
 /**
  * KAI Airdrop & Referral Power Engine (PRD v1.2 Implementation)
@@ -250,7 +249,6 @@ const inMemoryStore = new Map<string, {
 
 function getOrCreateInMemoryUser(userId: string, email = 'contributor@kai.network', name = 'Austin Kai') {
   if (!inMemoryStore.has(userId)) {
-    const defaultDate = new Date();
     inMemoryStore.set(userId, {
       user: {
         id: userId,

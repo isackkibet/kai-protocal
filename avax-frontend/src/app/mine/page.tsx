@@ -8,11 +8,9 @@ import WalletConnectModal from '@/components/WalletConnectModal';
 import ClaimCelebration from '@/components/ClaimCelebration';
 import { usePrivyAuth } from '@/lib/privy-auth';
 import {
-  AlertCircle, ArrowLeft, CheckCircle, Clock, Coins, Gift,
-  Layers, Sparkles, Star, Timer, TrendingUp,
-  UserPlus, Zap, Copy, Check, ShieldCheck, Share2,
-  Users, Activity, Award, ArrowUpRight, Flame,
-  HelpCircle, ChevronRight, Wallet, Lock, Info
+  AlertCircle, ArrowLeft, CheckCircle, Clock, Gift,
+  Sparkles, TrendingUp, Zap, Copy, Check, ShieldCheck,
+  Users, Activity, Award, Flame, Lock, Info
 } from 'lucide-react';
 import type { AirdropSummary, ReferralItem, LedgerActivityItem, MissionItem, LeaderboardEntry } from '@/lib/airdrop-engine';
 
@@ -58,7 +56,7 @@ function useCountUp(target: number, duration = 600) {
 }
 
 export default function MinePage() {
-  const { isConnected, address } = useAccount();
+  const { address } = useAccount();
   const privy = usePrivyAuth();
 
   const [activeTab, setActiveTab] = useState<'claim' | 'referrals' | 'missions' | 'ledger' | 'leaderboard'>('claim');
@@ -160,6 +158,7 @@ export default function MinePage() {
   const [minerActive, setMinerActive] = useState(false);
   const [minerBuffered, setMinerBuffered] = useState(0);
   const canMine = privy.authenticated && !needsOnboarding;
+  const { getAccessToken } = privy;
 
   useEffect(() => {
     if (!canMine) return;
@@ -169,7 +168,7 @@ export default function MinePage() {
       if (pts < 0.05) return; // nothing meaningful to flush
       minerBuffer.current = 0; // reset before async call (prevents double-flush)
       try {
-        const token = await privy.getAccessToken();
+        const token = await getAccessToken();
         const headers: Record<string, string> = { 'Content-Type': 'application/json' };
         if (token) headers.authorization = `Bearer ${token}`;
         const res = await fetch('/api/airdrop/mine', {
@@ -210,7 +209,7 @@ export default function MinePage() {
       void flush(true);
       setMinerActive(false);
     };
-  }, [canMine, privy.getAccessToken]);
+  }, [canMine, getAccessToken]);
 
   const formatCountdown = (secs: number) => {
     const h = Math.floor(secs / 3600).toString().padStart(2, '0');
@@ -563,10 +562,13 @@ export default function MinePage() {
                   Daily Drop Yield
                 </p>
                 <h3 style={{ ...SERIF, fontSize: 36, fontWeight: 800, color: C.goldLight, margin: '4px 0 2px' }}>
-                  {displayNextClaim} NVR
+                  {displayNextClaim} points
                 </h3>
                 <p style={{ fontSize: 12, color: C.paperDim, margin: 0 }}>
                   Floor {summary?.baseDailyClaim ?? 10} × <strong style={{ color: C.emeraldLight }}>{displayMultiplier.toFixed(2)}x Active Multiplier</strong>
+                </p>
+                <p style={{ fontSize: 11.5, color: C.inkLight, margin: '8px 0 0', lineHeight: 1.45 }}>
+                  Points are saved to your account and convert to NVR tokens at the mainnet snapshot.
                 </p>
               </div>
 
@@ -598,7 +600,7 @@ export default function MinePage() {
                 ) : claiming ? (
                   <><Clock size={17} className="animate-spin" /> Processing Claim...</>
                 ) : countdown === 0 ? (
-                  <><Gift size={18} /> Claim {displayNextClaim} NVR Drop</>
+                  <><Gift size={18} /> Claim {displayNextClaim} points</>
                 ) : (
                   <><Clock size={16} /> Next Drop in {formatCountdown(countdown)}</>
                 )}
@@ -713,10 +715,10 @@ export default function MinePage() {
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 18, flexWrap: 'wrap', gap: 8 }}>
                   <div>
                     <h3 style={{ ...SERIF, fontSize: 19, fontWeight: 700, margin: 0, color: C.paper }}>
-                      Ecosystem Token Allocations
+                      Your Points & Future Tokens
                     </h3>
                     <p style={{ fontSize: 12.5, color: C.inkLight, margin: '3px 0 0' }}>
-                      Earned rewards stream across multiple ecosystem utility tokens.
+                      You earn points now. At the mainnet snapshot, points convert into ecosystem tokens.
                     </p>
                   </div>
                   <span style={{ ...MONO, fontSize: 10, color: C.goldLight, background: 'rgba(0,0,0,0.3)', padding: '4px 8px', borderRadius: 4 }}>
@@ -726,7 +728,7 @@ export default function MinePage() {
 
                 <div className="mine-token-grid">
                   {[
-                    { symbol: 'NVR', name: 'Nuvari Native Token', amount: summary ? summary.totalPoints.toLocaleString() : '0', color: C.goldLight, note: 'Your points so far · Daily Floor & Mining Engine' },
+                    { symbol: 'POINTS', name: 'Earned so far', amount: summary ? summary.totalPoints.toLocaleString() : '0', color: C.goldLight, note: 'Convert to NVR at the snapshot' },
                     { symbol: 'YBOB', name: 'Stable Yield Token', amount: 'At snapshot', color: '#7DC383', note: 'DeFi Liquidity & Lending' },
                     { symbol: 'GAMI', name: 'Community Governance', amount: 'At snapshot', color: '#6FA8DC', note: 'DAO Voting & Proposal Rights' },
                     { symbol: 'CFA-C', name: 'Conservation Credit', amount: 'At snapshot', color: C.emeraldLight, note: 'Verified Tree Carbon Proofs' },
