@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { listReviewQueue } from '@/lib/sihu-store';
-import { resolveActor } from '@/lib/hub-actor';
+import { resolveActor, isHubEditor } from '@/lib/hub-actor';
 
 /**
  * SIHU editor endpoints (PRD Part A §4, §6).
@@ -9,14 +9,16 @@ import { resolveActor } from '@/lib/hub-actor';
  * POST /api/hub/editor/:id — editor decision: PUBLISH | APPROVE | REJECT | REQUIRE_CHANGES
  *                            (see [id]/route.ts)
  *
- * Editor authority: a verified signed-in session. Real role-based access
- * control (which Privy users hold the EDITOR role) plugs in where Kai Nuvari
- * role management is introduced; the AI can never call this endpoint.
+ * Editor authority: a verified session whose member is on the editor list
+ * (SIHU_EDITOR_EMAILS, see isHubEditor). The AI can never call this endpoint.
  */
 export async function GET(req: Request) {
   const { actor, authenticated } = await resolveActor(req);
   if (!actor || !authenticated) {
     return NextResponse.json({ error: 'Please sign in to open the editor.' }, { status: 401 });
+  }
+  if (!(await isHubEditor(actor.key))) {
+    return NextResponse.json({ error: 'Only SIHU editors can open the editor desk.', notEditor: true }, { status: 403 });
   }
   const posts = await listReviewQueue();
   return NextResponse.json({ posts });

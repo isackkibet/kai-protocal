@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getById, makeDecision } from '@/lib/sihu-store';
-import { resolveActor } from '@/lib/hub-actor';
+import { resolveActor, isHubEditor } from '@/lib/hub-actor';
 import type { ReviewDecision } from '@/lib/sihu-types';
 
 /**
@@ -15,8 +15,23 @@ export async function POST(req: Request, ctx: { params: Promise<{ id: string }> 
     return NextResponse.json({ error: 'Please sign in to review.' }, { status: 401 });
   }
 
+  if (!(await isHubEditor(actor.key))) {
+    return NextResponse.json({ error: 'Only SIHU editors can review stories.', notEditor: true }, { status: 403 });
+  }
+
   const post = await getById(id);
   if (!post) return NextResponse.json({ error: 'Post not found.' }, { status: 404 });
+  if (post.creatorUserId && post.creatorUserId === actor.key) {
+    return NextResponse.json({ error: 'You cannot review your own story. Another editor has to decide.' }, { status: 403 });
+  }
+  const decisions = ['PUBLISH', 'APPROVE', 'REJECT', 'REQUIRE_CHANGES'];
+  if (!decisions.includes(body.decision)) {
+    return NextResponse.json({ error: 'Unknown decision.' }, { status: 400 });
+  }
+  // The writer needs to know why: a rejection or a change request carries a reason.
+  if ((body.decision === 'REJECT' || body.decision === 'REQUIRE_CHANGES') && !body.note?.trim()) {
+    return NextResponse.json({ error: 'Add a short note so the writer knows what to fix.' }, { status: 400 });
+  }
   if (post.status === 'PUBLISHED') {
     return NextResponse.json({ error: 'This post is already published.' }, { status: 409 });
   }

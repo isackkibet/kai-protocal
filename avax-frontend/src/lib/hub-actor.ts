@@ -1,5 +1,17 @@
 import { verifyPrivyUserId } from '@/lib/privy-server';
+import { getPrisma } from '@/lib/db';
 import type { Actor } from '@/lib/sihu-store';
+
+/** The member's account name and email, when they have a KaiUser row. */
+async function memberProfile(privyUserId: string): Promise<{ name: string; email: string } | null> {
+  const prisma = await getPrisma();
+  if (!prisma) return null;
+  try {
+    return await prisma.kaiUser.findUnique({ where: { privyUserId }, select: { name: true, email: true } });
+  } catch {
+    return null;
+  }
+}
 
 /**
  * Resolves the caller's identity for SIHU endpoints.
@@ -14,8 +26,10 @@ export async function resolveActor(req: Request, name?: string, guestKey?: strin
   const privyUserId = await verifyPrivyUserId(req.headers.get('authorization'));
 
   if (privyUserId) {
+    // Use the member's real name for bylines instead of a generic label.
+    const profile = name?.trim() ? null : await memberProfile(privyUserId);
     return {
-      actor: { name: name?.trim() || 'Verified contributor', key: privyUserId },
+      actor: { name: name?.trim() || profile?.name?.trim() || 'Verified contributor', key: privyUserId },
       authenticated: true,
     };
   }
@@ -29,4 +43,22 @@ export async function resolveActor(req: Request, name?: string, guestKey?: strin
   }
 
   return { actor: null, authenticated: false };
+}
+/**
+ * Whether a signed-in member may use the SIHU editor desk.
+ *
+ * Editors are listed in SIHU_EDITOR_EMAILS (comma separated emails or Privy
+ * user ids). Without a database (local demo mode) everyone signed in may
+ * review, so the flow can be tried out. With a database and no list, nobody
+ * can publish: before this check, any signed-in member could approve and
+ * publish any story, including their own.
+ */
+export async function isHubEditor(privyUserId: string): Promise<boolean> {
+  const allow = (process.env.SIHU_EDITOR_EMAILS ?? '')
+    .split(',').map(v => v.trim().toLowerCase()).filter(Boolean);
+  if (allow.includes(privyUserId.toLowerCase())) return true;
+  if (!process.env.DATABASE_URL) return true;
+  if (allow.length === 0) return false;
+  const profile = await memberProfile(privyUserId);
+  return !!profile?.email && allow.includes(profile.email.toLowerCase());
 }
