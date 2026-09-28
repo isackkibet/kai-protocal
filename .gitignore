@@ -49,3 +49,9 @@ avax-frontend/hubs/**/node_modules/
 # Standalone repos at root (now merged into avax-frontend/hubs)
 SIHU.COM/
 oloolua-youth-guardians/
+
+# Agent tooling config (local)
+.claude/
+.agents/
+AGENTS.md
+avax-frontend/AGENTS.md
