@@ -4,7 +4,7 @@ import { verifyPrivyUserId } from '@/lib/privy-server';
 import { claimDrop, claimStatus } from '@/lib/mining-engine';
 
 /**
- * /api/mine/claim  —  GET / POST
+ * /api/mine/claim: GET / POST
  *
  * Nuvari v4 "Claim Drop" (spec §4). GET returns what the screen needs to
  * render (claimable state, live hash power, lifetime XP, projected next
@@ -56,17 +56,15 @@ export async function POST(req: Request) {
 
     const result = await claimDrop(prisma, user.id);
     if (!result.ok) {
-      return NextResponse.json({ error: result.error }, { status: result.cooldown ? 409 : 503 });
+      return NextResponse.json(
+        { error: result.error, cooldown: !!result.cooldown, remainingSeconds: result.remainingSeconds ?? 0 },
+        { status: result.cooldown ? 409 : 503 },
+      );
     }
 
-    return NextResponse.json({
-      ok: true,
-      claimAmount: result.claimAmount,
-      userAmount: result.userAmount,
-      treasuryAmount: result.treasuryAmount,
-      multiplier: result.multiplier,
-      hashPower: result.hashPower,
-    });
+    const next = await claimStatus(prisma, user.id);
+    const { ok, ...claim } = result;
+    return NextResponse.json({ ok, ...claim, projectedNextClaim: next.projectedNextClaim, projectedUserAmount: next.projectedUserAmount });
   } catch (e: unknown) {
     console.error('[mine/claim POST] failed', e);
     return NextResponse.json({ error: 'Failed to claim drop' }, { status: 500 });

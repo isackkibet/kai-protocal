@@ -1,7 +1,7 @@
 import type { PrismaClient } from '@prisma/client';
 import { MiningTier } from '@prisma/client';
 import { MINING_CONFIG } from '@/lib/mining-config';
-import { decayHashPower, gainHashPower, claimMultiplier, applyTreasuryCut, DAY_MS } from '@/lib/mining-engine-math';
+import { decayHashPower, gainHashPower, claimMultiplier, applyTreasuryCut, claimStreak, DAY_MS } from '@/lib/mining-engine-math';
 
 const {
   XP_PER_TIER,
@@ -82,10 +82,35 @@ export interface ClaimStatusResult {
   hashPower: number;
   lifetimeXP: number;
   multiplier: number;
+  /** Gross amount of the next claim (before the treasury share). */
   projectedNextClaim: number;
+  /** What actually lands in the user's balance on the next claim. */
+  projectedUserAmount: number;
   baseDailyClaim: number;
-  treasuryCut?: number;
+  treasuryCut: number;
+  streak: number;
   exists: boolean;
+}
+
+/** A streak survives as long as no more than two cooldowns pass between claims. */
+const STREAK_GRACE_MS = CLAIM_COOLDOWN_MS * 2;
+/** How far back the streak looks. Long enough for any realistic streak display. */
+const STREAK_LOOKBACK = 366;
+
+type Db = Pick<PrismaClient, 'dailyClaim'>;
+
+async function recentClaimTimes(db: Db, userId: string): Promise<number[]> {
+  const rows = await db.dailyClaim.findMany({
+    where: { userId },
+    orderBy: { claimedAt: 'desc' },
+    take: STREAK_LOOKBACK,
+    select: { claimedAt: true },
+  });
+  return rows.map((r) => r.claimedAt.getTime());
+}
+
+function remainingCooldownMs(lastClaimAt: number | undefined, now: number): number {
+  return lastClaimAt === undefined ? 0 : Math.max(0, CLAIM_COOLDOWN_MS - (now - lastClaimAt));
 }
 
 /**
@@ -94,29 +119,29 @@ export interface ClaimStatusResult {
  * before the next action/cron recomputes.
  */
 export async function claimStatus(prisma: PrismaClient, userId: string): Promise<ClaimStatusResult> {
-  const [stat, lastClaim] = await Promise.all([
+  const [stat, claimTimes] = await Promise.all([
     prisma.userMiningStat.findUnique({ where: { userId } }),
-    prisma.dailyClaim.findFirst({ where: { userId }, orderBy: { claimedAt: 'desc' } }),
+    recentClaimTimes(prisma, userId),
   ]);
 
-  const exists = !!stat;
+  const now = Date.now();
   const hashPower = liveHashPower(toNum(stat?.hashPower), stat?.lastActiveAt ?? null);
-  const lifetimeXP = toNum(stat?.lifetimeXP);
   const multiplier = claimMultiplier(hashPower, HP_NORMALIZATION, HP_MULTIPLIER_CAP);
   const projectedNextClaim = +(BASE_DAILY_CLAIM * multiplier).toFixed(4);
-
-  const remainingMs = lastClaim ? CLAIM_COOLDOWN_MS - (Date.now() - lastClaim.claimedAt.getTime()) : 0;
-  const canClaimNow = remainingMs <= 0;
+  const remainingMs = remainingCooldownMs(claimTimes[0], now);
 
   return {
-    canClaimNow,
-    remainingSeconds: canClaimNow ? 0 : Math.max(0, Math.ceil((lastClaim ? CLAIM_COOLDOWN_MS - (Date.now() - lastClaim.claimedAt.getTime()) : 0) / 1000)),
+    canClaimNow: remainingMs === 0,
+    remainingSeconds: Math.ceil(remainingMs / 1000),
     hashPower: +hashPower.toFixed(4),
-    lifetimeXP: +lifetimeXP.toFixed(2),
+    lifetimeXP: +toNum(stat?.lifetimeXP).toFixed(2),
     multiplier: +multiplier.toFixed(3),
     projectedNextClaim,
+    projectedUserAmount: +applyTreasuryCut(projectedNextClaim, CLAIM_TREASURY_CUT).userAmount.toFixed(4),
     baseDailyClaim: BASE_DAILY_CLAIM,
-    exists,
+    treasuryCut: CLAIM_TREASURY_CUT,
+    streak: claimStreak(claimTimes, now, STREAK_GRACE_MS),
+    exists: !!stat,
   };
 }
 
@@ -133,42 +158,70 @@ export async function canMint(_prisma: PrismaClient, claimAmount: number): Promi
   return { ok: true, queued: false };
 }
 
+export type ClaimDropResult =
+  | {
+      ok: true;
+      claimAmount: number;
+      userAmount: number;
+      treasuryAmount: number;
+      multiplier: number;
+      hashPower: number;
+      streak: number;
+      balance: number;
+      remainingSeconds: number;
+    }
+  | { ok: false; error: string; cooldown?: boolean; remainingSeconds?: number };
+
 /**
  * Perform a daily "Claim Drop" (spec §4.1). Gated by the 24h rolling
  * cooldown, scaled by live (decayed) hash power, capped, treasury-cut split.
  * On success credits the user's MiningBalance and the system totals.
+ *
+ * The cooldown check and the claim insert run in one transaction that holds a
+ * row lock on the user, so two taps (or two tabs) at once cannot both pass the
+ * cooldown and double-claim.
  */
-export async function claimDrop(prisma: PrismaClient, userId: string): Promise<
-  | { ok: true; claimAmount: number; userAmount: number; treasuryAmount: number; multiplier: number; hashPower: number }
-  | { ok: false; error: string; cooldown?: boolean }
-> {
-  const lastClaim = await prisma.dailyClaim.findFirst({ where: { userId }, orderBy: { claimedAt: 'desc' } });
-  if (lastClaim && Date.now() - lastClaim.claimedAt.getTime() < CLAIM_COOLDOWN_MS) {
-    const remaining = CLAIM_COOLDOWN_MS - (Date.now() - lastClaim.claimedAt.getTime());
-    return { ok: false, error: 'Already claimed — try again in ' + Math.ceil(remaining / 60000) + ' min', cooldown: true };
-  }
+export async function claimDrop(prisma: PrismaClient, userId: string): Promise<ClaimDropResult> {
+  return prisma.$transaction(async (tx) => {
+    await tx.$queryRaw`SELECT id FROM kai_users WHERE id = ${userId} FOR UPDATE`;
 
-  const stat = await prisma.userMiningStat.findUnique({ where: { userId } });
-  const hashPower = liveHashPower(toNum(stat?.hashPower), stat?.lastActiveAt ?? null);
-  const multiplier = claimMultiplier(hashPower, HP_NORMALIZATION, HP_MULTIPLIER_CAP);
-  const claimAmount = +(BASE_DAILY_CLAIM * multiplier).toFixed(4);
-  const { userAmount } = applyTreasuryCut(claimAmount, CLAIM_TREASURY_CUT);
+    const claimTimes = await recentClaimTimes(tx, userId);
+    const now = new Date();
+    const remainingMs = remainingCooldownMs(claimTimes[0], now.getTime());
+    if (remainingMs > 0) {
+      return {
+        ok: false as const,
+        error: `Already claimed. Your next drop is ready in ${formatWait(remainingMs)}.`,
+        cooldown: true,
+        remainingSeconds: Math.ceil(remainingMs / 1000),
+      };
+    }
 
-  const gate = await canMint(prisma, claimAmount);
-  if (!gate.ok) {
-    return { ok: false, error: 'Claim queued while collateral settles' };
-  }
+    const stat = await tx.userMiningStat.findUnique({ where: { userId } });
+    const hashPower = liveHashPower(toNum(stat?.hashPower), stat?.lastActiveAt ?? null, now);
+    const multiplier = claimMultiplier(hashPower, HP_NORMALIZATION, HP_MULTIPLIER_CAP);
+    const claimAmount = +(BASE_DAILY_CLAIM * multiplier).toFixed(4);
+    const { userAmount } = applyTreasuryCut(claimAmount, CLAIM_TREASURY_CUT);
 
-  const roundedUser = +userAmount.toFixed(4);
-  const roundedTreasury = +(claimAmount - roundedUser).toFixed(4);
+    const gate = await canMint(prisma, claimAmount);
+    if (!gate.ok) {
+      return { ok: false as const, error: 'Your claim is queued while collateral settles.' };
+    }
 
-  await prisma.$transaction(async (tx) => {
-    // settle the decayed hash power back into the stat (claiming is an action)
-    await tx.userMiningStat.update({ where: { userId }, data: { hashPower, lastActiveAt: new Date() } });
-    await tx.dailyClaim.create({
-      data: { userId, claimAmount, multiplier, hashPower },
+    const roundedUser = +userAmount.toFixed(4);
+    const roundedTreasury = +(claimAmount - roundedUser).toFixed(4);
+
+    // Settle the decayed hash power back into the stat (claiming is an action).
+    // Upsert: a brand-new user who has not earned XP yet has no stat row.
+    await tx.userMiningStat.upsert({
+      where: { userId },
+      update: { hashPower, lastActiveAt: now },
+      create: { userId, lifetimeXP: 0, hashPower, lastActiveAt: now },
     });
-    await tx.miningBalance.upsert({
+    await tx.dailyClaim.create({
+      data: { userId, claimAmount, multiplier, hashPower, claimedAt: now },
+    });
+    const balance = await tx.miningBalance.upsert({
       where: { userId },
       update: { amount: { increment: roundedUser } },
       create: { userId, amount: roundedUser },
@@ -178,9 +231,28 @@ export async function claimDrop(prisma: PrismaClient, userId: string): Promise<
       update: { mintedSupply: { increment: claimAmount }, treasuryReserve: { increment: roundedTreasury } },
       create: { id: 'singleton', mintedSupply: claimAmount, treasuryReserve: roundedTreasury },
     });
-  });
 
-  return { ok: true, claimAmount, userAmount: roundedUser, treasuryAmount: roundedTreasury, multiplier, hashPower: +hashPower.toFixed(4) };
+    return {
+      ok: true as const,
+      claimAmount,
+      userAmount: roundedUser,
+      treasuryAmount: roundedTreasury,
+      multiplier: +multiplier.toFixed(3),
+      hashPower: +hashPower.toFixed(4),
+      streak: claimStreak([now.getTime(), ...claimTimes], now.getTime(), STREAK_GRACE_MS),
+      balance: toNum(balance.amount),
+      remainingSeconds: Math.ceil(CLAIM_COOLDOWN_MS / 1000),
+    };
+  });
+}
+
+/** "5h 12m" / "12m" / "under a minute" */
+function formatWait(ms: number): string {
+  const totalMin = Math.floor(ms / 60000);
+  if (totalMin < 1) return 'under a minute';
+  const h = Math.floor(totalMin / 60);
+  const m = totalMin % 60;
+  return h > 0 ? `${h}h ${m}m` : `${m}m`;
 }
 
 export { DAY_MS };

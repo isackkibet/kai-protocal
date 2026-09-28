@@ -1,19 +1,20 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAccount } from 'wagmi';
 import WalletConnectModal from '@/components/WalletConnectModal';
+import ClaimCelebration from '@/components/ClaimCelebration';
 import { usePrivyAuth } from '@/lib/privy-auth';
 import {
-  ArrowLeft, CheckCircle, Clock, Coins, Gift,
+  AlertCircle, ArrowLeft, CheckCircle, Clock, Coins, Gift,
   Layers, Sparkles, Star, Timer, TrendingUp,
   UserPlus, Zap, Copy, Check, ShieldCheck, Share2,
   Users, Activity, Award, ArrowUpRight, Flame,
   HelpCircle, ChevronRight, Wallet, Lock, Info
 } from 'lucide-react';
-import type { AirdropSummary, ReferralItem, LedgerActivityItem, MissionItem } from '@/lib/airdrop-engine';
+import type { AirdropSummary, ReferralItem, LedgerActivityItem, MissionItem, LeaderboardEntry } from '@/lib/airdrop-engine';
 
 const C = {
   bg:        '#06140D',
@@ -70,21 +71,22 @@ export default function MinePage() {
   const [referrals, setReferrals] = useState<ReferralItem[]>([]);
   const [ledger, setLedger] = useState<LedgerActivityItem[]>([]);
   const [missions, setMissions] = useState<MissionItem[]>([]);
-  const [leaderboard, setLeaderboard] = useState<any[]>([]);
+  const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
 
   // Action states
-  const [loading, setLoading] = useState(true);
   const [claiming, setClaiming] = useState(false);
   const [countdown, setCountdown] = useState(0);
   const [actionMsg, setActionMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const [claimingMissionId, setClaimingMissionId] = useState<string | null>(null);
   const [walletInput, setWalletInput] = useState('');
+  const [celebration, setCelebration] = useState<{ amount: number; multiplier: number; streak: number; balance?: number } | null>(null);
+  const [needsOnboarding, setNeedsOnboarding] = useState(false);
   const [linkingWallet, setLinkingWallet] = useState(false);
 
-  // Fetch all Airdrop Engine state
-  const loadAirdropData = async () => {
+  // Fetch all Airdrop Engine state. `isStale` lets an effect drop a response
+  // that arrives after the user signed in/out, so it never paints over newer data.
+  const loadAirdropData = useCallback(async (isStale: () => boolean = () => false) => {
     try {
-      setLoading(true);
       const token = await privy.getAccessToken();
       const headers: Record<string, string> = token ? { authorization: `Bearer ${token}` } : {};
 
@@ -95,13 +97,22 @@ export default function MinePage() {
         fetch('/api/airdrop/missions', { headers }),
         fetch('/api/airdrop/leaderboard', { headers }),
       ]);
+      if (isStale()) return;
 
+      setNeedsOnboarding(summaryRes.status === 404);
       if (summaryRes.ok) {
         const s = await summaryRes.json();
         if (s.data) {
           setSummary(s.data);
           setCountdown(s.data.dailyClaimCooldownSeconds || 0);
         }
+      } else if (summaryRes.status === 401) {
+        // Signed out: clear the previous member's data instead of leaving it on screen.
+        setSummary(null);
+        setReferrals([]);
+        setLedger([]);
+        setMissions([]);
+        setCountdown(0);
       }
 
       if (referralsRes.ok) {
@@ -125,14 +136,14 @@ export default function MinePage() {
       }
     } catch (err) {
       console.error('Failed to load airdrop engine data:', err);
-    } finally {
-      setLoading(false);
     }
-  };
+  }, [privy]);
 
   useEffect(() => {
-    loadAirdropData();
-  }, [privy.authenticated]);
+    let stale = false;
+    const id = setTimeout(() => { void loadAirdropData(() => stale); }, 0);
+    return () => { stale = true; clearTimeout(id); };
+  }, [loadAirdropData, privy.authenticated]);
 
   // Countdown ticker
   useEffect(() => {
@@ -142,19 +153,18 @@ export default function MinePage() {
     return () => clearInterval(timer);
   }, []);
 
-  // ── Auto-Miner Engine (0.05 pts/sec, 30s flush) ──────────────────────────
+  // Auto-Miner Engine (0.05 pts/sec, 30s flush). Mines only for signed-in
+  // members while the tab is visible; the server measures the time itself and
+  // never credits more than that, so the client number is only an upper bound.
   const minerBuffer = useRef(0);
   const [minerActive, setMinerActive] = useState(false);
+  const [minerBuffered, setMinerBuffered] = useState(0);
+  const canMine = privy.authenticated && !needsOnboarding;
 
   useEffect(() => {
-    // Accumulate 0.05 pts every second while on this page
-    const accumulatorTick = setInterval(() => {
-      minerBuffer.current += 0.05;
-      setMinerActive(true);
-    }, 1000);
+    if (!canMine) return;
 
-    // Flush accumulated points to the server every 30 seconds
-    const flushInterval = setInterval(async () => {
+    const flush = async (keepalive = false) => {
       const pts = minerBuffer.current;
       if (pts < 0.05) return; // nothing meaningful to flush
       minerBuffer.current = 0; // reset before async call (prevents double-flush)
@@ -162,11 +172,14 @@ export default function MinePage() {
         const token = await privy.getAccessToken();
         const headers: Record<string, string> = { 'Content-Type': 'application/json' };
         if (token) headers.authorization = `Bearer ${token}`;
-        await fetch('/api/airdrop/mine', {
+        const res = await fetch('/api/airdrop/mine', {
           method: 'POST',
           headers,
+          keepalive,
           body: JSON.stringify({ accumulatedPoints: pts }),
         });
+        if (!res.ok) throw new Error(String(res.status));
+        if (keepalive) return;
         // Quietly refresh summary to reflect new balance
         const summaryRes = await fetch('/api/airdrop/me', { headers: token ? { authorization: `Bearer ${token}` } : {} });
         if (summaryRes.ok) {
@@ -177,14 +190,27 @@ export default function MinePage() {
         // Non-critical: will retry on next flush cycle
         minerBuffer.current += pts; // restore on error
       }
-    }, 30_000);
+    };
+
+    const accumulatorTick = setInterval(() => {
+      const visible = typeof document === 'undefined' || document.visibilityState === 'visible';
+      if (visible) minerBuffer.current += 0.05;
+      setMinerActive(visible);
+      setMinerBuffered(minerBuffer.current);
+    }, 1000);
+    const flushInterval = setInterval(() => { void flush(); }, 30_000);
+    // Send what was mined before the tab goes to the background or closes.
+    const onHide = () => { if (document.visibilityState === 'hidden') void flush(true); };
+    document.addEventListener('visibilitychange', onHide);
 
     return () => {
       clearInterval(accumulatorTick);
       clearInterval(flushInterval);
+      document.removeEventListener('visibilitychange', onHide);
+      void flush(true);
       setMinerActive(false);
     };
-  }, [privy.getAccessToken]);
+  }, [canMine, privy.getAccessToken]);
 
   const formatCountdown = (secs: number) => {
     const h = Math.floor(secs / 3600).toString().padStart(2, '0');
@@ -200,25 +226,36 @@ export default function MinePage() {
 
   // Perform Daily Claim Ritual (§5.5)
   const handleDailyClaim = async () => {
+    if (!privy.authenticated) { setShowWalletModal(true); return; }
     if (claiming || countdown > 0) return;
     setClaiming(true);
     try {
       const token = await privy.getAccessToken();
-      const headers: Record<string, string> = { 'Content-Type': 'application/json' };
-      if (token) headers.authorization = `Bearer ${token}`;
-
-      const res = await fetch('/api/airdrop/claim', { method: 'POST', headers });
-      const data = await res.json();
+      if (!token) { showToast('Your session expired. Please sign in again.', 'error'); return; }
+      const res = await fetch('/api/airdrop/claim', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', authorization: `Bearer ${token}` },
+      });
+      const data = await res.json().catch(() => ({}));
 
       if (!res.ok || !data.ok) {
-        showToast(data.error || 'Daily claim failed — try again', 'error');
+        // Already claimed elsewhere (other tab, double tap): sync the timer too.
+        if (res.status === 409 && data.remainingSeconds) setCountdown(Number(data.remainingSeconds));
+        showToast(data.error || 'Daily claim failed. Please try again.', 'error');
         return;
       }
 
-      showToast(`🎉 Claimed ${data.data.claimPoints} NVR! (${data.data.multiplier}x Active Multiplier)`, 'success');
+      const d = data.data;
+      setCountdown(Number(d.remainingSeconds ?? 86400));
+      setCelebration({
+        amount: Number(d.claimPoints ?? 0),
+        multiplier: Number(d.multiplier ?? 1),
+        streak: Number(d.streak ?? 1),
+        balance: d.totalPoints != null ? Number(d.totalPoints) : undefined,
+      });
       loadAirdropData();
     } catch {
-      showToast('Network error while claiming daily drop', 'error');
+      showToast('Network error. Check your connection and try again.', 'error');
     } finally {
       setClaiming(false);
     }
@@ -226,6 +263,7 @@ export default function MinePage() {
 
   // Claim Mission Reward (§17)
   const handleClaimMission = async (missionId: string) => {
+    if (!privy.authenticated) { setShowWalletModal(true); return; }
     if (claimingMissionId) return;
     setClaimingMissionId(missionId);
     try {
@@ -241,7 +279,7 @@ export default function MinePage() {
         return;
       }
 
-      showToast(`⭐ Mission Completed! +${data.data.rewardPoints} Points awarded to your ledger.`, 'success');
+      showToast(`Mission complete! +${data.data.rewardPoints} points added to your ledger.`, 'success');
       loadAirdropData();
     } catch {
       showToast('Network error claiming mission', 'error');
@@ -252,6 +290,7 @@ export default function MinePage() {
 
   // Link Wallet for Snapshot (§25a)
   const handleLinkWallet = async (addrToLink?: string) => {
+    if (!privy.authenticated) { setShowWalletModal(true); return; }
     const targetAddr = addrToLink || walletInput || address;
     if (!targetAddr) {
       showToast('Please enter or connect a valid EVM address', 'error');
@@ -276,7 +315,7 @@ export default function MinePage() {
         return;
       }
 
-      showToast(`🔗 Wallet linked: ${targetAddr.slice(0, 6)}...${targetAddr.slice(-4)}`, 'success');
+      showToast(`Wallet linked: ${targetAddr.slice(0, 6)}...${targetAddr.slice(-4)}`, 'success');
       setWalletInput('');
       loadAirdropData();
     } catch {
@@ -302,10 +341,11 @@ export default function MinePage() {
     showToast('Referral code copied to clipboard!');
   };
 
-  const displayTotalPower = useCountUp(summary?.totalPower || 1400);
-  const displayActivePower = summary?.activePower ?? 82.5;
-  const displayMultiplier = summary?.claimMultiplier ?? 1.825;
-  const displayNextClaim = summary?.projectedNextClaim ?? 18.25;
+  const displayTotalPower = useCountUp(summary?.totalPower ?? 0);
+  const displayActivePower = summary?.activePower ?? 0;
+  const displayMultiplier = summary?.claimMultiplier ?? 1;
+  const displayNextClaim = summary?.projectedNextClaim ?? summary?.baseDailyClaim ?? 10;
+  const signedOut = !privy.authenticated;
 
   return (
     <main style={{
@@ -422,7 +462,7 @@ export default function MinePage() {
               padding: '5px 10px', borderRadius: 6, border: `1px solid ${C.hairline}`,
               fontWeight: 700,
             }}>
-              PRD v1.2 Engine Active
+              Pre-mainnet season
             </span>
             <span style={{
               ...MONO, fontSize: 10, letterSpacing: 1, textTransform: 'uppercase',
@@ -431,7 +471,7 @@ export default function MinePage() {
               padding: '5px 10px', borderRadius: 6, border: `1px solid ${C.hairlineGreen}`,
               fontWeight: 700,
             }}>
-              {summary?.tier || 'GOLD'} Contributor · Rank #{summary?.rank || 48}
+              {summary ? `${summary.tier} Contributor · Rank #${summary.rank}` : signedOut ? 'Sign in to see your rank' : 'Loading your rank'}
             </span>
           </div>
         </div>
@@ -468,9 +508,9 @@ export default function MinePage() {
               {/* Formula Breakdown Cards (§5.2) */}
               <div className="mine-formula-grid">
                 {[
-                  { label: 'Personal Power', value: summary?.personalPower ?? 1000, color: C.paper, icon: Award },
-                  { label: 'Referral Power (20%)', value: summary?.referralPower ?? 300, color: C.emeraldLight, icon: Users },
-                  { label: 'Campaign Bonus', value: summary?.bonusPower ?? 100, color: C.goldLight, icon: Gift },
+                  { label: 'Personal Power', value: summary?.personalPower ?? 0, color: C.paper, icon: Award },
+                  { label: 'Referral Power (20%)', value: summary?.referralPower ?? 0, color: C.emeraldLight, icon: Users },
+                  { label: 'Campaign Bonus', value: summary?.bonusPower ?? 0, color: C.goldLight, icon: Gift },
                   { label: 'Active Power (Decaying)', value: `${displayActivePower} HP`, color: '#7DD3FC', icon: Zap },
                 ].map((item, idx) => {
                   const Icon = item.icon;
@@ -526,7 +566,7 @@ export default function MinePage() {
                   {displayNextClaim} NVR
                 </h3>
                 <p style={{ fontSize: 12, color: C.paperDim, margin: 0 }}>
-                  Floor 10.0 × <strong style={{ color: C.emeraldLight }}>{displayMultiplier.toFixed(2)}x Active Multiplier</strong>
+                  Floor {summary?.baseDailyClaim ?? 10} × <strong style={{ color: C.emeraldLight }}>{displayMultiplier.toFixed(2)}x Active Multiplier</strong>
                 </p>
               </div>
 
@@ -553,7 +593,9 @@ export default function MinePage() {
                   boxShadow: countdown === 0 ? '0 0 25px rgba(200, 155, 60, 0.4)' : 'none',
                 }}
               >
-                {claiming ? (
+                {signedOut ? (
+                  <><Lock size={16} /> Sign in to claim</>
+                ) : claiming ? (
                   <><Clock size={17} className="animate-spin" /> Processing Claim...</>
                 ) : countdown === 0 ? (
                   <><Gift size={18} /> Claim {displayNextClaim} NVR Drop</>
@@ -569,13 +611,26 @@ export default function MinePage() {
                   animation: minerActive ? 'pulse 1.5s infinite' : 'none',
                 }} />
                 <p style={{ ...MONO, fontSize: 10, color: minerActive ? C.emeraldLight : C.inkLight, margin: 0 }}>
-                  {minerActive ? `Auto-Miner Active · +${(minerBuffer.current).toFixed(2)} pts buffered` : 'Auto-Miner Initialising…'}
+                  {!canMine ? (needsOnboarding ? 'Finish signing up to start the Auto-Miner' : 'Sign in to start the Auto-Miner')
+                    : minerActive ? `Auto-Miner Active · +${minerBuffered.toFixed(2)} pts buffered` : 'Auto-Miner paused while this tab is hidden'}
                 </p>
               </div>
+              {summary && summary.streak > 0 && (
+                <p style={{ ...MONO, fontSize: 10.5, color: C.goldLight, margin: '8px 0 0', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5 }}>
+                  <Flame size={12} /> {summary.streak}-day claim streak
+                </p>
+              )}
               <style>{`@keyframes pulse { 0%,100%{opacity:1}50%{opacity:0.4} }`}</style>
             </div>
           </div>
         </div>
+
+        {needsOnboarding && (
+          <div style={{ marginBottom: 24, padding: '12px 20px', borderRadius: 12, background: 'rgba(200,155,60,0.12)', border: `1px solid ${C.hairline}`, color: C.goldLight, display: 'flex', alignItems: 'center', gap: 10, fontSize: 14 }}>
+            <Info size={16} />
+            <span>Your account is still being set up. Finish onboarding to start earning airdrop points.</span>
+          </div>
+        )}
 
         {/* Action Toast Feedback */}
         <AnimatePresence>
@@ -598,8 +653,8 @@ export default function MinePage() {
                 fontWeight: 600,
               }}
             >
-              <CheckCircle size={16} />
-              <span>{actionMsg.text}</span>
+              {actionMsg.type === 'success' ? <CheckCircle size={16} /> : <AlertCircle size={16} />}
+              <span role={actionMsg.type === 'error' ? 'alert' : 'status'}>{actionMsg.text}</span>
             </motion.div>
           )}
         </AnimatePresence>
@@ -607,11 +662,11 @@ export default function MinePage() {
         {/* ── Navigation Tabs ── */}
         <div className="mine-tabs-bar">
           {[
-            { id: 'claim', label: '🚀 Ecosystem Rewards', icon: Sparkles },
-            { id: 'referrals', label: `👥 Referral Network (${summary?.totalReferrals ?? 4})`, icon: Users },
-            { id: 'missions', label: `🎯 Missions (${missions.filter(m => m.status === 'CLAIMED').length}/${missions.length || 10})`, icon: Award },
-            { id: 'ledger', label: '📜 Activity Ledger', icon: Activity },
-            { id: 'leaderboard', label: '🏆 Leaderboard', icon: TrendingUp },
+            { id: 'claim', label: 'Ecosystem Rewards', icon: Sparkles },
+            { id: 'referrals', label: `Referral Network (${summary?.totalReferrals ?? 0})`, icon: Users },
+            { id: 'missions', label: `Missions (${missions.filter(m => m.status === 'CLAIMED').length}/${missions.length})`, icon: Award },
+            { id: 'ledger', label: 'Activity Ledger', icon: Activity },
+            { id: 'leaderboard', label: 'Leaderboard', icon: TrendingUp },
           ].map(tab => {
             const active = activeTab === tab.id;
             const Icon = tab.icon;
@@ -671,10 +726,10 @@ export default function MinePage() {
 
                 <div className="mine-token-grid">
                   {[
-                    { symbol: 'NVR', name: 'Nuvari Native Token', amount: '1,420.00', color: C.goldLight, note: 'Daily Floor & Mining Engine' },
-                    { symbol: 'YBOB', name: 'Stable Yield Token', amount: '240.00', color: '#7DC383', note: 'DeFi Liquidity & Lending' },
-                    { symbol: 'GAMI', name: 'Community Governance', amount: '120.00', color: '#6FA8DC', note: 'DAO Voting & Proposal Rights' },
-                    { symbol: 'CFA-C', name: 'Conservation Credit', amount: '84.00', color: C.emeraldLight, note: 'Verified Tree Carbon Proofs' },
+                    { symbol: 'NVR', name: 'Nuvari Native Token', amount: summary ? summary.totalPoints.toLocaleString() : '0', color: C.goldLight, note: 'Your points so far · Daily Floor & Mining Engine' },
+                    { symbol: 'YBOB', name: 'Stable Yield Token', amount: 'At snapshot', color: '#7DC383', note: 'DeFi Liquidity & Lending' },
+                    { symbol: 'GAMI', name: 'Community Governance', amount: 'At snapshot', color: '#6FA8DC', note: 'DAO Voting & Proposal Rights' },
+                    { symbol: 'CFA-C', name: 'Conservation Credit', amount: 'At snapshot', color: C.emeraldLight, note: 'Verified Tree Carbon Proofs' },
                   ].map(t => (
                     <div key={t.symbol} className="interactive-card" style={{
                       background: 'rgba(0,0,0,0.35)',
@@ -849,7 +904,7 @@ export default function MinePage() {
                   <div style={{ display: 'flex', gap: 8, marginBottom: 12, flexWrap: 'wrap' }}>
                     <input
                       readOnly
-                      value={summary?.referralLink || (typeof window !== 'undefined' ? `${window.location.origin}/mine?ref=${summary?.referralCode || 'KAI-7X4K'}` : 'https://kai.network/mine?ref=KAI-7X4K')}
+                      value={summary?.referralLink || 'Sign in to get your referral link'}
                       style={{
                         flex: 1,
                         minWidth: 180,
@@ -886,7 +941,7 @@ export default function MinePage() {
 
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 6 }}>
                     <span style={{ fontSize: 12, color: C.paperDim }}>
-                      Referral Code: <strong style={{ color: C.goldLight, ...MONO }}>{summary?.referralCode || 'KAI-7X4K'}</strong>
+                      Referral Code: <strong style={{ color: C.goldLight, ...MONO }}>{summary?.referralCode || '--'}</strong>
                     </span>
                     <button
                       onClick={copyReferralCode}
@@ -916,7 +971,7 @@ export default function MinePage() {
                   </p>
                 </div>
                 <span style={{ ...MONO, fontSize: 10.5, color: C.emeraldLight, background: 'rgba(16,185,129,0.12)', padding: '4px 10px', borderRadius: 6 }}>
-                  Total Flow: +{summary?.referralPower ?? 300} Referral Power
+                  Total Flow: +{summary?.referralPower ?? 0} Referral Power
                 </span>
               </div>
 
@@ -999,6 +1054,7 @@ export default function MinePage() {
             <div className="mine-missions-grid">
               {missions.map(mission => {
                 const isClaimed = mission.status === 'CLAIMED';
+                const isReady = mission.status === 'COMPLETED';
                 const isClaimingThis = claimingMissionId === mission.id;
 
                 return (
@@ -1051,8 +1107,8 @@ export default function MinePage() {
                           padding: '6px 14px',
                           borderRadius: 8,
                           border: 'none',
-                          background: isClaimed ? 'rgba(16,185,129,0.2)' : C.gold,
-                          color: isClaimed ? C.emeraldLight : '#06140D',
+                          background: isClaimed ? 'rgba(16,185,129,0.2)' : isReady ? C.gold : 'rgba(255,255,255,0.08)',
+                          color: isClaimed ? C.emeraldLight : isReady ? '#06140D' : C.paperDim,
                           fontSize: 12,
                           fontWeight: 700,
                           cursor: isClaimed ? 'default' : 'pointer',
@@ -1066,8 +1122,10 @@ export default function MinePage() {
                           <><Clock size={13} className="animate-spin" /> Claiming...</>
                         ) : isClaimed ? (
                           <><CheckCircle size={13} /> Completed</>
+                        ) : isReady ? (
+                          'Claim reward'
                         ) : (
-                          'Complete & Claim'
+                          'Check progress'
                         )}
                       </button>
                     </div>
@@ -1101,6 +1159,11 @@ export default function MinePage() {
             </div>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              {ledger.length === 0 && (
+                <p style={{ textAlign: 'center', padding: '32px 16px', color: C.inkLight, fontSize: 13.5, margin: 0 }}>
+                  {signedOut ? 'Sign in to see your reward history.' : 'No rewards yet. Claim your first daily drop to get started.'}
+                </p>
+              )}
               {ledger.map((entry, idx) => (
                 <div key={idx} style={{
                   display: 'flex',
@@ -1160,8 +1223,8 @@ export default function MinePage() {
                   alignItems: 'center',
                   justifyContent: 'space-between',
                   padding: '12px 14px',
-                  background: user.rank === 2 ? 'rgba(200,155,60,0.12)' : 'rgba(0,0,0,0.25)',
-                  border: `1px solid ${user.rank === 2 ? C.hairline : 'rgba(255,255,255,0.05)'}`,
+                  background: user.isYou ? 'rgba(200,155,60,0.12)' : 'rgba(0,0,0,0.25)',
+                  border: `1px solid ${user.isYou ? C.hairline : 'rgba(255,255,255,0.05)'}`,
                   borderRadius: 12,
                   flexWrap: 'wrap',
                   gap: 10,
@@ -1174,7 +1237,7 @@ export default function MinePage() {
                       #{user.rank}
                     </span>
                     <div>
-                      <strong style={{ fontSize: 13.5, color: user.rank === 2 ? C.goldLight : C.paper }}>
+                      <strong style={{ fontSize: 13.5, color: user.isYou ? C.goldLight : C.paper }}>
                         {user.name}
                       </strong>
                       <p style={{ ...MONO, fontSize: 10.5, color: C.inkLight, margin: '2px 0 0' }}>
@@ -1198,6 +1261,20 @@ export default function MinePage() {
         )}
 
       </div>
+
+      <AnimatePresence>
+        {celebration && (
+          <ClaimCelebration
+            amount={celebration.amount}
+            multiplier={celebration.multiplier}
+            streak={celebration.streak}
+            balance={celebration.balance}
+            onClose={() => setCelebration(null)}
+          />
+        )}
+      </AnimatePresence>
+
+      {showWalletModal && <WalletConnectModal onClose={() => setShowWalletModal(false)} />}
     </main>
   );
 }
