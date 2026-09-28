@@ -47,6 +47,13 @@ const EDITABLE: ContentPost['status'][] = ['DRAFT', 'CHANGES_REQUESTED'];
 
 export default function CreatePage() {
   const { authenticated, ready, signInWithEmail, getAccessToken } = usePrivyAuth();
+  // Sign-in can be slow to report ready (the wallet layer loads last). Stop
+  // waiting after a moment so people never stare at a blank page.
+  const [waitedEnough, setWaitedEnough] = useState(false);
+  useEffect(() => {
+    const t = setTimeout(() => setWaitedEnough(true), 1800);
+    return () => clearTimeout(t);
+  }, []);
 
   const [postId, setPostId] = useState<string | null>(null);
   const [title, setTitle] = useState('');
@@ -197,8 +204,12 @@ export default function CreatePage() {
   const step2 = !!aiReport;
   const step3 = !!status && !EDITABLE.includes(status);
 
-  if (!ready) {
-    return <main style={{ minHeight: '100dvh', background: T.bg, color: T.paper }} />;
+  if (!ready && !waitedEnough) {
+    return (
+      <main style={{ minHeight: '100dvh', background: T.bg, color: T.inkLight, display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: "'IBM Plex Sans', sans-serif" }}>
+        Loading...
+      </main>
+    );
   }
 
   return (

@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { ArrowLeft, ShieldCheck, Newspaper } from 'lucide-react';
+import { ArrowLeft, ShieldCheck, Newspaper, PenLine } from 'lucide-react';
 import { getBySlug } from '@/lib/sihu-store';
 import ArticleEngage from '@/components/hub/ArticleEngage';
 import { HUB_THEME, MONO, SERIF, SANS } from '@/lib/hub-theme';
@@ -10,13 +10,20 @@ export const dynamic = 'force-dynamic';
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
   const { slug } = await params;
   const post = await getBySlug(slug);
-  if (!post) return { title: 'Article not found — SIHU' };
+  if (!post) return { title: 'Story not found | SIHU' };
   return {
-    title: `${post.title} — SIHU`,
+    title: `${post.title} | SIHU`,
     description: post.summary ?? post.body.slice(0, 160),
     openGraph: { title: post.title, description: post.summary ?? undefined, type: 'article' },
   };
 }
+
+const TYPE_LABEL: Record<string, string> = {
+  ARTICLE: 'Article', NEWS_UPDATE: 'News', EDUCATIONAL_GUIDE: 'How-to guide', FIELD_JOURNAL: 'Field journal',
+  AUDIO_PODCAST: 'Podcast', VIDEO: 'Video', DOCUMENT: 'Document', REPORT: 'Report',
+  CONSERVATION_IMPACT: 'Conservation impact', MARKET_NEWS: 'Market news',
+};
+const humanize = (t: string) => (t ? t.charAt(0) + t.slice(1).toLowerCase().replace(/_/g, ' ') : '');
 
 export default async function ArticlePage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
@@ -26,9 +33,9 @@ export default async function ArticlePage({ params }: { params: Promise<{ slug: 
     return (
       <main style={{ minHeight: '100dvh', background: HUB_THEME.bg, color: HUB_THEME.paper, fontFamily: "'IBM Plex Sans', sans-serif", padding: '0 28px' }}>
         <div style={{ maxWidth: 820, margin: '0 auto', padding: '160px 0', textAlign: 'center' }}>
-          <p style={{ ...SERIF, fontSize: 28, fontWeight: 600 }}>Article not found</p>
-          <p style={{ color: HUB_THEME.inkLight, margin: '10px 0 26px' }}>This story may have been unpublished or the link is wrong.</p>
-          <Link href="/hub" style={{ color: HUB_THEME.goldLight, fontWeight: 600, textDecoration: 'none' }}>← Back to SIHU</Link>
+          <p style={{ ...SERIF, fontSize: 28, fontWeight: 600 }}>Story not found</p>
+          <p style={{ color: HUB_THEME.inkLight, margin: '10px 0 26px' }}>This story may not be published yet, or the link is wrong.</p>
+          <Link href="/hub" style={{ color: HUB_THEME.goldLight, fontWeight: 600, textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 6 }}><ArrowLeft size={15} /> Back to the Info Hub</Link>
         </div>
       </main>
     );
@@ -40,9 +47,11 @@ export default async function ArticlePage({ params }: { params: Promise<{ slug: 
     <main style={{ minHeight: '100dvh', background: HUB_THEME.bg, color: HUB_THEME.paper, fontFamily: "'IBM Plex Sans', sans-serif", paddingBottom: 90 }}>
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300..700;1,9..144,300..700&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&display=swap');
+        .story-wrap { max-width: 900px; margin: 0 auto; padding: 0 28px; }
+        @media (max-width: 640px) { .story-wrap { padding: 0 16px; } }
       `}</style>
 
-      <div style={{ maxWidth: 900, margin: '0 auto', padding: '0 28px' }}>
+      <div className="story-wrap">
         <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '30px 0 20px' }}>
           <Link href="/hub" style={{ display: 'flex', alignItems: 'center', gap: 10, textDecoration: 'none' }}>
             <div style={{ width: 34, height: 34, borderRadius: '50%', background: HUB_THEME.gold, color: HUB_THEME.ink, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16, fontWeight: 700 }}>K</div>
@@ -56,15 +65,15 @@ export default async function ArticlePage({ params }: { params: Promise<{ slug: 
         <div style={{ borderTop: `1px solid ${HUB_THEME.hairline}`, borderBottom: `1px solid ${HUB_THEME.hairline}`, padding: '44px 0 30px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 16, flexWrap: 'wrap' }}>
             <span style={{ ...MONO, fontSize: 10, letterSpacing: 1.3, textTransform: 'uppercase', color: HUB_THEME.goldLight, display: 'flex', alignItems: 'center', gap: 5 }}>
-              <Newspaper size={12} /> {post.contentType.replaceAll('_', ' ')}
+              <Newspaper size={12} /> {TYPE_LABEL[post.contentType] ?? humanize(post.contentType)}
             </span>
             <span style={{ height: 1, width: 40, background: HUB_THEME.hairline }} />
             <span style={{ ...MONO, fontSize: 10, letterSpacing: 1, textTransform: 'uppercase', color: HUB_THEME.inkLight }}>
-              {post.category.replaceAll('_', ' ')}
+              {humanize(post.category)}
             </span>
           </div>
 
-          <h1 style={{ ...SERIF, fontSize: 40, fontWeight: 600, lineHeight: 1.15, margin: '0 0 18px', color: HUB_THEME.paper }}>
+          <h1 style={{ ...SERIF, fontSize: 'clamp(28px, 6vw, 40px)', fontWeight: 600, lineHeight: 1.15, margin: '0 0 18px', color: HUB_THEME.paper }}>
             {post.title}
           </h1>
 
@@ -81,14 +90,14 @@ export default async function ArticlePage({ params }: { params: Promise<{ slug: 
             <div>
               <p style={{ fontSize: 14, fontWeight: 700, color: HUB_THEME.paper, margin: 0 }}>
                 {post.creatorName}
-                {post.authorBadge && <span style={{ ...MONO, fontSize: 9, letterSpacing: 1, color: HUB_THEME.goldLight, marginLeft: 8 }}>{post.authorBadge}</span>}
+                {post.authorBadge && <span style={{ ...MONO, fontSize: 9, letterSpacing: 1, color: HUB_THEME.goldLight, marginLeft: 8 }}>{humanize(post.authorBadge)}</span>}
               </p>
               <p style={{ ...MONO, fontSize: 11, color: HUB_THEME.inkLight, margin: '2px 0 0' }}>
                 {post.publishedAt ? new Date(post.publishedAt).toLocaleDateString('en-KE', { year: 'numeric', month: 'long', day: 'numeric' }) : ''} · {post.viewsCount.toLocaleString()} reads
               </p>
             </div>
             <span style={{ marginLeft: 'auto', ...MONO, fontSize: 10, color: HUB_THEME.inkLight, display: 'flex', alignItems: 'center', gap: 5 }}>
-              <ShieldCheck size={13} color={HUB_THEME.pineLight} /> Editor-approved · human editorial authority
+              <ShieldCheck size={13} color={HUB_THEME.pineLight} /> Checked and approved by a SIHU editor
             </span>
           </div>
         </div>
@@ -102,6 +111,17 @@ export default async function ArticlePage({ params }: { params: Promise<{ slug: 
         </article>
 
         <ArticleEngage post={post} />
+
+        {/* Invite readers to become writers */}
+        <aside style={{ marginTop: 36, padding: '22px 22px', borderRadius: 16, background: 'rgba(200,155,60,0.08)', border: `1px solid ${HUB_THEME.hairline}`, display: 'flex', alignItems: 'center', gap: 16, flexWrap: 'wrap' }}>
+          <div style={{ flex: 1, minWidth: 220 }}>
+            <p style={{ ...SERIF, fontSize: 20, fontWeight: 600, margin: '0 0 4px' }}>Have a story from your area?</p>
+            <p style={{ fontSize: 14, color: HUB_THEME.inkLight, margin: 0, lineHeight: 1.55 }}>Write it, get a free AI check, and an editor will review it. Readers can tip published stories in KES.</p>
+          </div>
+          <Link href="/hub/create" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '12px 20px', borderRadius: 10, background: HUB_THEME.gold, color: HUB_THEME.ink, fontWeight: 700, fontSize: 14, textDecoration: 'none' }}>
+            <PenLine size={15} /> Write a story
+          </Link>
+        </aside>
       </div>
     </main>
   );

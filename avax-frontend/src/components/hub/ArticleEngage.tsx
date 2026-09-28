@@ -180,7 +180,7 @@ export default function ArticleEngage({ post }: { post: ContentPost }) {
           border: `1px solid ${post.aiDisclosure === 'AI_ASSISTED' ? 'rgba(156,75,45,0.35)' : HUB_THEME.hairline}`,
           padding: '5px 10px', borderRadius: 999,
         }}>
-          {post.aiDisclosure === 'AI_ASSISTED' ? 'AI-assisted — editor-reviewed' : 'Human-authored'}
+          {post.aiDisclosure === 'AI_ASSISTED' ? 'AI-assisted, reviewed by an editor' : 'Human-authored'}
         </span>
         {post.tags.map(t => (
           <span key={t} style={{ ...MONO, fontSize: 10, color: HUB_THEME.inkLight }}>#{t}</span>
@@ -255,7 +255,7 @@ export default function ArticleEngage({ post }: { post: ContentPost }) {
         </div>
         {!authenticated && (
           <p style={{ ...SANS, fontSize: 12, color: HUB_THEME.inkLight, margin: '0 0 14px' }}>
-            Sign in to comment with your KAI account — reading and browsing always work without one.
+            Sign in to comment. Reading never needs an account.
           </p>
         )}
 

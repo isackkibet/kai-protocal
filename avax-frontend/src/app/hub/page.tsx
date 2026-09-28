@@ -5,7 +5,7 @@ import Link from 'next/link';
 import {
   Newspaper, TreePine, ArrowRight, ExternalLink, PenTool, Sprout,
   BookOpen, MessageCircle, Mic, FileText, ShieldCheck, Library,
-  Users, Coins, Gift, Search,
+  Users, Coins, Gift, Search, Sparkles, Send,
 } from 'lucide-react';
 import { SIHU_THEME, OLOOLUA_THEME, MONO, SERIF, SANS } from '@/lib/hub-theme';
 
@@ -156,6 +156,7 @@ export default function HubPage() {
         .hub-actions { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
         .hub-stories { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
         .hub-pair { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+        .hub-flow { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
         .hub-card { transition: transform 0.2s ease, border-color 0.2s ease; }
         /* CSS-only entrance: cards are visible even before the page's JavaScript loads */
         .hub-rise { animation: hub-rise 0.35s ease both; }
@@ -166,12 +167,13 @@ export default function HubPage() {
         @media (max-width: 980px) {
           .hub-actions { grid-template-columns: 1fr 1fr; }
           .hub-stories { grid-template-columns: 1fr 1fr; }
+          .hub-flow { grid-template-columns: 1fr 1fr; }
         }
         @media (max-width: 720px) {
           .hub-wrap { padding: 0 16px; }
           .hub-pair, .hub-stories { grid-template-columns: 1fr; }
         }
-        @media (max-width: 420px) { .hub-actions { grid-template-columns: 1fr; } }
+        @media (max-width: 420px) { .hub-actions, .hub-flow { grid-template-columns: 1fr; } }
       `}</style>
 
       <div className="hub-wrap">
@@ -290,6 +292,42 @@ export default function HubPage() {
               ))}
             </div>
           )}
+        </section>
+
+        {/* How a story gets published, step by step */}
+        <section style={{ marginTop: 40, padding: '24px 22px', borderRadius: 20, background: 'linear-gradient(160deg, rgba(56,189,248,0.10) 0%, rgba(2,6,23,0.9) 60%)', border: `1px solid ${BLUE}33` }} aria-labelledby="hub-flow">
+          <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: 14, flexWrap: 'wrap', marginBottom: 18 }}>
+            <div>
+              <h2 id="hub-flow" style={{ ...SERIF, fontSize: 24, fontWeight: 700, margin: 0 }}>How to publish a story</h2>
+              <p style={{ fontSize: 13.5, color: DIM, margin: '4px 0 0' }}>Anyone can write. Every story is checked by a person before it goes live.</p>
+            </div>
+            <Link href="/hub/create" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '11px 18px', borderRadius: 10, background: BLUE, color: '#020617', fontWeight: 700, fontSize: 13.5, textDecoration: 'none' }}>
+              <PenTool size={15} /> Start writing
+            </Link>
+          </div>
+          <ol className="hub-flow" style={{ listStyle: 'none', padding: 0, margin: 0 }}>
+            {[
+              { icon: PenTool, t: 'Write', d: 'Sign in with your email and write your story, guide or field report. Save it as a draft any time.' },
+              { icon: Sparkles, t: 'Free AI check', d: 'One tap checks for missing sources, copied text and unsupported claims, so you can fix them first.' },
+              { icon: Send, t: 'Editor review', d: 'A SIHU editor reads it and publishes it, or sends it back with a note on what to change.' },
+              { icon: Coins, t: 'Live and earning', d: 'Your story appears in Latest stories. Readers can like, comment, save and tip you in KES.' },
+            ].map((step, i) => {
+              const SIcon = step.icon;
+              return (
+                <li key={step.t} style={{ position: 'relative', padding: '16px 16px', borderRadius: 14, background: 'rgba(2,6,23,0.6)', border: `1px solid ${LINE}` }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
+                    <span style={{ ...MONO, width: 26, height: 26, borderRadius: '50%', background: `${BLUE}26`, color: '#7DD3FC', fontSize: 12, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>{i + 1}</span>
+                    <SIcon size={16} color={BLUE} />
+                    <span style={{ fontSize: 15, fontWeight: 700 }}>{step.t}</span>
+                  </div>
+                  <p style={{ fontSize: 12.5, color: DIM, lineHeight: 1.55, margin: 0 }}>{step.d}</p>
+                </li>
+              );
+            })}
+          </ol>
+          <p style={{ fontSize: 12.5, color: DIM, margin: '14px 0 0' }}>
+            Are you a SIHU editor? <Link href="/hub/review" style={{ color: '#7DD3FC', fontWeight: 700, textDecoration: 'none' }}>Open the editor desk</Link>
+          </p>
         </section>
 
         {/* The two hubs, with only links that work */}
