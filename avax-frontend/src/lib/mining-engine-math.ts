@@ -45,3 +45,18 @@ export function applyTreasuryCut(claimAmount: number, treasuryCut: number): { us
     treasuryAmount: claimAmount * treasuryCut,
   };
 }
+/**
+ * Consecutive-day claim streak. `claimTimes` are epoch ms, newest first.
+ * A streak holds while each claim lands within `graceMs` of the one after it
+ * (and the newest is within `graceMs` of `now`); a longer gap breaks it.
+ * With a 24h cooldown, a 48h grace means "claimed on each calendar-ish day".
+ */
+export function claimStreak(claimTimes: number[], now: number, graceMs: number): number {
+  if (claimTimes.length === 0 || now - claimTimes[0] > graceMs) return 0;
+  let streak = 1;
+  for (let i = 1; i < claimTimes.length; i++) {
+    if (claimTimes[i - 1] - claimTimes[i] > graceMs) break;
+    streak++;
+  }
+  return streak;
+}

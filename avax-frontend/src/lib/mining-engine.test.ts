@@ -6,6 +6,7 @@ import {
   gainHashPower,
   claimMultiplier,
   applyTreasuryCut,
+  claimStreak,
 } from './mining-engine-math.ts';
 import { MINING_CONFIG } from './mining-config.ts';
 
@@ -74,4 +75,16 @@ test('treasury cut splits claim correctly (spec §4.1)', () => {
   const { userAmount, treasuryAmount } = applyTreasuryCut(claim, CLAIM_TREASURY_CUT);
   assert.equal(userAmount + treasuryAmount, claim);
   assert.equal(treasuryAmount, claim * CLAIM_TREASURY_CUT);
+});
+test('claim streak counts consecutive daily claims and breaks on a long gap', () => {
+  const now = 100 * DAY_MS;
+  const grace = 2 * DAY_MS;
+  assert.equal(claimStreak([], now, grace), 0);
+  assert.equal(claimStreak([now - DAY_MS], now, grace), 1);
+  // claimed yesterday, the day before, and the day before that
+  assert.equal(claimStreak([now - DAY_MS, now - 2 * DAY_MS, now - 3 * DAY_MS], now, grace), 3);
+  // a 3-day hole ends the streak at 2
+  assert.equal(claimStreak([now - DAY_MS, now - 2 * DAY_MS, now - 5 * DAY_MS], now, grace), 2);
+  // last claim too long ago: streak is gone
+  assert.equal(claimStreak([now - 3 * DAY_MS, now - 4 * DAY_MS], now, grace), 0);
 });
