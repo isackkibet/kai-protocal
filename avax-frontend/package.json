@@ -10,6 +10,8 @@
     "lint": "eslint",
     "test:mining": "node --test src/lib/mining-engine.test.ts",
     "test:airdrop": "node --test src/lib/airdrop-engine.test.ts",
+    "test:security": "node --experimental-strip-types --test src/lib/security/security.test.ts",
+    "test": "npm run test:mining && npm run test:airdrop && npm run test:security && npm run test:mrv",
     "test:mrv": "node --test src/lib/mrv/canonical.test.ts",
     "tokens:compile": "hardhat compile",
     "tokens:deploy:fuji": "hardhat run scripts/deploy-ecosystem-tokens.cjs --network fuji",
