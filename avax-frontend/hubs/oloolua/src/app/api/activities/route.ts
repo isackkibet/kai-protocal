@@ -66,65 +66,80 @@ export async function GET() {
   }
 }
 
+/**
+ * Records a new conservation activity. Records are append-only: the server
+ * assigns the id and every record starts as DRAFT or SUBMITTED. The client
+ * can never choose an existing id (which would overwrite that record) or mark
+ * a record verified — only a trusted backend verification step may do that
+ * (Canuvari MRV PRD §4.2, §6.1).
+ */
 export async function POST(request: Request) {
   try {
     await initDbSchema();
     const body = await request.json();
 
+    // Drop client-supplied identity and status fields before storing the payload.
+    const { id: _clientId, verificationStatus: _clientStatus, status: _status, ...payload } = body ?? {};
+
     const {
-      id,
       eventType,
       cfaId = 'CFA-OLO-001',
       nurseryId = 'NUR-OLO-01',
       seedbedId = 'SB-01',
       speciesId = 'SP-01',
-      quantity = 100,
+      quantity,
       recordedBy = 'Guardian Member',
       date = new Date().toISOString().split('T')[0],
-      verificationStatus = 'SUBMITTED',
       notes = ''
-    } = body;
+    } = payload;
 
-    const activityId = id || `ACT-${Date.now().toString().slice(-6)}`;
+    const qty = Number(quantity);
+    if (!eventType || !Number.isInteger(qty) || qty < 0) {
+      return NextResponse.json({
+        success: false,
+        error: 'eventType and a non-negative whole-number quantity are required'
+      }, { status: 400 });
+    }
 
-    // Insert into Neon Postgres table
+    // A submitter may keep a record as DRAFT; anything else is SUBMITTED.
+    // VERIFIED / REJECTED are never accepted from the client.
+    const verificationStatus = _clientStatus === 'DRAFT' ? 'DRAFT' : 'SUBMITTED';
+    const activityId = `ACT-${crypto.randomUUID()}`;
+
     await sql`
       INSERT INTO kai_activities (
         id, event_type, cfa_id, nursery_id, seedbed_id, species_id,
         quantity, recorded_by, activity_date, verification_status, notes, json_payload
       ) VALUES (
         ${activityId}, ${eventType}, ${cfaId}, ${nurseryId}, ${seedbedId}, ${speciesId},
-        ${quantity}, ${recordedBy}, ${date}::date, ${verificationStatus}, ${notes}, ${JSON.stringify(body)}
-      )
-      ON CONFLICT (id) DO UPDATE SET
-        verification_status = EXCLUDED.verification_status,
-        notes = EXCLUDED.notes;
+        ${qty}, ${recordedBy}, ${date}::date, ${verificationStatus}, ${notes}, ${JSON.stringify(payload)}
+      );
     `;
 
     // Also insert transaction record
     const direction = (eventType === 'SALE' || eventType === 'DONATION' || eventType === 'PLANTING' || eventType === 'MORTALITY') ? 'OUT' : 'IN';
-    const txnId = `TXN-${Date.now().toString().slice(-6)}`;
+    const txnId = `TXN-${crypto.randomUUID()}`;
 
     await sql`
       INSERT INTO kai_transactions (
         id, transaction_type, nursery_id, seedbed_id, species_id, quantity, direction, txn_date, recorded_by, verification_status
       ) VALUES (
-        ${txnId}, ${eventType}, ${nurseryId}, ${seedbedId}, ${speciesId}, ${quantity}, ${direction}, ${date}::date, ${recordedBy}, ${verificationStatus}
-      )
-      ON CONFLICT (id) DO NOTHING;
+        ${txnId}, ${eventType}, ${nurseryId}, ${seedbedId}, ${speciesId}, ${qty}, ${direction}, ${date}::date, ${recordedBy}, ${verificationStatus}
+      );
     `;
 
     return NextResponse.json({
       success: true,
       message: 'Activity and transaction written to Neon PostgreSQL',
       activityId,
-      txnId
+      txnId,
+      verificationStatus
     });
   } catch (error: any) {
     console.error('Error inserting into Neon DB:', error);
     return NextResponse.json({
       success: false,
-      error: error.message
+      error: 'Failed to record activity'
     }, { status: 500 });
   }
 }

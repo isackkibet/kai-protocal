@@ -1,8 +1,14 @@
 import { neon } from '@neondatabase/serverless';
 
-const DATABASE_URL = process.env.DATABASE_URL || "postgresql://neondb_owner:npg_7mfdGNKel0Rz@ep-small-king-aepdc5l6-pooler.c-2.us-east-2.aws.neon.tech/neondb?sslmode=require";
+// The connection string must only ever come from the environment — never
+// commit a fallback URL. Without it, queries throw and routes return 500.
+const DATABASE_URL = process.env.DATABASE_URL;
 
-export const sql = neon(DATABASE_URL);
+export const sql = DATABASE_URL
+  ? neon(DATABASE_URL)
+  : ((() => {
+      throw new Error('DATABASE_URL is not set');
+    }) as unknown as ReturnType<typeof neon>);
 
 // Auto-initialize Kai Nursery tables in Neon Postgres & Seed Real Operational Data
 export async function initDbSchema() {
@@ -41,7 +47,8 @@ export async function initDbSchema() {
       );
     `;
 
-    // Seed real baseline records if table is empty
+    // Seed baseline records if table is empty. They start as SUBMITTED: nothing
+    // here has been through verification, so nothing may claim to be VERIFIED.
     const checkCount = await sql`SELECT COUNT(*) as cnt FROM kai_activities`;
     if (Number(checkCount[0]?.cnt || 0) === 0) {
       console.log('🌱 Seeding real baseline CFA operational records into Neon DB...');
@@ -57,7 +64,7 @@ export async function initDbSchema() {
           quantity: 3000,
           recorded_by: 'Austin Namuye (CFA Admin)',
           date: '2024-01-15',
-          status: 'VERIFIED',
+          status: 'SUBMITTED',
           notes: 'Initial opening stock audit for Bed 1 Croton megalocarpus'
         },
         {
@@ -70,7 +77,7 @@ export async function initDbSchema() {
           quantity: 4500,
           recorded_by: 'Jane N. (Nursery Manager)',
           date: '2024-02-01',
-          status: 'VERIFIED',
+          status: 'SUBMITTED',
           notes: 'Sown Markhamia lutea seeds acquired from KEFRI'
         },
         {
@@ -83,7 +90,7 @@ export async function initDbSchema() {
           quantity: 2500,
           recorded_by: 'Peter K. (Guardian Member)',
           date: '2024-02-15',
-          status: 'VERIFIED',
+          status: 'SUBMITTED',
           notes: 'Prunus africana wild harvested seed germination'
         },
         {
@@ -96,7 +103,7 @@ export async function initDbSchema() {
           quantity: 600,
           recorded_by: 'Austin Namuye & KFS Guard Team',
           date: '2024-04-10',
-          status: 'VERIFIED',
+          status: 'SUBMITTED',
           notes: 'Reforestation planting at Oloolua Forest Reserve Riverine Section 4'
         },
         {
@@ -109,7 +116,7 @@ export async function initDbSchema() {
           quantity: 350,
           recorded_by: 'Grace W. (Nursery Manager)',
           date: '2024-04-20',
-          status: 'VERIFIED',
+          status: 'SUBMITTED',
           notes: 'Commercial sale to Karen Farmers Association'
         },
         {
@@ -122,7 +129,7 @@ export async function initDbSchema() {
           quantity: 200,
           recorded_by: 'Samuel O. (Guardian Member)',
           date: '2024-05-05',
-          status: 'VERIFIED',
+          status: 'SUBMITTED',
           notes: 'School greening donation to Oloolua Primary School'
         }
       ];

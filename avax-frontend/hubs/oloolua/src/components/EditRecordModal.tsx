@@ -18,6 +18,7 @@ export default function EditRecordModal({ isOpen, onClose, recordType, initialDa
   const [formData, setFormData] = useState<any>(initialData || {});
   const [saving, setSaving] = useState(false);
   const [successMsg, setSuccessMsg] = useState('');
+  const [errorMsg, setErrorMsg] = useState('');
 
   if (!isOpen) return null;
 
@@ -25,28 +26,45 @@ export default function EditRecordModal({ isOpen, onClose, recordType, initialDa
     e.preventDefault();
     setSaving(true);
 
+    setErrorMsg('');
+
     try {
-      // POST / PUT to Neon DB API endpoint
-      await fetch('/api/activities', {
+      // Records are append-only: an edit is logged as a new ADJUSTMENT entry
+      // and never overwrites an existing one. Only a stock adjustment moves
+      // seedling counts; metadata edits (seedbed, species…) carry quantity 0.
+      const { verificationStatus: _vs, ...changes } = formData;
+      const res = await fetch('/api/activities', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           eventType: 'ADJUSTMENT',
-          id: formData.id || `REC-${Date.now().toString().slice(-5)}`,
+          recordType,
+          recordId: formData.id ?? null,
+          changes,
+          seedbedId: formData.seedbedId,
+          speciesId: formData.speciesId,
+          quantity: recordType === 'ADJUSTMENT' ? Number(formData.quantity) || 0 : 0,
           recordedBy: 'CFA Manager (Admin Edit)',
-          notes: `Updated ${recordType} record state: ${JSON.stringify(formData)}`,
-          ...formData
+          notes: recordType === 'ADJUSTMENT' && formData.notes
+            ? formData.notes
+            : `Updated ${recordType} record: ${JSON.stringify(changes)}`,
         }),
       });
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok || !json.success) {
+        setErrorMsg(json.error || 'Could not save this change. Please try again.');
+        return;
+      }
 
       onSave(formData);
-      setSuccessMsg(`Stateful ${recordType} record updated successfully!`);
+      setSuccessMsg(`${recordType} change logged as a new record.`);
       setTimeout(() => {
         setSuccessMsg('');
         onClose();
       }, 1000);
     } catch (err) {
       console.error('Error saving stateful record:', err);
+      setErrorMsg('Could not reach the server. Please try again.');
     } finally {
       setSaving(false);
     }
@@ -241,6 +259,13 @@ export default function EditRecordModal({ isOpen, onClose, recordType, initialDa
                     className="w-full bg-[#0b1c14] border border-[#e4c878]/30 rounded-lg p-2 text-white"
                   />
                 </div>
+              </div>
+            )}
+
+            {errorMsg && (
+              <div className="flex items-start gap-2 p-3 rounded-lg bg-red-950/60 border border-red-800 text-red-200">
+                <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+                <span>{errorMsg}</span>
               </div>
             )}
 

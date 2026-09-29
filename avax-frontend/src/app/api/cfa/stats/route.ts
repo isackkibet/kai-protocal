@@ -3,8 +3,11 @@ import { VAULT_ADDRESSES } from '@/lib/addresses';
 
 // Returns rich mock data shaped exactly like the Prisma CFA schema.
 // When a live DB is connected, replace the mock with prisma queries.
+// `demo: true` tells the UI to label everything as sample data — these
+// figures are not real and must never be presented as verified (MRV PRD §8).
 export async function GET() {
   const data = {
+    demo: true,
     forest: {
       id: 'cfa-001',
       name: 'Mau Forest Guardians Group A',

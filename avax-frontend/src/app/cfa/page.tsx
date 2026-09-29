@@ -13,6 +13,8 @@ import TreasuryTab from '@/components/cfa/TreasuryTab';
 
 // ── Types ─────────────────────────────────────────────────────────
 interface CFAData {
+  /** True while the stats API serves sample data instead of real records. */
+  demo?: boolean;
   forest: {
     name: string; did: string; locationRegion: string;
     establishedAt: string; totalHectares: number;
@@ -170,6 +172,15 @@ export default function CFAPage() {
               <RefreshCw size={15} />
             </button>
           </div>
+
+          {d.demo && (
+            <div role="note" style={{ display: 'flex', alignItems: 'flex-start', gap: 8, marginBottom: 16, padding: '10px 12px', borderRadius: 10, border: `1px solid ${C.gold}`, background: 'rgba(0,0,0,0.18)' }}>
+              <AlertTriangle size={14} color={C.gold} style={{ flexShrink: 0, marginTop: 2 }} />
+              <p style={{ fontSize: 12, color: C.paper, margin: 0, lineHeight: 1.5 }}>
+                <strong>Sample data.</strong> The figures on this page are examples, not real or verified CFA records.
+              </p>
+            </div>
+          )}
 
           {/* DID + wallet strip */}
           <div style={{ display: 'flex', gap: 18, marginBottom: 20, overflowX: 'auto', scrollbarWidth: 'none' }}>

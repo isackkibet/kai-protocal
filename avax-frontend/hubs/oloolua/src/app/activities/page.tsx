@@ -10,10 +10,10 @@ export default function ActivitiesPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   const activities = [
-    { title: 'Tree Nursery Sowing & Potting', date: '2024-09-20', location: 'Oloolua Forest Station', category: 'Propagation', status: 'VERIFIED' },
-    { title: 'Riverine Zone Croton Reforestation', date: '2024-08-15', location: 'Oloolua Stream Bank', category: 'Planting Out', status: 'VERIFIED' },
-    { title: 'Apiculture & Hive Maintenance', date: '2024-07-28', location: 'Forest Buffer Apiary', category: 'Beekeeping', status: 'VERIFIED' },
-    { title: 'Community Seedling Distribution', date: '2024-06-10', location: 'Oloolua Primary School', category: 'Donation', status: 'VERIFIED' },
+    { title: 'Tree Nursery Sowing & Potting', date: '2024-09-20', location: 'Oloolua Forest Station', category: 'Propagation', status: 'RECORDED' },
+    { title: 'Riverine Zone Croton Reforestation', date: '2024-08-15', location: 'Oloolua Stream Bank', category: 'Planting Out', status: 'RECORDED' },
+    { title: 'Apiculture & Hive Maintenance', date: '2024-07-28', location: 'Forest Buffer Apiary', category: 'Beekeeping', status: 'RECORDED' },
+    { title: 'Community Seedling Distribution', date: '2024-06-10', location: 'Oloolua Primary School', category: 'Donation', status: 'RECORDED' },
   ];
 
   return (
@@ -26,7 +26,7 @@ export default function ActivitiesPage() {
             <span className="text-[#e4c878] font-bold text-xs uppercase tracking-widest">Field Stewardship</span>
             <h1 className="text-3xl sm:text-5xl font-extrabold text-white">Conservation Activities</h1>
             <p className="text-xs sm:text-sm text-gray-300">
-              Log of activities recorded by youth members and verified on Kai Hub.
+              Log of activities recorded by youth members on Kai Hub. Records are marked verified only after independent review.
             </p>
           </div>
 
