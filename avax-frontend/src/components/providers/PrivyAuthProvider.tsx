@@ -217,43 +217,73 @@ function PrivyAuthContextProvider({ children }: { children: React.ReactNode }) {
    * has verified their email must be saved immediately (PRD: "wallet-
    * optional"); the wallet attaches on a later call once it's ready.
    */
-  const syncToBackend = useCallback(async (): Promise<PrivyAuthSyncResult> => {
-    const s = stateRef.current;
-    if (!s.privyUserId || !s.email) {
-      return { ok: false, reason: 'missing-identity', isNew: false };
-    }
-    setSyncState('linking');
-    try {
-      const token = await getAccessToken();
-      if (!token) {
-        setSyncState('error');
-        setError('Could not verify your session. Please try again.');
-        return { ok: false, reason: 'no-access-token', isNew: false };
+  // Sign-in fires syncToBackend from up to three places at once (the sign-in
+  // handler, the auto-sync effect, the wallet-attach effect). Concurrent calls
+  // share one request instead of each POSTing /api/kai-bar/onboard.
+  const inFlightSync = useRef<Promise<PrivyAuthSyncResult> | null>(null);
+
+  const syncToBackend = useCallback((): Promise<PrivyAuthSyncResult> => {
+    if (inFlightSync.current) return inFlightSync.current;
+    const run = runSync();
+    inFlightSync.current = run;
+    void run.finally(() => {
+      if (inFlightSync.current === run) inFlightSync.current = null;
+    });
+    return run;
+
+    async function runSync(): Promise<PrivyAuthSyncResult> {
+      const s = stateRef.current;
+      if (!s.privyUserId || !s.email) {
+        return { ok: false, reason: 'missing-identity', isNew: false };
       }
-      const res = await fetch('/api/kai-bar/onboard', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-        body: JSON.stringify({
-          privyUserId: s.privyUserId, email: s.email, name: s.name,
-          authProvider: s.authProvider, address: s.address ?? undefined,
-        }),
-      });
-      const data = await res.json();
-      if (!res.ok) {
+      setSyncState('linking');
+      try {
+        const token = await getAccessToken();
+        if (!token) {
+          setSyncState('error');
+          setError('Could not verify your session. Please try again.');
+          return { ok: false, reason: 'no-access-token', isNew: false };
+        }
+        const res = await fetch('/api/kai-bar/onboard', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+          body: JSON.stringify({
+            privyUserId: s.privyUserId, email: s.email, name: s.name,
+            authProvider: s.authProvider, address: s.address ?? undefined,
+          }),
+        });
+        const data = await res.json();
+        if (!res.ok) {
+          setSyncState('error');
+          setError(data.error ?? 'Failed to link your account.');
+          return { ok: false, reason: data.error, isNew: false };
+        }
+        setSyncState('linked');
+        setError(null);
+        return { ok: true, isNew: data.isNew, kaiBar: data.kaiBar, userId: data.userId };
+      } catch (e: unknown) {
+        console.error('[privy-auth] syncToBackend failed', e);
         setSyncState('error');
-        setError(data.error ?? 'Failed to link your account.');
-        return { ok: false, reason: data.error, isNew: false };
+        setError('Could not reach our servers. Please try again.');
+        return { ok: false, reason: 'network', isNew: false };
       }
-      setSyncState('linked');
-      setError(null);
-      return { ok: true, isNew: data.isNew, kaiBar: data.kaiBar, userId: data.userId };
-    } catch (e: unknown) {
-      console.error('[privy-auth] syncToBackend failed', e);
-      setSyncState('error');
-      setError('Could not reach our servers. Please try again.');
-      return { ok: false, reason: 'network', isNew: false };
     }
   }, [getAccessToken]);
+
+  /**
+   * Right after login() resolves, Privy's user object can take a moment to
+   * carry the email. Wait for it (up to ~3 s) rather than one 400 ms retry,
+   * which was losing the race and logging a false "missing-identity" error
+   * even though the auto-sync effect saved the user a moment later.
+   */
+  const syncWhenIdentityReady = useCallback(async (): Promise<PrivyAuthSyncResult> => {
+    let result = await syncToBackend();
+    for (let i = 0; i < 10 && !result.ok && result.reason === 'missing-identity'; i++) {
+      await new Promise((r) => setTimeout(r, 300));
+      result = await syncToBackend();
+    }
+    return result;
+  }, [syncToBackend]);
 
   /**
    * One-shot "Continue with Google": logs in, then links the account to the
@@ -267,13 +297,8 @@ function PrivyAuthContextProvider({ children }: { children: React.ReactNode }) {
       await builtLogin();
       // Identity (email + privyUserId) is saved immediately — it must not
       // wait on the embedded wallet, which can lag or fail independently
-      // (the wallet-attach effect below picks it up once it's ready). Retry
-      // once for the brief state-update race right after login() resolves.
-      let result = await syncToBackend();
-      if (!result.ok && result.reason === 'missing-identity') {
-        await new Promise((r) => setTimeout(r, 400));
-        result = await syncToBackend();
-      }
+      // (the wallet-attach effect below picks it up once it's ready).
+      const result = await syncWhenIdentityReady();
       if (!result.ok) reportClientError('google-signin-no-throw-fail', String(result.reason ?? 'unknown'));
       return result;
     } catch (e: unknown) {
@@ -288,7 +313,7 @@ function PrivyAuthContextProvider({ children }: { children: React.ReactNode }) {
       setError(rawMsg || 'Google sign-in failed. Please try again.');
       return { ok: false, reason: rawMsg || 'login-failed', isNew: false };
     }
-  }, [authenticated, builtLogin, syncToBackend]);
+  }, [authenticated, builtLogin, syncWhenIdentityReady]);
 
   /**
    * "Continue with Email": opens Privy's email OTP flow, then links the
@@ -300,11 +325,7 @@ function PrivyAuthContextProvider({ children }: { children: React.ReactNode }) {
     try {
       rememberPostLoginPath();
       await builtEmailLogin();
-      let result = await syncToBackend();
-      if (!result.ok && result.reason === 'missing-identity') {
-        await new Promise((r) => setTimeout(r, 400));
-        result = await syncToBackend();
-      }
+      const result = await syncWhenIdentityReady();
       if (!result.ok) reportClientError('email-signin-no-throw-fail', String(result.reason ?? 'unknown'));
       return result;
     } catch (e: unknown) {
@@ -319,7 +340,7 @@ function PrivyAuthContextProvider({ children }: { children: React.ReactNode }) {
       setError(rawMsg || 'Email sign-in failed. Please try again.');
       return { ok: false, reason: rawMsg || 'login-failed', isNew: false };
     }
-  }, [authenticated, builtEmailLogin, syncToBackend]);
+  }, [authenticated, builtEmailLogin, syncWhenIdentityReady]);
 
   const loginFn = login;
 

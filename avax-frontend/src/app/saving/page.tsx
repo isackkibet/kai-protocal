@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import {
+import { AlertTriangle,
   ArrowLeft, Users, TrendingUp, Lock, Gift, BarChart3,
   Vote, ExternalLink, RefreshCw, ChevronRight,
   CheckCircle, Clock, Shield,
@@ -24,6 +24,8 @@ const SERIF: React.CSSProperties = { fontFamily: "'Poppins', sans-serif" };
 const label: React.CSSProperties = { ...MONO, fontSize: 10, letterSpacing: 1.4, textTransform: 'uppercase', color: C.goldLight, fontWeight: 600, margin: 0 };
 
 interface SavingData {
+  /** True while the stats API serves sample data instead of real records. */
+  demo?: boolean;
   chama: {
     groupName: string; registrationNumber: string; cyclePeriodDays: number;
     contributionAmount: number; totalPoolBalanceKes: number;
@@ -140,6 +142,15 @@ export default function SavingGroupPage() {
               <RefreshCw size={15} />
             </button>
           </div>
+
+          {d.demo && (
+            <div role="note" style={{ display: 'flex', alignItems: 'flex-start', gap: 8, marginBottom: 20, padding: '10px 12px', borderRadius: 10, border: `1px solid ${C.gold}`, background: 'rgba(0,0,0,0.18)' }}>
+              <AlertTriangle size={14} color={C.gold} style={{ flexShrink: 0, marginTop: 2 }} />
+              <p style={{ fontSize: 12, color: C.paper, margin: 0, lineHeight: 1.5 }}>
+                <strong>Sample data.</strong> The figures on this page are examples, not real records.
+              </p>
+            </div>
+          )}
 
           {/* Pool balance */}
           <div style={{ marginBottom: 24 }}>

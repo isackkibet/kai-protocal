@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import {
+import { AlertTriangle,
   ArrowLeft, Store, TrendingUp,
   CreditCard, ShieldCheck, Package, ExternalLink, RefreshCw,
   ArrowUpRight, ArrowDownRight, AlertCircle,
@@ -26,6 +26,8 @@ const SERIF: React.CSSProperties = { fontFamily: "'Poppins', sans-serif" };
 const label: React.CSSProperties = { ...MONO, fontSize: 10, letterSpacing: 1.4, textTransform: 'uppercase', color: C.goldLight, fontWeight: 600, margin: 0 };
 
 interface SMEData {
+  /** True while the stats API serves sample data instead of real records. */
+  demo?: boolean;
   business: {
     businessName: string; ownerName: string; phoneNumber: string;
     category: string; location: string; cashFlowScore: number;
@@ -158,6 +160,15 @@ export default function SMEPage() {
               <RefreshCw size={15} />
             </button>
           </div>
+
+          {d.demo && (
+            <div role="note" style={{ display: 'flex', alignItems: 'flex-start', gap: 8, marginBottom: 20, padding: '10px 12px', borderRadius: 10, border: `1px solid ${C.gold}`, background: 'rgba(0,0,0,0.18)' }}>
+              <AlertTriangle size={14} color={C.gold} style={{ flexShrink: 0, marginTop: 2 }} />
+              <p style={{ fontSize: 12, color: C.paper, margin: 0, lineHeight: 1.5 }}>
+                <strong>Sample data.</strong> The figures on this page are examples, not real records.
+              </p>
+            </div>
+          )}
 
           {/* Cash flow score */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 18, marginBottom: 24, paddingBottom: 24, borderBottom: `1px solid ${C.hairline}` }}>

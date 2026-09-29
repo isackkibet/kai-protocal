@@ -11,7 +11,22 @@ export const sql = DATABASE_URL
     }) as unknown as ReturnType<typeof neon>);
 
 // Auto-initialize Kai Nursery tables in Neon Postgres & Seed Real Operational Data
-export async function initDbSchema() {
+// Schema setup + seeding only needs to happen once per server process. It
+// used to run (CREATE TABLE IF NOT EXISTS ×2 + a COUNT) on every API request.
+// A failed attempt clears the cache so the next request retries.
+let schemaReady: Promise<void> | null = null;
+
+export function initDbSchema(): Promise<void> {
+  if (!schemaReady) {
+    schemaReady = runSchemaSetup().catch((err) => {
+      schemaReady = null;
+      throw err;
+    });
+  }
+  return schemaReady;
+}
+
+async function runSchemaSetup() {
   try {
     await sql`
       CREATE TABLE IF NOT EXISTS kai_activities (
@@ -161,5 +176,6 @@ export async function initDbSchema() {
     console.log('✅ Neon Postgres schema ready for Kai Oloolua Hub');
   } catch (err) {
     console.error('⚠️ Neon DB auto-schema init note:', err);
+    throw err;
   }
 }

@@ -1,8 +1,11 @@
 import { NextResponse } from 'next/server';
 import { REGISTRY_ADDRESS } from '@/lib/addresses';
 
+// Sample data only — this route doesn't read the database yet. `demo: true`
+// makes the page label it, so it's never presented as a real group/business.
 export async function GET() {
   const data = {
+    demo: true,
     chama: {
       id: 'chama-001',
       groupName: 'Mwanzo Mpya Women Savings Chama',
