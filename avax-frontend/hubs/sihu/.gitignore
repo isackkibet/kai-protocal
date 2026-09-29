@@ -42,3 +42,6 @@ next-env.d.ts
 
 # separate local project not used by the Next.js app
 guardian/
+
+# Generated lint output — regenerate locally, never commit
+eslint-report.json
