@@ -17,6 +17,7 @@
 
 import { NextResponse } from "next/server";
 import { stkPush, usdToKes } from "@/lib/mpesa";
+import { createPendingStkTransaction } from "@/lib/mpesa/transactions";
 import { verifyPrivyUserId } from "@/lib/privy-server";
 import { verifyWalletOwnership } from "@/lib/wallet-signature";
 
@@ -85,6 +86,26 @@ export async function POST(request: Request) {
       );
     }
 
+    /*
+     * Persist what we EXPECT before returning. The M-Pesa callback is
+     * unauthenticated — Safaricom sends no signature — so the only way to know
+     * a callback refers to a real, correctly-priced purchase is to have
+     * recorded the checkoutRequestId and amount at initiation time and to
+     * confirm the callback against Safaricom afterwards.
+     * See lib/mpesa/transactions.ts for the full model.
+     */
+    const reference = await createPendingStkTransaction({
+      amountKes,
+      phoneNumber: cleanPhone,
+      checkoutRequestId: result.CheckoutRequestID,
+      merchantRequestId: result.MerchantRequestID,
+      nftId,
+      nftName,
+      wallet: ownsWallet ? String(wallet).toLowerCase() : undefined,
+      channel: "stk_push",
+      privyUserId: privyUser ?? undefined,
+    });
+
     return NextResponse.json(
       {
         checkoutRequestId: result.CheckoutRequestID,
@@ -93,6 +114,9 @@ export async function POST(request: Request) {
         nftId,
         nftName,
         message:           result.CustomerMessage,
+        // The buyer polls status with this — never with checkoutRequestId,
+        // which is a provider identifier we don't want echoed around.
+        reference,
       },
       { status: 201 },
     );
