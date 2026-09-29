@@ -10,6 +10,11 @@ const GROQ_MODEL   = process.env.GROQ_MODEL      || 'llama-3.1-8b-instant';
 const GROQ_URL     = 'https://api.groq.com/openai/v1/chat/completions';
 const GEMINI_KEY   = process.env.GEMINI_API_KEY  || '';
 const GEMINI_MODEL = process.env.GEMINI_MODEL    || 'gemini-3.6-flash';
+// NVIDIA (build.nvidia.com) — OpenAI-compatible API, used only after Gemini
+// and Groq have both failed, before falling back to the canned answers.
+const NVIDIA_API_KEY = process.env.NVIDIA_API_KEY || '';
+const NVIDIA_MODEL   = process.env.NVIDIA_MODEL   || 'openai/gpt-oss-20b';
+const NVIDIA_URL     = 'https://integrate.api.nvidia.com/v1/chat/completions';
 
 // ── Built-in KAI knowledge base (fallback when all LLMs are offline) ──────────
 const KAI_KB: { match: RegExp; answer: string }[] = [
@@ -269,6 +274,93 @@ async function callGemini(message: string, context?: WalletContext): Promise<str
   }
 }
 
+function nvidiaRequest(message: string, context: WalletContext | undefined, stream: boolean) {
+  return fetch(NVIDIA_URL, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${NVIDIA_API_KEY}`,
+    },
+    body: JSON.stringify({
+      model: NVIDIA_MODEL,
+      messages: [
+        { role: 'system', content: SYSTEM_PROMPT + contextSummary(context) },
+        { role: 'user', content: message },
+      ],
+      stream,
+      temperature: 0.3,
+      max_tokens: 1024,
+    }),
+    // NVIDIA's hosted models are slower to start than Groq, so allow longer.
+    signal: AbortSignal.timeout(20_000),
+  });
+}
+
+/** Stream from NVIDIA's OpenAI-compatible API, re-emitted in our SSE shape. */
+async function streamNvidia(message: string, context?: WalletContext): Promise<Response | null> {
+  if (!NVIDIA_API_KEY) return null;
+  try {
+    const res = await nvidiaRequest(message, context, true);
+    if (!res.ok || !res.body) return null;
+
+    const { readable, writable } = new TransformStream();
+    const writer = writable.getWriter();
+    const encoder = new TextEncoder();
+
+    (async () => {
+      const reader = res.body!.getReader();
+      const dec = new TextDecoder();
+      let buf = '';
+      let finished = false;
+      try {
+        while (!finished) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          buf += dec.decode(value, { stream: true });
+          const lines = buf.split('\n');
+          buf = lines.pop() ?? '';
+          for (const line of lines) {
+            if (!line.startsWith('data: ')) continue;
+            const data = line.slice(6).trim();
+            if (data === '[DONE]') { finished = true; break; }
+            try {
+              const token = JSON.parse(data).choices?.[0]?.delta?.content ?? '';
+              if (token) await writer.write(encoder.encode(`data: ${JSON.stringify({ token })}\n\n`));
+            } catch { /* skip unparseable SSE frame */ }
+          }
+        }
+        await writer.write(encoder.encode(`data: ${JSON.stringify({ done: true, sources: 0 })}\n\n`));
+      } finally {
+        await writer.close();
+      }
+    })();
+
+    return new Response(readable, {
+      headers: {
+        'Content-Type': 'text/event-stream',
+        'Cache-Control': 'no-cache',
+        'Connection': 'keep-alive',
+        'X-Accel-Buffering': 'no',
+      },
+    });
+  } catch {
+    return null;
+  }
+}
+
+/** Non-streaming NVIDIA call. */
+async function callNvidia(message: string, context?: WalletContext): Promise<string | null> {
+  if (!NVIDIA_API_KEY) return null;
+  try {
+    const res = await nvidiaRequest(message, context, false);
+    if (!res.ok) return null;
+    const data = await res.json();
+    return data.choices?.[0]?.message?.content ?? null;
+  } catch {
+    return null;
+  }
+}
+
 // ── POST /api/chat ─────────────────────────────────────────────────────────────
 // Accepts { message, rag, stream? }
 // When stream=true  → proxies the FastAPI /stream SSE or Gemini/Groq SSE
@@ -398,7 +490,11 @@ export async function POST(req: Request) {
         }
       }
 
-      // 4. Built-in knowledge base fallback
+      // 4. Try NVIDIA
+      const nvidiaStream = await streamNvidia(message, context);
+      if (nvidiaStream) return nvidiaStream;
+
+      // 5. Built-in knowledge base fallback
       return streamText(kaiKnowledgeFallback(message));
     }
 
@@ -470,6 +566,17 @@ export async function POST(req: Request) {
         }
       }
 
+      // Try NVIDIA
+      const nvidiaText = await callNvidia(message, context);
+      if (nvidiaText) {
+        return NextResponse.json({
+          text:          nvidiaText,
+          agent:         'KAI NVIDIA Agent',
+          rag_used:      false,
+          sources_count: 0,
+        });
+      }
+
       // Fallback
       return NextResponse.json({
         text:          kaiKnowledgeFallback(message),
@@ -478,6 +585,11 @@ export async function POST(req: Request) {
         sources_count: 0,
       });
     } catch {
+      // A Groq network error lands here — still give NVIDIA a chance.
+      const nvidiaText = await callNvidia(message, context);
+      if (nvidiaText) {
+        return NextResponse.json({ text: nvidiaText, agent: 'KAI NVIDIA Agent', rag_used: false, sources_count: 0 });
+      }
       return NextResponse.json({
         text:          kaiKnowledgeFallback(message),
         agent:         'KAI Agent (offline)',
