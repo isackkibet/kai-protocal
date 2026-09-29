@@ -1,5 +1,7 @@
 import { NextResponse } from 'next/server';
 import { askConservation } from '@/lib/conservation-data';
+import { requireRateLimit } from '@/lib/security/route-guard';
+import { readJsonBody } from '@/lib/security/input';
 
 /**
  * Ask KAI — retrieval-grounded conservation Q&A (PRD Part B §3).
@@ -11,11 +13,23 @@ import { askConservation } from '@/lib/conservation-data';
  * unsupported claims.
  */
 export async function POST(req: Request) {
-  const body = await req.json().catch(() => ({})) as { query?: string };
-  const query = body.query?.trim() ?? '';
+  // Search backends and the LLM fallback both cost money per call, so this is
+  // the endpoint a script would hammer to burn the API budget.
+  const limited = await requireRateLimit(req, [
+    { scope: 'ip', limit: 20, windowMs: 60_000 },
+  ]);
+  if (!limited.ok) return limited.response;
+
+  const body = await readJsonBody(req, 8 * 1024).catch(() => ({})) as { query?: string };
+  const query = typeof body.query === 'string' ? body.query.trim() : '';
 
   if (!query || query.length < 3) {
     return NextResponse.json({ error: 'Ask KAI needs a question of at least 3 characters.' }, { status: 400 });
+  }
+  // Bound the query so a single request cannot push a huge prompt through the
+  // retrieval + LLM path.
+  if (query.length > 1000) {
+    return NextResponse.json({ error: 'Question is too long.' }, { status: 400 });
   }
 
   const results = askConservation(query);

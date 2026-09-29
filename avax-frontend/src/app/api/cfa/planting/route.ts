@@ -5,6 +5,8 @@ import { getOrCreateDefaultForest } from '@/lib/cfa';
 import { MiningTier } from '@prisma/client';
 import { awardXp } from '@/lib/mining-engine';
 import { buildPlantingData, createConservationRecord, PLANTING_SCHEMA } from '@/lib/mrv/records';
+import { requireRateLimit } from '@/lib/security/route-guard';
+import { readJsonBody, assertNoPrivilegeEscalation, InputError } from '@/lib/security/input';
 
 /** Kai Bar points credited for a verified planting submission — change here (KAI Nuvari PRD §3). */
 const PLANTING_POINTS = 20;
@@ -40,11 +42,35 @@ export async function GET() {
 }
 
 export async function POST(req: Request) {
+  // Writes create both a planting row AND a fingerprinted MRV record, and the
+  // Kai Bar path runs a transaction with row locks. Unbounded, that is a cheap
+  // way to bloat the table and hammer the database.
+  const limited = await requireRateLimit(req, [
+    { scope: 'ip', limit: 30, windowMs: 60_000 },
+  ]);
+  if (!limited.ok) return limited.response;
+
   let body: Record<string, unknown> = {};
   try {
-    body = await req.json();
-  } catch {
-    return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
+    // Sanitised parse: rejects injection payloads and strips prototype-pollution
+    // keys, rather than trusting a raw JSON.parse of user input.
+    body = (await readJsonBody(req)) as Record<string, unknown>;
+  } catch (err) {
+    return NextResponse.json(
+      { error: err instanceof InputError ? err.message : 'Invalid JSON body' },
+      { status: 400 },
+    );
+  }
+
+  // Conservation records are meant to be tamper-evident, so a client must never
+  // be able to assert a trust-level field when creating one.
+  try {
+    assertNoPrivilegeEscalation(body);
+  } catch (err) {
+    if (err instanceof InputError) {
+      return NextResponse.json({ error: err.message }, { status: 400 });
+    }
+    throw err;
   }
 
   const speciesId = String(body.speciesId ?? '').trim();
@@ -55,6 +81,22 @@ export async function POST(req: Request) {
 
   if (!speciesId || numberPlanted <= 0) {
     return NextResponse.json({ error: 'speciesId and a positive numberPlanted are required' }, { status: 400 });
+  }
+
+  // Upper bound: a plausible nursery/field planting. Without a ceiling, one
+  // request could claim 10^15 trees and poison any downstream total.
+  if (numberPlanted > 1_000_000) {
+    return NextResponse.json({ error: 'numberPlanted exceeds the maximum plausible value' }, { status: 400 });
+  }
+
+  // Reject an unparseable date rather than silently storing Invalid Date,
+  // which would break the MRV record's canonical hash determinism.
+  if (Number.isNaN(plantedAt.getTime())) {
+    return NextResponse.json({ error: 'plantedAt is not a valid date' }, { status: 400 });
+  }
+  // And not in the future.
+  if (plantedAt.getTime() > Date.now() + 60_000) {
+    return NextResponse.json({ error: 'plantedAt cannot be in the future' }, { status: 400 });
   }
 
   const prisma = await getPrisma();

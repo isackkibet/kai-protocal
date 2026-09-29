@@ -1,5 +1,7 @@
 import { NextResponse } from 'next/server';
 import { VAULT_ADDRESSES, AMM_ADDRESS, EXPLORER_BASE } from '@/lib/addresses';
+import { requireRateLimit } from '@/lib/security/route-guard';
+import { readJsonBody } from '@/lib/security/input';
 
 // Vercel Hobby plan cap is 300s
 export const maxDuration = 300;
@@ -367,10 +369,30 @@ async function callNvidia(message: string, context?: WalletContext): Promise<str
 // When stream=false → calls /chat or direct LLM for a JSON response
 export async function POST(req: Request) {
   try {
-    const { message, rag = true, stream = true, context } = await req.json();
+    /*
+     * Every message here can cost real money: the fallback chain is
+     * Groq → Gemini → NVIDIA, and each is a paid API call. An unauthenticated
+     * script looping this endpoint is a direct financial attack, so it gets a
+     * per-IP budget in addition to the global proxy limit.
+     */
+    const limited = await requireRateLimit(req, [
+      { scope: 'ip', limit: 20, windowMs: 60_000 },
+    ]);
+    if (!limited.ok) return limited.response;
 
-    if (!message) {
+    // Sanitised parse — rejects injection payloads and prototype-pollution keys.
+    const { message, rag = true, stream = true, context } = await readJsonBody(req, 32 * 1024) as {
+      message?: string;
+      rag?: boolean;
+      stream?: boolean;
+      context?: WalletContext;
+    };
+
+    if (!message || typeof message !== 'string') {
       return NextResponse.json({ error: 'Message is required' }, { status: 400 });
+    }
+    if (message.length > 8000) {
+      return NextResponse.json({ error: 'Message is too long.' }, { status: 400 });
     }
 
     // Personal questions ("what's my portfolio worth", "best yield for me")
