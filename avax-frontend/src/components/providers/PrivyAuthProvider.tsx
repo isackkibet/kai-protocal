@@ -94,7 +94,11 @@ function PrivyAuthContextProvider({ children }: { children: React.ReactNode }) {
 
   // Privy user identity → app fields.
   const privyUserId = (user?.id as string | undefined) ?? null;
-  const email = user?.email?.address ?? null;
+  // A Google login stores its email on the linked Google account, not on
+  // `user.email` (that is only set by email/OTP login). Reading only
+  // `user.email` left Google users with no email, so syncToBackend bailed
+  // with "missing-identity" and the account was never saved.
+  const email = user?.email?.address ?? user?.google?.email ?? null;
   const name = user?.google?.name ?? user?.email?.address ?? null;
   const authProvider = user?.google ? 'GOOGLE' : 'EMAIL';
 
