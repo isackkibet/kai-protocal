@@ -268,13 +268,32 @@ import crypto from "crypto";
  * Call with the raw request body (as a string/Buffer) and the
  * x-paystack-signature header value.
  */
+/**
+ * Verify the `x-paystack-signature` HMAC.
+ *
+ * SECURITY: this must be a constant-time comparison. `hash === signature`
+ * short-circuits at the first differing character, so an attacker can recover
+ * the valid HMAC for an arbitrary payload one character at a time by timing
+ * the response. `timingSafeEqual` compares every byte regardless.
+ *
+ * Both sides are hex digests of identical length when valid, but a malformed
+ * header of a different length makes `timingSafeEqual` throw — so lengths are
+ * checked first and unequal lengths are rejected outright.
+ */
 export function verifyWebhookSignature(
   rawBody: string,
   signature: string,
 ): boolean {
-  const hash = crypto
+  const expected = crypto
     .createHmac("sha512", SECRET_KEY)
     .update(rawBody)
     .digest("hex");
-  return hash === signature;
+
+  if (typeof signature !== "string" || signature.length !== expected.length) {
+    return false;
+  }
+  return crypto.timingSafeEqual(
+    Buffer.from(expected, "hex"),
+    Buffer.from(signature, "hex"),
+  );
 }
