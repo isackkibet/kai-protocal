@@ -91,18 +91,41 @@ export async function POST(req: Request) {
 
   try {
     // ── idempotent: reuse an existing user for this Privy id / email ──
-    let user: KaiUserWithWallets | null = await prisma.kaiUser.findFirst({
-      where: { OR: [{ privyUserId }, { email }] },
-      include: { wallets: true },
-    });
+    // Prefer the Privy-id match, so an email-only row can't shadow the
+    // account this login is already bound to.
+    let user: KaiUserWithWallets | null =
+      (await prisma.kaiUser.findUnique({ where: { privyUserId }, include: { wallets: true } })) ??
+      (await prisma.kaiUser.findUnique({ where: { email }, include: { wallets: true } }));
 
     let isNew = false;
     if (!user) {
-      user = await prisma.kaiUser.create({
-        data: { name, email, privyUserId, authProvider },
+      try {
+        user = await prisma.kaiUser.create({
+          data: { name, email, privyUserId, authProvider },
+          include: { wallets: true },
+        });
+        isNew = true;
+      } catch (e) {
+        // Sign-in fires several onboard calls at once (login handler, the
+        // auto-sync effect, the wallet-attach effect). Two can both miss the
+        // lookup above and race to create; the loser hits the unique
+        // constraint. The row now exists, so just use it.
+        if ((e as { code?: string })?.code !== 'P2002') throw e;
+        user = await prisma.kaiUser.findFirst({
+          where: { OR: [{ privyUserId }, { email }] },
+          include: { wallets: true },
+        });
+        if (!user) throw e;
+      }
+    } else if (!user.privyUserId) {
+      // Found by email but never tied to a Privy login (older accounts).
+      // Link it, or every Privy-authenticated route keeps saying
+      // "Finish signing up" for this person.
+      user = await prisma.kaiUser.update({
+        where: { id: user.id },
+        data: { privyUserId },
         include: { wallets: true },
       });
-      isNew = true;
     }
 
     // ── persist the wallet if a valid address is available yet (create or

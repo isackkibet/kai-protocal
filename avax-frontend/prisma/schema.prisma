@@ -69,6 +69,27 @@ model KaiWallet {
   @@map("kai_wallets")
 }
 
+/// Someone who joined by connecting a browser wallet (MetaMask/Core) rather
+/// than signing in with email/Google — KaiUser requires an email, so these
+/// people were never recorded anywhere. Each row is proven with a signed
+/// ownership challenge (lib/wallet-signature.ts), so the count can't be
+/// inflated with made-up addresses. If the same address later attaches to a
+/// KaiUser (kai_wallets), the admin view counts that person once, as a member.
+model WalletMember {
+  id          String   @id @default(cuid())
+  /// Lowercased 0x address.
+  address     String   @unique
+  /// Wallet app used to connect, e.g. "MetaMask", "Core".
+  connector   String?
+  firstSeenAt DateTime @default(now())
+  lastSeenAt  DateTime @default(now())
+  /// Number of verified connects — a rough activity signal.
+  visits      Int      @default(1)
+
+  @@index([firstSeenAt])
+  @@map("wallet_members")
+}
+
 // ═══════════════════════════════════════════════════════════════
 //  KAI BAR — REWARDS & AIRDROP (PRD 2)
 // ═══════════════════════════════════════════════════════════════

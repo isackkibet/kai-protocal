@@ -26,8 +26,19 @@ interface Member {
   walletAddress: string | null;
 }
 
+interface WalletOnlyMember {
+  address: string;
+  connector: string | null;
+  firstSeenAt: string;
+  lastSeenAt: string;
+  visits: number;
+}
+
 interface Summary {
   total: number;
+  /** Email/Google accounts (KaiUser rows); `total` also includes wallet-only. */
+  accounts?: number;
+  walletOnly?: number;
   byProvider: Record<string, number>;
   withWallet: number;
   withoutWallet: number;
@@ -50,6 +61,7 @@ export default function AdminMembersPage() {
   });
   const [members, setMembers] = useState<Member[] | null>(null);
   const [summary, setSummary] = useState<Summary | null>(null);
+  const [walletOnly, setWalletOnly] = useState<WalletOnlyMember[]>([]);
   const [loading, setLoading] = useState(false);
   const [err, setErr] = useState('');
 
@@ -62,11 +74,13 @@ export default function AdminMembersPage() {
       if (r.ok) {
         setMembers(d.members ?? []);
         setSummary(d.summary ?? null);
+        setWalletOnly(d.walletOnlyMembers ?? []);
         localStorage.setItem('kai-admin-key', adminKey);
       } else {
         setErr(String(d.error ?? 'Unauthorized — check the admin key'));
         setMembers(null);
         setSummary(null);
+        setWalletOnly([]);
       }
     } catch {
       setErr('Network error');
@@ -97,7 +111,7 @@ export default function AdminMembersPage() {
           Members <span style={{ color: C.goldLight }}>Admin</span>
         </h1>
         <p style={{ fontSize: 13, color: C.inkLight, margin: '8px 0 0', maxWidth: 560, lineHeight: 1.6 }}>
-          Everyone who has actually completed sign-in and been saved to the database, broken down by how they joined.
+          Everyone who has actually completed sign-in and been saved to the database, broken down by how they joined: email, Google, or a browser wallet on its own.
         </p>
 
         <section style={{ marginTop: 28, display: 'flex', gap: 12, alignItems: 'center', flexWrap: 'wrap' }}>
@@ -129,6 +143,10 @@ export default function AdminMembersPage() {
             <div style={{ padding: '16px', border: `1px solid ${C.hairline}`, borderRadius: 12 }}>
               <p style={label}>Via Google</p>
               <p style={{ fontSize: 28, fontWeight: 700, margin: '6px 0 0', fontFamily: 'var(--font-plex-mono), monospace' }}>{summary.byProvider.GOOGLE ?? 0}</p>
+            </div>
+            <div style={{ padding: '16px', border: `1px solid ${C.hairline}`, borderRadius: 12 }}>
+              <p style={label}>Wallet only</p>
+              <p style={{ fontSize: 28, fontWeight: 700, margin: '6px 0 0', fontFamily: 'var(--font-plex-mono), monospace' }}>{summary.walletOnly ?? 0}</p>
             </div>
             <div style={{ padding: '16px', border: `1px solid ${C.hairline}`, borderRadius: 12 }}>
               <p style={label}>Wallet attached</p>
@@ -174,6 +192,32 @@ export default function AdminMembersPage() {
                 </div>
               );
             })}
+          </section>
+        )}
+
+        {members && walletOnly.length > 0 && (
+          <section style={{ marginTop: 32 }}>
+            <p style={label}>Joined with a wallet only</p>
+            {walletOnly.map(w => (
+              <div key={w.address}
+                style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '13px 0', borderBottom: `1px solid ${C.hairline}` }}>
+                <div style={{ width: 28, flexShrink: 0, display: 'flex', justifyContent: 'center' }}>
+                  <Wallet size={16} color={C.inkLight} />
+                </div>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <p style={{ fontSize: 13, fontWeight: 700, margin: 0, fontFamily: 'var(--font-plex-mono), monospace', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    {w.address}
+                  </p>
+                  <p style={{ fontSize: 11.5, color: C.inkLight, margin: '2px 0 0' }}>
+                    {w.connector ?? 'Browser wallet'} · {w.visits} {w.visits === 1 ? 'visit' : 'visits'}
+                  </p>
+                </div>
+                <div style={{ textAlign: 'right', flexShrink: 0, fontSize: 11, color: C.inkLight, fontFamily: 'var(--font-plex-mono), monospace' }}>
+                  <p style={{ margin: 0 }}>Joined {fc(w.firstSeenAt)}</p>
+                  <p style={{ margin: '2px 0 0' }}>Last seen {fc(w.lastSeenAt)}</p>
+                </div>
+              </div>
+            ))}
           </section>
         )}
       </div>
