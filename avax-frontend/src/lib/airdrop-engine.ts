@@ -305,9 +305,14 @@ export function maskName(name: string): string {
  */
 export async function getAirdropSummary(userIdOrPrivyId: string): Promise<AirdropSummary> {
   const prisma = await getPrisma();
-  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 
-    (process.env.NEXT_PUBLIC_VERCEL_URL ? `https://${process.env.NEXT_PUBLIC_VERCEL_URL}` : 
-    (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'https://kai.network'));
+  // Referral links must point at the production domain. VERCEL_URL is the
+  // per-deployment address (avax-frontend-<hash>-….vercel.app), which Privy
+  // rejects as an origin, so invitees landing there could never sign in.
+  // VERCEL_PROJECT_PRODUCTION_URL is Vercel's stable production domain.
+  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL ||
+    (process.env.VERCEL_PROJECT_PRODUCTION_URL ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}` :
+    (process.env.NEXT_PUBLIC_VERCEL_URL ? `https://${process.env.NEXT_PUBLIC_VERCEL_URL}` :
+    (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'https://kai.network')));
 
   if (!prisma) {
     const mem = getOrCreateInMemoryUser(userIdOrPrivyId);

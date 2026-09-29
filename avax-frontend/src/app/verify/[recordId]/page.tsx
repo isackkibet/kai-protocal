@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
+import { notFound } from 'next/navigation';
 import { ArrowLeft, ShieldCheck, ShieldAlert, Clock, Link2 } from 'lucide-react';
 import { getPrisma } from '@/lib/db';
 import { checkRecordIntegrity } from '@/lib/mrv/records';
@@ -57,14 +58,8 @@ export default async function VerifyRecordPage({ params }: { params: Promise<{ r
       }).catch(() => null)
     : null;
 
-  if (!record) {
-    return (
-      <Shell>
-        <p style={{ ...SERIF, fontSize: 26, fontWeight: 600, margin: 0 }}>Record not found</p>
-        <p style={{ color: C.inkLight, marginTop: 10 }}>Check the link. Record IDs are case-sensitive.</p>
-      </Shell>
-    );
-  }
+  // Real 404 status (not a 200 page that says "not found").
+  if (!record) notFound();
 
   const integrity = await checkRecordIntegrity(prisma!, recordId);
   const latest = record.versions[record.versions.length - 1];
