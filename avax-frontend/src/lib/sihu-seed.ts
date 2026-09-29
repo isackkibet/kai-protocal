@@ -80,13 +80,15 @@ Economic value comes later: verified records become the inputs for conservation 
   {
     id: 'p3',
     slug: 'mau-forest-cfa-carbon-credits-avalanche',
-    title: 'Mau Forest CFA Bases 8,420 Carbon Credits on Avalanche',
-    summary: 'Patrol logs verified and anchored on-chain. A concrete example of verifiable conservation impact.',
-    body: `A Mau Forest CFA turned 18 months of patrol logs and planting records into 8,420 verified carbon credits. The workflow matched the hub's verification path: conservation activity captured in the CFA dashboard → structured record → evidence (photos, GPS, logs) → human verification → records anchored on Avalanche as verification proofs.
+    title: 'How a CFA Planting Record Could Become Finance-Ready Proof',
+    summary: 'An illustrative walkthrough of the planned verification path. No record has completed it yet.',
+    body: `This is an explainer, not a news report: no Community Forest Association record has yet been verified through Hedera Guardian or anchored on Avalanche. It describes the path the hub is being built to support.
 
-Importantly, the ledger of anchors holds hashes and provenance — not the underlying forest data, which stays off-chain. This is the selective anchoring model: ordinary browsing, likes, and reads stay off-chain; verification proofs are what get anchored.
+Take a simple example: a CFA plants 500 croton seedlings. The activity is captured in the CFA dashboard as a structured record. The server turns that record into canonical JSON and computes a SHA-256 fingerprint, so any later change to the data (500 becoming 900, say) no longer matches and is detected. Corrections never overwrite the original; they become a new version that points back to the previous fingerprint.
 
-The CFA's own dashboard remains the source of operational truth. The Information Hub and its blockchain layer organize, verify, and make that work traceable — they do not replace the people doing it. AI-assisted article; figures verified against the on-chain anchor log by an editor.`,
+The record is then checked against a published methodology by a Guardian policy workflow, which can issue a verifiable credential. Only after that would a compact proof (the record id, its fingerprint, the methodology and the version) be anchored on Avalanche as a timestamp. The underlying forest data stays off-chain; only the proof is anchored.
+
+The CFA's own dashboard remains the source of operational truth. The hub and its blockchain layer are meant to organize, verify and make that work traceable, not to replace the people doing it. Figures in this piece are illustrative.`,
     contentType: 'ARTICLE',
     category: 'CLIMATE',
     language: 'EN',

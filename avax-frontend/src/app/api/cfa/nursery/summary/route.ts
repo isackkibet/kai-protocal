@@ -44,18 +44,29 @@ export async function GET() {
       ? survivalRecords.reduce((s, r) => s + r.survivalRate, 0) / survivalRecords.length
       : null;
 
+  // Public verify page for plantings that have an MRV conservation record.
+  const mrvRecords = plantingRecords.length
+    ? await prisma.conservationRecord.findMany({
+        where: { sourceTable: 'planting_records', sourceId: { in: plantingRecords.map((r) => r.id) } },
+        select: { id: true, sourceId: true },
+      }).catch(() => [])
+    : [];
+  const verifyIdByPlanting = new Map(mrvRecords.map((m) => [m.sourceId, m.id]));
+
   const recentActivity = [
     ...inventoryEntries.map((e) => ({
       id: e.id,
       kind: 'inventory' as const,
       label: `${e.activityType === 'ORDERED' ? 'Ordered' : e.activityType === 'SOLD' ? 'Sold' : 'Planted'} ${e.quantity} ${e.species?.name ?? 'seedlings'}`,
       at: e.occurredAt,
+      verifyId: null as string | null,
     })),
     ...plantingRecords.map((r) => ({
       id: r.id,
       kind: 'planting' as const,
       label: `Planted ${r.numberPlanted} ${r.species.name}${r.activity ? ` — ${r.activity}` : ''}`,
       at: r.plantedAt,
+      verifyId: verifyIdByPlanting.get(r.id) ?? null,
     })),
   ]
     .sort((a, b) => new Date(b.at).getTime() - new Date(a.at).getTime())

@@ -4,6 +4,7 @@ import { verifyPrivyUserId } from '@/lib/privy-server';
 import { getOrCreateDefaultForest } from '@/lib/cfa';
 import { MiningTier } from '@prisma/client';
 import { awardXp } from '@/lib/mining-engine';
+import { buildPlantingData, createConservationRecord, PLANTING_SCHEMA } from '@/lib/mrv/records';
 
 /** Kai Bar points credited for a verified planting submission — change here (KAI Nuvari PRD §3). */
 const PLANTING_POINTS = 20;
@@ -87,6 +88,34 @@ export async function POST(req: Request) {
       },
     });
 
+    // MRV integrity layer (Canuvari PRD §4): the same event as a canonical,
+    // SHA-256-fingerprinted, versioned conservation record. Linked to this
+    // planting row so it can never be recorded twice. Best-effort: if it
+    // fails, the planting is still saved and the response says so.
+    let mrvRecord: { id: string; dataHash: string; verificationStatus: string } | null = null;
+    try {
+      const created = await createConservationRecord(prisma, {
+        forestId: forest.id,
+        recordType: 'PLANTING',
+        schemaVersion: PLANTING_SCHEMA,
+        data: buildPlantingData({
+          forest,
+          species,
+          quantity: numberPlanted,
+          plantedAt,
+          activity,
+          memberId: member?.id ?? null,
+          submitterName: member ? member.name : submittedName,
+        }),
+        sourceTable: 'planting_records',
+        sourceId: record.id,
+        memberId: member?.id ?? null,
+      });
+      mrvRecord = { id: created.id, dataHash: created.dataHash, verificationStatus: created.verificationStatus };
+    } catch (e) {
+      console.error('[cfa/planting] conservation record not created', e);
+    }
+
     await prisma.treeSpecies.update({
       where: { id: speciesId },
       data: { quantityPlanted: { increment: numberPlanted }, quantityAvailable: { decrement: Math.min(numberPlanted, species.quantityAvailable) } },
@@ -117,7 +146,7 @@ export async function POST(req: Request) {
       }
     }
 
-    return NextResponse.json({ ok: true, record, pointsEarned });
+    return NextResponse.json({ ok: true, record, pointsEarned, mrvRecord });
   } catch (e: unknown) {
     console.error('[cfa/planting] failed', e);
     return NextResponse.json({ error: 'Failed to record planting' }, { status: 500 });

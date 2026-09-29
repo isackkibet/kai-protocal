@@ -467,6 +467,7 @@ model CommunityForest {
   plantingRecords  PlantingRecord[]
   survivalRecords  SurvivalRecord[]
   nurseryEntries   NurseryInventoryEntry[]
+  conservationRecords ConservationRecord[]
 
   @@map("community_forests")
 }
@@ -696,6 +697,95 @@ enum NurseryActivityType {
   ORDERED
   PLANTED
   SOLD
+}
+
+// ── MRV INTEGRITY LAYER (Canuvari MRV PRD §4–§6) ─────────────────
+// One table for every kind of conservation record: the full JSON lives in
+// record_versions (append-only), each version fingerprinted with SHA-256 of
+// its canonical JSON and chained to the previous version's hash. Status is
+// only ever written by trusted backend code (lib/mrv/records.ts) — no API
+// route accepts a status from the client.
+
+/// Verification lifecycle, driven by the Hedera Guardian result (PRD §6.1).
+enum RecordVerificationStatus {
+  SUBMITTED
+  UNDER_REVIEW
+  VERIFIED
+  REJECTED
+}
+
+/// Proof-anchoring lifecycle, driven by the Avalanche result — independent
+/// of verification: a record can be VERIFIED while its anchor failed.
+enum RecordAnchorStatus {
+  NOT_ANCHORED
+  ANCHOR_PENDING
+  ANCHORED
+  ANCHOR_FAILED
+}
+
+model ConservationRecord {
+  id                 String   @id @default(cuid())
+  forestId           String
+  /// What kind of record this is, e.g. "PLANTING".
+  recordType         String
+  /// Shape of `data` in every version, e.g. "planting/v1".
+  schemaVersion      String
+  /// Methodology slug the record will be verified against, e.g. "jaza-miti".
+  methodology        String?
+  /// Latest version number and its fingerprint (mirrors the newest row in
+  /// record_versions so lists don't need a join).
+  currentVersion     Int      @default(1)
+  dataHash           String
+  verificationStatus RecordVerificationStatus @default(SUBMITTED)
+  anchorStatus       RecordAnchorStatus       @default(NOT_ANCHORED)
+  /// Reference IDs Guardian returns — Guardian's own data is not copied here.
+  guardianPolicyId   String?
+  guardianDocumentId String?
+  /// Avalanche Fuji transaction that anchored the proof.
+  avalancheTxHash    String?
+  anchoredAt         DateTime?
+  /// Operational row this record was created from, e.g.
+  /// ("planting_records", <PlantingRecord.id>), so one event is never
+  /// recorded twice.
+  sourceTable        String?
+  sourceId           String?
+  submittedByMemberId String?
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  forest             CommunityForest @relation(fields: [forestId], references: [id], onDelete: Restrict)
+  versions           RecordVersion[]
+
+  @@unique([sourceTable, sourceId])
+  @@index([forestId])
+  @@index([recordType])
+  @@index([verificationStatus])
+  @@map("conservation_records")
+}
+
+/// Immutable history of a conservation record. Rows are never updated or
+/// deleted (a database trigger enforces this); a correction adds version
+/// n+1 whose previousHash is version n's dataHash.
+model RecordVersion {
+  id                String   @id @default(cuid())
+  recordId          String
+  version           Int
+  /// Full record JSON exactly as it was hashed.
+  data              Json
+  /// SHA-256 (hex) of the canonical JSON of `data`.
+  dataHash          String
+  /// dataHash of the previous version; null for version 1.
+  previousHash      String?
+  /// Why this version exists, e.g. "initial submission", "count corrected".
+  reason            String?
+  createdByMemberId String?
+  createdAt         DateTime @default(now())
+
+  record            ConservationRecord @relation(fields: [recordId], references: [id], onDelete: Restrict)
+
+  @@unique([recordId, version])
+  @@index([dataHash])
+  @@map("record_versions")
 }
 
 // ═══════════════════════════════════════════════════════════════

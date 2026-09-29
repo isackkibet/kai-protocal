@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
+import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Sprout, Warehouse, Leaf, Tag, HeartPulse, Plus, X, Loader2,
@@ -43,7 +44,7 @@ interface NurserySummary {
     speciesForSale: number;
     survivalRate: number | null;
   };
-  recentActivity: { id: string; kind: 'inventory' | 'planting'; label: string; at: string }[];
+  recentActivity: { id: string; kind: 'inventory' | 'planting'; label: string; at: string; verifyId?: string | null }[];
   species: Species[];
 }
 
@@ -161,7 +162,8 @@ export default function NurseryTab() {
         showToast(d.error ?? 'Something went wrong');
         return false;
       }
-      showToast(d.pointsEarned ? `Saved. +${d.pointsEarned} Kai Bar earned!` : 'Saved');
+      const fingerprinted = d.mrvRecord ? ' Record fingerprinted.' : '';
+      showToast((d.pointsEarned ? `Saved. +${d.pointsEarned} Kai Bar earned!` : 'Saved.') + fingerprinted);
       setModal(null);
       await load();
       return true;
@@ -242,6 +244,11 @@ export default function NurseryTab() {
         <div key={a.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 0', borderBottom: `1px solid ${C.hairline}` }}>
           <ClipboardList size={14} color={a.kind === 'planting' ? '#7DC383' : C.goldLight} />
           <span style={{ flex: 1, fontSize: 12.5, color: C.paperDim }}>{a.label}</span>
+          {a.verifyId && (
+            <Link href={`/verify/${a.verifyId}`} style={{ ...MONO, fontSize: 10, color: C.goldLight, textDecoration: 'none' }}>
+              Verify
+            </Link>
+          )}
           <span style={{ ...MONO, fontSize: 10, color: C.inkLight }}>
             {new Date(a.at).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
           </span>
