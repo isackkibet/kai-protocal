@@ -12,6 +12,7 @@
 
 import { NextResponse } from 'next/server';
 import { walletAddress } from '@/lib/addresses';
+import { verifyWalletOwnership } from '@/lib/wallet-signature';
 
 const OWNER = walletAddress(process.env.WALLET_ADDRESS)?.toLowerCase() ?? '';
 
@@ -40,15 +41,33 @@ const demos: PendingPayment[] = [
 demos.forEach(d => pendingPayments.set(d.id, d));
 
 // ── Auth guard ──────────────────────────────────────────────────────────────
-function isOwner(req: Request) {
-  const w = req.headers.get('x-wallet-address') ?? '';
-  return w.toLowerCase() === OWNER;
+/*
+ * SECURITY: this previously compared an `x-wallet-address` request header
+ * against the owner wallet. Any client can send any header, so the guard was
+ * effectively "send the right header value" — no proof of key ownership at
+ * all. It is now backed by a real signature challenge from
+ * lib/wallet-signature.ts, which verifies a signed nonce against the address.
+ *
+ * Keep it that way: never treat a self-declared header as identity.
+ */
+async function isOwner(req: Request): Promise<boolean> {
+  const wallet = (req.headers.get('x-wallet-address') ?? '').toLowerCase();
+  if (!wallet || !OWNER || wallet !== OWNER) return false;
+
+  // Require a fresh signature over the request path, proving control of the
+  // private key for that address.
+  const ok = await verifyWalletOwnership(
+    wallet,
+    req.headers.get('x-wallet-signature') ?? '',
+    Number(req.headers.get('x-wallet-timestamp') ?? '0'),
+  );
+  return ok;
 }
 
 // ── GET ─────────────────────────────────────────────────────────────────────
 export async function GET(req: Request) {
-  if (!isOwner(req)) {
-    return NextResponse.json({ error: 'Owner wallet required' }, { status: 403 });
+  if (!(await isOwner(req))) {
+    return NextResponse.json({ error: 'Owner signature required' }, { status: 403 });
   }
   const { searchParams } = new URL(req.url);
   const statusFilter = searchParams.get('status') ?? 'all';
@@ -71,8 +90,8 @@ export async function GET(req: Request) {
 
 // ── POST ────────────────────────────────────────────────────────────────────
 export async function POST(req: Request) {
-  if (!isOwner(req)) {
-    return NextResponse.json({ error: 'Owner wallet required' }, { status: 403 });
+  if (!(await isOwner(req))) {
+    return NextResponse.json({ error: 'Owner signature required' }, { status: 403 });
   }
 
   const body = await req.json();
