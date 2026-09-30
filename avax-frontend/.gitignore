@@ -42,3 +42,6 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Voice-agent audit log: runtime data (wallets, questions, plans), never commit
+.agent-audit.jsonl

@@ -22,6 +22,9 @@
   "dependencies": {
     "@avalanche-sdk/chainkit": "0.3.13",
     "@avalanche-sdk/client": "0.1.2",
+    "@langchain/core": "^1.2.13",
+    "@langchain/google-genai": "^2.3.2",
+    "@langchain/openai": "^1.6.0",
     "@prisma/client": "^6.19.3",
     "@privy-io/react-auth": "^3.40.0",
     "@privy-io/server-auth": "^1.32.5",
@@ -38,6 +41,7 @@
     "react-dom": "19.2.8",
     "viem": "^2.55.19",
     "wagmi": "^3.7.6",
+    "zod": "^3.25.76",
     "zustand": "^5.0.15"
   },
   "devDependencies": {

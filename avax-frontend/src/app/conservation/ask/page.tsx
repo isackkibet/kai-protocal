@@ -7,6 +7,8 @@ import { Sparkles, Send, ExternalLink, Globe2 } from 'lucide-react';
 import ConservationShell from '@/components/conservation/ConservationShell';
 import { HUB_THEME, labelStyle, MONO, SERIF, SANS } from '@/lib/hub-theme';
 import type { AskKaiResult } from '@/lib/conservation-data';
+import { recentHistory } from '@/lib/ai/client';
+import { formatChat } from '@/lib/formatChat';
 
 interface Message {
   role: 'user' | 'kai';
@@ -39,7 +41,8 @@ export default function AskPage() {
       const r = await fetch('/api/conservation/ask', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ query: clean }),
+        // `messages` is the conversation before this question: the brain's memory.
+        body: JSON.stringify({ query: clean, history: recentHistory(messages) }),
       });
       const d = await r.json();
       if (!r.ok) throw new Error(d.error || 'Ask KAI failed.');
@@ -109,7 +112,9 @@ export default function AskPage() {
                     <span style={{ ...MONO, fontSize: 9, letterSpacing: 1, textTransform: 'uppercase', color: HUB_THEME.pineLight }}>Grounded in hub content</span>
                   )}
                 </div>
-                <p style={{ ...SANS, fontSize: 15, color: 'rgba(246,242,231,0.88)', lineHeight: 1.75, margin: '0 0 14px' }}>{m.text}</p>
+                {/* KAI answers use light markdown; formatChat escapes HTML first. */}
+                <div style={{ ...SANS, fontSize: 15, color: 'rgba(246,242,231,0.88)', lineHeight: 1.75, margin: '0 0 14px' }}
+                  dangerouslySetInnerHTML={{ __html: formatChat(m.text) }} />
 
                 {m.results && m.results.length > 0 && (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>

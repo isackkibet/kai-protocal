@@ -16,6 +16,8 @@ import { avalancheFuji } from 'wagmi/chains';
 import { parseUnits } from 'viem';
 import { ERC20_ABI } from '@/lib/erc20abi';
 import { buildOwnershipChallenge } from '@/lib/wallet-signature';
+import { usePrivyAuth } from '@/lib/privy-auth';
+import { authHeader, recentHistory } from '@/lib/ai/client';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -156,6 +158,11 @@ export default function VoiceAgentPage() {
   const { signMessageAsync } = useSignMessage();
 
   const [messages, setMessages] = useState<Msg[]>([{ role: 'ai', text: WELCOME }]);
+  // Live copy of the conversation for the brain's memory: speech callbacks
+  // are registered once and would otherwise see the list as it was then.
+  const { getAccessToken } = usePrivyAuth();
+  const messagesRef = useRef<Msg[]>(messages);
+  useEffect(() => { messagesRef.current = messages; }, [messages]);
   const [micState, setMicState] = useState<MicState>('idle');
   const [speakOn, setSpeakOn] = useState(true);
   const [autoReopen, setAutoReopen] = useState(true);
@@ -409,10 +416,13 @@ export default function VoiceAgentPage() {
     setMessages((p) => [...p, { role: 'ai', text: '', streaming: true }]);
 
     try {
+      // Earlier turns, minus this question if the list already holds it.
+      const earlier = messagesRef.current.filter((m) => !m.streaming);
+      if (earlier.length && earlier[earlier.length - 1].role === 'user' && earlier[earlier.length - 1].text === text) earlier.pop();
       const res = await fetch('/api/agent', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message: text, wallet: walletAddress || undefined, terse: true }),
+        headers: { 'Content-Type': 'application/json', ...(await authHeader(getAccessToken)) },
+        body: JSON.stringify({ message: text, wallet: walletAddress || undefined, terse: true, history: recentHistory(earlier) }),
       });
       if (!res.ok || !res.body) throw new Error('bad response');
 

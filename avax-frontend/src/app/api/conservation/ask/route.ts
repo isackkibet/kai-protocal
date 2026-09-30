@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { askConservation } from '@/lib/conservation-data';
 import { requireRateLimit } from '@/lib/security/route-guard';
 import { readJsonBody } from '@/lib/security/input';
+import { runKai } from '@/lib/ai/brain';
 
 /**
  * Ask KAI — retrieval-grounded conservation Q&A (PRD Part B §3).
@@ -20,7 +21,7 @@ export async function POST(req: Request) {
   ]);
   if (!limited.ok) return limited.response;
 
-  const body = await readJsonBody(req, 8 * 1024).catch(() => ({})) as { query?: string };
+  const body = await readJsonBody(req, 64 * 1024).catch(() => ({})) as { query?: string; history?: unknown };
   const query = typeof body.query === 'string' ? body.query.trim() : '';
 
   if (!query || query.length < 3) {
@@ -43,12 +44,27 @@ export async function POST(req: Request) {
   }
 
   const top = results[0];
-  const answer = top.kind === 'methodology'
+  let answer = top.kind === 'methodology'
     ? `The most relevant result on the hub is the ${top.title} methodology. ${top.summary}`
     : `The most relevant result on the hub is "${top.title}" (${top.source}). ${top.summary}`;
+  let aiWritten = false;
+
+  // The shared KAI brain writes a real answer from the same hub content (its
+  // search_knowledge tool) and names the titles it used. The template answer
+  // above stays as the fallback if no model is reachable.
+  try {
+    const ai = await runKai({ message: query, history: body.history, mode: 'ask', privyUserId: null });
+    if (ai.text && ai.toolsUsed.includes('search_knowledge')) {
+      answer = ai.text;
+      aiWritten = true;
+    }
+  } catch {
+    /* keep the template answer */
+  }
 
   return NextResponse.json({
     answer,
+    aiWritten,
     results,
     grounded: true,
     note: 'Answered from indexed hub content with source links. Unsupported questions trigger the external-search fallback rather than invention.',

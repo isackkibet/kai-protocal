@@ -7,6 +7,8 @@ import {
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
 import { formatChat } from '@/lib/formatChat';
+import { usePrivyAuth } from '@/lib/privy-auth';
+import { authHeader, recentHistory } from '@/lib/ai/client';
 
 const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_API_URL || 'http://localhost:8000';
 
@@ -31,6 +33,7 @@ const QUICK_PROMPTS = [
 interface Msg { role: 'ai' | 'user'; text: string; agent?: string; isRag?: boolean; }
 
 export default function AVAXChatPage() {
+  const { getAccessToken } = usePrivyAuth();
   const [messages, setMessages] = useState<Msg[]>([
     { role: 'ai', text: WELCOME, agent: 'KAI AVAX Agent' },
   ]);
@@ -64,10 +67,11 @@ export default function AVAXChatPage() {
     setLoading(true);
 
     try {
+      // `messages` is the conversation before this question: the brain's memory.
       let res = await fetch('/api/chat', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message: msg, rag: ragEnabled, stream: false }),
+        headers: { 'Content-Type': 'application/json', ...(await authHeader(getAccessToken)) },
+        body: JSON.stringify({ message: msg, rag: ragEnabled, stream: false, history: recentHistory(messages) }),
       });
 
       if (!res.ok) {

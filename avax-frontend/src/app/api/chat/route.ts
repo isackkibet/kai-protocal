@@ -2,21 +2,12 @@ import { NextResponse } from 'next/server';
 import { VAULT_ADDRESSES, AMM_ADDRESS, EXPLORER_BASE } from '@/lib/addresses';
 import { requireRateLimit } from '@/lib/security/route-guard';
 import { readJsonBody } from '@/lib/security/input';
+import { verifyPrivyUserId } from '@/lib/privy-server';
+import { runKai, BrainUnavailableError } from '@/lib/ai/brain';
 
 // Vercel Hobby plan cap is 300s
 export const maxDuration = 300;
 
-const RAG_API_URL  = process.env.RAG_API_URL    || 'http://localhost:8000';
-const GROQ_API_KEY = process.env.GROQ_API_KEY    || '';
-const GROQ_MODEL   = process.env.GROQ_MODEL      || 'llama-3.1-8b-instant';
-const GROQ_URL     = 'https://api.groq.com/openai/v1/chat/completions';
-const GEMINI_KEY   = process.env.GEMINI_API_KEY  || '';
-const GEMINI_MODEL = process.env.GEMINI_MODEL    || 'gemini-3.6-flash';
-// NVIDIA (build.nvidia.com) — OpenAI-compatible API, used only after Gemini
-// and Groq have both failed, before falling back to the canned answers.
-const NVIDIA_API_KEY = process.env.NVIDIA_API_KEY || '';
-const NVIDIA_MODEL   = process.env.NVIDIA_MODEL   || 'openai/gpt-oss-20b';
-const NVIDIA_URL     = 'https://integrate.api.nvidia.com/v1/chat/completions';
 
 // ── Built-in KAI knowledge base (fallback when all LLMs are offline) ──────────
 const KAI_KB: { match: RegExp; answer: string }[] = [
@@ -152,228 +143,21 @@ function streamText(text: string): Response {
   });
 }
 
-const SYSTEM_PROMPT = `You are KAI, a premium AI advisor for the KAI Nuvari DeFi ecosystem on Avalanche C-Chain.
-You help users with:
-- KAI ecosystem tokens: NVR (governance, 15.2% vault APY), yBOB (volatility buffer, 7.5% APY), YTOKEN (diversified investment vault, 14.8% APY), YGOLD (gold-backed reserve, 12.4% APY), GAMI (community rewards, 22.0% APY), CENTS (micro-utility, 6.5% APY)
-- DeFi vaults and yield strategies on the KAI AMM
-- KAI DAO governance, token burns, and fee model
-- KAI Micro-Pension, Micro-Insurance, and Trust Fund smart contracts
-- Avalanche C-Chain development (Fuji testnet, Snowtrace, MetaMask, Core Wallet)
-
-Keep answers concise, professional, and friendly. Use bullet points where helpful.`;
-
-/** Stream from Google Gemini API via SSE */
-async function streamGemini(message: string, context?: WalletContext): Promise<Response | null> {
-  if (!GEMINI_KEY) return null;
-  try {
-    const res = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:streamGenerateContent?alt=sse`,
-      {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-goog-api-key': GEMINI_KEY,
-        },
-        body: JSON.stringify({
-          contents: [
-            {
-              role: 'user',
-              parts: [{ text: `${SYSTEM_PROMPT}${contextSummary(context)}\n\nUser Question: ${message}` }],
-            },
-          ],
-          generationConfig: {
-            temperature: 0.3,
-            maxOutputTokens: 1024,
-          },
-        }),
-        signal: AbortSignal.timeout(10_000),
-      }
-    );
-
-    if (!res.ok || !res.body) return null;
-
-    const { readable, writable } = new TransformStream();
-    const writer = writable.getWriter();
-    const encoder = new TextEncoder();
-
-    (async () => {
-      const reader = res.body!.getReader();
-      const dec = new TextDecoder();
-      let buf = '';
-      try {
-        while (true) {
-          const { done, value } = await reader.read();
-          if (done) break;
-          buf += dec.decode(value, { stream: true });
-          const lines = buf.split('\n');
-          buf = lines.pop() ?? '';
-          for (const line of lines) {
-            if (!line.startsWith('data: ')) continue;
-            const data = line.slice(6).trim();
-            if (!data) continue;
-            try {
-              const chunk = JSON.parse(data);
-              const text = chunk.candidates?.[0]?.content?.parts?.[0]?.text ?? '';
-              if (text) {
-                await writer.write(encoder.encode(`data: ${JSON.stringify({ token: text })}\n\n`));
-              }
-            } catch {
-              // skip unparseable SSE frame
-            }
-          }
-        }
-        await writer.write(encoder.encode(`data: ${JSON.stringify({ done: true, sources: 0 })}\n\n`));
-      } finally {
-        await writer.close();
-      }
-    })();
-
-    return new Response(readable, {
-      headers: {
-        'Content-Type': 'text/event-stream',
-        'Cache-Control': 'no-cache',
-        'Connection': 'keep-alive',
-        'X-Accel-Buffering': 'no',
-      },
-    });
-  } catch {
-    return null;
-  }
-}
-
-/** Non-streaming direct call to Google Gemini */
-async function callGemini(message: string, context?: WalletContext): Promise<string | null> {
-  if (!GEMINI_KEY) return null;
-  try {
-    const res = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent`,
-      {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-goog-api-key': GEMINI_KEY,
-        },
-        body: JSON.stringify({
-          contents: [
-            {
-              role: 'user',
-              parts: [{ text: `${SYSTEM_PROMPT}${contextSummary(context)}\n\nUser Question: ${message}` }],
-            },
-          ],
-          generationConfig: {
-            temperature: 0.3,
-            maxOutputTokens: 1024,
-          },
-        }),
-        signal: AbortSignal.timeout(10_000),
-      }
-    );
-    if (!res.ok) return null;
-    const data = await res.json();
-    return data.candidates?.[0]?.content?.parts?.[0]?.text ?? null;
-  } catch {
-    return null;
-  }
-}
-
-function nvidiaRequest(message: string, context: WalletContext | undefined, stream: boolean) {
-  return fetch(NVIDIA_URL, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${NVIDIA_API_KEY}`,
-    },
-    body: JSON.stringify({
-      model: NVIDIA_MODEL,
-      messages: [
-        { role: 'system', content: SYSTEM_PROMPT + contextSummary(context) },
-        { role: 'user', content: message },
-      ],
-      stream,
-      temperature: 0.3,
-      max_tokens: 1024,
-    }),
-    // NVIDIA's hosted models are slower to start than Groq, so allow longer.
-    signal: AbortSignal.timeout(20_000),
-  });
-}
-
-/** Stream from NVIDIA's OpenAI-compatible API, re-emitted in our SSE shape. */
-async function streamNvidia(message: string, context?: WalletContext): Promise<Response | null> {
-  if (!NVIDIA_API_KEY) return null;
-  try {
-    const res = await nvidiaRequest(message, context, true);
-    if (!res.ok || !res.body) return null;
-
-    const { readable, writable } = new TransformStream();
-    const writer = writable.getWriter();
-    const encoder = new TextEncoder();
-
-    (async () => {
-      const reader = res.body!.getReader();
-      const dec = new TextDecoder();
-      let buf = '';
-      let finished = false;
-      try {
-        while (!finished) {
-          const { done, value } = await reader.read();
-          if (done) break;
-          buf += dec.decode(value, { stream: true });
-          const lines = buf.split('\n');
-          buf = lines.pop() ?? '';
-          for (const line of lines) {
-            if (!line.startsWith('data: ')) continue;
-            const data = line.slice(6).trim();
-            if (data === '[DONE]') { finished = true; break; }
-            try {
-              const token = JSON.parse(data).choices?.[0]?.delta?.content ?? '';
-              if (token) await writer.write(encoder.encode(`data: ${JSON.stringify({ token })}\n\n`));
-            } catch { /* skip unparseable SSE frame */ }
-          }
-        }
-        await writer.write(encoder.encode(`data: ${JSON.stringify({ done: true, sources: 0 })}\n\n`));
-      } finally {
-        await writer.close();
-      }
-    })();
-
-    return new Response(readable, {
-      headers: {
-        'Content-Type': 'text/event-stream',
-        'Cache-Control': 'no-cache',
-        'Connection': 'keep-alive',
-        'X-Accel-Buffering': 'no',
-      },
-    });
-  } catch {
-    return null;
-  }
-}
-
-/** Non-streaming NVIDIA call. */
-async function callNvidia(message: string, context?: WalletContext): Promise<string | null> {
-  if (!NVIDIA_API_KEY) return null;
-  try {
-    const res = await nvidiaRequest(message, context, false);
-    if (!res.ok) return null;
-    const data = await res.json();
-    return data.choices?.[0]?.message?.content ?? null;
-  } catch {
-    return null;
-  }
-}
-
 // ── POST /api/chat ─────────────────────────────────────────────────────────────
-// Accepts { message, rag, stream? }
-// When stream=true  → proxies the FastAPI /stream SSE or Gemini/Groq SSE
-// When stream=false → calls /chat or direct LLM for a JSON response
+// Body: { message, history?, stream?, context? }
+//   history — earlier turns of this conversation [{ role, content }], from the
+//             user's browser; the brain keeps the last 10.
+//   context — the home page's connected-wallet balances, if any.
+// Answers come from the shared KAI brain (lib/ai/brain.ts): LangChain tools
+// over real app data, Gemini → Groq → NVIDIA fallbacks. The built-in
+// knowledge base is the last resort when no model answers.
 export async function POST(req: Request) {
   try {
     /*
-     * Every message here can cost real money: the fallback chain is
-     * Groq → Gemini → NVIDIA, and each is a paid API call. An unauthenticated
-     * script looping this endpoint is a direct financial attack, so it gets a
-     * per-IP budget in addition to the global proxy limit.
+     * Every message here can cost real money (paid model APIs, possibly
+     * several tool rounds). An unauthenticated script looping this endpoint
+     * is a direct financial attack, so it gets a per-IP budget in addition
+     * to the global proxy limit.
      */
     const limited = await requireRateLimit(req, [
       { scope: 'ip', limit: 20, windowMs: 60_000 },
@@ -381,11 +165,12 @@ export async function POST(req: Request) {
     if (!limited.ok) return limited.response;
 
     // Sanitised parse — rejects injection payloads and prototype-pollution keys.
-    const { message, rag = true, stream = true, context } = await readJsonBody(req, 32 * 1024) as {
+    // 64 KB: one message plus up to 10 earlier turns.
+    const { message, stream = true, context, history } = await readJsonBody(req, 64 * 1024) as {
       message?: string;
-      rag?: boolean;
       stream?: boolean;
       context?: WalletContext;
+      history?: unknown;
     };
 
     if (!message || typeof message !== 'string') {
@@ -405,221 +190,34 @@ export async function POST(req: Request) {
         : NextResponse.json({ text: direct, agent: 'KAI Agent', rag_used: false, sources_count: 0 });
     }
 
-    // ── Streaming path ─────────────────────────────────────────────────────────
-    if (stream) {
-      // 1. Try FastAPI /stream endpoint first
-      try {
-        const ragRes = await fetch(`${RAG_API_URL}/stream`, {
-          method:  'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body:    JSON.stringify({ message, rag, context }),
-        });
+    // Identity only from a verified Privy token — it unlocks the user's own
+    // account data in the brain's get_my_account tool, nothing else.
+    const privyUserId = await verifyPrivyUserId(req.headers.get('authorization')).catch(() => null);
 
-        if (ragRes.ok && ragRes.body) {
-          return new Response(ragRes.body, {
-            headers: {
-              'Content-Type':  'text/event-stream',
-              'Cache-Control': 'no-cache',
-              'Connection':    'keep-alive',
-              'X-Accel-Buffering': 'no',
-            },
-          });
-        }
-      } catch {
-        // FastAPI offline — fall through
-      }
-
-      // 2. Try Google Gemini API streaming directly
-      if (GEMINI_KEY) {
-        const geminiStream = await streamGemini(message, context);
-        if (geminiStream) return geminiStream;
-      }
-
-      // 3. Try Groq direct stream fallback
-      if (GROQ_API_KEY) {
-        try {
-          const groqRes = await fetch(GROQ_URL, {
-            method:  'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${GROQ_API_KEY}`,
-            },
-            body: JSON.stringify({
-              model:   GROQ_MODEL,
-              messages: [
-                { role: 'system', content: SYSTEM_PROMPT + contextSummary(context) },
-                { role: 'user', content: message },
-              ],
-              stream:  true,
-              temperature: 0.3,
-              max_tokens: 1024,
-            }),
-            signal: AbortSignal.timeout(10_000),
-          });
-
-          if (groqRes.ok && groqRes.body) {
-            const { readable, writable } = new TransformStream();
-            const writer = writable.getWriter();
-            const encoder = new TextEncoder();
-
-            (async () => {
-              const reader = groqRes.body!.getReader();
-              const dec = new TextDecoder();
-              let buf = '';
-              try {
-                while (true) {
-                  const { done, value } = await reader.read();
-                  if (done) break;
-                  buf += dec.decode(value, { stream: true });
-                  const lines = buf.split('\n');
-                  buf = lines.pop() ?? '';
-                  for (const line of lines) {
-                    if (!line.startsWith('data: ')) continue;
-                    const data = line.slice(6).trim();
-                    if (data === '[DONE]') {
-                      await writer.write(encoder.encode(
-                        `data: ${JSON.stringify({ done: true, sources: 0 })}\n\n`
-                      ));
-                      break;
-                    }
-                    try {
-                      const chunk = JSON.parse(data);
-                      const token = chunk.choices?.[0]?.delta?.content ?? '';
-                      if (token) {
-                        await writer.write(encoder.encode(
-                          `data: ${JSON.stringify({ token })}\n\n`
-                        ));
-                      }
-                    } catch { /* skip */ }
-                  }
-                }
-              } finally {
-                await writer.close();
-              }
-            })();
-
-            return new Response(readable, {
-              headers: {
-                'Content-Type':  'text/event-stream',
-                'Cache-Control': 'no-cache',
-                'Connection':    'keep-alive',
-                'X-Accel-Buffering': 'no',
-              },
-            });
-          }
-        } catch {
-          // Groq error — fall through to knowledge base
-        }
-      }
-
-      // 4. Try NVIDIA
-      const nvidiaStream = await streamNvidia(message, context);
-      if (nvidiaStream) return nvidiaStream;
-
-      // 5. Built-in knowledge base fallback
-      return streamText(kaiKnowledgeFallback(message));
-    }
-
-    // ── Non-streaming (legacy JSON) path ────────────────────────────────────────
+    let text: string;
+    let agent: string;
+    let toolsUsed: string[] = [];
     try {
-      if (rag) {
-        try {
-          const ragRes = await fetch(`${RAG_API_URL}/chat`, {
-            method:  'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body:    JSON.stringify({ message, rag: true, context }),
-            signal:  AbortSignal.timeout(5_000),
-          });
-          if (ragRes.ok) {
-            const ragData = await ragRes.json();
-            return NextResponse.json({
-              text:         ragData.text,
-              agent:        ragData.agent || 'KAI AVAX Agent',
-              rag_used:     true,
-              sources_count: ragData.sources_count ?? 0,
-            });
-          }
-        } catch {
-          // RAG server offline — fall through
-        }
-      }
-
-      // Try Google Gemini
-      if (GEMINI_KEY) {
-        const geminiText = await callGemini(message, context);
-        if (geminiText) {
-          return NextResponse.json({
-            text:          geminiText,
-            agent:         'KAI Gemini Agent',
-            rag_used:      false,
-            sources_count: 0,
-          });
-        }
-      }
-
-      // Try Groq
-      if (GROQ_API_KEY) {
-        const groqRes2 = await fetch(GROQ_URL, {
-          method:  'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${GROQ_API_KEY}`,
-          },
-          body: JSON.stringify({
-            model:   GROQ_MODEL,
-            messages: [
-              { role: 'system', content: SYSTEM_PROMPT + contextSummary(context) },
-              { role: 'user', content: message },
-            ],
-            stream:  false,
-            temperature: 0.3,
-            max_tokens: 1024,
-          }),
-          signal: AbortSignal.timeout(10_000),
-        });
-        if (groqRes2.ok) {
-          const groqData = await groqRes2.json();
-          return NextResponse.json({
-            text:          groqData.choices?.[0]?.message?.content || 'No response.',
-            agent:         'KAI Groq Agent',
-            rag_used:      false,
-            sources_count: 0,
-          });
-        }
-      }
-
-      // Try NVIDIA
-      const nvidiaText = await callNvidia(message, context);
-      if (nvidiaText) {
-        return NextResponse.json({
-          text:          nvidiaText,
-          agent:         'KAI NVIDIA Agent',
-          rag_used:      false,
-          sources_count: 0,
-        });
-      }
-
-      // Fallback
-      return NextResponse.json({
-        text:          kaiKnowledgeFallback(message),
-        agent:         'KAI Agent (offline)',
-        rag_used:      false,
-        sources_count: 0,
+      const result = await runKai({
+        message,
+        history,
+        mode: 'chat',
+        privyUserId,
+        wallet: context?.address ?? null,
+        pageContext: contextSummary(context).trim(),
       });
-    } catch {
-      // A Groq network error lands here — still give NVIDIA a chance.
-      const nvidiaText = await callNvidia(message, context);
-      if (nvidiaText) {
-        return NextResponse.json({ text: nvidiaText, agent: 'KAI NVIDIA Agent', rag_used: false, sources_count: 0 });
-      }
-      return NextResponse.json({
-        text:          kaiKnowledgeFallback(message),
-        agent:         'KAI Agent (offline)',
-        rag_used:      false,
-        sources_count: 0,
-      });
+      text = result.text;
+      agent = `KAI (${result.provider})`;
+      toolsUsed = result.toolsUsed;
+    } catch (e) {
+      if (!(e instanceof BrainUnavailableError)) console.error('[/api/chat] brain error', e);
+      text = kaiKnowledgeFallback(message);
+      agent = 'KAI Agent (offline)';
     }
 
+    return stream
+      ? streamText(text)
+      : NextResponse.json({ text, agent, rag_used: toolsUsed.length > 0, sources_count: toolsUsed.length, tools: toolsUsed });
   } catch (error: unknown) {
     const msg = error instanceof Error ? error.message : 'Unknown error';
     console.error('[/api/chat]', msg);

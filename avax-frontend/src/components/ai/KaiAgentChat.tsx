@@ -13,6 +13,8 @@ import AgentProposalCard, { AgentProposal } from '@/components/AgentProposalCard
 import { ECOSYSTEM_TOKENS } from '@/lib/tokens';
 import { VAULT_ADDRESSES } from '@/lib/addresses';
 import { formatChat } from '@/lib/formatChat';
+import { usePrivyAuth } from '@/lib/privy-auth';
+import { authHeader, recentHistory } from '@/lib/ai/client';
 
 interface Msg {
   role: 'ai' | 'user';
@@ -108,6 +110,7 @@ interface KaiAgentChatProps {
 }
 
 export default function KaiAgentChat({ onClose }: KaiAgentChatProps) {
+  const { getAccessToken } = usePrivyAuth();
   const [msgs, setMsgs] = useState<Msg[]>([{
     role: 'ai',
     text: 'Hey, I\'m **KAI Agent**. Ask me about tokens, vaults, pools, governance, or community products — or open **Tools** to run pre-built queries instantly. I prepare plans for any financial action and you approve every one in your wallet.',
@@ -157,10 +160,11 @@ export default function KaiAgentChat({ onClose }: KaiAgentChatProps) {
     setMsgs(prev => [...prev, { role: 'ai', text: '', agent: 'KAI Agent', sources: 0, proposal }]);
     setLoading(true);
     try {
+      // `msgs` is the conversation before this question: the brain's memory.
       const res = await fetch('/api/chat', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message: query, rag, stream: true }),
+        headers: { 'Content-Type': 'application/json', ...(await authHeader(getAccessToken)) },
+        body: JSON.stringify({ message: query, rag, stream: true, history: recentHistory(msgs) }),
       });
       if (!res.ok || !res.body) throw new Error(`API ${res.status}`);
       const reader = res.body.getReader();
