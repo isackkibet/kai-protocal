@@ -28,6 +28,7 @@ import { askConservation } from '@/lib/conservation-data';
 import { getPrisma } from '@/lib/db';
 import { getNurseryCfa } from '@/lib/nursery/db';
 import { checkRecordIntegrity } from '@/lib/mrv/records';
+import { redactSecrets } from './redact';
 
 export type BrainMode = 'chat' | 'voice' | 'ask';
 
@@ -76,7 +77,7 @@ export function sanitizeHistory(raw: unknown): ChatTurn[] {
     if (!t || typeof t !== 'object') continue;
     const { role, content } = t as { role?: unknown; content?: unknown };
     if ((role !== 'user' && role !== 'assistant') || typeof content !== 'string') continue;
-    const text = content.trim().slice(0, MAX_TURN_CHARS);
+    const text = redactSecrets(content.trim().slice(0, MAX_TURN_CHARS));
     if (text) turns.push({ role, content: text });
   }
   return turns.slice(-MAX_TURNS);
@@ -161,8 +162,14 @@ function appDataTools(input: BrainInput): StructuredToolInterface[] {
           select: { activityType: true, activityDate: true, quantityAffected: true },
         }),
       ]);
+      const t = (dash ?? {}) as Record<string, number | string | null>;
+      const nothingYet = !t.total_seedlings && !t.activity_count;
       return JSON.stringify({
         cfa: cfa.name,
+        // A plain sentence, so zero counts are read as "none yet", not "no data".
+        summary: nothingYet
+          ? 'The data is available and up to date: nothing has been recorded yet — 0 seedlings in the nursery, 0 planted, 0 species.'
+          : `${t.total_seedlings} seedlings recorded: ${t.in_nursery} in the nursery, ${t.planted} planted, ${t.species_count} species, average survival ${t.avg_survival_pct ?? 'not measured yet'}%.`,
         totals: dash ?? null,
         species: species.map((s) => `${s.commonName} (${s.scientificName})`),
         recentActivities: activities.map((a) => ({ type: a.activityType, date: a.activityDate.toISOString().slice(0, 10), seedlings: a.quantityAffected })),
@@ -271,7 +278,7 @@ HOW TO ANSWER
 - Use your tools for every fact about numbers, balances, APYs, prices, the nursery, records or the user's own account. Never invent or estimate them. If a tool has no data or fails, say that plainly.
 - The conversation so far is included; use it to understand follow-up questions ("it", "that one", "how many more").
 - For money actions (swap, buy, pay, send, escrow) call the matching prepare_* tool. It only creates a PLAN the user approves in their wallet. Never say a payment, swap or transfer happened.
-- Never ask for seed phrases, private keys or passwords.
+- Never ask for seed phrases, private keys or passwords. If the user shared one (you will see [redacted …]), say clearly: never share it with anyone, KAI will never ask for it, and anyone who has it controls the wallet — move the funds to a new wallet now. KAI cannot restore wallets.
 - Everything on-chain is on the Fuji testnet unless a tool says otherwise.
 - Reply in the user's language (English or Swahili). Be clear and friendly. Point to the page where the user can act (e.g. /nursery, /mine, /wallet).`;
 
@@ -286,6 +293,11 @@ const MODE_PROMPT: Record<BrainMode, string> = {
 // ── Run ───────────────────────────────────────────────────────────────────────
 
 const MAX_TOOL_ROUNDS = 5;
+
+/** Per-instance provider cooldowns after quota / rate-limit errors. */
+const COOLDOWN_UNTIL = new Map<string, number>();
+const QUOTA_COOLDOWN_MS = 10 * 60_000;
+const RATE_COOLDOWN_MS = 60_000;
 
 function textOf(msg: AIMessage): string {
   if (typeof msg.content === 'string') return msg.content.trim();
@@ -319,8 +331,9 @@ export async function runKai(input: BrainInput): Promise<BrainResult> {
   let answeredBy = bound[0].name;
   const invoke = async (msgs: BaseMessage[]): Promise<AIMessage> => {
     let lastErr: unknown;
-    for (const b of bound) {
-      if (dead.has(b.name)) continue;
+    const available = bound.filter((b) => !dead.has(b.name) && (COOLDOWN_UNTIL.get(b.name) ?? 0) <= Date.now());
+    // If every provider is cooling down, try them anyway rather than fail.
+    for (const b of available.length ? available : bound.filter((x) => !dead.has(x.name))) {
       try {
         const ai = await b.llm.invoke(msgs);
         answeredBy = b.name;
@@ -328,7 +341,16 @@ export async function runKai(input: BrainInput): Promise<BrainResult> {
       } catch (e) {
         dead.add(b.name);
         lastErr = e;
-        console.error(`[kai-brain] ${b.name} failed:`, e instanceof Error ? e.message.slice(0, 300) : e);
+        const msg = e instanceof Error ? e.message : String(e);
+        // Quota exhausted → skip this provider for a while instead of paying a
+        // failed round-trip on every question.
+        if (/quota|429|rate.?limit|too many requests/i.test(msg)) {
+          const ms = /quota/i.test(msg) ? QUOTA_COOLDOWN_MS : RATE_COOLDOWN_MS;
+          COOLDOWN_UNTIL.set(b.name, Date.now() + ms);
+          console.error(`[kai-brain] ${b.name} rate-limited; skipping it for ${ms / 60_000} min`);
+        } else {
+          console.error(`[kai-brain] ${b.name} failed:`, msg.slice(0, 300));
+        }
       }
     }
     throw lastErr ?? new Error('no model available');
@@ -343,7 +365,7 @@ export async function runKai(input: BrainInput): Promise<BrainResult> {
   const messages: BaseMessage[] = [
     new SystemMessage(BASE_PROMPT + MODE_PROMPT[input.mode] + (facts ? `\n\nCONTEXT\n${facts}` : '')),
     ...sanitizeHistory(input.history).map((t) => (t.role === 'user' ? new HumanMessage(t.content) : new AIMessage(t.content))),
-    new HumanMessage(input.message),
+    new HumanMessage(redactSecrets(input.message)),
   ];
 
   let last: AIMessage | null = null;
@@ -354,7 +376,10 @@ export async function runKai(input: BrainInput): Promise<BrainResult> {
       const calls = ai.tool_calls ?? [];
       if (!calls.length || round === MAX_TOOL_ROUNDS) break;
 
-      messages.push(ai);
+      // Send the turn back as plain text + tool calls. Some providers return
+      // structured/reasoning content blocks that others (NVIDIA) reject when
+      // echoed back ("Input should be a valid dictionary or instance of Content").
+      messages.push(new AIMessage({ content: textOf(ai), tool_calls: calls }));
       for (const call of calls) {
         const t = byName.get(call.name);
         let output: string;

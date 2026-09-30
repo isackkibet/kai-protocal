@@ -142,8 +142,13 @@ export const TOOLS: AgentTool[] = [
     },
     run: async (args) => {
       const vault = (args.vault || '').trim().toUpperCase();
+      // kv* entries are the vaults users deposit into; the others are token
+      // reference yields. Labelled so "the NVR vault" isn't confused with the
+      // NVR token's 15.2% (the kvNVR vault is 12.0%).
       const all = Object.entries(PROTOCOL_APY).map(([symbol, v]) => ({
-        symbol, apy: v.apyPct, apyBps: v.apyBps, risk: v.risk, source: 'protocol-parameters',
+        symbol,
+        kind: symbol.startsWith('kv') ? `vault (deposit ${symbol.slice(2)} here)` : 'token reference yield (not a vault)',
+        apy: v.apyPct, apyBps: v.apyBps, risk: v.risk, source: 'protocol-parameters',
       }));
       const filtered = vault ? all.filter((t) => t.symbol.toUpperCase() === vault || t.symbol.toUpperCase().includes(vault)) : all;
       return { kind: 'data', payload: { apys: filtered, note: 'Reference protocol APYs, not a live market oracle.' } };
