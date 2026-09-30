@@ -1,97 +1,78 @@
 import { NextResponse } from 'next/server';
-import { getPrisma } from '@/lib/db';
-import { getOrCreateDefaultForest } from '@/lib/cfa';
+import { nurseryRead } from '@/lib/nursery/route';
 
 /**
- * /api/cfa/nursery/summary  —  GET
+ * /api/cfa/nursery/summary — everything the nursery screen shows, in one call.
  *
- * Powers the CFA dashboard summary cards (KAI Nuvari PRD §6): trees planted,
- * trees in nursery, species available/for sale, survival rate, plus a merged
- * recent-activity feed. Deliberately returns rollups, not raw tables — the
- * PRD is explicit the dashboard should not be "a huge database table."
+ * Totals come from the database views (Kanuvari nursery DB §6):
+ * v_nursery_dashboard and v_inventory_by_status, so the app never
+ * re-implements the counting. Also returns the lists the forms pick from.
  */
+interface DashboardRow {
+  total_seedlings: bigint | number;
+  species_count: bigint | number;
+  in_nursery: bigint | number;
+  planted: bigint | number;
+  avg_survival_pct: string | null;
+  activity_count: bigint | number;
+}
+
+const num = (v: bigint | number | string | null | undefined) => (v == null ? 0 : Number(v));
+
 export async function GET() {
-  const prisma = await getPrisma();
-  if (!prisma) return NextResponse.json({ db: false });
+  return nurseryRead('cfa/nursery/summary', async ({ prisma, cfa }) => {
+    const [dash] = await prisma.$queryRaw<DashboardRow[]>`
+      SELECT total_seedlings, species_count, in_nursery, planted, avg_survival_pct::text, activity_count
+      FROM v_nursery_dashboard WHERE cfa_id = ${cfa.id}::uuid`;
+    const byStatus = await prisma.$queryRaw<{ status: string; total: bigint; batches: bigint }[]>`
+      SELECT status::text, total, batches FROM v_inventory_by_status WHERE cfa_id = ${cfa.id}::uuid`;
 
-  const forest = await getOrCreateDefaultForest();
-  if (!forest) return NextResponse.json({ db: false });
+    const [species, locations, batches, activities] = await Promise.all([
+      prisma.species.findMany({ orderBy: { commonName: 'asc' }, select: { id: true, commonName: true, scientificName: true, localName: true } }),
+      prisma.nurseryLocation.findMany({ where: { cfaId: cfa.id }, orderBy: { name: 'asc' }, select: { id: true, name: true } }),
+      prisma.seedlingBatch.findMany({
+        where: { cfaId: cfa.id },
+        orderBy: { updatedAt: 'desc' },
+        take: 100,
+        select: {
+          id: true, quantity: true, status: true, dateReceived: true, plantingDate: true, source: true,
+          species: { select: { commonName: true } },
+          location: { select: { name: true } },
+        },
+      }),
+      prisma.nurseryActivity.findMany({
+        where: { cfaId: cfa.id },
+        orderBy: [{ activityDate: 'desc' }, { createdAt: 'desc' }],
+        take: 10,
+        select: { id: true, activityType: true, activityDate: true, quantityAffected: true, description: true, inventoryId: true },
+      }),
+    ]);
 
-  try {
-    const [species, survivalRecords, inventoryEntries, plantingRecords] = await Promise.all([
-    prisma.treeSpecies.findMany({ where: { forestId: forest.id } }),
-    prisma.survivalRecord.findMany({ where: { forestId: forest.id }, select: { survivalRate: true } }),
-    prisma.nurseryInventoryEntry.findMany({
-      where: { forestId: forest.id },
-      orderBy: { occurredAt: 'desc' },
-      take: 8,
-      include: { species: { select: { name: true } } },
-    }),
-    prisma.plantingRecord.findMany({
-      where: { forestId: forest.id },
-      orderBy: { plantedAt: 'desc' },
-      take: 8,
-      include: { species: { select: { name: true } } },
-    }),
-  ]);
+    // Planted batches link to their public MRV record.
+    const plantedIds = batches.filter((b) => b.status === 'planted').map((b) => b.id);
+    const records = plantedIds.length
+      ? await prisma.conservationRecord.findMany({
+          where: { sourceTable: 'seedling_inventory', sourceId: { in: plantedIds } },
+          select: { id: true, sourceId: true },
+        })
+      : [];
+    const verifyId = new Map(records.map((r) => [r.sourceId, r.id]));
 
-  const treesPlanted = species.reduce((s, sp) => s + sp.quantityPlanted, 0);
-  const treesInNursery = species.reduce((s, sp) => s + sp.quantityAvailable, 0);
-  const speciesAvailable = species.filter((sp) => sp.quantityAvailable > 0).length;
-  const speciesForSale = species.filter((sp) => sp.quantityForSale > 0).length;
-  const survivalRate =
-    survivalRecords.length > 0
-      ? survivalRecords.reduce((s, r) => s + r.survivalRate, 0) / survivalRecords.length
-      : null;
-
-  // Public verify page for plantings that have an MRV conservation record.
-  const mrvRecords = plantingRecords.length
-    ? await prisma.conservationRecord.findMany({
-        where: { sourceTable: 'planting_records', sourceId: { in: plantingRecords.map((r) => r.id) } },
-        select: { id: true, sourceId: true },
-      }).catch(() => [])
-    : [];
-  const verifyIdByPlanting = new Map(mrvRecords.map((m) => [m.sourceId, m.id]));
-
-  const recentActivity = [
-    ...inventoryEntries.map((e) => ({
-      id: e.id,
-      kind: 'inventory' as const,
-      label: `${e.activityType === 'ORDERED' ? 'Ordered' : e.activityType === 'SOLD' ? 'Sold' : 'Planted'} ${e.quantity} ${e.species?.name ?? 'seedlings'}`,
-      at: e.occurredAt,
-      verifyId: null as string | null,
-    })),
-    ...plantingRecords.map((r) => ({
-      id: r.id,
-      kind: 'planting' as const,
-      label: `Planted ${r.numberPlanted} ${r.species.name}${r.activity ? ` — ${r.activity}` : ''}`,
-      at: r.plantedAt,
-      verifyId: verifyIdByPlanting.get(r.id) ?? null,
-    })),
-  ]
-    .sort((a, b) => new Date(b.at).getTime() - new Date(a.at).getTime())
-    .slice(0, 8);
-
-  return NextResponse.json({
-    forest: { id: forest.id, name: forest.name },
-    stats: {
-      treesPlanted,
-      treesInNursery,
-      speciesAvailable,
-      speciesForSale,
-      survivalRate,
-    },
-    recentActivity,
-    species: species.map((sp) => ({
-      id: sp.id,
-      name: sp.name,
-      quantityAvailable: sp.quantityAvailable,
-      quantityPlanted: sp.quantityPlanted,
-      quantityForSale: sp.quantityForSale,
-    })),
-  });
-  } catch (e) {
-    console.error('[cfa/nursery/summary] database unavailable', e);
-    return NextResponse.json({ db: false });
-  }
+    return NextResponse.json({
+      cfa: { id: cfa.id, name: cfa.name },
+      stats: {
+        totalSeedlings: num(dash?.total_seedlings),
+        inNursery: num(dash?.in_nursery),
+        planted: num(dash?.planted),
+        speciesCount: num(dash?.species_count),
+        avgSurvivalPct: dash?.avg_survival_pct != null ? Number(dash.avg_survival_pct) : null,
+        activityCount: num(dash?.activity_count),
+      },
+      byStatus: byStatus.map((r) => ({ status: r.status, total: num(r.total), batches: num(r.batches) })),
+      species,
+      locations,
+      batches: batches.map((b) => ({ ...b, verifyId: verifyId.get(b.id) ?? null })),
+      activities,
+    });
+  }, { stats: null, byStatus: [], species: [], locations: [], batches: [], activities: [] });
 }

@@ -1,196 +1,162 @@
 import { NextResponse } from 'next/server';
-import { getPrisma } from '@/lib/db';
-import { verifyPrivyUserId } from '@/lib/privy-server';
-import { getOrCreateDefaultForest } from '@/lib/cfa';
 import { MiningTier } from '@prisma/client';
 import { awardXp } from '@/lib/mining-engine';
 import { buildPlantingData, createConservationRecord, PLANTING_SCHEMA } from '@/lib/mrv/records';
-import { requireRateLimit } from '@/lib/security/route-guard';
-import { readJsonBody, assertNoPrivilegeEscalation, InputError } from '@/lib/security/input';
+import { withMember } from '@/lib/nursery/db';
+import { nurseryRead, nurseryWrite, toDate } from '@/lib/nursery/route';
+import { count, day, id, text } from '@/lib/nursery/validate';
 
-/** Kai Bar points credited for a verified planting submission — change here (KAI Nuvari PRD §3). */
+/** Kai Bar points credited for planting a batch — change here (KAI Nuvari PRD §3). */
 const PLANTING_POINTS = 20;
 
 /**
- * /api/cfa/planting  —  GET / POST
+ * /api/cfa/planting — plant seedlings from a nursery batch.
  *
- * A planting event (KAI Nuvari PRD §5 "Planting"): species, number planted,
- * date, CFA, and who submitted it. If the submitter is a signed-in Kai Bar
- * member, this also credits Kai Bar points once the record is created — the
- * "conservation activity becomes points" handoff from PRD §7.
+ * POST { inventoryId, plantingDate, quantity? }. Planting the whole batch
+ * marks it `planted`; planting part of it splits the batch so the counts
+ * always add up (the rest stays in_inventory). Each planting also:
+ *   - logs a `planting` nursery activity,
+ *   - becomes a hashed, versioned MRV conservation record (planting/v1),
+ *   - credits the member's Kai Bar once.
+ * GET lists planted batches with their public /verify record.
  */
 export async function GET() {
-  const prisma = await getPrisma();
-  if (!prisma) return NextResponse.json({ records: [], db: false });
-
-  const forest = await getOrCreateDefaultForest();
-  if (!forest) return NextResponse.json({ records: [], db: false });
-
-  try {
-    const records = await prisma.plantingRecord.findMany({
-      where: { forestId: forest.id },
-      orderBy: { plantedAt: 'desc' },
+  return nurseryRead('cfa/planting', async ({ prisma, cfa }) => {
+    const planted = await prisma.seedlingBatch.findMany({
+      where: { cfaId: cfa.id, status: 'planted' },
+      orderBy: { plantingDate: 'desc' },
       take: 50,
-      include: { species: { select: { name: true } }, submittedBy: { select: { name: true } } },
+      include: { species: { select: { commonName: true } }, location: { select: { name: true } } },
     });
-
-    return NextResponse.json({ records });
-  } catch (e) {
-    console.error('[cfa/planting] database unavailable', e);
-    return NextResponse.json({ records: [], db: false });
-  }
+    const records = await prisma.conservationRecord.findMany({
+      where: { sourceTable: 'seedling_inventory', sourceId: { in: planted.map((b) => b.id) } },
+      select: { id: true, sourceId: true },
+    });
+    const verifyId = new Map(records.map((r) => [r.sourceId, r.id]));
+    return NextResponse.json({ planted: planted.map((b) => ({ ...b, verifyId: verifyId.get(b.id) ?? null })) });
+  }, { planted: [] });
 }
 
 export async function POST(req: Request) {
-  // Writes create both a planting row AND a fingerprinted MRV record, and the
-  // Kai Bar path runs a transaction with row locks. Unbounded, that is a cheap
-  // way to bloat the table and hammer the database.
-  const limited = await requireRateLimit(req, [
-    { scope: 'ip', limit: 30, windowMs: 60_000 },
-  ]);
-  if (!limited.ok) return limited.response;
+  return nurseryWrite(req, 'cfa/planting', async ({ prisma, cfa, member, privyUserId, body }) => {
+    const inventoryId = id(body, 'inventoryId', { required: true })!;
+    const plantingDate = day(body, 'plantingDate', { required: true })!;
+    const requested = count(body, 'quantity', { min: 1 });
+    const note = text(body, 'notes', { max: 2000 });
 
-  let body: Record<string, unknown> = {};
-  try {
-    // Sanitised parse: rejects injection payloads and strips prototype-pollution
-    // keys, rather than trusting a raw JSON.parse of user input.
-    body = (await readJsonBody(req)) as Record<string, unknown>;
-  } catch (err) {
-    return NextResponse.json(
-      { error: err instanceof InputError ? err.message : 'Invalid JSON body' },
-      { status: 400 },
-    );
-  }
+    const result = await withMember(prisma, member.id, async (tx) => {
+      // Lock the batch so two members can't plant the same seedlings at once.
+      await tx.$queryRaw`SELECT id FROM seedling_inventory WHERE id = ${inventoryId}::uuid FOR UPDATE`;
+      const batch = await tx.seedlingBatch.findUnique({ where: { id: inventoryId }, include: { species: true } });
+      if (!batch || batch.cfaId !== cfa.id) return { error: 'Unknown batch.', status: 404 } as const;
+      if (batch.status !== 'in_inventory') return { error: `This batch is already ${batch.status.replace('_', ' ')}.`, status: 409 } as const;
 
-  // Conservation records are meant to be tamper-evident, so a client must never
-  // be able to assert a trust-level field when creating one.
-  try {
-    assertNoPrivilegeEscalation(body);
-  } catch (err) {
-    if (err instanceof InputError) {
-      return NextResponse.json({ error: err.message }, { status: 400 });
-    }
-    throw err;
-  }
+      const quantity = requested ?? batch.quantity;
+      if (quantity > batch.quantity) {
+        return { error: `Only ${batch.quantity} seedlings are left in this batch.`, status: 400 } as const;
+      }
 
-  const speciesId = String(body.speciesId ?? '').trim();
-  const numberPlanted = Math.max(0, Number(body.numberPlanted) || 0);
-  const activity = body.activity ? String(body.activity).trim() : null;
-  const submittedName = body.submittedName ? String(body.submittedName).trim() : null;
-  const plantedAt = body.plantedAt ? new Date(String(body.plantedAt)) : new Date();
+      let planted;
+      if (quantity === batch.quantity) {
+        planted = await tx.seedlingBatch.update({
+          where: { id: batch.id },
+          data: { status: 'planted', plantingDate: toDate(plantingDate), updatedBy: member.id },
+        });
+      } else {
+        await tx.seedlingBatch.update({
+          where: { id: batch.id },
+          data: { quantity: batch.quantity - quantity, updatedBy: member.id },
+        });
+        planted = await tx.seedlingBatch.create({
+          data: {
+            cfaId: batch.cfaId,
+            speciesId: batch.speciesId,
+            locationId: batch.locationId,
+            quantity,
+            status: 'planted',
+            dateReceived: batch.dateReceived,
+            plantingDate: toDate(plantingDate),
+            source: batch.source,
+            notes: note ?? batch.notes,
+            metadata: { ...(batch.metadata as object), split_from: batch.id },
+            createdBy: member.id,
+            updatedBy: member.id,
+          },
+        });
+      }
 
-  if (!speciesId || numberPlanted <= 0) {
-    return NextResponse.json({ error: 'speciesId and a positive numberPlanted are required' }, { status: 400 });
-  }
-
-  // Upper bound: a plausible nursery/field planting. Without a ceiling, one
-  // request could claim 10^15 trees and poison any downstream total.
-  if (numberPlanted > 1_000_000) {
-    return NextResponse.json({ error: 'numberPlanted exceeds the maximum plausible value' }, { status: 400 });
-  }
-
-  // Reject an unparseable date rather than silently storing Invalid Date,
-  // which would break the MRV record's canonical hash determinism.
-  if (Number.isNaN(plantedAt.getTime())) {
-    return NextResponse.json({ error: 'plantedAt is not a valid date' }, { status: 400 });
-  }
-  // And not in the future.
-  if (plantedAt.getTime() > Date.now() + 60_000) {
-    return NextResponse.json({ error: 'plantedAt cannot be in the future' }, { status: 400 });
-  }
-
-  const prisma = await getPrisma();
-  if (!prisma) return NextResponse.json({ error: 'database unavailable' }, { status: 503 });
-
-  const forest = await getOrCreateDefaultForest();
-  if (!forest) return NextResponse.json({ error: 'database unavailable' }, { status: 503 });
-
-  const species = await prisma.treeSpecies.findUnique({ where: { id: speciesId } });
-  if (!species || species.forestId !== forest.id) {
-    return NextResponse.json({ error: 'Unknown species' }, { status: 404 });
-  }
-
-  // Identity is verified server-side (never trusted from the body) so a
-  // submitter can only earn points for themselves (PRD 1 §12 pattern).
-  const privyUserId = await verifyPrivyUserId(req.headers.get('authorization'));
-  const kaiUser = privyUserId ? await prisma.kaiUser.findUnique({ where: { privyUserId } }) : null;
-  const member = kaiUser ? await prisma.forestMember.findUnique({ where: { kaiUserId: kaiUser.id } }) : null;
-
-  try {
-    const record = await prisma.plantingRecord.create({
-      data: {
-        forestId: forest.id,
-        speciesId,
-        numberPlanted,
-        plantedAt,
-        activity,
-        submittedById: member?.id ?? null,
-        submittedName: member ? null : submittedName,
-        pointsAwarded: false,
-      },
+      await tx.nurseryActivity.create({
+        data: {
+          cfaId: batch.cfaId,
+          locationId: batch.locationId,
+          inventoryId: planted.id,
+          activityType: 'planting',
+          activityDate: toDate(plantingDate)!,
+          quantityAffected: quantity,
+          description: note,
+          performedBy: member.id,
+        },
+      });
+      return { planted, species: batch.species, quantity } as const;
     });
 
-    // MRV integrity layer (Canuvari PRD §4): the same event as a canonical,
-    // SHA-256-fingerprinted, versioned conservation record. Linked to this
-    // planting row so it can never be recorded twice. Best-effort: if it
-    // fails, the planting is still saved and the response says so.
+    if ('error' in result) return NextResponse.json({ error: result.error }, { status: result.status });
+    const { planted, species, quantity } = result;
+
+    // MRV integrity layer: the planting as a canonical, SHA-256-fingerprinted,
+    // versioned conservation record, linked to the planted batch so it is
+    // never recorded twice. Best-effort — the planting is already saved.
     let mrvRecord: { id: string; dataHash: string; verificationStatus: string } | null = null;
     try {
       const created = await createConservationRecord(prisma, {
-        forestId: forest.id,
+        forestId: cfa.id,
         recordType: 'PLANTING',
         schemaVersion: PLANTING_SCHEMA,
         data: buildPlantingData({
-          forest,
-          species,
-          quantity: numberPlanted,
-          plantedAt,
-          activity,
-          memberId: member?.id ?? null,
-          submitterName: member ? member.name : submittedName,
+          forest: { id: cfa.id, name: cfa.name, locationRegion: cfa.location },
+          species: { id: species.id, name: `${species.commonName} (${species.scientificName})` },
+          quantity,
+          plantedAt: planted.plantingDate!,
+          activity: note,
+          memberId: member.id,
+          submitterName: member.name,
         }),
-        sourceTable: 'planting_records',
-        sourceId: record.id,
-        memberId: member?.id ?? null,
+        sourceTable: 'seedling_inventory',
+        sourceId: planted.id,
+        memberId: member.id,
       });
       mrvRecord = { id: created.id, dataHash: created.dataHash, verificationStatus: created.verificationStatus };
     } catch (e) {
       console.error('[cfa/planting] conservation record not created', e);
     }
 
-    await prisma.treeSpecies.update({
-      where: { id: speciesId },
-      data: { quantityPlanted: { increment: numberPlanted }, quantityAvailable: { decrement: Math.min(numberPlanted, species.quantityAvailable) } },
-    });
-
+    // Kai Bar points, once per planted batch (the ledger reference is the batch).
     let pointsEarned = 0;
-    if (member) {
-      await prisma.$transaction([
-        prisma.kaiBarLedger.create({
-          data: {
-            userId: member.kaiUserId!,
-            type: 'COMMUNITY_ACTIVITY',
-            amount: PLANTING_POINTS,
-            description: `Planted ${numberPlanted} ${species.name} seedling(s)`,
-            referenceId: record.id,
-          },
-        }),
-        prisma.plantingRecord.update({ where: { id: record.id }, data: { pointsAwarded: true } }),
-      ]);
-      pointsEarned = PLANTING_POINTS;
-
-      // Nuvari v4 §3.2 — verified ecological work maps to TIER_2 XP.
-      // Idempotent by (user, tier, source, referenceId=record.id).
-      try {
-        await awardXp({ prisma, userId: member.kaiUserId!, tier: MiningTier.TIER_2, source: 'PLANTING', referenceId: record.id });
-      } catch (e) {
-        console.error('[cfa/planting] awardXp failed', e); // XP is best-effort
+    try {
+      const kaiUser = await prisma.kaiUser.findUnique({ where: { privyUserId } });
+      if (kaiUser) {
+        const already = await prisma.kaiBarLedger.findFirst({ where: { userId: kaiUser.id, referenceId: planted.id } });
+        if (!already) {
+          await prisma.kaiBarLedger.create({
+            data: {
+              userId: kaiUser.id,
+              type: 'COMMUNITY_ACTIVITY',
+              amount: PLANTING_POINTS,
+              description: `Planted ${quantity} ${species.commonName} seedling(s)`,
+              referenceId: planted.id,
+            },
+          });
+          pointsEarned = PLANTING_POINTS;
+        }
+        // Nuvari v4 §3.2 — verified ecological work maps to TIER_2 XP (idempotent).
+        await awardXp({ prisma, userId: kaiUser.id, tier: MiningTier.TIER_2, source: 'PLANTING', referenceId: planted.id }).catch((e) =>
+          console.error('[cfa/planting] awardXp failed', e),
+        );
       }
+    } catch (e) {
+      console.error('[cfa/planting] points not credited', e); // points are best-effort
     }
 
-    return NextResponse.json({ ok: true, record, pointsEarned, mrvRecord });
-  } catch (e: unknown) {
-    console.error('[cfa/planting] failed', e);
-    return NextResponse.json({ error: 'Failed to record planting' }, { status: 500 });
-  }
+    return NextResponse.json({ ok: true, batch: planted, pointsEarned, mrvRecord });
+  });
 }

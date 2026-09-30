@@ -31,10 +31,10 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
     const record = await prisma.conservationRecord.findUnique({ where: { id } });
     if (!record) return NextResponse.json({ error: 'Record not found' }, { status: 404 });
 
-    const kaiUser = await prisma.kaiUser.findUnique({ where: { privyUserId } });
-    const member = kaiUser ? await prisma.forestMember.findUnique({ where: { kaiUserId: kaiUser.id } }) : null;
-    const isSubmitter = !!member && member.id === record.submittedByMemberId;
-    const isAdmin = !!member && member.forestId === record.forestId && member.role === 'ADMIN';
+    const member = await prisma.cfaMember.findUnique({ where: { authUserId: privyUserId } });
+    const active = !!member && member.status === 'active';
+    const isSubmitter = active && member.id === record.submittedByMemberId;
+    const isAdmin = active && member.cfaId === record.forestId && member.role === 'admin';
     if (!isSubmitter && !isAdmin) {
       return NextResponse.json({ error: 'Only the submitter or a CFA admin can correct this record.' }, { status: 403 });
     }

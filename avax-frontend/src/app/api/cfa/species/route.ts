@@ -1,61 +1,39 @@
 import { NextResponse } from 'next/server';
-import { getPrisma } from '@/lib/db';
-import { getOrCreateDefaultForest } from '@/lib/cfa';
+import { canManageCatalogue, withMember } from '@/lib/nursery/db';
+import { nurseryRead, nurseryWrite } from '@/lib/nursery/route';
+import { metadata, text } from '@/lib/nursery/validate';
 
 /**
- * /api/cfa/species  —  GET / POST
- *
- * Tree species stocked by the CFA's nursery (KAI Nuvari PRD §5 "Tree
- * species"): name, quantity available, quantity planted, quantity for sale.
+ * /api/cfa/species — the shared species catalogue (Kanuvari nursery DB:
+ * `species`). Members pick species from this list instead of typing them.
+ * GET is public; POST is for CFA admins, so the catalogue stays clean.
  */
 export async function GET() {
-  const prisma = await getPrisma();
-  if (!prisma) return NextResponse.json({ species: [], db: false });
-
-  const forest = await getOrCreateDefaultForest();
-  if (!forest) return NextResponse.json({ species: [], db: false });
-
-  try {
-    const species = await prisma.treeSpecies.findMany({
-      where: { forestId: forest.id },
-      orderBy: { name: 'asc' },
+  return nurseryRead('cfa/species', async ({ prisma }) => {
+    const species = await prisma.species.findMany({
+      orderBy: { commonName: 'asc' },
+      select: { id: true, commonName: true, scientificName: true, localName: true, description: true },
     });
-
     return NextResponse.json({ species });
-  } catch (e) {
-    console.error('[cfa/species] database unavailable', e);
-    return NextResponse.json({ species: [], db: false });
-  }
+  }, { species: [] });
 }
 
 export async function POST(req: Request) {
-  let body: Record<string, unknown> = {};
-  try {
-    body = await req.json();
-  } catch {
-    return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
-  }
+  return nurseryWrite(req, 'cfa/species', async ({ prisma, member, body }) => {
+    if (!canManageCatalogue(member)) {
+      return NextResponse.json({ error: 'Only a CFA admin can add species to the catalogue.' }, { status: 403 });
+    }
+    const commonName = text(body, 'commonName', { required: true })!;
+    const scientificName = text(body, 'scientificName', { required: true })!;
+    const localName = text(body, 'localName');
+    const description = text(body, 'description', { max: 2000 });
+    const meta = metadata(body);
 
-  const name = String(body.name ?? '').trim();
-  if (!name) return NextResponse.json({ error: 'name required' }, { status: 400 });
-
-  const quantityAvailable = Math.max(0, Number(body.quantityAvailable) || 0);
-  const quantityPlanted = Math.max(0, Number(body.quantityPlanted) || 0);
-  const quantityForSale = Math.max(0, Number(body.quantityForSale) || 0);
-
-  const prisma = await getPrisma();
-  if (!prisma) return NextResponse.json({ error: 'database unavailable' }, { status: 503 });
-
-  const forest = await getOrCreateDefaultForest();
-  if (!forest) return NextResponse.json({ error: 'database unavailable' }, { status: 503 });
-
-  try {
-    const species = await prisma.treeSpecies.create({
-      data: { forestId: forest.id, name, quantityAvailable, quantityPlanted, quantityForSale },
-    });
+    const species = await withMember(prisma, member.id, (tx) =>
+      tx.species.create({
+        data: { commonName, scientificName, localName, description, metadata: meta as object, createdBy: member.id },
+      }),
+    );
     return NextResponse.json({ ok: true, species });
-  } catch (e: unknown) {
-    console.error('[cfa/species] failed', e);
-    return NextResponse.json({ error: 'Failed to add species' }, { status: 500 });
-  }
+  });
 }

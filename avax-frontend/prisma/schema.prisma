@@ -1,3 +1,11 @@
+// ⚠️  NEVER run `prisma db push` or `prisma migrate dev` against this database.
+// Parts of it live only in SQL (prisma/sql/*.sql): CHECK rules, same-CFA
+// composite foreign keys, the generated survival_rate, JSON GIN indexes, the
+// audit/updated_at/append-only triggers and the v_* views — plus the Oloolua
+// hub's kai_activities / kai_transactions tables, which share this database.
+// Prisma can't see those, so a push would silently DROP them. Schema changes
+// go in a new prisma/sql/<date>_<name>.sql applied with `prisma db execute`.
+
 generator client {
   provider = "prisma-client-js"
 }
@@ -467,7 +475,6 @@ model CommunityForest {
   plantingRecords  PlantingRecord[]
   survivalRecords  SurvivalRecord[]
   nurseryEntries   NurseryInventoryEntry[]
-  conservationRecords ConservationRecord[]
 
   @@map("community_forests")
 }
@@ -725,7 +732,8 @@ enum RecordAnchorStatus {
 
 model ConservationRecord {
   id                 String   @id @default(cuid())
-  forestId           String
+  /// cfa.id (uuid) — the CFA this record belongs to.
+  forestId           String   @db.Uuid
   /// What kind of record this is, e.g. "PLANTING".
   recordType         String
   /// Shape of `data` in every version, e.g. "planting/v1".
@@ -753,7 +761,7 @@ model ConservationRecord {
   createdAt          DateTime @default(now())
   updatedAt          DateTime @updatedAt
 
-  forest             CommunityForest @relation(fields: [forestId], references: [id], onDelete: Restrict)
+  forest             Cfa @relation(fields: [forestId], references: [id], onDelete: Restrict)
   versions           RecordVersion[]
 
   @@unique([sourceTable, sourceId])
@@ -786,6 +794,240 @@ model RecordVersion {
   @@unique([recordId, version])
   @@index([dataHash])
   @@map("record_versions")
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  OLOOLUA CFA NURSERY (Kanuvari nursery DB design, v1.0 MVP)
+//  Created by prisma/sql/2026-09-30_oloolua_nursery.sql, which also holds
+//  what Prisma can't express: CHECK rules, the generated survival_rate,
+//  lower(email) uniqueness, GIN metadata indexes, same-CFA composite FKs,
+//  updated_at + audit triggers, and the v_* dashboard views.
+//
+//  Every write must run inside lib/nursery/db.ts → withMember(), which sets
+//  app.current_member_id for the transaction; the audit trigger refuses
+//  writes with no acting member. updated_at is set by a trigger, not Prisma.
+// ═══════════════════════════════════════════════════════════════
+
+enum CfaMemberRole {
+  member
+  admin
+  verifier
+  auditor
+  partner
+
+  @@map("user_role")
+}
+
+enum CfaMemberStatus {
+  active
+  inactive
+  suspended
+
+  @@map("user_status")
+}
+
+enum InventoryStatus {
+  in_inventory
+  planted
+  transferred
+  dead
+  sold
+  distributed
+
+  @@map("inventory_status")
+}
+
+enum NurseryWorkType {
+  watering
+  weeding
+  mulching
+  pruning
+  pest_control
+  transplanting
+  distribution
+  planting
+  other
+
+  @@map("activity_type")
+}
+
+enum AuditAction {
+  CREATE
+  UPDATE
+  DELETE
+
+  @@map("audit_action")
+}
+
+model Cfa {
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name        String   @unique @db.VarChar(255)
+  location    String   @db.VarChar(255)
+  description String?
+  metadata    Json     @default("{}")
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt   DateTime @default(now()) @map("updated_at") @db.Timestamptz(6)
+
+  members             CfaMember[]
+  locations           NurseryLocation[]
+  inventory           SeedlingBatch[]
+  activities          NurseryActivity[]
+  conservationRecords ConservationRecord[]
+
+  @@map("cfa")
+}
+
+/// A person who logs in and does the work. Linked to the Privy login by
+/// authUserId (= kai_users.privyUserId). Wallet is an attribute, not an id.
+model CfaMember {
+  id            String          @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  cfaId         String          @map("cfa_id") @db.Uuid
+  authUserId    String?         @unique @map("auth_user_id")
+  name          String          @db.VarChar(255)
+  email         String          @db.VarChar(255)
+  phone         String?         @db.VarChar(30)
+  walletAddress String?         @map("wallet_address") @db.VarChar(42)
+  role          CfaMemberRole   @default(member)
+  status        CfaMemberStatus @default(active)
+  metadata      Json            @default("{}")
+  createdAt     DateTime        @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt     DateTime        @default(now()) @map("updated_at") @db.Timestamptz(6)
+
+  cfa Cfa @relation(fields: [cfaId], references: [id], onDelete: Restrict)
+
+  @@unique([id, cfaId])
+  @@index([cfaId], map: "members_cfa_idx")
+  @@map("members")
+}
+
+/// Shared species catalogue, picked from a list rather than typed each time.
+model Species {
+  id             String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  commonName     String   @map("common_name") @db.VarChar(255)
+  scientificName String   @unique @map("scientific_name") @db.VarChar(255)
+  localName      String?  @map("local_name") @db.VarChar(255)
+  description    String?
+  metadata       Json     @default("{}")
+  createdBy      String?  @map("created_by") @db.Uuid
+  createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt      DateTime @default(now()) @map("updated_at") @db.Timestamptz(6)
+
+  batches SeedlingBatch[]
+
+  @@map("species")
+}
+
+model NurseryLocation {
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  cfaId       String   @map("cfa_id") @db.Uuid
+  name        String   @db.VarChar(255)
+  description String?
+  latitude    Decimal? @db.Decimal(10, 8)
+  longitude   Decimal? @db.Decimal(11, 8)
+  metadata    Json     @default("{}")
+  createdBy   String?  @map("created_by") @db.Uuid
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt   DateTime @default(now()) @map("updated_at") @db.Timestamptz(6)
+
+  cfa        Cfa               @relation(fields: [cfaId], references: [id], onDelete: Cascade)
+  batches    SeedlingBatch[]
+  activities NurseryActivity[]
+
+  @@unique([cfaId, name])
+  @@unique([id, cfaId])
+  @@map("nursery_locations")
+}
+
+/// One batch of seedlings — the core table the dashboard counts.
+model SeedlingBatch {
+  id           String          @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  cfaId        String          @map("cfa_id") @db.Uuid
+  speciesId    String          @map("species_id") @db.Uuid
+  locationId   String          @map("location_id") @db.Uuid
+  quantity     Int
+  status       InventoryStatus @default(in_inventory)
+  dateReceived DateTime?       @map("date_received") @db.Date
+  plantingDate DateTime?       @map("planting_date") @db.Date
+  source       String?         @db.VarChar(255)
+  notes        String?
+  metadata     Json            @default("{}")
+  createdBy    String          @map("created_by") @db.Uuid
+  createdAt    DateTime        @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedBy    String          @map("updated_by") @db.Uuid
+  updatedAt    DateTime        @default(now()) @map("updated_at") @db.Timestamptz(6)
+
+  cfa          Cfa                   @relation(fields: [cfaId], references: [id], onDelete: Cascade)
+  species      Species               @relation(fields: [speciesId], references: [id], onDelete: Restrict)
+  location     NurseryLocation       @relation(fields: [locationId], references: [id], onDelete: Restrict)
+  activities   NurseryActivity[]
+  observations SurvivalObservation[]
+
+  @@unique([id, cfaId])
+  @@index([cfaId, status], map: "inv_cfa_status_idx")
+  @@index([speciesId], map: "inv_species_idx")
+  @@index([locationId], map: "inv_location_idx")
+  @@map("seedling_inventory")
+}
+
+model NurseryActivity {
+  id               String          @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  cfaId            String          @map("cfa_id") @db.Uuid
+  locationId       String          @map("location_id") @db.Uuid
+  inventoryId      String?         @map("inventory_id") @db.Uuid
+  activityType     NurseryWorkType @map("activity_type")
+  activityDate     DateTime        @default(dbgenerated("CURRENT_DATE")) @map("activity_date") @db.Date
+  description      String?
+  quantityAffected Int?            @map("quantity_affected")
+  performedBy      String          @map("performed_by") @db.Uuid
+  metadata         Json            @default("{}")
+  createdAt        DateTime        @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt        DateTime        @default(now()) @map("updated_at") @db.Timestamptz(6)
+
+  cfa      Cfa             @relation(fields: [cfaId], references: [id], onDelete: Cascade)
+  location NurseryLocation @relation(fields: [locationId], references: [id], onDelete: Restrict)
+  batch    SeedlingBatch?  @relation(fields: [inventoryId], references: [id], onDelete: SetNull)
+
+  @@index([cfaId, activityDate(sort: Desc)], map: "act_cfa_date_idx")
+  @@index([activityType], map: "act_type_idx")
+  @@map("nursery_activities")
+}
+
+/// Periodic survival check on a batch. survivalRate is computed by the
+/// database (GENERATED column) — never write it.
+model SurvivalObservation {
+  id              String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  inventoryId     String   @map("inventory_id") @db.Uuid
+  observationDate DateTime @default(dbgenerated("CURRENT_DATE")) @map("observation_date") @db.Date
+  initialQuantity Int      @map("initial_quantity")
+  aliveQuantity   Int      @map("alive_quantity")
+  deadQuantity    Int      @map("dead_quantity")
+  survivalRate    Decimal? @map("survival_rate") @db.Decimal(5, 2)
+  observedBy      String   @map("observed_by") @db.Uuid
+  notes           String?
+  metadata        Json     @default("{}")
+  createdAt       DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt       DateTime @default(now()) @map("updated_at") @db.Timestamptz(6)
+
+  batch SeedlingBatch @relation(fields: [inventoryId], references: [id], onDelete: Cascade)
+
+  @@index([inventoryId, observationDate(sort: Desc)], map: "surv_inv_date_idx")
+  @@map("survival_observations")
+}
+
+/// Append-only history of every change, written by the audit trigger.
+model AuditLog {
+  id         String      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId     String      @map("user_id") @db.Uuid
+  entityType String      @map("entity_type") @db.VarChar(100)
+  entityId   String      @map("entity_id") @db.Uuid
+  action     AuditAction
+  oldData    Json?       @map("old_data")
+  newData    Json?       @map("new_data")
+  createdAt  DateTime    @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  @@index([entityType, entityId, createdAt(sort: Desc)], map: "audit_entity_idx")
+  @@index([userId, createdAt(sort: Desc)], map: "audit_user_idx")
+  @@map("audit_logs")
 }
 
 // ═══════════════════════════════════════════════════════════════

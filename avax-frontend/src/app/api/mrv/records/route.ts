@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getPrisma } from '@/lib/db';
-import { getOrCreateDefaultForest } from '@/lib/cfa';
+import { getNurseryCfa } from '@/lib/nursery/db';
 
 /**
  * GET /api/mrv/records — conservation records for the CFA, newest first.
@@ -14,10 +14,10 @@ export async function GET() {
   const prisma = await getPrisma();
   if (!prisma) return NextResponse.json({ records: [], db: false });
 
-  const forest = await getOrCreateDefaultForest();
-  if (!forest) return NextResponse.json({ records: [], db: false });
-
   try {
+    const forest = await getNurseryCfa(prisma);
+    if (!forest) return NextResponse.json({ records: [], db: false });
+
     const records = await prisma.conservationRecord.findMany({
       where: { forestId: forest.id },
       orderBy: { createdAt: 'desc' },
