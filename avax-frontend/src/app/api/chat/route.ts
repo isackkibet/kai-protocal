@@ -211,7 +211,13 @@ export async function POST(req: Request) {
       toolsUsed = result.toolsUsed;
     } catch (e) {
       if (!(e instanceof BrainUnavailableError)) console.error('[/api/chat] brain error', e);
-      text = kaiKnowledgeFallback(message);
+      // Say plainly that the AI is down. The built-in notes are added only
+      // when they actually match the question — the generic product menu
+      // used to be returned as if it were an answer.
+      const notes = kaiKnowledgeFallback(message);
+      const matched = notes !== kaiKnowledgeFallback('');
+      text = "KAI's AI is temporarily unavailable, so I can't answer that properly right now. Please try again in a few minutes."
+        + (matched ? `\n\nMeanwhile, here is some general information:\n\n${notes}` : '');
       agent = 'KAI Agent (offline)';
     }
 
