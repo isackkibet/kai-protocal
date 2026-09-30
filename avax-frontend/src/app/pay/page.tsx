@@ -358,7 +358,6 @@ export default function PayPage() {
               message: "Payment confirmed!",
               detail: [
                 `Paid KES ${poll.amountKes?.toLocaleString()}`,
-                `Email: ${poll.email}`,
                 `Ref: ${poll.reference}`,
               ],
             });

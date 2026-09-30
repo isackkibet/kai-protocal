@@ -8,7 +8,6 @@
  *   status     "success" | "failed" | "abandoned" | "pending"
  *   reference  string
  *   amountKes  number
- *   email      string
  *   paidAt     string | null
  */
 
@@ -32,17 +31,22 @@ async function handle(reference: string) {
       data:  { status: tx.status },
     });
 
+    // Public, unauthenticated poll: return status only. The payer's email
+    // is personal data and anyone holding a reference could read it.
     return NextResponse.json({
       status:    tx.status,
       reference: tx.reference,
       amountKes: Math.round(tx.amount / 100), // kobo → KES
-      email:     tx.customer.email,
       paidAt:    tx.paidAt ?? null,
     });
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : "Verify failed";
+    // Paystack's own "not found" is a client error, not a server fault.
+    if (/not found/i.test(message)) {
+      return NextResponse.json({ error: "Transaction reference not found." }, { status: 404 });
+    }
     console.error("[/api/paystack/verify]", message);
-    return NextResponse.json({ error: message }, { status: 500 });
+    return NextResponse.json({ error: "Could not verify the payment. Please try again." }, { status: 502 });
   }
 }
 
