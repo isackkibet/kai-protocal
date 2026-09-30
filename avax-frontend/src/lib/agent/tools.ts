@@ -91,6 +91,18 @@ const TOKEN_ADDRESSES: Record<string, `0x${string}`> = {
   KAI: '0xaA9953BAB5de2147cC0c919Ab2ff22d809188514',
 };
 
+/**
+ * Canonical symbol from a user/model-typed one, ignoring case: "YBOB",
+ * "ybob" → "yBOB". The tools used to upper-case the input and look it up
+ * directly, so every mixed-case token (yBOB, yTOKEN, yGOLD) was "unknown"
+ * to the price, balance and swap tools.
+ */
+function canonicalSymbol(table: Record<string, unknown>, input: string | null | undefined): string | null {
+  const want = (input ?? '').trim().toUpperCase();
+  if (!want) return null;
+  return Object.keys(table).find((k) => k.toUpperCase() === want) ?? null;
+}
+
 async function getWalletBalance(address: string, token?: string | null): Promise<ToolResult> {
   if (!isValidAddress(address)) {
     return {
@@ -107,9 +119,9 @@ async function getWalletBalance(address: string, token?: string | null): Promise
         payload: { address: checksummed, token: 'AVAX', balance: formatUnits(wei, 18), unit: 'AVAX' },
       };
     }
-    const sym = token.toUpperCase();
-    const tokenAddr = TOKEN_ADDRESSES[sym];
-    if (!tokenAddr) {
+    const sym = canonicalSymbol(TOKEN_ADDRESSES, token);
+    const tokenAddr = sym ? TOKEN_ADDRESSES[sym] : undefined;
+    if (!sym || !tokenAddr) {
       return { kind: 'data', payload: { error: `Unknown token: ${token}` } };
     }
     const raw = (await rpcClient.readContract({
@@ -165,10 +177,10 @@ export const TOOLS: AgentTool[] = [
       required: ['token'],
     },
     run: async (args) => {
-      const sym = (args.token || '').trim().toUpperCase();
-      const price = REFERENCE_PRICE_USD[sym];
-      if (price === undefined) {
-        return { kind: 'data', payload: { error: `Unknown token: ${sym}`, known: Object.keys(REFERENCE_PRICE_USD) } };
+      const sym = canonicalSymbol(REFERENCE_PRICE_USD, args.token);
+      const price = sym ? REFERENCE_PRICE_USD[sym] : undefined;
+      if (!sym || price === undefined) {
+        return { kind: 'data', payload: { error: `Unknown token: ${args.token}`, known: Object.keys(REFERENCE_PRICE_USD) } };
       }
       return { kind: 'data', payload: { token: sym, priceUsd: price, unit: 'USD', note: 'Reference price, informational only.' } };
     },
@@ -281,8 +293,9 @@ export const TOOLS: AgentTool[] = [
       required: ['fromToken', 'fromAmount', 'toToken'],
     },
     run: async (args) => {
-      const fromToken = (args.fromToken || '').trim().toUpperCase();
-      const toToken = (args.toToken || '').trim().toUpperCase();
+      const isAvax = (t: string) => t.trim().toUpperCase() === 'AVAX';
+      const fromToken = isAvax(args.fromToken || '') ? 'AVAX' : (canonicalSymbol(TOKEN_ADDRESSES, args.fromToken) ?? (args.fromToken || '').trim());
+      const toToken = isAvax(args.toToken || '') ? 'AVAX' : (canonicalSymbol(TOKEN_ADDRESSES, args.toToken) ?? (args.toToken || '').trim());
       const amount = parseFloat(args.fromAmount || '0');
       if (!(amount > 0)) {
         return { kind: 'plan', payload: { error: 'fromAmount must be a positive number', requiresHumanApproval: true } };

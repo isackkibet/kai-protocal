@@ -85,38 +85,38 @@ export function sanitizeHistory(raw: unknown): ChatTurn[] {
 
 // ── Models (Gemini → Groq → NVIDIA) ───────────────────────────────────────────
 
+/** Env value with stray whitespace removed ("openai/gpt-oss-120b " → a 404 from Groq). */
+const env = (k: string) => (process.env[k] ?? '').trim();
+
 function configuredModels(mode: BrainMode) {
   const temperature = mode === 'voice' ? 0.2 : 0.3;
   const maxTokens = mode === 'voice' ? 512 : 1536;
+  // Names are provider-qualified ("groq/…", "nvidia/…"): the same model id can
+  // exist at two providers, and cooldowns / failures must not collide.
   const models: { name: string; model: ChatGoogleGenerativeAI | ChatOpenAI }[] = [];
+  const openAiCompatible = (provider: string, baseURL: string, apiKey: string, model: string, timeout: number) => ({
+    name: `${provider}/${model}`,
+    model: new ChatOpenAI({ model, apiKey, temperature, maxTokens, timeout, maxRetries: 1, configuration: { baseURL } }),
+  });
 
-  if (process.env.GEMINI_API_KEY) {
-    const name = process.env.GEMINI_MODEL || 'gemini-3.6-flash';
+  if (env('GEMINI_API_KEY')) {
+    const model = env('GEMINI_MODEL') || 'gemini-3.6-flash';
     models.push({
-      name,
-      model: new ChatGoogleGenerativeAI({ model: name, apiKey: process.env.GEMINI_API_KEY, temperature, maxOutputTokens: maxTokens, maxRetries: 1 }),
+      name: `gemini/${model}`,
+      model: new ChatGoogleGenerativeAI({ model, apiKey: env('GEMINI_API_KEY'), temperature, maxOutputTokens: maxTokens, maxRetries: 1 }),
     });
   }
-  if (process.env.GROQ_API_KEY) {
+  if (env('GROQ_API_KEY')) {
     // llama-3.1-8b-instant was retired by Groq (404 model_not_found).
-    const name = process.env.GROQ_MODEL || 'openai/gpt-oss-120b';
-    models.push({
-      name,
-      model: new ChatOpenAI({
-        model: name, apiKey: process.env.GROQ_API_KEY, temperature, maxTokens, timeout: 20_000, maxRetries: 1,
-        configuration: { baseURL: 'https://api.groq.com/openai/v1' },
-      }),
-    });
+    const primary = env('GROQ_MODEL') || 'openai/gpt-oss-120b';
+    models.push(openAiCompatible('groq', 'https://api.groq.com/openai/v1', env('GROQ_API_KEY'), primary, 20_000));
+    // Groq's free tier limits tokens per minute PER MODEL (8k for gpt-oss-120b),
+    // so a second model is a real fallback, not a duplicate.
+    const second = env('GROQ_FALLBACK_MODEL') || 'openai/gpt-oss-20b';
+    if (second !== primary) models.push(openAiCompatible('groq', 'https://api.groq.com/openai/v1', env('GROQ_API_KEY'), second, 20_000));
   }
-  if (process.env.NVIDIA_API_KEY) {
-    const name = process.env.NVIDIA_MODEL || 'openai/gpt-oss-20b';
-    models.push({
-      name,
-      model: new ChatOpenAI({
-        model: name, apiKey: process.env.NVIDIA_API_KEY, temperature, maxTokens, timeout: 30_000, maxRetries: 1,
-        configuration: { baseURL: 'https://integrate.api.nvidia.com/v1' },
-      }),
-    });
+  if (env('NVIDIA_API_KEY')) {
+    models.push(openAiCompatible('nvidia', 'https://integrate.api.nvidia.com/v1', env('NVIDIA_API_KEY'), env('NVIDIA_MODEL') || 'openai/gpt-oss-20b', 30_000));
   }
   return models;
 }
@@ -143,6 +143,20 @@ function fromAgentTool(t: AgentTool, onPlan: (plan: Record<string, unknown>) => 
     },
     { name: t.name, description: t.description, schema: z.object(shape) },
   );
+}
+
+// Neon closes idle connections; the first query after a quiet spell can fail
+// with P1017 ("Server has closed the connection") / P1001. One retry reconnects.
+const DB_RECONNECT_CODES = new Set(['P1017', 'P1001', 'P1002']);
+async function invokeWithReconnect(t: StructuredToolInterface, args: unknown): Promise<unknown> {
+  try {
+    return await t.invoke(args as Record<string, unknown>);
+  } catch (e) {
+    const code = (e as { code?: unknown })?.code;
+    if (typeof code !== 'string' || !DB_RECONNECT_CODES.has(code)) throw e;
+    console.warn(`[kai-brain] tool ${t.name}: database connection dropped (${code}), retrying once`);
+    return t.invoke(args as Record<string, unknown>);
+  }
 }
 
 function appDataTools(input: BrainInput): StructuredToolInterface[] {
@@ -316,14 +330,32 @@ function textOf(msg: AIMessage): string {
 /** Thrown when no model is configured or every model failed. */
 export class BrainUnavailableError extends Error {}
 
+/** Read-only agent tools every question may need. The rest are action tools. */
+const CORE_AGENT_TOOLS = new Set(['get_apy', 'compare_apy', 'get_token_price', 'get_wallet_balance', 'get_token_balance']);
+const ACTION_WORDS = /\b(swap|exchange|convert|trade|buy|purchase|sell|pay|payment|send|transfer|m-?pesa|nft|nfts|escrow|x402|release|refund|transaction|tx|monitor|approve|order|checkout)\b|0x[0-9a-fA-F]{64}/i;
+
+/**
+ * Whether this turn might need the money/escrow/NFT/x402 tools. Their schemas
+ * are ~55% of each prompt, and Groq's free tier allows only 8k tokens a
+ * minute, so they're sent only when the message — or the last turns, for
+ * follow-ups like "yes, do it" — mention an action.
+ */
+function wantsActionTools(input: BrainInput): boolean {
+  const recent = sanitizeHistory(input.history).slice(-3).map((t) => t.content).join('\n');
+  return ACTION_WORDS.test(input.message) || ACTION_WORDS.test(recent);
+}
+
 export async function runKai(input: BrainInput): Promise<BrainResult> {
   const models = configuredModels(input.mode);
   if (!models.length) throw new BrainUnavailableError('No AI provider key is configured.');
 
   const plans: Record<string, unknown>[] = [];
   const toolsUsed: string[] = [];
+  const withActions = wantsActionTools(input);
   const tools = [
-    ...AGENT_TOOLS.map((t) => fromAgentTool(t, (plan) => plans.push(plan))),
+    ...AGENT_TOOLS
+      .filter((t) => withActions || CORE_AGENT_TOOLS.has(t.name))
+      .map((t) => fromAgentTool(t, (plan) => plans.push(plan))),
     ...appDataTools(input),
   ];
   const byName = new Map(tools.map((t) => [t.name, t]));
@@ -396,7 +428,7 @@ export async function runKai(input: BrainInput): Promise<BrainResult> {
         const t = byName.get(call.name);
         let output: string;
         try {
-          output = t ? String(await t.invoke(call.args)) : JSON.stringify({ error: `Unknown tool ${call.name}` });
+          output = t ? String(await invokeWithReconnect(t, call.args)) : JSON.stringify({ error: `Unknown tool ${call.name}` });
           if (t) toolsUsed.push(call.name);
         } catch (e) {
           console.error(`[kai-brain] tool ${call.name} failed`, e);
