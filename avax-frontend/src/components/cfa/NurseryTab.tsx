@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Sprout, Warehouse, Leaf, HeartPulse, Plus, X, Loader2, MapPin,
-  PackagePlus, ClipboardList, Trees, UserPlus, CheckCircle2, Activity, Droplets,
+  PackagePlus, ClipboardList, Trees, CheckCircle2, Activity, Droplets,
 } from 'lucide-react';
 import { usePrivyAuth } from '@/lib/privy-auth';
 

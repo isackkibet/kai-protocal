@@ -65,7 +65,9 @@ const ROLE_COLOR: Record<string, string> = {
   GUARDIAN:  '#7DC383',
 };
 
-const TABS = ['overview','nursery','members','patrol','products','treasury','gov'] as const;
+// Nursery first and by default: it is the tab with real data (the Oloolua
+// nursery DB); the others still show sample figures from /api/cfa/stats.
+const TABS = ['nursery','overview','members','patrol','products','treasury','gov'] as const;
 
 function KPICell({ icon, value, label: l, color }: { icon: React.ReactNode; value: string; label: string; color: string }) {
   return (
@@ -99,7 +101,15 @@ function MiniBar({ data }: { data: { month: string; trees: number; patrols: numb
 export default function CFAPage() {
   const [data, setData]       = useState<CFAData | null>(null);
   const [loading, setLoading] = useState(true);
-  const [tab, setTab]         = useState<typeof TABS[number]>('overview');
+  const [tab, setTab]         = useState<typeof TABS[number]>('nursery');
+
+  // Deep link: /cfa?tab=treasury opens that tab.
+  useEffect(() => {
+    const wanted = new URLSearchParams(window.location.search).get('tab');
+    // Runs once after hydration; reading window must wait for the client.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    if (wanted && (TABS as readonly string[]).includes(wanted)) setTab(wanted as typeof TABS[number]);
+  }, []);
 
   const load = async () => {
     setLoading(true);
@@ -162,10 +172,10 @@ export default function CFAPage() {
             </Link>
             <Trees size={20} color={C.goldLight} strokeWidth={1.7} style={{ flexShrink: 0 }} />
             <div style={{ flex: 1, minWidth: 0 }}>
-              <h1 style={{ ...SERIF, fontSize: 19, fontWeight: 600, margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', color: C.paper }}>{d.forest.name}</h1>
+              <h1 style={{ ...SERIF, fontSize: 19, fontWeight: 600, margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', color: C.paper }}>{tab === 'nursery' ? 'Oloolua CFA Nursery' : d.forest.name}</h1>
               <div style={{ display: 'flex', alignItems: 'center', gap: 5, marginTop: 2 }}>
                 <MapPin size={10} color={C.inkLight} />
-                <p style={{ fontSize: 11, color: C.inkLight, margin: 0 }}>{d.forest.locationRegion}</p>
+                <p style={{ fontSize: 11, color: C.inkLight, margin: 0 }}>{tab === 'nursery' ? 'Kenya' : d.forest.locationRegion}</p>
               </div>
             </div>
             <button onClick={load} style={{ background: 'none', border: 'none', cursor: 'pointer', color: C.inkLight, display: 'flex', flexShrink: 0 }}>
@@ -173,7 +183,7 @@ export default function CFAPage() {
             </button>
           </div>
 
-          {d.demo && (
+          {d.demo && tab !== 'nursery' && (
             <div role="note" style={{ display: 'flex', alignItems: 'flex-start', gap: 8, marginBottom: 16, padding: '10px 12px', borderRadius: 10, border: `1px solid ${C.gold}`, background: 'rgba(0,0,0,0.18)' }}>
               <AlertTriangle size={14} color={C.gold} style={{ flexShrink: 0, marginTop: 2 }} />
               <p style={{ fontSize: 12, color: C.paper, margin: 0, lineHeight: 1.5 }}>
@@ -182,6 +192,8 @@ export default function CFAPage() {
             </div>
           )}
 
+          {/* Sample header figures don't describe the real nursery — hide them there. */}
+          {tab !== 'nursery' && (<>
           {/* DID + wallet strip */}
           <div style={{ display: 'flex', gap: 18, marginBottom: 20, overflowX: 'auto', scrollbarWidth: 'none' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
@@ -209,6 +221,8 @@ export default function CFAPage() {
             <KPICell icon={<TrendingUp size={17} color={C.gold} strokeWidth={1.7} />}     value={'KES '+Math.round(d.stats.treasuryTvlKes/1000)+'K'} label="Treasury" color={C.gold} />
             <KPICell icon={<Vote size={17} color="#6FA8DC" strokeWidth={1.7} />}          value={d.stats.proposalsActive.toString()}                  label="Active DAO" color="#6FA8DC" />
           </div>
+
+          </>)}
 
           {/* Tabs */}
           <div className="cfa-tabbar" style={{ display: 'flex', gap: 24, overflowX: 'auto' }}>

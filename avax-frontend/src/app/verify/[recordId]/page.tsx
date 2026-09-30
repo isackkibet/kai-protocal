@@ -38,7 +38,7 @@ function Shell({ children }: { children: React.ReactNode }) {
   return (
     <main style={{ minHeight: '100dvh', background: C.bg, color: C.paper, fontFamily: "'IBM Plex Sans', sans-serif", padding: '0 16px 80px' }}>
       <div style={{ maxWidth: 760, margin: '0 auto', paddingTop: 36 }}>
-        <Link href="/cfa" style={{ display: 'inline-flex', alignItems: 'center', gap: 6, color: C.inkLight, fontSize: 13, textDecoration: 'none', marginBottom: 24 }}>
+        <Link href="/nursery" style={{ display: 'inline-flex', alignItems: 'center', gap: 6, color: C.inkLight, fontSize: 13, textDecoration: 'none', marginBottom: 24 }}>
           <ArrowLeft size={14} /> Back
         </Link>
         {children}
