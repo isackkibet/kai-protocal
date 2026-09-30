@@ -98,7 +98,8 @@ function configuredModels(mode: BrainMode) {
     });
   }
   if (process.env.GROQ_API_KEY) {
-    const name = process.env.GROQ_MODEL || 'llama-3.1-8b-instant';
+    // llama-3.1-8b-instant was retired by Groq (404 model_not_found).
+    const name = process.env.GROQ_MODEL || 'openai/gpt-oss-120b';
     models.push({
       name,
       model: new ChatOpenAI({
