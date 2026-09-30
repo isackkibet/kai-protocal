@@ -28,9 +28,12 @@ machines host it on a cloud VM (images are published for amd64 and arm64).
 
 ## How records flow
 
-1. `POST /api/cfa/planting` saves the operational `PlantingRecord` **and** a
+1. `POST /api/cfa/planting` plants a nursery batch (`seedling_inventory`,
+   status `planted`; a partial planting splits the batch) **and** creates a
    `conservation_records` row: canonical JSON (RFC 8785) → SHA-256 →
-   `record_versions` v1. Status starts `SUBMITTED` / `NOT_ANCHORED`.
+   `record_versions` v1, sourced from that batch. Status starts `SUBMITTED` /
+   `NOT_ANCHORED`. Nursery tables and their audit log are described in
+   `prisma/sql/2026-09-30_oloolua_nursery.sql`.
 2. Corrections (`POST /api/mrv/records/:id/versions`) add version n+1 with
    `previousHash` = version n's hash. A database trigger rejects any UPDATE or
    DELETE on `record_versions`.
