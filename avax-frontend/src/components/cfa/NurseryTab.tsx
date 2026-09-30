@@ -113,6 +113,36 @@ function Field({ label: l, children }: { label: string; children: React.ReactNod
   );
 }
 
+function Step({ n, title, hint, done, last, children }: { n: number; title: string; hint: string; done: boolean; last?: boolean; children?: React.ReactNode }) {
+  return (
+    <div style={{ display: 'flex', gap: 12, padding: '12px 0', borderBottom: last ? 'none' : `1px solid ${C.hairline}` }}>
+      <div style={{
+        width: 24, height: 24, borderRadius: 999, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center',
+        fontSize: 12, fontWeight: 700, ...(done
+          ? { background: '#7DC383', color: '#0E2418' }
+          : { border: `1px solid ${C.gold}`, color: C.goldLight }),
+      }}>{done ? '✓' : n}</div>
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <p style={{ fontSize: 13.5, fontWeight: 700, color: done ? C.inkLight : C.paper, margin: 0, textDecoration: done ? 'line-through' : 'none' }}>{title}</p>
+        {!done && <p style={{ fontSize: 11.5, color: C.inkLight, margin: '3px 0 10px', lineHeight: 1.5 }}>{hint}</p>}
+        {!done && children}
+      </div>
+    </div>
+  );
+}
+
+function StepButton({ onClick, children, secondary, disabled, done }: { onClick: () => void; children: React.ReactNode; secondary?: boolean; disabled?: boolean; done?: boolean }) {
+  return (
+    <button onClick={onClick} disabled={disabled} style={{
+      padding: '9px 16px', borderRadius: 999, fontSize: 12, fontWeight: 700, fontFamily: 'inherit',
+      cursor: disabled ? 'wait' : 'pointer',
+      ...(secondary || done
+        ? { background: 'none', border: `1px solid ${done ? '#7DC383' : C.gold}`, color: done ? '#7DC383' : C.goldLight }
+        : { background: C.gold, border: 'none', color: '#1B1A14' }),
+    }}>{children}</button>
+  );
+}
+
 const inputStyle: React.CSSProperties = {
   padding: '8px 2px', border: 'none', borderBottom: `1px solid ${C.hairline}`, borderRadius: 0,
   background: 'none', color: C.paper, fontSize: 13.5, outline: 'none', fontFamily: 'inherit',
@@ -122,7 +152,7 @@ const formStyle: React.CSSProperties = { display: 'flex', flexDirection: 'column
 
 // ── Main component ──────────────────────────────────────────────
 export default function NurseryTab() {
-  const { authenticated, getAccessToken } = usePrivyAuth();
+  const { authenticated, getAccessToken, signInWithGoogle, signInWithEmail } = usePrivyAuth();
   const [summary, setSummary] = useState<NurserySummary | null>(null);
   const [loading, setLoading] = useState(true);
   const [modal, setModal] = useState<ModalType>(null);
@@ -229,40 +259,70 @@ export default function NurseryTab() {
   const batches = summary?.batches ?? [];
   const inNursery = batches.filter((b) => b.status === 'in_inventory');
   const needsSetup = (summary?.species.length ?? 0) === 0 || (summary?.locations.length ?? 0) === 0;
+  const allSet = authenticated && isMember && !needsSetup && batches.length > 0;
 
   return (
     <div>
       <style>{`.nursery-action:hover:not(:disabled) { color: ${C.goldLight}; }`}</style>
 
-      {/* CFA membership — every nursery record is attributed to a member */}
-      {authenticated && membership === null && (
-        <div style={{
-          display: 'flex', alignItems: 'center', gap: 12, padding: '13px 0', marginBottom: 20,
-          borderBottom: `1px solid ${C.hairline}`,
-        }}>
-          <UserPlus size={18} color={C.goldLight} style={{ flexShrink: 0 }} />
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <p style={{ fontSize: 13, fontWeight: 700, color: C.paper, margin: 0 }}>Join this CFA</p>
-            <p style={{ fontSize: 11.5, color: C.inkLight, margin: '2px 0 0' }}>Members record seedlings, activities and survival. Every entry is saved under your name.</p>
-          </div>
-          <button onClick={joinCfa} disabled={joining} style={{
-            padding: '8px 16px', borderRadius: 999, border: 'none', cursor: joining ? 'wait' : 'pointer',
-            background: C.gold, color: '#1B1A14', fontSize: 11.5, fontWeight: 700, flexShrink: 0, fontFamily: 'inherit',
-          }}>
-            {joining ? 'Joining…' : 'Join'}
-          </button>
-        </div>
+      {/* Getting started: one numbered path from "signed out" to "recording" */}
+      {!allSet && (
+        <section style={{ marginBottom: 28, paddingBottom: 8, borderBottom: `1px solid ${C.hairline}` }}>
+          <p style={{ ...label, marginBottom: 6 }}>Get started</p>
+          <p style={{ fontSize: 12, color: C.inkLight, margin: '0 0 8px' }}>Follow these steps in order. Each one ticks when it is done.</p>
+
+          <Step n={1} done={authenticated} title="Sign in"
+            hint="Use the same Google account or email every time, so your records stay yours.">
+            {!authenticated && (
+              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                <StepButton onClick={() => { void signInWithGoogle(); }}>Continue with Google</StepButton>
+                <StepButton onClick={() => { void signInWithEmail(); }} secondary>Continue with email</StepButton>
+              </div>
+            )}
+          </Step>
+
+          <Step n={2} done={isMember} title="Join the CFA"
+            hint="Makes you a member of Oloolua CFA. Admins are set by email in the site settings.">
+            {authenticated && membership === undefined && <p style={{ fontSize: 12, color: C.inkLight, margin: 0 }}>Checking your membership…</p>}
+            {authenticated && membership === null && (
+              <StepButton onClick={joinCfa} disabled={joining}>{joining ? 'Joining…' : 'Join Oloolua CFA'}</StepButton>
+            )}
+            {membership && membership.status !== 'active' && (
+              <p style={{ fontSize: 12, color: C.red, margin: 0 }}>Your membership is {membership.status}. Ask a CFA admin to reactivate it.</p>
+            )}
+          </Step>
+
+          <Step n={3} done={!needsSetup} title="Add species and a nursery location"
+            hint="The list of trees you grow and the places in the nursery where batches are kept.">
+            {isMember && needsSetup && (isAdmin ? (
+              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                <StepButton onClick={() => setModal('species')} done={(summary?.species.length ?? 0) > 0}>
+                  {(summary?.species.length ?? 0) > 0 ? `✓ ${summary!.species.length} species` : 'Add species'}
+                </StepButton>
+                <StepButton onClick={() => setModal('location')} done={(summary?.locations.length ?? 0) > 0}>
+                  {(summary?.locations.length ?? 0) > 0 ? `✓ ${summary!.locations.length} location${summary!.locations.length === 1 ? '' : 's'}` : 'Add location'}
+                </StepButton>
+              </div>
+            ) : (
+              <p style={{ fontSize: 12, color: C.inkLight, margin: 0 }}>A CFA admin does this step. Ask your admin to add them.</p>
+            ))}
+          </Step>
+
+          <Step n={4} done={batches.length > 0} title="Record your first seedling batch" last
+            hint="A batch is a group of seedlings of one species, e.g. 500 Croton in Section A.">
+            {isMember && !needsSetup && batches.length === 0 && (
+              <StepButton onClick={() => setModal('batch')}>Add seedling batch</StepButton>
+            )}
+          </Step>
+        </section>
       )}
-      {isMember && (
+      {allSet && (
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 20 }}>
           <CheckCircle2 size={15} color={C.goldLight} />
           <p style={{ fontSize: 11.5, color: C.goldLight, margin: 0, fontWeight: 600 }}>
             You&apos;re a CFA {isAdmin ? 'admin' : 'member'}. Your entries are saved under your name and earn Kai Bar points.
           </p>
         </div>
-      )}
-      {!authenticated && (
-        <p style={{ fontSize: 11.5, color: C.inkLight, margin: '0 0 20px' }}>Sign in and join the CFA to record nursery work.</p>
       )}
 
       {/* Summary (v_nursery_dashboard) */}
@@ -278,11 +338,6 @@ export default function NurseryTab() {
 
       {/* Actions */}
       <p style={{ ...label, marginBottom: 8 }}>Actions</p>
-      {isMember && needsSetup && (
-        <p style={{ fontSize: 11.5, color: C.inkLight, margin: '0 0 6px' }}>
-          {isAdmin ? 'Start by adding the species you grow and your nursery locations.' : 'A CFA admin needs to add species and nursery locations before batches can be recorded.'}
-        </p>
-      )}
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', marginBottom: 28, paddingBottom: 20, borderBottom: `1px solid ${C.hairline}` }}>
         <ActionTile icon={<PackagePlus size={16} color={C.goldLight} />} label="Add Seedling Batch" onClick={() => setModal('batch')} disabled={!isMember || needsSetup} />
         <ActionTile icon={<Trees size={16} color="#7DC383" />} label="Plant Seedlings" onClick={() => setModal('plant')} disabled={!isMember || inNursery.length === 0} />
