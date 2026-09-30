@@ -209,6 +209,19 @@ export async function POST(req: Request) {
       text = result.text;
       agent = `KAI (${result.provider})`;
       toolsUsed = result.toolsUsed;
+      // The chat window can't show the brain's approval cards (only the voice
+      // agent can), so say where each prepared plan is completed instead of
+      // leaving "approve it in your wallet" with nothing to approve.
+      if (result.plans.length) {
+        const where: Record<string, string> = {
+          prepare_swap: 'the Swap page (/swap)',
+          prepare_mpesa_payment: 'the Pay page (/pay)',
+          prepare_nft_purchase: 'the Conservation NFTs page (/connft)',
+        };
+        const pages = [...new Set(result.plans.map((p) => where[String(p.name)] ?? 'the Voice agent (/voice)'))];
+        text = text.replace(/please review and approve it in your wallet\.?/i, '').trim();
+        text += `${text ? '\n\n' : ''}Nothing has been sent. To review and sign this, open ${pages.join(' or ')} — you approve every transaction in your own wallet.`;
+      }
     } catch (e) {
       if (!(e instanceof BrainUnavailableError)) console.error('[/api/chat] brain error', e);
       // Say plainly that the AI is down. The built-in notes are added only

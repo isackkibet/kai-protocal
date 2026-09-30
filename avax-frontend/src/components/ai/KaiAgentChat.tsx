@@ -75,30 +75,50 @@ const TOOLS = [
   },
 ];
 
+/** The yBOB amount the user actually typed ("deposit 50 yBOB", "send yBOB 12.5 to 0x…"). */
+function ybobAmount(query: string): string | null {
+  const m = query.match(/(\d+(?:\.\d+)?)\s*ybob\b/i) ?? query.match(/\bybob\s*(\d+(?:\.\d+)?)/i);
+  if (!m) return null;
+  const n = Number(m[1]);
+  return n > 0 && n < 1e9 ? m[1] : null;
+}
+
+/**
+ * Client-side quick actions for the two things this card can sign safely:
+ * approving yBOB for the vault, and a yBOB transfer. Requires an action word
+ * AND the amount the user typed — it used to fire on any mention of "vault"
+ * (so "what is the yBOB vault APY?" showed a deposit card) and always used a
+ * hard-coded 10 / 5 yBOB regardless of what was asked.
+ */
 function detectProposal(query: string): AgentProposal | undefined {
   const q = query.toLowerCase();
+  if (!q.includes('ybob')) return undefined;
+  const amount = ybobAmount(query);
+  if (!amount) return undefined; // no amount → let KAI answer / ask
   const yBOB = ECOSYSTEM_TOKENS.find(t => t.symbol === 'yBOB');
-  if ((q.includes('deposit') || q.includes('vault')) && q.includes('ybob')) {
+
+  if (/\b(deposit|stake)\b/.test(q)) {
     return {
       agentName: 'Vault Agent', actionType: 'APPROVE_STAKE',
-      title: 'Deposit yBOB into Vault',
-      description: 'Deposit yBOB into the kvyBOB yield vault to earn 7.5% APY.',
-      amount: '10', tokenSymbol: 'yBOB', tokenAddress: yBOB?.address as `0x${string}`,
+      title: `Approve ${amount} yBOB for the vault (step 1 of 2)`,
+      description: `Lets the kvyBOB vault (7.5% APY) take ${amount} yBOB. After approving, finish the deposit on the Vaults page.`,
+      amount, tokenSymbol: 'yBOB', tokenAddress: yBOB?.address as `0x${string}`,
       targetContract: VAULT_ADDRESSES.yBOB ?? '0x431A98d42f9F7d6529C676115D5E3Df3c2419DA2',
       projectedApy: '7.5% APY',
     };
   }
-  if (q.includes('transfer') && q.includes('ybob')) {
+  if (/\b(transfer|send)\b/.test(q)) {
     const addressMatch = query.match(/0x[a-fA-F0-9]{40}/);
     if (!addressMatch) return undefined;
     return {
       agentName: 'Tx Agent', actionType: 'TRANSFER',
-      title: 'Transfer yBOB',
-      description: 'Transfer yBOB on Avalanche Fuji testnet.',
-      amount: '5', tokenSymbol: 'yBOB', tokenAddress: yBOB?.address as `0x${string}`,
+      title: `Send ${amount} yBOB`,
+      description: `Transfer ${amount} yBOB to ${addressMatch[0].slice(0, 6)}…${addressMatch[0].slice(-4)} on Avalanche Fuji testnet.`,
+      amount, tokenSymbol: 'yBOB', tokenAddress: yBOB?.address as `0x${string}`,
       recipientAddress: addressMatch[0] as `0x${string}`,
     };
   }
+  return undefined;
 }
 
 function fmt(text: string) {

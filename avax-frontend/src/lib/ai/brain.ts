@@ -163,13 +163,14 @@ function appDataTools(input: BrainInput): StructuredToolInterface[] {
         }),
       ]);
       const t = (dash ?? {}) as Record<string, number | string | null>;
-      const nothingYet = !t.total_seedlings && !t.activity_count;
+      const catalogue = species.length ? `${species.length} species in the catalogue` : 'no species in the catalogue yet';
+      // A plain sentence, so zero counts are read as "none yet", not "no data".
+      const summary = !t.total_seedlings
+        ? `The data is available and up to date: no seedling batches recorded yet (0 in the nursery, 0 planted); ${catalogue}; ${t.activity_count ?? 0} nursery activities logged.`
+        : `${t.total_seedlings} seedlings recorded: ${t.in_nursery} in the nursery, ${t.planted} planted, across ${t.species_count} species (${catalogue}); average survival ${t.avg_survival_pct != null ? `${t.avg_survival_pct}%` : 'not measured yet'}; ${t.activity_count ?? 0} nursery activities logged.`;
       return JSON.stringify({
         cfa: cfa.name,
-        // A plain sentence, so zero counts are read as "none yet", not "no data".
-        summary: nothingYet
-          ? 'The data is available and up to date: nothing has been recorded yet — 0 seedlings in the nursery, 0 planted, 0 species.'
-          : `${t.total_seedlings} seedlings recorded: ${t.in_nursery} in the nursery, ${t.planted} planted, ${t.species_count} species, average survival ${t.avg_survival_pct ?? 'not measured yet'}%.`,
+        summary,
         totals: dash ?? null,
         species: species.map((s) => `${s.commonName} (${s.scientificName})`),
         recentActivities: activities.map((a) => ({ type: a.activityType, date: a.activityDate.toISOString().slice(0, 10), seedlings: a.quantityAffected })),
@@ -298,6 +299,10 @@ const MAX_TOOL_ROUNDS = 5;
 const COOLDOWN_UNTIL = new Map<string, number>();
 const QUOTA_COOLDOWN_MS = 10 * 60_000;
 const RATE_COOLDOWN_MS = 60_000;
+/** One model call. */
+const CALL_TIMEOUT_MS = 25_000;
+/** Whole answer, tool rounds included: stop calling tools after this. */
+const ANSWER_DEADLINE_MS = 55_000;
 
 function textOf(msg: AIMessage): string {
   if (typeof msg.content === 'string') return msg.content.trim();
@@ -335,7 +340,9 @@ export async function runKai(input: BrainInput): Promise<BrainResult> {
     // If every provider is cooling down, try them anyway rather than fail.
     for (const b of available.length ? available : bound.filter((x) => !dead.has(x.name))) {
       try {
-        const ai = await b.llm.invoke(msgs);
+        // Per-call timeout for every provider (the Gemini client has no
+        // timeout of its own; a hung call would stall until the function dies).
+        const ai = await b.llm.invoke(msgs, { timeout: CALL_TIMEOUT_MS });
         answeredBy = b.name;
         return ai;
       } catch (e) {
@@ -369,12 +376,16 @@ export async function runKai(input: BrainInput): Promise<BrainResult> {
   ];
 
   let last: AIMessage | null = null;
+  const startedAt = Date.now();
   try {
     for (let round = 0; round <= MAX_TOOL_ROUNDS; round++) {
       const ai = await invoke(messages);
       last = ai;
       const calls = ai.tool_calls ?? [];
       if (!calls.length || round === MAX_TOOL_ROUNDS) break;
+      // Out of time: answer with what the model already said rather than
+      // start another tool round.
+      if (Date.now() - startedAt > ANSWER_DEADLINE_MS) break;
 
       // Send the turn back as plain text + tool calls. Some providers return
       // structured/reasoning content blocks that others (NVIDIA) reject when

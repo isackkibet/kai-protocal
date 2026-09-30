@@ -548,10 +548,25 @@ export default function VoiceAgentPage() {
   // ─── Proposal Execution (wagmi on-chain) ────────────────────────────────
 
   const executeProposal = async (proposal: IntentProposal, proposalKey: string) => {
-    if (!walletAddress || !proposal.tokenAddress) {
+    if (!walletAddress) {
       setProposalStatus((s) => ({ ...s, [proposalKey]: { msg: '', error: 'Connect wallet first.' } }));
       return;
     }
+    // Only token transfers and vault approvals can be signed from a voice card.
+    // AI plans for swaps, M-Pesa, NFTs and escrow carry no token call — send the
+    // user to the page that completes them instead of a dead "Connect wallet" error.
+    const signable = !!proposal.tokenAddress && (
+      (proposal.actionType === 'TRANSFER' && !!proposal.recipientAddress) ||
+      (proposal.actionType === 'APPROVE_STAKE' && !!proposal.targetContract)
+    );
+    if (!signable) {
+      const title = (proposal.title || '').toLowerCase();
+      const page = title.includes('swap') ? '/swap' : title.includes('mpesa') || title.includes('m-pesa') || title.includes('pay') ? '/pay'
+        : title.includes('nft') ? '/connft' : title.includes('vault') || title.includes('deposit') ? '/vaults' : '/wallet';
+      setProposalStatus((s) => ({ ...s, [proposalKey]: { msg: '', error: `This plan can't be signed here yet. Complete it on ${page}.` } }));
+      return;
+    }
+    const token = proposal.tokenAddress as `0x${string}`; // guaranteed by `signable`
     setExecutingProposal(proposalKey);
     setProposalStatus((s) => ({ ...s, [proposalKey]: { msg: 'Switching to Avalanche Fuji…' } }));
 
@@ -563,7 +578,7 @@ export default function VoiceAgentPage() {
       if (proposal.actionType === 'TRANSFER' && proposal.recipientAddress) {
         setProposalStatus((s) => ({ ...s, [proposalKey]: { msg: `Signing transfer of ${proposal.amount} ${proposal.tokenSymbol}…` } }));
         hash = await writeContractAsync({
-          address: proposal.tokenAddress,
+          address: token,
           abi: ERC20_ABI,
           functionName: 'transfer',
           args: [proposal.recipientAddress, amount],
@@ -572,26 +587,24 @@ export default function VoiceAgentPage() {
       } else if (proposal.actionType === 'APPROVE_STAKE' && proposal.targetContract) {
         setProposalStatus((s) => ({ ...s, [proposalKey]: { msg: `Approving ${proposal.tokenSymbol} for Vault…` } }));
         hash = await writeContractAsync({
-          address: proposal.tokenAddress,
+          address: token,
           abi: ERC20_ABI,
           functionName: 'approve',
           args: [proposal.targetContract, amount],
           chainId: avalancheFuji.id,
         });
       } else {
-        setProposalStatus((s) => ({ ...s, [proposalKey]: { msg: `Executing ${proposal.actionType}…` } }));
-        const target = proposal.targetContract || proposal.recipientAddress || proposal.tokenAddress;
-        hash = await writeContractAsync({
-          address: proposal.tokenAddress,
-          abi: ERC20_ABI,
-          functionName: 'transfer',
-          args: [target, amount],
-          chainId: avalancheFuji.id,
-        });
+        // Unreachable (guarded above). Never fall back to a raw transfer: it
+        // used to send tokens to the contract — or to the token itself — which
+        // strands them for good.
+        throw new Error('This plan cannot be signed here.');
       }
 
-      setProposalStatus((s) => ({ ...s, [proposalKey]: { msg: 'Confirmed on-chain!', hash } }));
-      speak(`Confirmed on chain. ${proposal.amount} ${proposal.tokenSymbol} processed.`);
+      const approvalOnly = proposal.actionType === 'APPROVE_STAKE';
+      setProposalStatus((s) => ({ ...s, [proposalKey]: { msg: approvalOnly ? 'Approved (step 1 of 2) — finish the deposit on Vaults.' : 'Confirmed on-chain!', hash } }));
+      speak(approvalOnly
+        ? `Approval confirmed. Finish the deposit on the vaults page.`
+        : `Confirmed on chain. ${proposal.amount} ${proposal.tokenSymbol} sent.`);
 
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Execution failed';

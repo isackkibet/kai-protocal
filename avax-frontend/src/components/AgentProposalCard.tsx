@@ -3,10 +3,10 @@
 import { useState } from 'react';
 import { useAccount, useWriteContract, useSwitchChain, usePublicClient } from 'wagmi';
 import { avalancheFuji } from 'wagmi/chains';
-import { parseUnits, maxUint256 } from 'viem';
+import { parseUnits } from 'viem';
 import { ERC20_ABI } from '@/lib/erc20abi';
 import { 
-  Bot, ShieldCheck, ArrowRight, ExternalLink, Loader2, CheckCircle2, AlertTriangle, Cpu
+  ShieldCheck, ArrowRight, ExternalLink, Loader2, CheckCircle2, AlertTriangle, Cpu
 } from 'lucide-react';
 
 export interface AgentProposal {
@@ -74,26 +74,24 @@ export default function AgentProposalCard({ proposal, onSuccess }: AgentProposal
           args: [proposal.targetContract, parseUnits(proposal.amount, 18)],
           chainId: avalancheFuji.id,
         });
-      } else if (proposal.tokenAddress && (proposal.targetContract || proposal.recipientAddress)) {
-        // Default token operation
-        const recipient = proposal.targetContract || proposal.recipientAddress!;
-        setStatusMsg(`Executing ${proposal.actionType} on-chain…`);
-        hash = await writeContractAsync({
-          address: proposal.tokenAddress,
-          abi: ERC20_ABI,
-          functionName: 'transfer',
-          args: [recipient, parseUnits(proposal.amount, 18)],
-          chainId: avalancheFuji.id,
-        });
       } else {
-        throw new Error('Contract address or parameters missing for on-chain execution.');
+        // Only transfers and approvals can be signed from this card. There used
+        // to be a "default" branch that ERC-20-transferred the tokens straight
+        // to the vault/AMM contract for swaps, deposits and policy mints — that
+        // does not swap or deposit anything; it just strands the user's tokens
+        // in the contract. Refuse instead, and point to the page that does it.
+        const page = proposal.actionType === 'SWAP' ? '/swap' : proposal.actionType === 'VAULT_DEPOSIT' ? '/vaults' : '/products';
+        throw new Error(`This ${proposal.actionType.toLowerCase().replace('_', ' ')} can't be signed from this card. Complete it on ${page}.`);
       }
 
       setStatusMsg('Waiting for transaction confirmation on Avalanche…');
       await publicClient?.waitForTransactionReceipt({ hash });
 
       setTxHash(hash);
-      setStatusMsg('Transaction successfully confirmed!');
+      // An approval only lets the vault take the tokens; it is not a deposit.
+      setStatusMsg(proposal.actionType === 'APPROVE_STAKE'
+        ? 'Approval confirmed (step 1 of 2). Finish the deposit on the Vaults page.'
+        : 'Transaction successfully confirmed!');
       if (onSuccess) onSuccess(hash);
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Execution failed';
