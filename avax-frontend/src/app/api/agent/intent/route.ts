@@ -138,24 +138,14 @@ export async function POST(req: Request) {
           });
         }
 
-        case 'balance': {
-          return NextResponse.json({
-            intentType: 'BALANCE',
-            spokenReply: spoken_reply || 'Here is your portfolio summary.',
-            displayText: `📊 **Wallet & Ecosystem Portfolio** — live balances on Avalanche Fuji.`,
-            navigationPath: '/profile',
-          });
-        }
-
-        case 'mrv_audit': {
-          const batchId = params?.batch_id ?? '07';
-          return NextResponse.json({
-            intentType: 'MRV_AUDIT',
-            spokenReply: spoken_reply || `MRV audit complete for Nursery Batch ${batchId}.`,
-            displayText: `🌲 **Digital MRV Audit** — Nursery Batch #${batchId} · 94.8% survival · NDVI verified ✅`,
-            navigationPath: '/hub',
-          });
-        }
+        // Balance and MRV/nursery questions are answered by the KAI brain with
+        // real data (balance tools, nursery summary, record lookup). These
+        // used to return canned text — including an "MRV audit complete for
+        // Nursery Batch 07, 94.8% survival" claim for a batch that doesn't
+        // exist — so they fall through to QUERY instead.
+        case 'balance':
+        case 'mrv_audit':
+          break;
 
         case 'sdg_log': {
           return NextResponse.json({
@@ -275,27 +265,8 @@ export async function POST(req: Request) {
       });
     }
 
-    // MRV
-    if (lower.includes('mrv') || lower.includes('tree') || lower.includes('nursery') || lower.includes('carbon')) {
-      const batchMatch = lower.match(/(?:batch|id|#)\s*(\d+)/i);
-      const batchId = batchMatch ? batchMatch[1] : '07';
-      return NextResponse.json({
-        intentType: 'MRV_AUDIT',
-        spokenReply: `Digital MRV audit complete for Nursery Batch ${batchId}. 99.4% confidence.`,
-        displayText: `🌲 **Digital MRV Audit**\n\n- **Batch:** #${batchId} (Kakamega Canopy Initiative)\n- **Survival Rate:** 94.8%\n- **NDVI Verified** ✅\n- **Carbon Credits:** +120 KAI-CARBON`,
-        navigationPath: '/hub',
-      });
-    }
-
-    // Balance
-    if (lower.includes('balance') || lower.includes('portfolio') || lower.includes('holdings') || lower.includes('wallet')) {
-      return NextResponse.json({
-        intentType: 'BALANCE',
-        spokenReply: `Here is your portfolio summary across Avalanche C-Chain and KAI vaults.`,
-        displayText: `📊 **Wallet & Ecosystem Portfolio**\n\n- **Tokens:** NVR, yBOB, YTOKEN, YGOLD, GAMI, CENTS\n- **Network:** Avalanche Fuji\n\nFull balances on your profile page.`,
-        navigationPath: '/profile',
-      });
-    }
+    // MRV / nursery / balance questions: no canned reply here — the default
+    // QUERY below hands them to the KAI brain, which answers from real data.
 
     // Default — hand off to /api/chat (RAG + Needle)
     return NextResponse.json({
@@ -328,11 +299,9 @@ function checkNavigationIntent(text: string): { name: string; path: string } | n
   const routes = [
     { keys: ['vault', 'vaults', 'yield'],               name: 'Yield Vaults',           path: '/vaults' },
     { keys: ['pool', 'pools', 'amm', 'liquidity'],       name: 'AMM Pools',              path: '/pools' },
-    { keys: ['mrv', 'tree', 'trees', 'nursery', 'hub'],  name: 'Information Hub & MRV',  path: '/hub' },
+    { keys: ['nursery', 'tree nursery', 'cfa', 'trees'], name: 'Oloolua CFA Nursery',     path: '/nursery' },
+    { keys: ['hub', 'info hub', 'news', 'mrv'],          name: 'Information Hub',        path: '/hub' },
     { keys: ['pay', 'payment', 'qr', 'mpesa'],           name: 'Scan & Pay',             path: '/pay' },
-    { keys: ['insurance', 'micro insurance'],            name: 'Micro-Insurance',         path: '/insurance' },
-    { keys: ['pension', 'micro pension'],                name: 'Micro-Pension',           path: '/pension' },
-    { keys: ['trust', 'trust fund'],                     name: 'Trust Fund',              path: '/trust' },
     { keys: ['saving', 'chama', 'saving group'],         name: 'Saving Circles',          path: '/saving' },
     { keys: ['sme', 'business', 'invoice'],              name: 'SME Hub',                 path: '/sme' },
     { keys: ['mine', 'airdrop', 'rewards'],              name: 'Mine & Airdrop',          path: '/mine' },
@@ -344,14 +313,10 @@ function checkNavigationIntent(text: string): { name: string; path: string } | n
 
   for (const r of routes) {
     for (const k of r.keys) {
-      if (
-        text.includes(`go to ${k}`)   ||
-        text.includes(`open ${k}`)    ||
-        text.includes(`take me to ${k}`) ||
-        text.includes(`show ${k}`)    ||
-        text.includes(`navigate to ${k}`) ||
-        text === k || text === `go ${k}`
-      ) {
+      // "open the nursery", "show me my profile", "take me to the vaults"…
+      const verb = String.raw`(?:go to|open|take me to|show me|show|navigate to|bring up)`;
+      const re = new RegExp(String.raw`\b${verb}\s+(?:the\s+|my\s+|our\s+)?${k.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\b`);
+      if (re.test(text) || text === k || text === `go ${k}`) {
         return { name: r.name, path: r.path };
       }
     }

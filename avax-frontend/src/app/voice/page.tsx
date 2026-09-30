@@ -398,7 +398,7 @@ export default function VoiceAgentPage() {
       }
 
       // ─── QUERY fallback: terse Gemini agent for factual questions ────────────
-      await runQuery(text, intent.spokenReply);
+      await runQuery(text);
 
     } catch {
       const err = 'Command not recognized. Try again with a clear action.';
@@ -410,7 +410,7 @@ export default function VoiceAgentPage() {
 
   // ─── Query fallback: terse Gemini agent (what is KAI, best APY, etc.) ────
 
-  const runQuery = async (text: string, intentSpokenReply?: string) => {
+  const runQuery = async (text: string) => {
     loadingRef.current = true;
     setMicState('thinking');
     setMessages((p) => [...p, { role: 'ai', text: '', streaming: true }]);
@@ -430,7 +430,10 @@ export default function VoiceAgentPage() {
       const dec = new TextDecoder();
       let buf = '';
       const tokens: string[] = [];
-      let finalSpoken = intentSpokenReply || '';
+      // What gets spoken is the AI's own answer. (It used to start as the
+      // intent router's canned "Let me check the KAI knowledge base", which
+      // was then spoken instead of the answer whenever a plan arrived first.)
+      let finalSpoken = '';
 
       while (true) {
         const { done, value } = await reader.read();
@@ -514,7 +517,7 @@ export default function VoiceAgentPage() {
         }
         return clone;
       });
-      speak(finalSpoken || aiText || 'Done.', reopenMic);
+      speak(finalSpoken || aiText || 'Sorry, I could not get an answer. Please try again.', reopenMic);
 
     } catch {
       setMessages((p) => {
