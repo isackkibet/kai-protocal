@@ -16,11 +16,9 @@ import { usePrivyAuth } from '@/lib/auth/privy-auth';
 import { useActiveAccount } from '@/hooks/useActiveAccount';
 import { formatChat } from '@/lib/ai/formatChat';
 import NurseryShortcut from '@/components/cfa/NurseryShortcut';
+import QuickActions, { QUICK_COUNT } from '@/components/shared/QuickActions';
 import {
-  Mic, Bot, FlaskConical, ScanLine, CircleDollarSign,
-  Globe, ShieldCheck, ImageIcon, Droplets, Lock, Gift,
-  LayoutGrid, Copy, RefreshCw, Link2, UserRound, Sprout, Sparkles,
-  type LucideIcon,
+  Bot, LayoutGrid, Copy, RefreshCw, Link2, UserRound, type LucideIcon,
 } from 'lucide-react';
 
 /* Same editorial system as /hub: solid pine background, one gold accent,
@@ -67,55 +65,6 @@ function SectionHeader({ icon: Icon, eyebrow, badge }: { icon: LucideIcon; eyebr
 /* Sections render fully visible on load — no hide-until-scroll animation,
    so everything is on the page at once. */
 const reveal = {} as const;
-
-const QUICK_GROUPS = [
-  {
-    // First, so the nursery is easy to find (it was missing from this grid).
-    title: 'Conservation',
-    items: [
-      { name: 'Nursery',      href: '/nursery',   icon: Sprout,      featured: true },
-      { name: 'Kanuvari AI',  href: '/workspace', icon: Sparkles,    featured: true },
-      { name: 'Verification', href: '/mrv',       icon: ShieldCheck, featured: true },
-    ],
-  },
-  {
-    title: 'Agents',
-    items: [
-      { name: 'Voice Agent', href: '/voice', icon: Mic },
-      { name: 'AI Agent',    href: '/ai',    icon: Bot },
-    ],
-  },
-  {
-    title: 'DeFi · Earn',
-    items: [
-      { name: 'Securities', href: '/securities', icon: ShieldCheck },
-      { name: 'Pools',      href: '/pools',      icon: Droplets },
-      { name: 'Vaults',     href: '/vaults',     icon: Lock },
-      { name: 'TaaS',       href: '/taas',       icon: LayoutGrid },
-    ],
-  },
-  {
-    title: 'Shop · Pay',
-    items: [
-      { name: 'Scan & Pay', href: '/pay',      icon: ScanLine },
-      { name: 'Products',   href: '/products', icon: CircleDollarSign },
-      { name: 'NFT Mkt',    href: '/connft',   icon: ImageIcon },
-      { name: 'Airdrop',    href: '/mine',     icon: Gift },
-    ],
-  },
-  {
-    title: 'Explore',
-    items: [
-      { name: 'Playground', href: '/nuvari', icon: FlaskConical },
-      { name: 'SDG Impact', href: '/sdg',    icon: Globe },
-      { name: 'KAI Web',    href: '/kai',    icon: Link2 },
-    ],
-  },
-];
-
-/* All quick actions flattened into one grid, so they sit together in a
-   single spot — no group boxes stretching tiles wide. */
-const QUICK_ACTIONS: { name: string; href: string; icon: LucideIcon; featured?: boolean }[] = QUICK_GROUPS.flatMap(g => g.items);
 
 function buildCalls(addr: `0x${string}` | undefined) {
   if (!addr) return [];
@@ -391,18 +340,8 @@ export default function Home() {
             visible at once and arranged in one place. */}
         <motion.section className="home-section home-section--qa" id="actions"
           style={{ scrollMarginTop:70 }} {...reveal}>
-          <SectionHeader icon={LayoutGrid} eyebrow="Quick actions" badge={`● ${QUICK_ACTIONS.length} apps`} />
-          <div className="qa-wrap">
-            {QUICK_ACTIONS.map(a => {
-              const Icon = a.icon;
-              return (
-                <Link key={a.name} href={a.href} className={a.featured ? 'qa-tile qa-tile--featured' : 'qa-tile'} prefetch={false}>
-                  <Icon size={18} className="qa-tile-icon" strokeWidth={1.6}/>
-                  <span className="qa-tile-label">{a.name}</span>
-                </Link>
-              );
-            })}
-          </div>
+          <SectionHeader icon={LayoutGrid} eyebrow="Quick actions" badge={`● ${QUICK_COUNT} apps`} />
+          <QuickActions />
         </motion.section>
 
         {/* KAI AGENT — the assistant panel lives on home too */}

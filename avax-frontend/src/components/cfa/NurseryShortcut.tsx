@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { ArrowRight, Sparkles, Sprout } from 'lucide-react';
+import { ArrowRight, Sprout } from 'lucide-react';
 
 /**
  * Home-page card that makes the nursery easy to find: live numbers from the
@@ -34,8 +34,8 @@ export default function NurseryShortcut() {
         <ArrowRight size={18} color="#E4C878" />
       </Link>
       <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-        <Link href="/nursery" prefetch={false} style={pill(true)}><Sprout size={14} /> Open nursery</Link>
-        <Link href="/workspace" prefetch={false} style={pill(false)}><Sparkles size={14} /> Tell Kanuvari AI what happened</Link>
+        <Link href="/nursery" prefetch={false} style={pill(true)}>Open nursery</Link>
+        <Link href="/workspace" prefetch={false} style={pill(false)}>Tell Kanuvari AI what happened</Link>
       </div>
     </section>
   );

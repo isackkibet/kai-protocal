@@ -1,0 +1,108 @@
+'use client';
+
+import { useEffect, useState } from 'react';
+import Link from 'next/link';
+import {
+  Bot, CircleDollarSign, Droplets, FlaskConical, Gift, Globe, ImageIcon, LayoutGrid, Link2, Lock, MessagesSquare, Mic,
+  ScanLine, ShieldCheck, Sprout, type LucideIcon,
+} from 'lucide-react';
+
+/**
+ * Home "Quick actions": every app as a tile with a line icon in a tinted
+ * badge, what it does in a few words, and live numbers where they help
+ * (seedlings in the nursery, records waiting for a verifier). Conservation
+ * comes first so the nursery is easy to find.
+ */
+
+interface Item { name: string; hint: string; href: string; icon: LucideIcon; live?: 'nursery' | 'verify' }
+interface Group { title: string; tint: string; items: Item[] }
+
+export const QUICK_GROUPS: Group[] = [
+  {
+    title: 'Conservation', tint: '#7DC383',
+    items: [
+      { name: 'Nursery', hint: 'Seedlings, planting, survival', href: '/nursery', icon: Sprout, live: 'nursery' },
+      { name: 'Kanuvari AI', hint: 'Say what happened', href: '/workspace', icon: MessagesSquare },
+      { name: 'Verification', hint: 'Check and prove records', href: '/mrv', icon: ShieldCheck, live: 'verify' },
+    ],
+  },
+  {
+    title: 'Agents', tint: '#6FA8DC',
+    items: [
+      { name: 'Voice Agent', hint: 'Talk to KAI', href: '/voice', icon: Mic },
+      { name: 'AI Agent', hint: 'Ask about tokens and DeFi', href: '/ai', icon: Bot },
+    ],
+  },
+  {
+    title: 'DeFi · Earn', tint: '#C89B3C',
+    items: [
+      { name: 'Securities', hint: 'Tokenised assets', href: '/securities', icon: ShieldCheck },
+      { name: 'Pools', hint: 'Swap and add liquidity', href: '/pools', icon: Droplets },
+      { name: 'Vaults', hint: 'Earn yield', href: '/vaults', icon: Lock },
+      { name: 'TaaS', hint: 'Tokens as a service', href: '/taas', icon: LayoutGrid },
+    ],
+  },
+  {
+    title: 'Shop · Pay', tint: '#C48FE0',
+    items: [
+      { name: 'Scan & Pay', hint: 'M-Pesa and QR', href: '/pay', icon: ScanLine },
+      { name: 'Products', hint: 'Buy with yBOB', href: '/products', icon: CircleDollarSign },
+      { name: 'NFT Mkt', hint: 'Conservation NFTs', href: '/connft', icon: ImageIcon },
+      { name: 'Airdrop', hint: 'Daily drop and points', href: '/mine', icon: Gift },
+    ],
+  },
+  {
+    title: 'Explore', tint: '#6FC3B8',
+    items: [
+      { name: 'Playground', hint: 'Try KAI operations', href: '/nuvari', icon: FlaskConical },
+      { name: 'SDG Impact', hint: 'Impact by goal', href: '/sdg', icon: Globe },
+      { name: 'KAI Web', hint: 'The KAI website', href: '/kai', icon: Link2 },
+    ],
+  },
+];
+
+export const QUICK_COUNT = QUICK_GROUPS.reduce((n, g) => n + g.items.length, 0);
+
+export default function QuickActions() {
+  const [live, setLive] = useState<{ nursery?: string; verify?: string }>({});
+
+  // Live numbers for the conservation tiles (public, read-only endpoints).
+  useEffect(() => {
+    let on = true;
+    fetch('/api/cfa/nursery/summary').then((r) => r.json()).then((d) => {
+      const s = d?.stats;
+      if (on && s) setLive((l) => ({ ...l, nursery: s.totalSeedlings ? `${Number(s.totalSeedlings).toLocaleString()} seedlings` : 'Start here' }));
+    }).catch(() => {});
+    fetch('/api/mrv/records').then((r) => r.json()).then((d) => {
+      const waiting = (d?.records ?? []).filter((r: { verificationStatus: string }) => r.verificationStatus === 'SUBMITTED' || r.verificationStatus === 'UNDER_REVIEW').length;
+      if (on) setLive((l) => ({ ...l, verify: waiting ? `${waiting} waiting` : 'All checked' }));
+    }).catch(() => {});
+    return () => { on = false; };
+  }, []);
+
+  return (
+    <div className="qa2-groups">
+      {QUICK_GROUPS.map((g) => (
+        <div key={g.title} className="qa2-group">
+          <p className="qa2-group-title" style={{ color: g.tint }}>{g.title}</p>
+          <div className="qa2-grid">
+            {g.items.map((a) => {
+              const Icon = a.icon;
+              const badge = a.live ? live[a.live] : undefined;
+              return (
+                <Link key={a.name} href={a.href} prefetch={false} className="qa2-tile" style={{ ['--tint' as string]: g.tint }}>
+                  <span className="qa2-icon"><Icon size={18} strokeWidth={1.8} /></span>
+                  <span className="qa2-text">
+                    <span className="qa2-name">{a.name}</span>
+                    <span className="qa2-hint">{a.hint}</span>
+                  </span>
+                  {badge && <span className="qa2-badge">{badge}</span>}
+                </Link>
+              );
+            })}
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
