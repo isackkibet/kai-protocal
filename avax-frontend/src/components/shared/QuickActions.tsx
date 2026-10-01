@@ -21,9 +21,9 @@ export const QUICK_GROUPS: Group[] = [
   {
     title: 'Conservation', tint: '#7DC383',
     items: [
-      { name: 'Nursery', hint: 'Seedlings, planting, survival', href: '/nursery', icon: Sprout, live: 'nursery' },
-      { name: 'Kanuvari AI', hint: 'Say what happened', href: '/workspace', icon: MessagesSquare },
-      { name: 'Verification', hint: 'Check and prove records', href: '/mrv', icon: ShieldCheck, live: 'verify' },
+      { name: 'Nursery', hint: 'Seedlings & planting', href: '/nursery', icon: Sprout, live: 'nursery' },
+      { name: 'Kanuvari AI', hint: 'Just say it', href: '/workspace', icon: MessagesSquare },
+      { name: 'Verification', hint: 'Check records', href: '/mrv', icon: ShieldCheck, live: 'verify' },
     ],
   },
   {
@@ -65,6 +65,7 @@ export const QUICK_COUNT = QUICK_GROUPS.reduce((n, g) => n + g.items.length, 0);
 
 export default function QuickActions() {
   const [live, setLive] = useState<{ nursery?: string; verify?: string }>({});
+  const [filter, setFilter] = useState<string>('All');
 
   // Live numbers for the conservation tiles (public, read-only endpoints).
   useEffect(() => {
@@ -80,29 +81,47 @@ export default function QuickActions() {
     return () => { on = false; };
   }, []);
 
+  const [featured, ...rest] = QUICK_GROUPS;
+  const apps = rest
+    .filter((g) => filter === 'All' || g.title === filter)
+    .flatMap((g) => g.items.map((item) => ({ ...item, tint: g.tint })));
+
   return (
-    <div className="qa2-groups">
-      {QUICK_GROUPS.map((g) => (
-        <div key={g.title} className="qa2-group">
-          <p className="qa2-group-title" style={{ color: g.tint }}>{g.title}</p>
-          <div className="qa2-grid">
-            {g.items.map((a) => {
-              const Icon = a.icon;
-              const badge = a.live ? live[a.live] : undefined;
-              return (
-                <Link key={a.name} href={a.href} prefetch={false} className="qa2-tile" style={{ ['--tint' as string]: g.tint }}>
-                  <span className="qa2-icon"><Icon size={18} strokeWidth={1.8} /></span>
-                  <span className="qa2-text">
-                    <span className="qa2-name">{a.name}</span>
-                    <span className="qa2-hint">{a.hint}</span>
-                  </span>
-                  {badge && <span className="qa2-badge">{badge}</span>}
-                </Link>
-              );
-            })}
-          </div>
-        </div>
-      ))}
+    <div className="qa3">
+      {/* Conservation first: three wide cards with live numbers. */}
+      <div className="qa3-featured">
+        {featured.items.map((a) => {
+          const Icon = a.icon;
+          const badge = a.live ? live[a.live] : undefined;
+          return (
+            <Link key={a.name} href={a.href} prefetch={false} className="qa3-card" style={{ ['--tint' as string]: featured.tint }}>
+              <span className="qa3-card-icon"><Icon size={20} strokeWidth={1.8} /></span>
+              <span className="qa3-card-name">{a.name}</span>
+              <span className="qa3-card-hint">{badge ?? a.hint}</span>
+            </Link>
+          );
+        })}
+      </div>
+
+      {/* Everything else: filter chips + a compact icon grid. */}
+      <div className="qa3-chips" role="tablist" aria-label="Filter apps">
+        {['All', ...rest.map((g) => g.title)].map((t) => (
+          <button key={t} role="tab" aria-selected={filter === t} onClick={() => setFilter(t)} className={filter === t ? 'qa3-chip qa3-chip--on' : 'qa3-chip'}>
+            {t}
+          </button>
+        ))}
+      </div>
+      <div className="qa3-grid">
+        {apps.map((a) => {
+          const Icon = a.icon;
+          return (
+            <Link key={a.name} href={a.href} prefetch={false} className="qa3-app" title={a.hint} style={{ ['--tint' as string]: a.tint }}>
+              <span className="qa3-app-icon"><Icon size={20} strokeWidth={1.8} /></span>
+              <span className="qa3-app-name">{a.name}</span>
+            </Link>
+          );
+        })}
+      </div>
     </div>
   );
 }
