@@ -6,8 +6,11 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   Sprout, Warehouse, Leaf, HeartPulse, Plus, X, Loader2, MapPin,
   PackagePlus, ClipboardList, Trees, CheckCircle2, Activity, Droplets,
+  ArrowRightLeft, Skull, Camera, ShieldCheck,
 } from 'lucide-react';
 import { usePrivyAuth } from '@/lib/auth/privy-auth';
+import EvidencePanel from '@/components/cfa/EvidencePanel';
+import CfaAdminPanel from '@/components/cfa/CfaAdminPanel';
 
 /* Same editorial system as the rest of the app — pine + gold + paper,
    flat rows separated by a hairline, no gradient card shells. The
@@ -65,7 +68,7 @@ interface NurserySummary {
 }
 interface Membership { id: string; name: string; role: string; status: string }
 
-type ModalType = 'species' | 'location' | 'batch' | 'plant' | 'activity' | 'survival' | null;
+type ModalType = 'species' | 'location' | 'batch' | 'plant' | 'activity' | 'survival' | 'transfer' | 'loss' | 'evidence' | null;
 type Submit = (path: string, body: Record<string, unknown>) => Promise<boolean>;
 
 const ACTIVITY_LABELS: Record<string, string> = {
@@ -160,6 +163,8 @@ export default function NurseryTab() {
   const [toast, setToast] = useState<string | null>(null);
   const [membership, setMembership] = useState<Membership | null | undefined>(undefined);
   const [joining, setJoining] = useState(false);
+  /** The batch whose photos the evidence modal shows. */
+  const [evidenceBatch, setEvidenceBatch] = useState<Batch | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -343,9 +348,17 @@ export default function NurseryTab() {
         <ActionTile icon={<Trees size={16} color="#7DC383" />} label="Plant Seedlings" onClick={() => setModal('plant')} disabled={!isMember || inNursery.length === 0} />
         <ActionTile icon={<Droplets size={16} color="#6FA8DC" />} label="Log Activity" onClick={() => setModal('activity')} disabled={!isMember || (summary?.locations.length ?? 0) === 0} />
         <ActionTile icon={<HeartPulse size={16} color="#6FA8DC" />} label="Survival Check" onClick={() => setModal('survival')} disabled={!isMember || batches.length === 0} />
+        <ActionTile icon={<ArrowRightLeft size={16} color={C.goldLight} />} label="Transfer Seedlings" onClick={() => setModal('transfer')} disabled={!isMember || inNursery.length === 0} />
+        <ActionTile icon={<Skull size={16} color={C.red} />} label="Record Loss" onClick={() => setModal('loss')} disabled={!isMember || inNursery.length === 0} />
         {isAdmin && <ActionTile icon={<Plus size={16} color="#C48FE0" />} label="Add Species" onClick={() => setModal('species')} />}
         {isAdmin && <ActionTile icon={<MapPin size={16} color="#C48FE0" />} label="Add Location" onClick={() => setModal('location')} />}
       </div>
+
+      <Link href="/mrv" style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 28, color: C.goldLight, fontSize: 12.5, fontWeight: 600, textDecoration: 'none' }}>
+        <ShieldCheck size={15} /> Verification desk — review, correct and anchor records on Avalanche →
+      </Link>
+
+      {isAdmin && membership && <CfaAdminPanel myMemberId={membership.id} onChanged={load} />}
 
       {/* Batches */}
       <p style={{ ...label, marginBottom: 14 }}>Seedling Batches</p>
@@ -360,6 +373,10 @@ export default function NurseryTab() {
             <span style={{ ...MONO, fontSize: 10, color: b.status === 'planted' ? '#7DC383' : C.inkLight, flexShrink: 0 }}>
               {STATUS_LABELS[b.status] ?? b.status}{b.status === 'planted' && b.plantingDate ? ` ${shortDate(b.plantingDate)}` : ''}
             </span>
+            <button onClick={() => { setEvidenceBatch(b); setModal('evidence'); }} aria-label="Photos" title="Photos and documents"
+              style={{ background: 'none', border: 'none', cursor: 'pointer', color: C.goldLight, display: 'flex', padding: 0, flexShrink: 0 }}>
+              <Camera size={14} />
+            </button>
             {b.verifyId && (
               <Link href={`/verify/${b.verifyId}`} style={{ ...MONO, fontSize: 10, color: C.goldLight, textDecoration: 'none', flexShrink: 0 }}>
                 Verify
@@ -402,6 +419,8 @@ export default function NurseryTab() {
             submitting={submitting}
             onClose={() => setModal(null)}
             onSubmit={submit}
+            evidenceBatch={evidenceBatch}
+            canUpload={isMember}
           />
         )}
       </AnimatePresence>
@@ -411,13 +430,15 @@ export default function NurseryTab() {
 
 // ── Modal + forms ────────────────────────────────────────────────
 function NurseryModal({
-  type, summary, submitting, onClose, onSubmit,
+  type, summary, submitting, onClose, onSubmit, evidenceBatch, canUpload,
 }: {
   type: Exclude<ModalType, null>;
   summary: NurserySummary;
   submitting: boolean;
   onClose: () => void;
   onSubmit: Submit;
+  evidenceBatch: Batch | null;
+  canUpload: boolean;
 }) {
   const titles: Record<Exclude<ModalType, null>, string> = {
     species: 'Add Species',
@@ -426,6 +447,9 @@ function NurseryModal({
     plant: 'Plant Seedlings',
     activity: 'Log Nursery Activity',
     survival: 'Survival Check',
+    transfer: 'Transfer Seedlings',
+    loss: 'Record Seedling Loss',
+    evidence: 'Photos & Documents',
   };
 
   return (
@@ -452,6 +476,14 @@ function NurseryModal({
         {type === 'plant' && <PlantForm summary={summary} submitting={submitting} onSubmit={onSubmit} />}
         {type === 'activity' && <ActivityForm summary={summary} submitting={submitting} onSubmit={onSubmit} />}
         {type === 'survival' && <SurvivalForm summary={summary} submitting={submitting} onSubmit={onSubmit} />}
+        {type === 'transfer' && <TransferForm summary={summary} submitting={submitting} onSubmit={onSubmit} />}
+        {type === 'loss' && <LossForm summary={summary} submitting={submitting} onSubmit={onSubmit} />}
+        {type === 'evidence' && evidenceBatch && (
+          <div>
+            <p style={{ fontSize: 12.5, color: C.inkLight, margin: '0 0 14px' }}>{batchLabel(evidenceBatch)}. Each file gets a SHA-256 fingerprint that verifiers can check.</p>
+            <EvidencePanel entityType="seedling_inventory" entityId={evidenceBatch.id} canUpload={canUpload} />
+          </div>
+        )}
       </motion.div>
     </motion.div>
   );
@@ -716,6 +748,115 @@ function SurvivalForm({ summary, submitting, onSubmit }: { summary: NurserySumma
         <input value={notes} onChange={(e) => setNotes(e.target.value)} style={inputStyle} />
       </Field>
       <SubmitButton submitting={submitting} label="Save Survival Check" disabled={overCount} />
+    </form>
+  );
+}
+
+function TransferForm({ summary, submitting, onSubmit }: { summary: NurserySummary; submitting: boolean; onSubmit: Submit }) {
+  const inNursery = summary.batches.filter((b) => b.status === 'in_inventory');
+  const [inventoryId, setInventoryId] = useState(inNursery[0]?.id ?? '');
+  const batch = inNursery.find((b) => b.id === inventoryId);
+  const [quantity, setQuantity] = useState(() => String(inNursery[0]?.quantity ?? ''));
+  const [kind, setKind] = useState<'nursery' | 'outside'>('nursery');
+  const others = summary.locations.filter((l) => l.name !== batch?.location.name);
+  const [toLocationId, setToLocationId] = useState(others[0]?.id ?? '');
+  const [destination, setDestination] = useState('');
+  const [transferDate, setTransferDate] = useState(today);
+  const [notes, setNotes] = useState('');
+  const q = Number(quantity);
+  const tooMany = !!batch && q > batch.quantity;
+  const noTarget = kind === 'nursery' ? !others.length : !destination.trim();
+  return (
+    <form style={formStyle} onSubmit={async (e) => {
+      e.preventDefault();
+      await onSubmit('/api/cfa/transfer', {
+        inventoryId, quantity: q, transferDate, notes: optional(notes),
+        ...(kind === 'nursery' ? { toLocationId } : { destination: destination.trim() }),
+      });
+    }}>
+      <Field label="Batch in the nursery">
+        <select required value={inventoryId} onChange={(e) => {
+          setInventoryId(e.target.value);
+          setQuantity(String(inNursery.find((b) => b.id === e.target.value)?.quantity ?? ''));
+        }} style={inputStyle}>
+          {inNursery.map((b) => <option key={b.id} value={b.id} style={optionStyle}>{batchLabel(b)}</option>)}
+        </select>
+      </Field>
+      <Field label="Number of seedlings">
+        <input required type="number" min={1} max={batch?.quantity} value={quantity} onChange={(e) => setQuantity(e.target.value)} style={inputStyle} />
+      </Field>
+      {tooMany && <p style={{ fontSize: 11.5, color: C.red, margin: '-6px 0 0' }}>Only {batch!.quantity.toLocaleString()} seedlings are in this batch.</p>}
+      <Field label="Where to">
+        <select value={kind} onChange={(e) => setKind(e.target.value as 'nursery' | 'outside')} style={inputStyle}>
+          <option value="nursery" style={optionStyle}>Another nursery of this CFA</option>
+          <option value="outside" style={optionStyle}>Outside the CFA (school, partner…)</option>
+        </select>
+      </Field>
+      {kind === 'nursery' ? (
+        others.length ? (
+          <Field label="Destination nursery">
+            <select required value={toLocationId} onChange={(e) => setToLocationId(e.target.value)} style={inputStyle}>
+              {others.map((l) => <option key={l.id} value={l.id} style={optionStyle}>{l.name}</option>)}
+            </select>
+          </Field>
+        ) : <p style={{ fontSize: 11.5, color: C.inkLight, margin: 0 }}>There is no other nursery yet. An admin can add one.</p>
+      ) : (
+        <Field label="Destination">
+          <input required value={destination} onChange={(e) => setDestination(e.target.value)} placeholder="e.g. Oloolua Primary School" style={inputStyle} />
+        </Field>
+      )}
+      <Field label="Date">
+        <input type="date" max={today()} value={transferDate} onChange={(e) => setTransferDate(e.target.value)} style={inputStyle} />
+      </Field>
+      <Field label="Notes (optional)">
+        <input value={notes} onChange={(e) => setNotes(e.target.value)} style={inputStyle} />
+      </Field>
+      <SubmitButton submitting={submitting} label="Record Transfer" disabled={tooMany || noTarget} />
+    </form>
+  );
+}
+
+const LOSS_LABELS: Record<string, string> = {
+  drought: 'Drought', disease: 'Disease', damage: 'Damage (animals, people, weather)', pests: 'Pests', mortality: 'Died (natural)', unknown: 'Unknown',
+};
+
+function LossForm({ summary, submitting, onSubmit }: { summary: NurserySummary; submitting: boolean; onSubmit: Submit }) {
+  const inNursery = summary.batches.filter((b) => b.status === 'in_inventory');
+  const [inventoryId, setInventoryId] = useState(inNursery[0]?.id ?? '');
+  const batch = inNursery.find((b) => b.id === inventoryId);
+  const [quantity, setQuantity] = useState('');
+  const [reason, setReason] = useState('drought');
+  const [lossDate, setLossDate] = useState(today);
+  const [notes, setNotes] = useState('');
+  const q = Number(quantity);
+  const tooMany = !!batch && q > batch.quantity;
+  return (
+    <form style={formStyle} onSubmit={async (e) => {
+      e.preventDefault();
+      await onSubmit('/api/cfa/loss', { inventoryId, quantity: q, reason, lossDate, notes: optional(notes) });
+    }}>
+      <p style={{ fontSize: 11.5, color: C.inkLight, margin: 0 }}>For seedlings that died in the nursery. After planting, use a survival check.</p>
+      <Field label="Batch in the nursery">
+        <select required value={inventoryId} onChange={(e) => setInventoryId(e.target.value)} style={inputStyle}>
+          {inNursery.map((b) => <option key={b.id} value={b.id} style={optionStyle}>{batchLabel(b)}</option>)}
+        </select>
+      </Field>
+      <Field label="Number lost">
+        <input required type="number" min={1} max={batch?.quantity} value={quantity} onChange={(e) => setQuantity(e.target.value)} style={inputStyle} />
+      </Field>
+      {tooMany && <p style={{ fontSize: 11.5, color: C.red, margin: '-6px 0 0' }}>Only {batch!.quantity.toLocaleString()} seedlings are in this batch.</p>}
+      <Field label="Reason">
+        <select value={reason} onChange={(e) => setReason(e.target.value)} style={inputStyle}>
+          {Object.entries(LOSS_LABELS).map(([k, v]) => <option key={k} value={k} style={optionStyle}>{v}</option>)}
+        </select>
+      </Field>
+      <Field label="Date">
+        <input type="date" max={today()} value={lossDate} onChange={(e) => setLossDate(e.target.value)} style={inputStyle} />
+      </Field>
+      <Field label="Notes (optional)">
+        <input value={notes} onChange={(e) => setNotes(e.target.value)} style={inputStyle} />
+      </Field>
+      <SubmitButton submitting={submitting} label="Record Loss" disabled={tooMany} />
     </form>
   );
 }

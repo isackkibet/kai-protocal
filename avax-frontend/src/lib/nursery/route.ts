@@ -25,6 +25,8 @@ export async function nurseryWrite(
   req: Request,
   label: string,
   handler: (ctx: WriteContext) => Promise<NextResponse>,
+  /** Trust-level fields this route may receive because it checks the caller itself (e.g. `role` for admins). */
+  opts: { allowFields?: readonly string[] } = {},
 ): Promise<NextResponse> {
   const limited = await requireRateLimit(req, [{ scope: 'ip', limit: 30, windowMs: 60_000 }]);
   if (!limited.ok) return limited.response;
@@ -32,7 +34,7 @@ export async function nurseryWrite(
   let body: Record<string, unknown> = {};
   try {
     body = ((await readJsonBody(req)) ?? {}) as Record<string, unknown>;
-    assertNoPrivilegeEscalation(body);
+    assertNoPrivilegeEscalation(body, opts.allowFields);
   } catch (err) {
     return NextResponse.json({ error: err instanceof InputError ? err.message : 'Invalid JSON body' }, { status: 400 });
   }
@@ -75,6 +77,24 @@ export async function nurseryRead(
     console.error(`[${label}] database unavailable`, e);
     return NextResponse.json({ ...empty, db: false });
   }
+}
+
+/**
+ * The CFA and the signed-in member, for routes that don't write nursery rows
+ * themselves (verification, anchoring, member lists). Returns a ready error
+ * response when there is no database, CFA, sign-in or membership.
+ */
+export async function memberContext(
+  req: Request,
+): Promise<{ ok: true; prisma: PrismaClient; cfa: Cfa; member: CfaMember } | { ok: false; response: NextResponse }> {
+  const prisma = await getPrisma();
+  if (!prisma) return { ok: false, response: NextResponse.json({ error: 'database unavailable' }, { status: 503 }) };
+  const cfa = await getNurseryCfa(prisma);
+  if (!cfa) return { ok: false, response: NextResponse.json({ error: 'Nursery database is not set up yet.' }, { status: 503 }) };
+  const session = await getSessionMember(prisma, req);
+  if (!session.ok) return { ok: false, response: NextResponse.json({ error: session.error }, { status: session.status }) };
+  if (session.member.cfaId !== cfa.id) return { ok: false, response: NextResponse.json({ error: 'You are not a member of this CFA.' }, { status: 403 }) };
+  return { ok: true, prisma, cfa, member: session.member };
 }
 
 /** "YYYY-MM-DD" → Date at UTC midnight, for @db.Date columns. */

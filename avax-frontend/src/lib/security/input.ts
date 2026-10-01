@@ -307,9 +307,13 @@ const FORBIDDEN_FIELDS = new Set([
   'data_hash', 'dataHash', 'previous_hash', 'previousHash',
 ]);
 
-export function assertNoPrivilegeEscalation(body: Record<string, unknown>): void {
+/**
+ * `allow` names fields a specific route legitimately sets after its OWN
+ * authorization check — e.g. `role` on the CFA-admin member routes.
+ */
+export function assertNoPrivilegeEscalation(body: Record<string, unknown>, allow: readonly string[] = []): void {
   for (const key of Object.keys(body)) {
-    if (FORBIDDEN_FIELDS.has(key)) {
+    if (FORBIDDEN_FIELDS.has(key) && !allow.includes(key)) {
       throw new InputError(
         key,
         `"${key}" is server-controlled and cannot be supplied by a client.`,

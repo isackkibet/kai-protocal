@@ -32,20 +32,32 @@ export function fail(tool: string, code: ToolErrorCode, message: string, options
 
 // ── Plans (drafts the user confirms) ──────────────────────────────────────────
 
-/** Endpoints a confirmed plan may be sent to. The browser refuses any other. */
-export const NURSERY_PLAN_ENDPOINTS = [
-  '/api/cfa/inventory', '/api/cfa/planting', '/api/cfa/loss', '/api/cfa/activities', '/api/cfa/survival',
-] as const;
+/**
+ * Where a confirmed plan may be sent. The browser refuses anything else, so
+ * a plan can never make the user's browser call an arbitrary URL.
+ */
+const PLAN_ROUTES: { method: 'POST' | 'PATCH'; path: RegExp }[] = [
+  { method: 'POST', path: /^\/api\/cfa\/(inventory|planting|loss|transfer|activities|survival|species|locations|members)$/ },
+  { method: 'PATCH', path: /^\/api\/cfa\/(profile|locations\/[0-9a-f-]{36}|members\/[0-9a-f-]{36})$/ },
+  { method: 'POST', path: /^\/api\/mrv\/records\/[a-z0-9]{8,40}\/review$/ },
+  { method: 'POST', path: /^\/api\/mrv\/submit$/ },
+];
+
+export function isAllowedPlanRoute(method: string, endpoint: string): boolean {
+  return PLAN_ROUTES.some((r) => r.method === method && r.path.test(endpoint));
+}
 
 /**
- * A nursery write the agent prepared but did not perform. The user confirms
- * it and their browser POSTs `body` to `endpoint`, where the route checks the
- * login and membership again, validates and writes with an audit entry.
+ * A nursery / CFA / verification write the agent prepared but did not
+ * perform. The user confirms it and their browser sends `body` to
+ * `endpoint`, where the route checks the login and role again, validates and
+ * writes with an audit entry.
  */
 export interface NurseryPlan {
   kind: 'nursery';
   name: string;
-  endpoint: (typeof NURSERY_PLAN_ENDPOINTS)[number];
+  method: 'POST' | 'PATCH';
+  endpoint: string;
   body: Record<string, unknown>;
   /** One line the user reads before confirming. */
   summary: string;
@@ -58,7 +70,7 @@ export function isNurseryPlan(x: unknown): x is NurseryPlan {
   const p = x as Partial<NurseryPlan>;
   return p.kind === 'nursery'
     && typeof p.summary === 'string'
-    && (NURSERY_PLAN_ENDPOINTS as readonly string[]).includes(String(p.endpoint))
+    && isAllowedPlanRoute(String(p.method), String(p.endpoint))
     && !!p.body && typeof p.body === 'object' && !Array.isArray(p.body);
 }
 

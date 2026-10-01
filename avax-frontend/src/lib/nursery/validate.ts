@@ -23,6 +23,8 @@ export const INVENTORY_STATUSES = ['in_inventory', 'planted', 'transferred', 'de
 export const ACTIVITY_TYPES = [
   'watering', 'weeding', 'mulching', 'pruning', 'pest_control', 'transplanting', 'distribution', 'planting', 'other',
 ] as const;
+export const MEMBER_ROLES = ['member', 'admin', 'verifier', 'auditor', 'partner'] as const;
+export const MEMBER_STATUSES = ['active', 'inactive', 'suspended'] as const;
 export type InventoryStatusValue = (typeof INVENTORY_STATUSES)[number];
 export type ActivityTypeValue = (typeof ACTIVITY_TYPES)[number];
 

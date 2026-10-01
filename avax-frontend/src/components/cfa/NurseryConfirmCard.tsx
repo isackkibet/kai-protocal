@@ -25,7 +25,7 @@ export default function NurseryConfirmCard({ plan }: { plan: NurseryPlan }) {
     setState('saving');
     try {
       const res = await fetch(plan.endpoint, {
-        method: 'POST',
+        method: plan.method,
         headers: { 'Content-Type': 'application/json', ...(await authHeader(getAccessToken)) },
         body: JSON.stringify(plan.body),
       });
@@ -47,7 +47,7 @@ export default function NurseryConfirmCard({ plan }: { plan: NurseryPlan }) {
   return (
     <div style={{ marginTop: 8, padding: 12, borderRadius: 14, border: `1px solid ${border}`, background: 'rgba(16,185,129,0.06)', fontSize: 13, color: '#fff' }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontWeight: 600, marginBottom: 6 }}>
-        <Sprout size={15} color="#34d399" /> Nursery record — not saved yet
+        <Sprout size={15} color="#34d399" /> {plan.endpoint.startsWith('/api/mrv') ? 'Verification decision' : 'Nursery record'} — not saved yet
       </div>
       <div style={{ lineHeight: 1.5 }}>{plan.summary}</div>
       {plan.assumptions.length > 0 && (

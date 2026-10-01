@@ -83,6 +83,18 @@ export function isConfiguredAdmin(email: string) {
  * mostly catch races and bugs — but they must never surface as a raw 500.
  */
 export function explainDbError(e: unknown): { status: number; error: string } | null {
+  // Prisma's own unique-constraint error (P2002) names the columns in
+  // meta.target, not the constraint, so the patterns below never saw it.
+  const prismaErr = e as { code?: string; meta?: { target?: unknown } };
+  if (prismaErr?.code === 'P2002') {
+    const target = Array.isArray(prismaErr.meta?.target) ? prismaErr.meta.target.join(',') : String(prismaErr.meta?.target ?? '');
+    if (/name/.test(target) && /cfa_id/.test(target)) return { status: 409, error: 'A location with that name already exists.' };
+    if (/scientific_name/.test(target)) return { status: 409, error: 'That species (scientific name) is already in the catalogue.' };
+    if (/email/.test(target)) return { status: 409, error: 'A member with this email already exists.' };
+    if (/auth_user_id/.test(target)) return { status: 409, error: 'This login is already linked to a member.' };
+    if (/sha256/.test(target)) return { status: 409, error: 'This exact file is already attached here.' };
+    return { status: 409, error: 'That already exists.' };
+  }
   const msg = e instanceof Error ? e.message : String(e);
   const rules: [RegExp, number, string][] = [
     [/check_quantity_sum/, 400, 'Alive plus dead seedlings cannot be more than the initial count.'],

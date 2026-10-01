@@ -5,6 +5,9 @@ import { ArrowLeft, ShieldCheck, ShieldAlert, Clock, Link2 } from 'lucide-react'
 import { getPrisma } from '@/lib/db/db';
 import { checkRecordIntegrity } from '@/lib/mrv/records';
 import { HUB_THEME as C, MONO, SERIF } from '@/lib/hubs/hub-theme';
+import EvidencePanel from '@/components/cfa/EvidencePanel';
+import AnchorCheck from '@/components/mrv/AnchorCheck';
+import type { EvidenceEntity } from '@/lib/nursery/evidence-rules';
 
 export const dynamic = 'force-dynamic';
 
@@ -14,10 +17,14 @@ export const metadata: Metadata = {
 };
 
 const VERIFICATION_TEXT: Record<string, string> = {
-  SUBMITTED: 'Submitted. Not yet verified by Hedera Guardian.',
-  UNDER_REVIEW: 'Under review in Hedera Guardian.',
-  VERIFIED: 'Verified by Hedera Guardian against the methodology.',
+  SUBMITTED: 'Submitted. Waiting for a CFA verifier.',
+  UNDER_REVIEW: 'A CFA verifier is reviewing it.',
+  VERIFIED: 'Verified by a CFA verifier (not the person who submitted it).',
   REJECTED: 'Rejected in verification. A corrected version can be submitted.',
+  CORRECTION_REQUIRED: 'Sent back for correction. The submitter adds a corrected version.',
+};
+const DECISION_TEXT: Record<string, string> = {
+  UNDER_REVIEW: 'Review started', VERIFIED: 'Verified', REJECTED: 'Rejected', CORRECTION_REQUIRED: 'Correction requested',
 };
 const ANCHOR_TEXT: Record<string, string> = {
   NOT_ANCHORED: 'No proof on Avalanche yet.',
@@ -54,7 +61,11 @@ export default async function VerifyRecordPage({ params }: { params: Promise<{ r
   const record = prisma
     ? await prisma.conservationRecord.findUnique({
         where: { id: recordId },
-        include: { versions: { orderBy: { version: 'asc' } }, forest: { select: { name: true } } },
+        include: {
+          versions: { orderBy: { version: 'asc' } },
+          forest: { select: { name: true } },
+          reviews: { orderBy: { createdAt: 'asc' } },
+        },
       }).catch(() => null)
     : null;
 
@@ -66,6 +77,10 @@ export default async function VerifyRecordPage({ params }: { params: Promise<{ r
   const data = (latest?.data ?? {}) as Record<string, unknown>;
   const species = (data.species as { name?: string } | undefined)?.name;
   const ok = integrity?.ok ?? false;
+  const reviewerNames = new Map(
+    (await prisma!.cfaMember.findMany({ where: { id: { in: record.reviews.map((r) => r.reviewerId) } }, select: { id: true, name: true } }).catch(() => []))
+      .map((m) => [m.id, m.name]),
+  );
 
   return (
     <Shell>
@@ -73,11 +88,14 @@ export default async function VerifyRecordPage({ params }: { params: Promise<{ r
       <h1 style={{ ...SERIF, fontSize: 26, fontWeight: 700, margin: '8px 0 4px', lineHeight: 1.25 }}>
         {record.recordType === 'PLANTING' && typeof data.quantity === 'number'
           ? `${data.quantity.toLocaleString()} ${species ?? 'seedlings'} planted`
-          : 'Conservation record'}
+          : record.recordType === 'SURVIVAL_CHECK' && typeof data.aliveQuantity === 'number'
+            ? `${data.aliveQuantity.toLocaleString()} of ${Number(data.initialQuantity).toLocaleString()} ${species ?? 'seedlings'} alive`
+            : 'Conservation record'}
       </h1>
       <p style={{ color: C.inkLight, fontSize: 13, margin: 0 }}>
         {record.forest.name}
         {typeof data.plantedAt === 'string' ? ` · ${fmt(data.plantedAt)}` : ''}
+        {typeof data.observedOn === 'string' ? ` · checked ${data.observedOn}` : ''}
       </p>
 
       <section style={{ ...card, marginTop: 22, borderColor: ok ? C.pineLight : C.red, display: 'flex', gap: 12, alignItems: 'flex-start' }}>
@@ -113,6 +131,35 @@ export default async function VerifyRecordPage({ params }: { params: Promise<{ r
         <p style={label}>Current fingerprint (SHA-256)</p>
         <p style={hash}>{record.dataHash}</p>
       </section>
+
+      {record.anchorStatus === 'ANCHORED' && (
+        <section style={{ ...card, marginTop: 12 }}>
+          <p style={{ ...label, marginBottom: 10 }}>Proof on Avalanche</p>
+          <AnchorCheck recordId={record.id} />
+        </section>
+      )}
+
+      <h2 style={{ ...SERIF, fontSize: 18, fontWeight: 600, margin: '30px 0 10px' }}>Verification history</h2>
+      {record.reviews.length === 0 && <p style={{ color: C.inkLight, fontSize: 13, margin: 0 }}>No verifier has looked at this record yet.</p>}
+      {record.reviews.map((r) => (
+        <div key={r.id} style={{ display: 'flex', gap: 12, justifyContent: 'space-between', flexWrap: 'wrap', padding: '10px 0', borderBottom: `1px solid ${C.hairline}` }}>
+          <p style={{ margin: 0, fontSize: 13.5 }}>
+            <strong>{DECISION_TEXT[r.decision] ?? r.decision}</strong> by {reviewerNames.get(r.reviewerId) ?? 'a CFA verifier'} (version {r.recordVersion})
+            {r.reason ? <span style={{ color: C.inkLight }}> — {r.reason}</span> : null}
+          </p>
+          <p style={{ margin: 0, fontSize: 12, color: C.inkLight }}>{fmt(r.createdAt)}</p>
+        </div>
+      ))}
+
+      <h2 style={{ ...SERIF, fontSize: 18, fontWeight: 600, margin: '30px 0 10px' }}>Evidence</h2>
+      <p style={{ color: C.inkLight, fontSize: 13, margin: '0 0 12px', lineHeight: 1.55 }}>
+        Photos and documents for this work. Each file&apos;s SHA-256 is shown, so a copy can be checked. CFA members can open the files.
+      </p>
+      {record.sourceTable && record.sourceId && ['seedling_inventory', 'survival_observations'].includes(record.sourceTable) && (
+        <EvidencePanel entityType={record.sourceTable as EvidenceEntity} entityId={record.sourceId} canUpload={false} />
+      )}
+      <EvidencePanel entityType="conservation_records" entityId={record.id} canUpload={false}
+        quietWhenEmpty={!!record.sourceTable && ['seedling_inventory', 'survival_observations'].includes(record.sourceTable)} />
 
       <h2 style={{ ...SERIF, fontSize: 18, fontWeight: 600, margin: '30px 0 10px' }}>Version history</h2>
       <p style={{ color: C.inkLight, fontSize: 13, margin: '0 0 12px', lineHeight: 1.55 }}>

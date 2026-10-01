@@ -81,3 +81,19 @@ test('tool result shape', () => {
   assert.deepEqual(bad.error, { code: 'INVALID_SPECIES', message: 'nope', options: ['Acacia'] });
   assert.equal(fail('get_x', 'NOT_FOUND', 'x').error?.options, undefined);
 });
+
+test('plans may only target known routes and methods', async () => {
+  const { isAllowedPlanRoute, isNurseryPlan } = await import('./agent-logic.ts');
+  assert.ok(isAllowedPlanRoute('POST', '/api/cfa/transfer'));
+  assert.ok(isAllowedPlanRoute('PATCH', '/api/cfa/members/0b3c5e2a-1111-4222-8333-944455556666'));
+  assert.ok(isAllowedPlanRoute('POST', '/api/mrv/records/cmabc12345xyz/review'));
+  assert.ok(!isAllowedPlanRoute('PATCH', '/api/cfa/transfer'));
+  assert.ok(!isAllowedPlanRoute('POST', '/api/airdrop/claim'));
+  assert.ok(!isAllowedPlanRoute('POST', 'https://evil.example/api/cfa/inventory'));
+  assert.ok(!isAllowedPlanRoute('POST', '/api/cfa/inventory?x=1'));
+  assert.ok(!isAllowedPlanRoute('DELETE', '/api/cfa/inventory'));
+  const plan = { kind: 'nursery', name: 'x', method: 'POST', endpoint: '/api/cfa/loss', body: {}, summary: 's', assumptions: [] };
+  assert.ok(isNurseryPlan(plan));
+  assert.ok(!isNurseryPlan({ ...plan, endpoint: '/api/mine/claim' }));
+  assert.ok(!isNurseryPlan({ ...plan, body: [] }));
+});

@@ -6,15 +6,15 @@ import { hashRecord } from './canonical.ts';
  *
  * The only code allowed to write conservation_records / record_versions.
  * API routes pass record *data* in; statuses are never taken from a caller —
- * verificationStatus / anchorStatus change only in the trusted Guardian and
- * Avalanche integrations (not built yet, so every record stays SUBMITTED /
- * NOT_ANCHORED until they are).
+ * verificationStatus changes only through a human verifier's decision
+ * (lib/mrv/verification.ts) and anchorStatus only through Merkle anchoring
+ * on Avalanche (lib/mrv/anchor.ts).
  */
 
 type Db = PrismaClient | Prisma.TransactionClient;
 
 /** Records under review or verified are frozen: data under audit can't change. */
-const CORRECTABLE_STATUSES = new Set(['SUBMITTED', 'REJECTED']);
+const CORRECTABLE_STATUSES = new Set(['SUBMITTED', 'REJECTED', 'CORRECTION_REQUIRED']);
 
 // ── planting/v1 ───────────────────────────────────────────────────────────────
 
@@ -74,8 +74,49 @@ export function validatePlantingData(data: unknown): string[] {
   return problems;
 }
 
+// ── survival/v1 ───────────────────────────────────────────────────────────────
+
+export const SURVIVAL_SCHEMA = 'survival/v1';
+
+export interface SurvivalRecordData {
+  schema: typeof SURVIVAL_SCHEMA;
+  recordType: 'SURVIVAL_CHECK';
+  cfa: { id: string; name: string; region: string };
+  species: { id: string; name: string };
+  /** The planted batch that was checked. */
+  batchId: string;
+  initialQuantity: number;
+  aliveQuantity: number;
+  deadQuantity: number;
+  /** ISO date (YYYY-MM-DD) of the check. */
+  observedOn: string;
+  notes: string | null;
+  submittedBy: { memberId: string | null; name: string | null };
+}
+
+export function validateSurvivalData(data: unknown): string[] {
+  const problems: string[] = [];
+  const d = data as Partial<SurvivalRecordData> | null;
+  if (!d || typeof d !== 'object') return ['record data must be an object'];
+  if (d.schema !== SURVIVAL_SCHEMA) problems.push(`schema must be "${SURVIVAL_SCHEMA}"`);
+  if (d.recordType !== 'SURVIVAL_CHECK') problems.push('recordType must be "SURVIVAL_CHECK"');
+  if (!d.cfa?.id || !d.cfa?.name) problems.push('cfa.id and cfa.name are required');
+  if (!d.species?.id || !d.species?.name) problems.push('species.id and species.name are required');
+  if (typeof d.batchId !== 'string' || !d.batchId) problems.push('batchId is required');
+  const counts = [d.initialQuantity, d.aliveQuantity, d.deadQuantity];
+  if (!counts.every((n) => Number.isInteger(n) && (n as number) >= 0)) problems.push('counts must be whole numbers, zero or more');
+  else if ((d.aliveQuantity as number) + (d.deadQuantity as number) > (d.initialQuantity as number)) {
+    problems.push('alive plus dead cannot be more than the initial count');
+  }
+  if (typeof d.observedOn !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(d.observedOn)) problems.push('observedOn must be a date like 2026-09-30');
+  if (d.notes !== null && typeof d.notes !== 'string') problems.push('notes must be a string or null');
+  if (!d.submittedBy || typeof d.submittedBy !== 'object') problems.push('submittedBy is required');
+  return problems;
+}
+
 const VALIDATORS: Record<string, (data: unknown) => string[]> = {
   [PLANTING_SCHEMA]: validatePlantingData,
+  [SURVIVAL_SCHEMA]: validateSurvivalData,
 };
 
 function assertValid(schemaVersion: string, data: unknown) {

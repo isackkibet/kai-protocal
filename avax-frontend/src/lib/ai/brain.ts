@@ -31,7 +31,9 @@ import { getPrisma } from '@/lib/db/db';
 import { getNurseryCfa } from '@/lib/nursery/db';
 import { checkRecordIntegrity } from '@/lib/mrv/records';
 import { redactSecrets } from './redact';
-import { NURSERY_PROMPT, NURSERY_WORDS, nurseryTools } from './nursery-agent';
+import {
+  ADMIN_PROMPT, CFA_ADMIN_WORDS, NURSERY_PROMPT, NURSERY_WORDS, VERIFY_PROMPT, VERIFY_WORDS, nurseryTools, type NurseryToolGroups,
+} from './nursery-agent';
 
 export type BrainMode = 'chat' | 'voice' | 'ask';
 
@@ -345,13 +347,26 @@ const ACTION_WORDS = /\b(swap|exchange|convert|trade|buy|purchase|sell|pay|payme
  */
 function wantsActionTools(input: BrainInput): boolean {
   const recent = sanitizeHistory(input.history).slice(-3).map((t) => t.content).join('\n');
-  return ACTION_WORDS.test(input.message) || ACTION_WORDS.test(recent);
+  const text = `${input.message}\n${recent}`;
+  if (!ACTION_WORDS.test(text)) return false;
+  // "Transfer 100 seedlings" / "approve this record" are nursery and
+  // verification actions, not money: without a money word they don't need
+  // (and must not be steered towards) the token tools.
+  const onlyAmbiguous = !ACTION_WORDS.test(text.replace(/\b(transfer\w*|approv\w*)\b/gi, ''));
+  if (onlyAmbiguous && (NURSERY_WORDS.test(text) || VERIFY_WORDS.test(text)) && !MONEY_WORDS.test(text)) return false;
+  return true;
 }
 
-/** Same idea for the nursery agent's tools (lib/ai/nursery-agent.ts). */
-function wantsNurseryTools(input: BrainInput): boolean {
+const MONEY_WORDS = /\b(nvr|ybob|ytoken|ygold|gami|cents|avax|usdc|kes|ksh|shillings?|tokens?|wallet|funds|money)\b|0x[0-9a-fA-F]{40}/i;
+
+/**
+ * Same idea for the nursery agent's three tool groups (lib/ai/nursery-agent.ts):
+ * nursery records, CFA administration, and verification / evidence / anchoring.
+ */
+function nurseryGroups(input: BrainInput): NurseryToolGroups {
   const recent = sanitizeHistory(input.history).slice(-3).map((t) => t.content).join('\n');
-  return NURSERY_WORDS.test(input.message) || NURSERY_WORDS.test(recent);
+  const hit = (re: RegExp) => re.test(input.message) || re.test(recent);
+  return { nursery: hit(NURSERY_WORDS), admin: hit(CFA_ADMIN_WORDS), verify: hit(VERIFY_WORDS) };
 }
 
 /** Today's date in Kenya (UTC+3), so "today" / "yesterday" become real dates. */
@@ -366,17 +381,27 @@ export async function runKai(input: BrainInput): Promise<BrainResult> {
   const plans: Record<string, unknown>[] = [];
   const toolsUsed: string[] = [];
   const withActions = wantsActionTools(input);
-  const withNursery = wantsNurseryTools(input);
-  const tools = [
+  const groups = nurseryGroups(input);
+  const withNursery = groups.nursery || groups.admin || groups.verify;
+  const shared = [
     ...AGENT_TOOLS
       .filter((t) => withActions || CORE_AGENT_TOOLS.has(t.name))
       .map((t) => fromAgentTool(t, (plan) => plans.push(plan))),
     ...appDataTools(input),
-    ...(withNursery ? nurseryTools(input.privyUserId, (plan) => plans.push({ ...plan })) : []),
   ];
+  // The nursery tools come in two schema styles with the same code behind
+  // them: optional fields may be null for Groq/NVIDIA (gpt-oss sends null and
+  // Groq rejects that against a plain "optional"), but not for Gemini (which
+  // rejects null types). Tools are always RUN from the null-tolerant set.
+  const onNurseryPlan = (plan: object) => plans.push({ ...plan });
+  const tools = [...shared, ...(withNursery ? nurseryTools(input.privyUserId, onNurseryPlan, groups, true) : [])];
+  const geminiTools = [...shared, ...(withNursery ? nurseryTools(input.privyUserId, onNurseryPlan, groups, false) : [])];
   const byName = new Map(tools.map((t) => [t.name, t]));
 
-  const bound = models.map((m) => ({ name: m.name, llm: m.model.bindTools(tools) as Runnable<BaseLanguageModelInput, AIMessage> }));
+  const bound = models.map((m) => ({
+    name: m.name,
+    llm: m.model.bindTools(m.name.startsWith('gemini/') ? geminiTools : tools) as Runnable<BaseLanguageModelInput, AIMessage>,
+  }));
 
   // Fallback chain, done by hand (not Runnable.withFallbacks) so each
   // provider's failure is logged by name and we know who answered. A provider
@@ -420,7 +445,9 @@ export async function runKai(input: BrainInput): Promise<BrainResult> {
   ].filter(Boolean).join('\n');
 
   const messages: BaseMessage[] = [
-    new SystemMessage(BASE_PROMPT + (withNursery ? NURSERY_PROMPT : '') + MODE_PROMPT[input.mode] + (facts ? `\n\nCONTEXT\n${facts}` : '')),
+    new SystemMessage(BASE_PROMPT
+      + (withNursery ? NURSERY_PROMPT : '') + (groups.admin ? ADMIN_PROMPT : '') + (groups.verify ? VERIFY_PROMPT : '')
+      + MODE_PROMPT[input.mode] + (facts ? `\n\nCONTEXT\n${facts}` : '')),
     ...sanitizeHistory(input.history).map((t) => (t.role === 'user' ? new HumanMessage(t.content) : new AIMessage(t.content))),
     new HumanMessage(redactSecrets(input.message)),
   ];

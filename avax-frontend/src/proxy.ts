@@ -71,6 +71,9 @@ function policyFor(pathname: string): readonly typeof POLICIES[keyof typeof POLI
 // ── Body guard ───────────────────────────────────────────────────────────────
 
 const MAX_BODY_BYTES = 512 * 1024; // AI prompts and JSON records; generous
+/** Evidence photos/PDFs: 3 MB file + form fields (route re-checks the file). */
+const MAX_UPLOAD_BYTES = 3 * 1024 * 1024 + 64 * 1024;
+const UPLOAD_PATHS = new Set(['/api/cfa/evidence']);
 const ALLOWED_CONTENT_TYPES = new Set([
   'application/json',
   'application/x-www-form-urlencoded',
@@ -78,11 +81,11 @@ const ALLOWED_CONTENT_TYPES = new Set([
   'text/plain',
 ]);
 
-function checkBody(req: NextRequest): string | null {
+function checkBody(req: NextRequest, pathname: string): string | null {
   if (req.method === 'GET' || req.method === 'HEAD' || req.method === 'OPTIONS') return null;
 
   const declared = Number(req.headers.get('content-length') ?? '0');
-  if (declared > MAX_BODY_BYTES) return 'payload_too_large';
+  if (declared > (UPLOAD_PATHS.has(pathname) ? MAX_UPLOAD_BYTES : MAX_BODY_BYTES)) return 'payload_too_large';
 
   const contentType = req.headers.get('content-type') ?? '';
   // Strip parameters like "; charset=utf-8".
@@ -119,7 +122,7 @@ export function proxy(req: NextRequest) {
   const isApi = pathname.startsWith('/api');
 
   // 2. Body guard.
-  const bodyProblem = checkBody(req);
+  const bodyProblem = checkBody(req, pathname);
   if (bodyProblem) {
     return finalize(
       NextResponse.json(

@@ -17,6 +17,7 @@ npm install
 cp .env.example .env.local   # fill in the values
 npm run dev                  # http://localhost:3000
 npm test                     # all unit tests (no DB or network needed)
+npm run test:integration     # nursery/verification/evidence/anchoring against a throwaway Docker Postgres
 npx tsc --noEmit             # type check
 npx eslint src               # lint
 ```
@@ -31,7 +32,8 @@ src/
 │   └── api/<name>/route.ts e.g. app/api/mine/claim    ->  POST /api/mine/claim
 ├── components/         React pieces used by pages
 │   ├── ai/             KAI chat window, approval cards
-│   ├── cfa/            Nursery and treasury tabs on /cfa
+│   ├── cfa/            Nursery screen, CFA admin panel, evidence (photos), AI confirm card
+│   ├── mrv/            Verification desk (/mrv) and the Avalanche proof check
 │   ├── conservation/   Conservation hub header and shell
 │   ├── hub/            Information hub article widgets
 │   ├── pools/          Pools page: bubbles canvas, drawer, stats
@@ -54,9 +56,12 @@ src/
     ├── db/             Prisma client; getPrisma() returns null when DATABASE_URL is missing
     ├── hubs/           SIHU + Oloolua hub data, theme, AI review
     ├── mining/         Daily drop engine, config, math (+ tests)
-    ├── mrv/            MRV records: canonical JSON + SHA-256 hashing (+ tests)
-    ├── nursery/        Nursery DB helpers, validation, and the nursery TOOLS
-    │                   (tools.ts: plain functions, PRD tool contract) (+ tests)
+    ├── mrv/            MRV records: canonical JSON + SHA-256 (records.ts), human
+    │                   verification (verification.ts), Merkle tree (merkle.ts),
+    │                   Avalanche anchoring (anchor.ts), Verification Agent tools (+ tests)
+    ├── nursery/        Nursery DB helpers, validation, evidence storage, and the
+    │                   agent TOOLS (tools.ts, cfa-tools.ts: plain functions,
+    │                   PRD tool contract) (+ tests)
     ├── operations/     Nuvari operation schemas
     ├── payments/       M-Pesa, Paystack, server-side price catalogue
     ├── security/       Rate limit, CSRF, CSP headers, input limits (+ tests)
@@ -90,6 +95,12 @@ docs/                   PRDs and design notes (SECURITY.md, db-integration.md, .
 | AI answer about the nursery or account | `src/lib/nursery/tools.ts` (the data), `src/lib/ai/nursery-agent.ts` (rules), `appDataTools` in `src/lib/ai/brain.ts` |
 | Nursery "Confirm and save" card fails | The error text comes from the `/api/cfa/*` route named in the draft; card is `src/components/cfa/NurseryConfirmCard.tsx` |
 | Nursery forms / CFA data | `src/app/api/cfa/`, `src/lib/nursery/`, `src/components/cfa/NurseryTab.tsx` |
+| Transfer / loss of seedlings | `src/app/api/cfa/transfer/route.ts`, `src/app/api/cfa/loss/route.ts` |
+| Members, roles, CFA profile | `src/app/api/cfa/members/`, `src/app/api/cfa/profile/`, `src/components/cfa/CfaAdminPanel.tsx` |
+| Photo / PDF upload fails | `src/app/api/cfa/evidence/route.ts`, rules in `src/lib/nursery/evidence-rules.ts` (3 MB, JPEG/PNG/WebP/PDF); proxy body limit in `src/proxy.ts` |
+| "Only a verifier…", verify/reject errors | `src/lib/mrv/verification.ts` (who may decide, allowed status changes) |
+| Anchoring on Avalanche fails | `src/lib/mrv/anchor.ts`, `src/components/mrv/VerificationDesk.tsx` (wallet step); Fuji RPC `AVAX_RPC_URL` |
+| /verify page says the proof fails | `src/lib/mrv/anchor.ts` `verifyRecordAnchor` — the failing step is named |
 | Login (Privy) fails | `src/components/providers/PrivyAuthProvider.tsx`; allowed origins in the Privy dashboard |
 
 Server logs prefix their source in square brackets, e.g. `[kai-brain]`,

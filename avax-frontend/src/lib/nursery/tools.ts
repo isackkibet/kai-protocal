@@ -26,22 +26,23 @@ export type { NurseryPlan } from './agent-logic';
  * write on its own.
  */
 
-type Ctx = { prisma: PrismaClient; cfa: Cfa };
+export type Ctx = { prisma: PrismaClient; cfa: Cfa };
 
-async function context(tool: string): Promise<Ctx | ToolResult<never>> {
+/** Shared by every tool file (nursery, CFA, verification). */
+export async function context(tool: string): Promise<Ctx | ToolResult<never>> {
   const prisma = await getPrisma();
   if (!prisma) return fail(tool, 'DATABASE_ERROR', 'The database is not available right now.');
   const cfa = await getNurseryCfa(prisma);
   if (!cfa) return fail(tool, 'NOT_FOUND', 'The nursery database is not set up yet.');
   return { prisma, cfa };
 }
-const isFail = (x: unknown): x is ToolResult<never> => !!x && typeof x === 'object' && 'success' in x;
+export const isFail = (x: unknown): x is ToolResult<never> => !!x && typeof x === 'object' && 'success' in x;
 
 const iso = (d: Date | null | undefined) => (d ? d.toISOString().slice(0, 10) : null);
 
 // ── Resolution helpers ────────────────────────────────────────────────────────
 
-async function resolveSpecies(tool: string, prisma: PrismaClient, name: string): Promise<Species | ToolResult<never>> {
+export async function resolveSpecies(tool: string, prisma: PrismaClient, name: string): Promise<Species | ToolResult<never>> {
   const catalogue = await prisma.species.findMany();
   if (!catalogue.length) return fail(tool, 'INVALID_SPECIES', 'The species catalogue is empty. A CFA admin adds species on the /nursery page.');
   const m = matchSpecies(name, catalogue);
@@ -55,7 +56,7 @@ async function resolveSpecies(tool: string, prisma: PrismaClient, name: string):
   return fail(tool, 'INVALID_SPECIES', `"${name}" is not in the species catalogue. A CFA admin can add it on /nursery.`, catalogue.slice(0, 15).map(speciesLabel));
 }
 
-async function resolveNursery(
+export async function resolveNursery(
   tool: string, prisma: PrismaClient, cfa: Cfa, name: string | undefined, assumptions: string[],
 ): Promise<{ id: string; name: string } | ToolResult<never>> {
   const locations = await prisma.nurseryLocation.findMany({ where: { cfaId: cfa.id }, select: { id: true, name: true }, orderBy: { name: 'asc' } });
@@ -73,8 +74,8 @@ async function resolveNursery(
 }
 
 /** The signed-in user's active CFA membership — required for any write. */
-async function actingMember(tool: string, prisma: PrismaClient, cfa: Cfa, privyUserId: string | null): Promise<CfaMember | ToolResult<never>> {
-  if (!privyUserId) return fail(tool, 'UNAUTHORIZED', 'The user must sign in before recording nursery data.');
+export async function actingMember(tool: string, prisma: PrismaClient, cfa: Cfa, privyUserId: string | null): Promise<CfaMember | ToolResult<never>> {
+  if (!privyUserId) return fail(tool, 'UNAUTHORIZED', 'The user is not signed in. Tell them to sign in on the /nursery page (Continue with Google or email); there is no other sign-in page.');
   const member = await prisma.cfaMember.findUnique({ where: { authUserId: privyUserId } });
   if (!member || member.cfaId !== cfa.id) return fail(tool, 'FORBIDDEN', 'Only CFA members can record nursery data. They can join on /nursery.');
   if (member.status !== 'active') return fail(tool, 'FORBIDDEN', `This CFA membership is ${member.status}.`);
@@ -82,7 +83,7 @@ async function actingMember(tool: string, prisma: PrismaClient, cfa: Cfa, privyU
 }
 
 /** Date from the agent: "YYYY-MM-DD", not in the future. */
-function checkDate(tool: string, field: string, value: string | undefined, required: boolean): string | null | ToolResult<never> {
+export function checkDate(tool: string, field: string, value: string | undefined, required: boolean): string | null | ToolResult<never> {
   try {
     return day({ [field]: value }, field, { required });
   } catch (e) {
@@ -91,7 +92,7 @@ function checkDate(tool: string, field: string, value: string | undefined, requi
   }
 }
 
-function checkQuantity(tool: string, quantity: number): ToolResult<never> | null {
+export function checkQuantity(tool: string, quantity: number): ToolResult<never> | null {
   if (!Number.isInteger(quantity) || quantity <= 0) return fail(tool, 'INVALID_QUANTITY', 'The quantity must be a whole number above zero.');
   if (quantity > 1_000_000) return fail(tool, 'INVALID_QUANTITY', 'That quantity is larger than any plausible batch. Ask the user to check it.');
   return null;
@@ -360,7 +361,7 @@ export async function prepareSeedlingAddition(
   const nursery = await resolveNursery(tool, c.prisma, c.cfa, input.nursery, assumptions);
   if (isFail(nursery)) return nursery;
   return ok(tool, {
-    kind: 'nursery', name: tool, endpoint: '/api/cfa/inventory',
+    kind: 'nursery', name: tool, method: 'POST', endpoint: '/api/cfa/inventory',
     body: { speciesId: species.id, locationId: nursery.id, quantity: input.quantity, dateReceived: date, source: input.source?.trim() || null },
     summary: `Add ${input.quantity} ${speciesLabel(species)} seedlings to ${nursery.name}${date ? `, received ${date}` : ''}${input.source ? ` from ${input.source}` : ''}.`,
     assumptions,
@@ -368,7 +369,7 @@ export async function prepareSeedlingAddition(
 }
 
 /** Oldest in-nursery batch of this species (and nursery) big enough for `quantity`. */
-async function batchFor(tool: string, c: Ctx, speciesId: string, locationId: string, quantity: number, verb: string) {
+export async function batchFor(tool: string, c: Ctx, speciesId: string, locationId: string, quantity: number, verb: string) {
   const batches = await c.prisma.seedlingBatch.findMany({
     where: { cfaId: c.cfa.id, speciesId, locationId, status: 'in_inventory' },
     select: { id: true, quantity: true, status: true, createdAt: true },
@@ -406,7 +407,7 @@ export async function prepareSeedlingPlanting(
   if (isFail(batch)) return batch;
   const site = input.site.trim().slice(0, 200);
   return ok(tool, {
-    kind: 'nursery', name: tool, endpoint: '/api/cfa/planting',
+    kind: 'nursery', name: tool, method: 'POST', endpoint: '/api/cfa/planting',
     body: { inventoryId: batch.id, plantingDate: date, quantity: input.quantity, notes: `Planted at ${site}${input.notes ? `. ${input.notes.trim()}` : ''}`.slice(0, 2000) },
     summary: `Plant ${input.quantity} ${speciesLabel(species)} from ${nursery.name} at ${site} on ${date}.`,
     assumptions,
@@ -440,7 +441,7 @@ export async function prepareSeedlingLoss(
   const when = date ?? new Date().toISOString().slice(0, 10);
   if (!date) assumptions.push(`Date: ${when} (today)`);
   return ok(tool, {
-    kind: 'nursery', name: tool, endpoint: '/api/cfa/loss',
+    kind: 'nursery', name: tool, method: 'POST', endpoint: '/api/cfa/loss',
     body: { inventoryId: batch.id, quantity: input.quantity, reason: input.reason as LossReason, lossDate: when, notes: input.notes?.trim() || null },
     summary: `Record ${input.quantity} ${speciesLabel(species)} seedlings in ${nursery.name} as lost (${input.reason}) on ${when}.`,
     assumptions,
@@ -475,7 +476,7 @@ export async function prepareNurseryActivity(
   const when = date ?? new Date().toISOString().slice(0, 10);
   if (!date) assumptions.push(`Date: ${when} (today)`);
   return ok(tool, {
-    kind: 'nursery', name: tool, endpoint: '/api/cfa/activities',
+    kind: 'nursery', name: tool, method: 'POST', endpoint: '/api/cfa/activities',
     body: { activityType: input.activityType, locationId: nursery.id, activityDate: when, quantityAffected: input.quantity ?? null, description: input.notes?.trim() || null },
     summary: `Log ${input.activityType.replace('_', ' ')} at ${nursery.name} on ${when}${input.quantity ? ` (${input.quantity} seedlings)` : ''}.`,
     assumptions,
@@ -517,9 +518,51 @@ export async function prepareSurvivalAudit(
   assumptions.push(`Batch: ${batch.quantity} ${species.commonName} planted ${iso(batch.plantingDate)}`);
   const dead = batch.quantity - input.surviving;
   return ok(tool, {
-    kind: 'nursery', name: tool, endpoint: '/api/cfa/survival',
+    kind: 'nursery', name: tool, method: 'POST', endpoint: '/api/cfa/survival',
     body: { inventoryId: batch.id, observationDate: when, initialQuantity: batch.quantity, aliveQuantity: input.surviving, deadQuantity: dead, notes: input.notes?.trim() || null },
     summary: `Survival check on ${when}: ${input.surviving} of ${batch.quantity} ${species.commonName} alive (${Math.round((input.surviving / batch.quantity) * 1000) / 10}%).`,
+    assumptions,
+  });
+}
+
+/** PRD §4.4 record_seedling_transfer: to another nursery of this CFA, or outside it. */
+export async function prepareSeedlingTransfer(
+  privyUserId: string | null,
+  input: { species: string; quantity: number; fromNursery?: string; toNursery?: string; destination?: string; transferDate?: string; notes?: string },
+): Promise<ToolResult<NurseryPlan>> {
+  const tool = 'record_seedling_transfer';
+  const c = await context(tool);
+  if (isFail(c)) return c;
+  const member = await actingMember(tool, c.prisma, c.cfa, privyUserId);
+  if (isFail(member)) return member;
+  const bad = checkQuantity(tool, input.quantity);
+  if (bad) return bad;
+  if (!input.toNursery?.trim() === !input.destination?.trim()) {
+    return fail(tool, 'MISSING_INFORMATION', 'Where did they go? Ask: another nursery of the CFA, or an outside destination (name it).');
+  }
+  const date = checkDate(tool, 'transferDate', input.transferDate, false);
+  if (isFail(date)) return date;
+  const species = await resolveSpecies(tool, c.prisma, input.species);
+  if (isFail(species)) return species;
+  const assumptions: string[] = [];
+  const from = await resolveNursery(tool, c.prisma, c.cfa, input.fromNursery, assumptions);
+  if (isFail(from)) return from;
+  let to: { id: string; name: string } | null = null;
+  if (input.toNursery?.trim()) {
+    const t = await resolveNursery(tool, c.prisma, c.cfa, input.toNursery, []);
+    if (isFail(t)) return t;
+    if (t.id === from.id) return fail(tool, 'INVALID_INPUT', 'The source and destination nursery are the same.');
+    to = t;
+  }
+  const batch = await batchFor(tool, c, species.id, from.id, input.quantity, 'transfer');
+  if (isFail(batch)) return batch;
+  const when = date ?? new Date().toISOString().slice(0, 10);
+  if (!date) assumptions.push(`Date: ${when} (today)`);
+  const where = to ? to.name : input.destination!.trim().slice(0, 255);
+  return ok(tool, {
+    kind: 'nursery', name: tool, method: 'POST', endpoint: '/api/cfa/transfer',
+    body: { inventoryId: batch.id, quantity: input.quantity, ...(to ? { toLocationId: to.id } : { destination: where }), transferDate: when, notes: input.notes?.trim() || null },
+    summary: `Transfer ${input.quantity} ${speciesLabel(species)} from ${from.name} to ${where}${to ? '' : ' (outside the CFA)'} on ${when}.`,
     assumptions,
   });
 }

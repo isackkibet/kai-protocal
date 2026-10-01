@@ -719,6 +719,8 @@ enum RecordVerificationStatus {
   UNDER_REVIEW
   VERIFIED
   REJECTED
+  /// A verifier sent it back; the submitter corrects it (new version) and it is SUBMITTED again.
+  CORRECTION_REQUIRED
 }
 
 /// Proof-anchoring lifecycle, driven by the Avalanche result — independent
@@ -763,6 +765,8 @@ model ConservationRecord {
 
   forest             Cfa @relation(fields: [forestId], references: [id], onDelete: Restrict)
   versions           RecordVersion[]
+  reviews            VerificationReview[]
+  anchorLinks        AnchorBatchRecord[]
 
   @@unique([sourceTable, sourceId])
   @@index([forestId])
@@ -794,6 +798,105 @@ model RecordVersion {
   @@unique([recordId, version])
   @@index([dataHash])
   @@map("record_versions")
+}
+
+// ── Verification, evidence and anchoring (Kanuvari Tools & Agents PRD §4.8–§4.11)
+// Created by prisma/sql/2026-10-01_verification_evidence_anchoring.sql, which
+// also holds the append-only triggers, CHECK rules and the audit trigger on
+// evidence. Member / CFA ids are plain columns here (no Prisma relations) so
+// the existing models stay untouched.
+
+/// One human verification decision. Append-only (DB trigger).
+model VerificationReview {
+  id            String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  recordId      String   @map("record_id")
+  recordVersion Int      @map("record_version")
+  dataHash      String   @map("data_hash")
+  /// UNDER_REVIEW | VERIFIED | REJECTED | CORRECTION_REQUIRED
+  decision      String
+  reason        String?
+  reviewerId    String   @map("reviewer_id") @db.Uuid
+  createdAt     DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  record ConservationRecord @relation(fields: [recordId], references: [id], onDelete: Restrict)
+
+  @@index([recordId, createdAt(sort: Desc)], map: "verification_reviews_record_idx")
+  @@map("verification_reviews")
+}
+
+/// A photo or document attached to a batch, activity, survival check or record.
+model Evidence {
+  id         String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  cfaId      String   @map("cfa_id") @db.Uuid
+  /// seedling_inventory | nursery_activities | survival_observations | conservation_records
+  entityType String   @map("entity_type") @db.VarChar(40)
+  entityId   String   @map("entity_id")
+  fileName   String   @map("file_name") @db.VarChar(255)
+  mimeType   String   @map("mime_type") @db.VarChar(100)
+  sizeBytes  Int      @map("size_bytes")
+  /// SHA-256 (hex) of the file bytes.
+  sha256     String   @db.Char(64)
+  caption    String?
+  metadata   Json     @default("{}")
+  createdBy  String   @map("created_by") @db.Uuid
+  createdAt  DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt  DateTime @default(now()) @map("updated_at") @db.Timestamptz(6)
+
+  file EvidenceFile?
+
+  @@unique([entityType, entityId, sha256], map: "evidence_unique_file")
+  @@index([entityType, entityId], map: "evidence_entity_idx")
+  @@map("evidence")
+}
+
+/// File bytes, kept apart from `evidence` so the audit log doesn't copy them.
+model EvidenceFile {
+  evidenceId String @id @map("evidence_id") @db.Uuid
+  content    Bytes
+
+  evidence Evidence @relation(fields: [evidenceId], references: [id], onDelete: Cascade)
+
+  @@map("evidence_files")
+}
+
+/// Verified records whose Merkle root is written to Avalanche Fuji.
+model AnchorBatch {
+  id           String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  cfaId        String    @map("cfa_id") @db.Uuid
+  /// SHA-256 Merkle root (hex, no 0x). Unique among non-cancelled batches
+  /// (partial index anchor_batches_live_root, SQL only).
+  merkleRoot   String    @map("merkle_root") @db.Char(64)
+  recordCount  Int       @map("record_count")
+  /// PENDING (waiting for the wallet transaction) | ANCHORED | CANCELLED
+  status       String    @default("PENDING")
+  chainId      Int       @default(43113) @map("chain_id")
+  txHash       String?   @unique @map("tx_hash") @db.Char(66)
+  anchoredFrom String?   @map("anchored_from") @db.VarChar(42)
+  blockNumber  BigInt?   @map("block_number")
+  createdBy    String    @map("created_by") @db.Uuid
+  createdAt    DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  anchoredAt   DateTime? @map("anchored_at") @db.Timestamptz(6)
+
+  records AnchorBatchRecord[]
+
+  @@map("anchor_batches")
+}
+
+model AnchorBatchRecord {
+  batchId       String @map("batch_id") @db.Uuid
+  recordId      String @map("record_id")
+  recordVersion Int    @map("record_version")
+  dataHash      String @map("data_hash") @db.Char(64)
+  leafIndex     Int    @map("leaf_index")
+  /// Sibling hashes from the leaf up to the root.
+  proof         Json
+
+  batch  AnchorBatch        @relation(fields: [batchId], references: [id], onDelete: Cascade)
+  record ConservationRecord @relation(fields: [recordId], references: [id], onDelete: Restrict)
+
+  @@id([batchId, recordId])
+  @@index([recordId], map: "anchor_batch_records_record_idx")
+  @@map("anchor_batch_records")
 }
 
 // ═══════════════════════════════════════════════════════════════

@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { MiningTier } from '@prisma/client';
 import { awardXp } from '@/lib/mining/engine';
+import { recordForSource } from '@/lib/mrv/sources';
 import { withMember } from '@/lib/nursery/db';
 import { nurseryRead, nurseryWrite, toDate } from '@/lib/nursery/route';
 import { day, id, survivalCounts, text } from '@/lib/nursery/validate';
@@ -13,7 +14,8 @@ const SURVIVAL_POINTS = 15;
  * (Kanuvari nursery DB: `survival_observations`). The member enters the
  * initial, alive and dead counts; the DATABASE computes survival_rate
  * (alive / initial × 100) and rejects alive + dead > initial. Separate rows
- * per check, so survival can be tracked over time.
+ * per check, so survival can be tracked over time. Each check also becomes a
+ * hashed, versioned MRV record (survival/v1) that a verifier can review.
  */
 export async function GET() {
   return nurseryRead('cfa/survival', async ({ prisma, cfa }) => {
@@ -51,6 +53,16 @@ export async function POST(req: Request) {
       }),
     );
 
+    // MRV record (best-effort — the observation is already saved; a member
+    // can still submit it later from the verification desk).
+    let mrvRecord: { id: string; dataHash: string; verificationStatus: string } | null = null;
+    try {
+      const created = await recordForSource(prisma, cfa, 'survival_observations', observation.id);
+      mrvRecord = { id: created.id, dataHash: created.dataHash, verificationStatus: created.verificationStatus };
+    } catch (e) {
+      console.error('[cfa/survival] conservation record not created', e);
+    }
+
     // Kai Bar points, once per observation.
     let pointsEarned = 0;
     try {
@@ -74,6 +86,6 @@ export async function POST(req: Request) {
       console.error('[cfa/survival] points not credited', e);
     }
 
-    return NextResponse.json({ ok: true, observation, pointsEarned });
+    return NextResponse.json({ ok: true, observation, pointsEarned, mrvRecord });
   });
 }
