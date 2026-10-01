@@ -33,9 +33,9 @@ const SERIF: React.CSSProperties = { fontFamily: "'Poppins', sans-serif" };
 const label: React.CSSProperties = { ...MONO, fontSize: 10, letterSpacing: 1.4, textTransform: 'uppercase', color: C.goldLight, fontWeight: 600, margin: 0 };
 
 // ── Types (shape of GET /api/cfa/nursery/summary) ─────────────────
-interface SpeciesItem { id: string; commonName: string; scientificName: string; localName: string | null }
+export interface SpeciesItem { id: string; commonName: string; scientificName: string; localName: string | null }
 interface LocationItem { id: string; name: string }
-interface Batch {
+export interface Batch {
   id: string;
   quantity: number;
   status: string;
@@ -53,7 +53,7 @@ interface ActivityItem {
   quantityAffected: number | null;
   description: string | null;
 }
-interface NurserySummary {
+export interface NurserySummary {
   stats: {
     totalSeedlings: number;
     inNursery: number;
@@ -69,8 +69,8 @@ interface NurserySummary {
 }
 interface Membership { id: string; name: string; role: string; status: string }
 
-type ModalType = 'species' | 'location' | 'batch' | 'plant' | 'activity' | 'survival' | 'transfer' | 'loss' | 'evidence' | null;
-type Submit = (path: string, body: Record<string, unknown>) => Promise<boolean>;
+export type ModalType = 'species' | 'location' | 'batch' | 'plant' | 'activity' | 'survival' | 'transfer' | 'loss' | 'evidence' | null;
+export type Submit = (path: string, body: Record<string, unknown>) => Promise<boolean>;
 
 const ACTIVITY_LABELS: Record<string, string> = {
   watering: 'Watering', weeding: 'Weeding', mulching: 'Mulching', pruning: 'Pruning',
@@ -448,7 +448,7 @@ export default function NurseryTab() {
 }
 
 // ── Modal + forms ────────────────────────────────────────────────
-function NurseryModal({
+export function NurseryModal({
   type, summary, submitting, onClose, onSubmit, evidenceBatch, canUpload,
 }: {
   type: Exclude<ModalType, null>;

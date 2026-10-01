@@ -3,8 +3,9 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import {
-  BarChart3, BookOpen, Camera, ChevronDown, CloudOff, Database, FileText, FolderOpen, HelpCircle, Image as ImageIcon, LayoutDashboard,
-  Leaf, Menu, MessageSquare, Mic, MicOff, Paperclip, Plus, Send, Settings, ShieldCheck, Sprout, Trash2, Wrench, X,
+  ArrowRightLeft, BarChart3, BookOpen, Camera, ChevronDown, CloudOff, Database, Droplets, FileText, FolderOpen, HeartPulse, HelpCircle, Home,
+  Image as ImageIcon, LayoutDashboard, Leaf, Menu, MessageSquare, Mic, MicOff, PackagePlus, Paperclip, Plus, Send, Settings, ShieldCheck,
+  Skull, Sprout, Trash2, Trees, Wrench, X,
 } from 'lucide-react';
 import { useAccount } from 'wagmi';
 import { usePrivyAuth } from '@/lib/auth/privy-auth';
@@ -17,6 +18,8 @@ import {
   deleteThread, groupThreads, loadQueue, loadThreads, newThreadId, removeFromQueue, saveThread, type Thread,
 } from '@/lib/workspace/storage';
 import Orb, { toolLabel, type OrbState } from './Orb';
+import { NurseryModal, type ModalType, type NurserySummary } from '@/components/cfa/NurseryTab';
+import { AnimatePresence } from 'framer-motion';
 import RecordCard, { type SavedResult } from './RecordCard';
 
 /**
@@ -33,7 +36,17 @@ const C = {
 
 interface Msg { role: 'user' | 'ai'; text: string; at: number; tools?: string[]; plans?: NurseryPlan[]; error?: boolean }
 interface Attachment { id: string; file: File; kind: 'evidence' | 'text' | 'unsupported'; text?: string; preview?: string; note?: string }
-interface Summary { species: { id: string; commonName: string; scientificName: string }[]; locations: { id: string; name: string }[] }
+const EMPTY_SUMMARY: NurserySummary = { stats: null, species: [], locations: [], batches: [], activities: [] };
+
+/** Instant nursery actions: the same forms as /nursery, no AI round-trip. */
+const QUICK: { type: Exclude<ModalType, null>; label: string; icon: React.ReactNode; needs: 'setup' | 'stock' | 'any' }[] = [
+  { type: 'batch', label: 'Add seedlings', icon: <PackagePlus size={15} />, needs: 'setup' },
+  { type: 'plant', label: 'Plant', icon: <Trees size={15} />, needs: 'stock' },
+  { type: 'activity', label: 'Nursery work', icon: <Droplets size={15} />, needs: 'setup' },
+  { type: 'survival', label: 'Survival check', icon: <HeartPulse size={15} />, needs: 'any' },
+  { type: 'transfer', label: 'Transfer', icon: <ArrowRightLeft size={15} />, needs: 'stock' },
+  { type: 'loss', label: 'Record loss', icon: <Skull size={15} />, needs: 'stock' },
+];
 
 /** Event-time clock (kept out of render). */
 const nowMs = () => Date.now();
@@ -94,7 +107,10 @@ export default function Workspace() {
   const [busy, setBusy] = useState(false);
   const [pendingCards, setPendingCards] = useState(0);
   const [project, setProject] = useState<string>('');
-  const [summary, setSummary] = useState<Summary>({ species: [], locations: [] });
+  const [summary, setSummary] = useState<NurserySummary>(EMPTY_SUMMARY);
+  const [quick, setQuick] = useState<Exclude<ModalType, null> | null>(null);
+  const [quickSaving, setQuickSaving] = useState(false);
+  const [isMember, setIsMember] = useState<boolean | null>(null);
   const [lang, setLang] = useState<'en' | 'sw'>('en');
   const [attachments, setAttachments] = useState<Attachment[]>([]);
   const [plusOpen, setPlusOpen] = useState(false);
@@ -121,7 +137,7 @@ export default function Workspace() {
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setThreads(loadThreads(userKey));
     setQueued(loadQueue().length);
-    fetch('/api/cfa/nursery/summary').then((r) => r.json()).then((d) => setSummary({ species: d.species ?? [], locations: d.locations ?? [] })).catch(() => {});
+    fetch('/api/cfa/nursery/summary').then((r) => r.json()).then((d) => setSummary({ ...EMPTY_SUMMARY, ...d })).catch(() => {});
     try { const p = localStorage.getItem('kanuvari.project'); if (p) setProject(p); const l = localStorage.getItem('kanuvari.lang'); if (l === 'sw') setLang('sw'); } catch { /* optional */ }
   }, [userKey]);
 
@@ -150,6 +166,80 @@ export default function Workspace() {
     window.addEventListener('offline', update);
     return () => { window.removeEventListener('online', update); window.removeEventListener('offline', update); };
   }, [flushQueue]);
+
+  const refreshSummary = useCallback(async () => {
+    const d = await fetch('/api/cfa/nursery/summary').then((r) => r.json()).catch(() => null);
+    if (d) setSummary({ ...EMPTY_SUMMARY, ...d });
+  }, []);
+
+  // Is this person an active CFA member (the forms need it)?
+  useEffect(() => {
+    if (!authenticated) return;
+    let live = true;
+    (async () => {
+      const d = await fetch('/api/cfa/join', { headers: await authHeader() }).then((r) => r.json()).catch(() => ({}));
+      if (live) setIsMember(d.member?.status === 'active');
+    })();
+    return () => { live = false; };
+  }, [authenticated, authHeader]);
+
+  const say = (text: string, error = false) => setMsgs((m) => [...m, { role: 'ai', at: nowMs(), text, error }]);
+
+  /** Opens a quick form, or explains in one line why it can't be used yet. */
+  const openQuick = (q: (typeof QUICK)[number]) => {
+    if (!authenticated) { say('Sign in with Google first (link at the top), then join the CFA on /nursery.'); return; }
+    if (isMember === false) { say('Join the CFA first: open /nursery and press “Join Oloolua CFA”.'); return; }
+    const setupDone = summary.species.length > 0 && summary.locations.length > 0;
+    if (!setupDone) { say('A CFA admin must first add the species you grow and a nursery location (on /nursery).'); return; }
+    if (q.needs === 'stock' && !summary.batches.some((b) => b.status === 'in_inventory')) { say('There are no seedlings in the nursery yet. Use “Add seedlings” first.'); return; }
+    if (q.needs === 'any' && !summary.batches.length) { say('There are no batches yet. Use “Add seedlings” first.'); return; }
+    setQuick(q.type);
+  };
+
+  /** Same save path as /nursery: the /api/cfa route checks membership, validates and audits. */
+  const quickSubmit = async (path: string, body: Record<string, unknown>) => {
+    if (!navigator.onLine) {
+      const { enqueue } = await import('@/lib/workspace/storage');
+      enqueue({ method: 'POST', endpoint: path, body, summary: `${QUICK.find((x) => x.type === quick)?.label ?? 'Record'} (from quick action)` });
+      setQueued(loadQueue().length);
+      setQuick(null);
+      say('No signal: saved on this phone and will be sent when you are back online.');
+      return true;
+    }
+    setQuickSaving(true);
+    try {
+      const res = await fetch(path, { method: 'POST', headers: { 'Content-Type': 'application/json', ...(await authHeader()) }, body: JSON.stringify(body) });
+      const d = await res.json().catch(() => ({}));
+      if (!res.ok) { say(d.error ?? `Could not save (error ${res.status}).`, true); return false; }
+      const id = (d.batch ?? d.activity ?? d.observation)?.id as string | undefined;
+      const label = QUICK.find((x) => x.type === quick)?.label ?? 'Record';
+      say(`✓ ${label} saved${id ? ` as record **${id.replace(/-/g, '').slice(0, 6).toUpperCase()}**` : ''}.${d.pointsEarned ? ` +${d.pointsEarned} Kai Bar points.` : ''}${d.mrvRecord ? ' It is now waiting for a verifier.' : ''}`);
+      setQuick(null);
+      await refreshSummary();
+      return true;
+    } catch {
+      say('Network problem. Nothing was saved; try again.', true);
+      return false;
+    } finally {
+      setQuickSaving(false);
+    }
+  };
+
+  /** Instant numbers from the database, no AI. */
+  const showNumbers = () => {
+    const st = summary.stats;
+    const bySpecies = new Map<string, { available: number; planted: number }>();
+    for (const b of summary.batches) {
+      const e = bySpecies.get(b.species.commonName) ?? { available: 0, planted: 0 };
+      if (b.status === 'in_inventory') e.available += b.quantity;
+      if (b.status === 'planted') e.planted += b.quantity;
+      bySpecies.set(b.species.commonName, e);
+    }
+    const lines = [...bySpecies].map(([sp, e]) => `- **${sp}**: ${e.available.toLocaleString()} in the nursery, ${e.planted.toLocaleString()} planted`);
+    say(st
+      ? `**Nursery numbers**\n- Seedlings recorded: **${st.totalSeedlings.toLocaleString()}** (${st.inNursery.toLocaleString()} in the nursery, ${st.planted.toLocaleString()} planted)\n- Species: ${st.speciesCount} · Activities logged: ${st.activityCount}\n- Survival: ${st.avgSurvivalPct != null ? `${st.avgSurvivalPct.toFixed(0)}%` : 'no checks yet'}${lines.length ? `\n\n${lines.join('\n')}` : ''}`
+      : 'No nursery data yet.');
+  };
 
   const persist = useCallback((next: Msg[]) => {
     if (!next.length) return;
@@ -330,6 +420,7 @@ export default function Workspace() {
       </button>
 
       {sectionLabel('Main')}
+      <SideLink href="/" icon={<Home size={16} />} label="Home" />
       <SideLink href="/nursery" icon={<LayoutDashboard size={16} />} label="Overview" />
       <details>
         <summary className="kv-nav" style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '9px 10px', borderRadius: 10, color: C.paperDim, fontSize: 13.5, cursor: 'pointer', listStyle: 'none' }}>
@@ -403,6 +494,7 @@ export default function Workspace() {
           .kv-mobile-only { display: inline-flex; }
         }
         summary::-webkit-details-marker { display: none; }
+        .kv-quick { scrollbar-width: none; } .kv-quick::-webkit-scrollbar { display: none; }
       `}</style>
       <aside className="kv-side" data-open={sidebarOpen}>{sidebar}</aside>
       {sidebarOpen && <div onClick={() => setSidebarOpen(false)} style={{ position: 'fixed', inset: 0, zIndex: 70, background: 'rgba(0,0,0,.45)' }} />}
@@ -502,6 +594,12 @@ export default function Workspace() {
                 )}
               </div>
             )}
+            <div className="kv-quick" style={{ display: 'flex', gap: 8, overflowX: 'auto', paddingBottom: 8, marginBottom: 2 }} aria-label="Quick actions">
+              <button onClick={showNumbers} style={quickBtn}><BarChart3 size={15} /> Nursery numbers</button>
+              {QUICK.map((q) => (
+                <button key={q.type} onClick={() => openQuick(q)} style={quickBtn}>{q.icon} {q.label}</button>
+              ))}
+            </div>
             <div style={{ display: 'flex', alignItems: 'flex-end', gap: 8, padding: 6, borderRadius: 18, border: `1px solid ${C.hairline}`, background: C.panel, position: 'relative' }}>
               <button aria-label="Attach" onClick={() => setPlusOpen((o) => !o)} style={{ width: 42, height: 42, borderRadius: 12, border: 'none', background: 'rgba(200,155,60,0.1)', color: C.goldLight, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}><Plus size={20} /></button>
               {plusOpen && (
@@ -531,6 +629,19 @@ export default function Workspace() {
           </div>
         </footer>
       </main>
+
+      <AnimatePresence>
+        {quick && (
+          <NurseryModal type={quick} summary={summary} submitting={quickSaving} onClose={() => setQuick(null)}
+            onSubmit={quickSubmit} evidenceBatch={null} canUpload={!!isMember} />
+        )}
+      </AnimatePresence>
     </div>
   );
 }
+
+const quickBtn: React.CSSProperties = {
+  display: 'inline-flex', alignItems: 'center', gap: 6, flexShrink: 0, padding: '8px 13px', minHeight: 38, borderRadius: 999,
+  border: `1px solid ${C.hairline}`, background: 'rgba(200,155,60,0.07)', color: C.paperDim, fontSize: 12.5, fontWeight: 600,
+  cursor: 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap',
+};
