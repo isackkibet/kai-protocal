@@ -972,6 +972,12 @@ body {
   transition: transform .15s ease, background-color .15s ease, color .15s ease;
 }
 .qa3-app:hover .qa3-app-icon { transform: translateY(-2px); background: var(--tint); color: #0E2418; }
+/* Tiles with a real picture instead of a line icon: fill the badge and clip
+   to its corners so the photo reads as the app's own badge. */
+.qa3-card-icon img, .qa3-app-icon img {
+  display: block; width: 100%; height: 100%;
+  object-fit: cover; object-position: center; border-radius: inherit;
+}
 .qa3-app-name {
   font-size: 11.5px; font-weight: 600; color: var(--home-text); text-align: center; line-height: 1.25;
   max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
@@ -987,6 +993,11 @@ body {
   transition: border-color 0.15s ease, background-color 0.15s ease;
 }
 .apps-tile:hover { border-color: rgba(200,155,60,0.38); background: rgba(200,155,60,0.05); }
+/* Apps that ship a real picture instead of a line icon. */
+.apps-tile-icon {
+  display: block; width: 44px; height: 44px; object-fit: cover; object-position: center;
+  border-radius: 12px; margin-bottom: 4px;
+}
 
 
 /* ═══ POOLS — micro-interactions ═══════════════════════════════ */

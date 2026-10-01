@@ -37,7 +37,7 @@ export const QUICK_GROUPS: Group[] = [
     title: 'DeFi · Earn', tint: '#C89B3C',
     items: [
       { name: 'Securities', hint: 'Tokenised assets', href: '/securities', icon: ShieldCheck, image: '/images/apps/securities.jpg' },
-      { name: 'Pools', hint: 'Swap and add liquidity', href: '/pools', icon: Droplets },
+      { name: 'Pools', hint: 'Swap and add liquidity', href: '/pools', icon: Droplets, image: '/images/apps/pools.jpg' },
       { name: 'Vaults', hint: 'Earn yield', href: '/vaults', icon: Lock },
       { name: 'TaaS', hint: 'Tokens as a service', href: '/taas', icon: LayoutGrid },
     ],

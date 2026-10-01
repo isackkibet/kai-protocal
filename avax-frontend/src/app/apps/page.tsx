@@ -24,15 +24,15 @@ const GROUPS = [
   {
     title: 'Agents',
     items: [
-      { name: 'Voice Agent', href: '/voice', icon: Mic },
-      { name: 'AI Agent',    href: '/ai',    icon: Bot },
+      { name: 'Voice Agent', href: '/voice', icon: Mic, image: '/images/apps/voice-agent.jpg' },
+      { name: 'AI Agent',    href: '/ai',    icon: Bot, image: '/images/apps/ai-agent.jpg' },
     ],
   },
   {
     title: 'DeFi · Earn',
     items: [
-      { name: 'Securities', href: '/securities', icon: ShieldCheck },
-      { name: 'Pools',      href: '/pools',      icon: Droplets },
+      { name: 'Securities', href: '/securities', icon: ShieldCheck, image: '/images/apps/securities.jpg' },
+      { name: 'Pools',      href: '/pools',      icon: Droplets, image: '/images/apps/pools.jpg' },
       { name: 'Vaults',     href: '/vaults',     icon: Lock },
       { name: 'TaaS',       href: '/taas',       icon: LayoutGrid },
     ],
@@ -93,7 +93,9 @@ export default function AppsPage() {
                   const A = a.icon;
                   const tile = (
                     <>
-                      <A size={26} strokeWidth={1.6} style={{ color: C.goldLight, marginBottom: 4 }} />
+                      {a.image
+                        ? <img src={a.image} alt="" className="apps-tile-icon" />
+                        : <A size={26} strokeWidth={1.6} style={{ color: C.goldLight, marginBottom: 4 }} />}
                       <span style={{ fontSize: 16, fontWeight: 600, color: C.paper, lineHeight: 1.35 }}>{a.name}</span>
                     </>
                   );
