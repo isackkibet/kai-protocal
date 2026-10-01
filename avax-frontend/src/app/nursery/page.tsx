@@ -18,27 +18,29 @@ export const metadata: Metadata = {
  */
 export default function NurseryPage() {
   return (
-    <main style={{ minHeight: '100dvh', background: '#0B1C14', color: '#F6F2E7', fontFamily: "'Poppins', 'IBM Plex Sans', var(--font-sans)", padding: '0 16px 110px' }}>
-      <div style={{ maxWidth: 720, margin: '0 auto', paddingTop: 24 }}>
-        <Link href="/" style={{ display: 'inline-flex', alignItems: 'center', gap: 6, color: '#9BA396', fontSize: 13, textDecoration: 'none', marginBottom: 20 }}>
-          <ArrowLeft size={14} /> Home
-        </Link>
+    <main style={{ minHeight: '100dvh', background: '#0B1C14', color: '#F6F2E7', fontFamily: "'Poppins', 'IBM Plex Sans', var(--font-sans)" }}>
+      {/* The Nursery AI fills the screen when the page opens; the main KAI
+          assistant stays on the rest of the app. */}
+      <section aria-label="Nursery AI">
+        <Workspace embedded fullScreen />
+      </section>
 
+      {/* Records and forms, one scroll (or "Records ↓") below. */}
+      <div id="nursery-records" style={{ maxWidth: 720, margin: '0 auto', padding: '32px 16px 110px', scrollMarginTop: 12 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 6 }}>
           <Sprout size={22} color="#E4C878" strokeWidth={1.7} />
-          <h1 style={{ fontSize: 22, fontWeight: 700, margin: 0 }}>Oloolua CFA Nursery</h1>
+          <h1 style={{ fontSize: 22, fontWeight: 700, margin: 0 }}>Nursery records</h1>
         </div>
         <p style={{ color: '#9BA396', fontSize: 13, margin: '0 0 28px', lineHeight: 1.6 }}>
-          Record the seedlings you raise, when they are planted, the work done in the nursery, and how many survive.
+          The seedlings you raise, when they are planted, the work done in the nursery, and how many survive.
           Every entry is saved under your name.
         </p>
-
-        {/* The Nursery AI lives here; the main KAI assistant stays on the rest of the app. */}
-        <section aria-label="Nursery AI" style={{ marginBottom: 32 }}>
-          <Workspace embedded />
-        </section>
-
         <NurseryTab />
+        <p style={{ marginTop: 32 }}>
+          <Link href="/" style={{ display: 'inline-flex', alignItems: 'center', gap: 6, color: '#9BA396', fontSize: 13, textDecoration: 'none' }}>
+            <ArrowLeft size={14} /> Home
+          </Link>
+        </p>
       </div>
     </main>
   );

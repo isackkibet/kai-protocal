@@ -834,20 +834,24 @@ body {
   .home-section + .home-section { margin-top: 44px; padding-top: 36px; }
 }
 
-/* Home sections as coloured bands instead of hairlines: each section is its
-   own panel in a different green, from deep pine to a lighter forest green. */
+/* Home sections as full-width colour bands (no boxes, no borders): the
+   background runs edge to edge while the content keeps the page width.
+   box-shadow + clip-path extend the band's colour past the container. */
 .home-band {
-  border-radius: 22px; padding: 26px 24px; border: 1px solid rgba(255,255,255,0.04);
-  box-shadow: 0 10px 30px rgba(0,0,0,0.18);
+  --band: #0E2418;
+  background: var(--band);
+  box-shadow: 0 0 0 100vmax var(--band);
+  clip-path: inset(0 -100vmax);
+  padding: 44px 0;
 }
-.home-band + .home-band, .home-section + .home-band { margin-top: 18px; padding-top: 26px; border-top: 1px solid rgba(255,255,255,0.04); }
-.home-band:first-of-type { margin-top: 8px; }
-/* Each panel's small title (icon + uppercase label) so sections are easy to tell apart. */
+.home-band + .home-band, .home-section + .home-band { margin-top: 0; padding-top: 44px; border-top: none; }
+.home-band:first-of-type { margin-top: 0; }
+/* Each band's small title (icon + uppercase label) so sections are easy to tell apart. */
 .home-band-title { display: flex; align-items: center; gap: 8px; margin: 0 0 14px; font-family: 'IBM Plex Mono', monospace; font-size: 10.5px; font-weight: 600; letter-spacing: 1.4px; text-transform: uppercase; color: var(--home-accent); }
-.home-band--nursery { background: linear-gradient(135deg, #1F5638 0%, #17432C 100%); }
-.home-band--profile { background: #102A1E; }
-.home-band--qa      { background: linear-gradient(180deg, #19412D 0%, #143726 100%); }
-@media (max-width: 639px) { .home-band { padding: 20px 16px; border-radius: 18px; } }
+.home-band--nursery { --band: #1B4D33; }   /* green */
+.home-band--profile { --band: #0C2016; }   /* dark green */
+.home-band--qa      { --band: #23593C; }   /* lighter green */
+@media (max-width: 639px) { .home-band, .home-band + .home-band, .home-section + .home-band { padding: 32px 0; } }
 
 /* Shared stat row (profile + portfolio): values aligned on a grid, hairlines
    between cells. No shells. */
@@ -929,8 +933,8 @@ body {
 .qa3-card {
   display: flex; flex-direction: column; align-items: flex-start; gap: 6px; min-width: 0;
   padding: 12px; border-radius: 14px; text-decoration: none;
-  background: rgba(11,28,20,0.45);
-  border: 1px solid color-mix(in srgb, var(--tint) 35%, transparent);
+  background: rgba(11,28,20,0.35);
+  border: 1px solid transparent;
   transition: transform .18s ease, border-color .18s ease, box-shadow .18s ease;
 }
 .qa3-card:hover { transform: translateY(-2px); border-color: var(--tint); box-shadow: 0 8px 22px rgba(0,0,0,.25); }

@@ -98,7 +98,7 @@ function PromptButton({ q, icon, label, onPick }: { q: string; icon: React.React
  * panel, its own chat history, and answers kept to nursery work (the main
  * KAI assistant stays everywhere else).
  */
-export default function Workspace({ embedded = false }: { embedded?: boolean } = {}) {
+export default function Workspace({ embedded = false, fullScreen = false }: { embedded?: boolean; fullScreen?: boolean } = {}) {
   const { authenticated, getAccessToken, privyUserId, name, signInWithGoogle } = usePrivyAuth();
   const { address } = useAccount();
   const userKey = `${privyUserId ?? 'guest'}${embedded ? ':nursery' : ''}`;
@@ -489,7 +489,9 @@ export default function Workspace({ embedded = false }: { embedded?: boolean } =
   );
 
   return (
-    <div style={embedded
+    <div style={embedded && fullScreen
+      ? { display: 'flex', height: '100dvh', background: C.bg, color: C.paper, fontFamily: 'inherit' }
+      : embedded
       ? { display: 'flex', height: 'calc(100dvh - 120px)', minHeight: 480, background: C.panel, color: C.paper, border: `1px solid ${C.hairline}`, borderRadius: 18, overflow: 'hidden', fontFamily: 'inherit' }
       : { display: 'flex', height: '100dvh', background: C.bg, color: C.paper, fontFamily: "'Poppins', 'IBM Plex Sans', var(--font-sans)" }}>
       <style>{`
@@ -513,8 +515,14 @@ export default function Workspace({ embedded = false }: { embedded?: boolean } =
         <header style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 16px', borderBottom: `1px solid ${C.hairline}` }}>
           {!embedded && <button onClick={() => setSidebarOpen(true)} className="kv-mobile-only" aria-label="Open menu" style={{ background: 'none', border: 'none', color: C.paperDim, cursor: 'pointer', padding: 6 }}><Menu size={20} /></button>}
           <p style={{ margin: 0, fontWeight: 700, fontSize: 14.5, flex: 1, minWidth: 0 }}>
-            {embedded ? 'Nursery AI' : 'Nursery Assistant'}{project ? <span style={{ color: C.inkLight, fontWeight: 500 }}> · {project}</span> : null}
+            {fullScreen
+              ? <><Link href="/" aria-label="Home" style={{ color: C.inkLight, textDecoration: 'none', marginRight: 10 }}>←</Link>Oloolua CFA Nursery</>
+              : embedded ? 'Nursery AI' : 'Nursery Assistant'}
+            {project ? <span style={{ color: C.inkLight, fontWeight: 500 }}> · {project}</span> : null}
           </p>
+          {fullScreen && (
+            <a href="#nursery-records" style={{ fontSize: 11.5, fontWeight: 700, color: C.goldLight, textDecoration: 'none', whiteSpace: 'nowrap' }}>Records ↓</a>
+          )}
           {embedded && msgs.length > 0 && (
             <button onClick={newChat} style={{ fontSize: 11.5, color: C.paperDim, background: 'none', border: `1px solid ${C.hairline}`, borderRadius: 999, padding: '4px 10px', cursor: 'pointer' }}>New chat</button>
           )}
