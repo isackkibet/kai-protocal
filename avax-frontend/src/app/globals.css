@@ -840,7 +840,9 @@ body {
 @media (max-width: 639px) {
   .home-stats { grid-template-columns: repeat(2, 1fr); row-gap: 22px; }
 }
-.home-stat { text-align: center; padding: 0 10px; min-width: 0; }
+.home-stat { text-align: left; padding: 0 16px; min-width: 0; }
+.home-stat:first-child { padding-left: 0; }
+@media (max-width: 639px) { .home-stat:nth-child(3) { padding-left: 0; } }
 .home-stat + .home-stat { border-left: 1px solid var(--home-line); }
 @media (max-width: 639px) {
   .home-stat:nth-child(3) { border-left: none; }

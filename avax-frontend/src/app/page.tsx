@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef, useSyncExternalStore } from 'react';
+import { useState, useEffect, useSyncExternalStore } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import dynamic from 'next/dynamic';
@@ -8,17 +8,15 @@ import { motion } from 'framer-motion';
 import { useBalance, useReadContracts } from 'wagmi';
 import { formatUnits } from 'viem';
 import { useKaivaxStore } from '@/store/useKaivaxStore';
-import { useAIChatStore } from '@/store/useAIChatStore';
 const WalletConnectModal = dynamic(() => import('@/components/wallet/WalletConnectModal'), { ssr: false });
 import { ECOSYSTEM_TOKENS, TICKER_TOKENS } from '@/lib/blockchain/tokens';
 import { ERC20_ABI } from '@/lib/blockchain/erc20abi';
 import { usePrivyAuth } from '@/lib/auth/privy-auth';
 import { useActiveAccount } from '@/hooks/useActiveAccount';
-import { formatChat } from '@/lib/ai/formatChat';
 import NurseryShortcut from '@/components/cfa/NurseryShortcut';
 import QuickActions, { QUICK_COUNT } from '@/components/shared/QuickActions';
 import {
-  Bot, LayoutGrid, Copy, RefreshCw, Link2, UserRound, type LucideIcon,
+  LayoutGrid, Copy, RefreshCw, Link2, UserRound, type LucideIcon,
 } from 'lucide-react';
 
 /* Same editorial system as /hub: solid pine background, one gold accent,
@@ -94,13 +92,7 @@ export default function Home() {
   const [showModal,  setShowModal]  = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [copied,     setCopied]     = useState(false);
-  const [agentQ,     setAgentQ]     = useState('');
-  const [agentA,     setAgentA]     = useState('');
-  const [agentBusy,  setAgentBusy]  = useState(false);
   const [profile,    setProfile]    = useState<{ name?: string; displayName?: string } | null>(null);
-  const agentRef = useRef<HTMLTextAreaElement>(null);
-
-  const openAIChat = useAIChatStore(s => s.open);
 
   useEffect(() => {
     isConnected && address ? connectWallet('metamask', address) : disconnectWallet();
@@ -167,28 +159,6 @@ export default function Home() {
   const balancesLoading = connected && tokenData === undefined;
   const displayName = mounted ? (profile?.displayName || profile?.name || (address ? `${address.slice(0,6)}…${address.slice(-4)}` : '')) : '';
 
-  /* Wallet context sent alongside every question so the agent can answer
-     "what's my portfolio worth" / "best yield for me" with real balances
-     instead of generic copy. */
-  const agentContext = {
-    connected,
-    address,
-    network: 'Fuji',
-    totalUsd,
-    balances: allTokens.filter(b => b.value > 0).map(b => ({ symbol: b.symbol, value: b.value })),
-  };
-
-  const askAgent = async () => {
-    if (!agentQ.trim() || agentBusy) return;
-    setAgentBusy(true); setAgentA('');
-    try {
-      const r = await fetch('/api/chat', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ message: agentQ, rag: true, stream: false, context: agentContext }) });
-      const d = await r.json();
-      setAgentA(d.text || d.response || 'No answer returned.');
-    } catch { setAgentA('Agent offline. Start the server.'); }
-    finally { setAgentBusy(false); }
-  };
-
   return (
     <main style={{ minHeight:'100dvh', background:C.bg, color:C.paper, fontFamily:"'Poppins', 'IBM Plex Sans', var(--font-sans)", position:'relative', paddingBottom:80 }}>
       {/* kaiweb fonts — Poppins display + IBM Plex Mono small-caps labels */}
@@ -227,7 +197,8 @@ export default function Home() {
           backgroundSize: 'cover', backgroundPosition: 'center 30%',
           textAlign: 'left',
         }}>
-          <div style={{ width: 'min(1150px, calc(100% - 48px))', marginInline: 'auto', boxSizing: 'border-box', position: 'relative', zIndex: 2 }}>
+          {/* Same content width as .home-container (1120px - 2 × 24px), so every left edge lines up. */}
+          <div style={{ width: 'min(1072px, calc(100% - 48px))', marginInline: 'auto', boxSizing: 'border-box', position: 'relative', zIndex: 2 }}>
             <div style={{ maxWidth: 660 }}>
               {/* Pill badge — original gold dot, not the screenshot's orange */}
               <div style={{ display: 'inline-flex', alignItems: 'center', gap: 9, padding: '7px 14px', borderRadius: 999, background: 'rgba(246,242,231,0.06)', border: `1px solid rgba(228,200,120,0.28)` }}>
@@ -344,59 +315,6 @@ export default function Home() {
           <QuickActions />
         </motion.section>
 
-        {/* KAI AGENT — the assistant panel lives on home too */}
-        <motion.section className="home-section" id="agent"
-          style={{ scrollMarginTop:70 }} {...reveal}>
-          <SectionHeader icon={Bot} eyebrow="Intelligence" />
-          <p style={{ ...SERIF, fontSize:18, fontWeight:600, margin:'0 0 8px', color:C.paper }}>
-            <span style={HL.green}>KAI</span> Agent
-          </p>
-          <p style={{ fontSize:14, color:C.inkLight, margin:'0 0 6px', lineHeight:1.6 }}>
-            Live and ready to help, powered by Qwen3 RAG. Best for quick questions.{' '}
-            <button onClick={openAIChat} className="text-link" style={{ background:'none', border:'none', cursor:'pointer', padding:0, font:'inherit', fontSize:'inherit' }}>Open the full chat</button>
-          </p>
-          <p style={{ fontSize:13, color:C.inkLight, opacity:0.85, margin:'0 0 18px', lineHeight:1.6 }}>
-            Need to check balances or make a swap by talking? Try the{' '}
-            <Link href="/voice" className="text-link">Voice Agent</Link>
-          </p>
-
-          <p style={label}>Quick ask</p>
-          <div style={{ display:'flex', flexWrap:'wrap', gap:'6px 22px', marginBottom:18 }}>
-            {(connected
-              ? ["What's my portfolio worth?", 'Best yield for me?', 'What tokens does KAI have?', 'How to get started?']
-              : ['What tokens does KAI have?','Best yield now?','How to get started?','Pool rates?']
-            ).map(q => (
-              <button key={q} onClick={() => setAgentQ(q)} style={{ background:'none', border:'none', cursor:'pointer', padding:0, font:'inherit', fontSize:13, fontWeight:600, textAlign:'left', color: agentQ===q ? C.goldLight : C.inkLight }}>{q}</button>
-            ))}
-          </div>
-
-          <div style={{ display:'flex', gap:9, marginBottom: agentA ? 16 : 0, alignItems:'flex-end' }}>
-            <textarea ref={agentRef} value={agentQ}
-              onChange={e => setAgentQ(e.target.value)}
-              onKeyDown={e => e.key==='Enter' && !e.shiftKey && (e.preventDefault(), askAgent())}
-              placeholder="Ask KAI anything…" rows={2}
-              style={{ flex:1, background:'none', border:'none', borderBottom:`1px solid ${C.hairline}`, borderRadius:0, padding:'8px 2px', fontSize:13, color:C.paper, outline:'none', fontFamily:'inherit', resize:'none', lineHeight:1.5, caretColor:C.goldLight, transition:'border-color 0.15s ease' }}
-              onFocus={e => (e.target.style.borderColor=C.gold)}
-              onBlur={e  => (e.target.style.borderColor=C.hairline)}
-            />
-            <button onClick={askAgent} disabled={agentBusy||!agentQ.trim()} style={{
-              padding:'0 20px', borderRadius:999, flexShrink:0, border:'none', height:38,
-              background:agentQ.trim()&&!agentBusy?C.gold:'transparent',
-              color:agentQ.trim()&&!agentBusy?C.ink:C.inkLight,
-              cursor:agentQ.trim()?'pointer':'not-allowed',
-              fontSize:13, fontWeight:700, fontFamily:'inherit',
-            }}>
-              {agentBusy ? 'Asking…' : 'Send'}
-            </button>
-          </div>
-
-          {agentA && (
-            <motion.div initial={{ opacity:0 }} animate={{ opacity:1 }}
-              style={{ paddingLeft:14, borderLeft:`2px solid ${C.gold}`, fontSize:13, color:C.paperDim, lineHeight:1.65, maxHeight:280, overflowY:'auto' }}>
-              <div dangerouslySetInnerHTML={{ __html:formatChat(agentA) }} />
-            </motion.div>
-          )}
-        </motion.section>
       </div>
 
       {showModal && <WalletConnectModal onClose={() => setShowModal(false)} />}
