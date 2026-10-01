@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { randomUUID } from 'node:crypto';
+import type { CfaMember, PrismaClient } from '@prisma/client';
 import { getPrisma } from '@/lib/db/db';
 import { verifyPrivyUserId } from '@/lib/auth/privy-server';
 import { requireRateLimit } from '@/lib/security/route-guard';
@@ -14,6 +15,16 @@ import { explainDbError, getNurseryCfa, isConfiguredAdmin, withMember } from '@/
  * KaiUser, never from the request. Emails in NURSERY_ADMIN_EMAILS join as
  * admin; everyone else as member.
  */
+/**
+ * Someone who joined BEFORE their email was put in NURSERY_ADMIN_EMAILS would
+ * otherwise stay a plain member forever — and with no admin nobody can add
+ * species or nurseries. Promote only (never demote); the change is audited.
+ */
+async function promoteIfConfiguredAdmin(prisma: PrismaClient, member: CfaMember): Promise<CfaMember> {
+  if (member.role !== 'member' || member.status !== 'active' || !isConfiguredAdmin(member.email)) return member;
+  return withMember(prisma, member.id, (tx) => tx.cfaMember.update({ where: { id: member.id }, data: { role: 'admin' } }));
+}
+
 export async function GET(req: Request) {
   const privyUserId = await verifyPrivyUserId(req.headers.get('authorization'));
   if (!privyUserId) return NextResponse.json({ member: null });
@@ -22,11 +33,11 @@ export async function GET(req: Request) {
   if (!prisma) return NextResponse.json({ member: null });
 
   try {
-    const member = await prisma.cfaMember.findUnique({
-      where: { authUserId: privyUserId },
-      select: { id: true, name: true, role: true, status: true, createdAt: true },
+    const found = await prisma.cfaMember.findUnique({ where: { authUserId: privyUserId } });
+    const member = found ? await promoteIfConfiguredAdmin(prisma, found) : null;
+    return NextResponse.json({
+      member: member && { id: member.id, name: member.name, role: member.role, status: member.status, createdAt: member.createdAt },
     });
-    return NextResponse.json({ member });
   } catch (e) {
     console.error('[cfa/join] database unavailable', e);
     return NextResponse.json({ member: null });
@@ -47,7 +58,7 @@ export async function POST(req: Request) {
 
   try {
     const existing = await prisma.cfaMember.findUnique({ where: { authUserId: privyUserId } });
-    if (existing) return NextResponse.json({ ok: true, member: existing, isNew: false });
+    if (existing) return NextResponse.json({ ok: true, member: await promoteIfConfiguredAdmin(prisma, existing), isNew: false });
 
     const user = await prisma.kaiUser.findUnique({ where: { privyUserId }, include: { wallets: true } });
     if (!user) return NextResponse.json({ error: 'Finish signing up first.' }, { status: 404 });
