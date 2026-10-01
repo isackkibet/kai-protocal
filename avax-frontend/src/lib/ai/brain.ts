@@ -12,9 +12,11 @@
  *     own browser — never a shared server-side buffer).
  *
  * Safety: every tool is read-only. Money-moving requests only ever produce a
- * plan (returned in `plans`) for the user to approve in their wallet; the
- * brain never signs, sends or writes anything. User-specific data comes only
- * from a Privy identity the ROUTE verified — never from the conversation.
+ * plan (returned in `plans`) for the user to approve in their wallet, and
+ * nursery records only a draft (kind: 'nursery') the user confirms, which
+ * their own browser then sends to the /api/cfa/* route (lib/ai/nursery-agent.ts).
+ * The brain never signs, sends or writes anything. User-specific data comes
+ * only from a Privy identity the ROUTE verified — never from the conversation.
  */
 import { tool, type StructuredToolInterface } from '@langchain/core/tools';
 import { AIMessage, HumanMessage, SystemMessage, ToolMessage, type BaseMessage } from '@langchain/core/messages';
@@ -29,6 +31,7 @@ import { getPrisma } from '@/lib/db/db';
 import { getNurseryCfa } from '@/lib/nursery/db';
 import { checkRecordIntegrity } from '@/lib/mrv/records';
 import { redactSecrets } from './redact';
+import { NURSERY_PROMPT, NURSERY_WORDS, nurseryTools } from './nursery-agent';
 
 export type BrainMode = 'chat' | 'voice' | 'ask';
 
@@ -345,6 +348,17 @@ function wantsActionTools(input: BrainInput): boolean {
   return ACTION_WORDS.test(input.message) || ACTION_WORDS.test(recent);
 }
 
+/** Same idea for the nursery agent's tools (lib/ai/nursery-agent.ts). */
+function wantsNurseryTools(input: BrainInput): boolean {
+  const recent = sanitizeHistory(input.history).slice(-3).map((t) => t.content).join('\n');
+  return NURSERY_WORDS.test(input.message) || NURSERY_WORDS.test(recent);
+}
+
+/** Today's date in Kenya (UTC+3), so "today" / "yesterday" become real dates. */
+function kenyaToday(): string {
+  return new Date(Date.now() + 3 * 3600_000).toISOString().slice(0, 10);
+}
+
 export async function runKai(input: BrainInput): Promise<BrainResult> {
   const models = configuredModels(input.mode);
   if (!models.length) throw new BrainUnavailableError('No AI provider key is configured.');
@@ -352,11 +366,13 @@ export async function runKai(input: BrainInput): Promise<BrainResult> {
   const plans: Record<string, unknown>[] = [];
   const toolsUsed: string[] = [];
   const withActions = wantsActionTools(input);
+  const withNursery = wantsNurseryTools(input);
   const tools = [
     ...AGENT_TOOLS
       .filter((t) => withActions || CORE_AGENT_TOOLS.has(t.name))
       .map((t) => fromAgentTool(t, (plan) => plans.push(plan))),
     ...appDataTools(input),
+    ...(withNursery ? nurseryTools(input.privyUserId, (plan) => plans.push({ ...plan })) : []),
   ];
   const byName = new Map(tools.map((t) => [t.name, t]));
 
@@ -397,13 +413,14 @@ export async function runKai(input: BrainInput): Promise<BrainResult> {
   };
 
   const facts = [
+    `Today is ${kenyaToday()} (Kenya).`,
     input.privyUserId ? 'The user is signed in (get_my_account works).' : 'The user is NOT signed in.',
     input.wallet && /^0x[a-fA-F0-9]{40}$/.test(input.wallet) ? `Connected wallet: ${input.wallet} (use it with balance tools).` : '',
     input.pageContext ?? '',
   ].filter(Boolean).join('\n');
 
   const messages: BaseMessage[] = [
-    new SystemMessage(BASE_PROMPT + MODE_PROMPT[input.mode] + (facts ? `\n\nCONTEXT\n${facts}` : '')),
+    new SystemMessage(BASE_PROMPT + (withNursery ? NURSERY_PROMPT : '') + MODE_PROMPT[input.mode] + (facts ? `\n\nCONTEXT\n${facts}` : '')),
     ...sanitizeHistory(input.history).map((t) => (t.role === 'user' ? new HumanMessage(t.content) : new AIMessage(t.content))),
     new HumanMessage(redactSecrets(input.message)),
   ];
@@ -444,7 +461,9 @@ export async function runKai(input: BrainInput): Promise<BrainResult> {
 
   const text = last ? textOf(last) : '';
   return {
-    text: text || (plans.length ? 'I prepared that for you. Please review and approve it in your wallet.' : 'I could not work that out. Please try asking another way.'),
+    text: text || (plans.some((p) => p.kind === 'nursery')
+      ? 'I prepared a draft. Please check it and press "Confirm and save".'
+      : plans.length ? 'I prepared that for you. Please review and approve it in your wallet.' : 'I could not work that out. Please try asking another way.'),
     plans,
     toolsUsed,
     provider: answeredBy,
