@@ -6,8 +6,8 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
-import { formatChat } from '@/lib/formatChat';
-import { usePrivyAuth } from '@/lib/privy-auth';
+import { formatChat } from '@/lib/ai/formatChat';
+import { usePrivyAuth } from '@/lib/auth/privy-auth';
 import { authHeader, recentHistory } from '@/lib/ai/client';
 
 const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_API_URL || 'http://localhost:8000';

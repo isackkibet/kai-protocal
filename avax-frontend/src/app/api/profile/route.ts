@@ -15,8 +15,8 @@
  * supplied any wallet address.
  */
 import { NextResponse } from 'next/server';
-import { verifyWalletOwnership } from '@/lib/wallet-signature';
-import { verifyPrivyUserId } from '@/lib/privy-server';
+import { verifyWalletOwnership } from '@/lib/auth/wallet-signature';
+import { verifyPrivyUserId } from '@/lib/auth/privy-server';
 
 /* ── in-memory fallback ───────────────────────────────────────── */
 const MEM: Record<string, Record<string, unknown>> = {};
@@ -24,7 +24,7 @@ const MEM: Record<string, Record<string, unknown>> = {};
 async function getPrisma() {
   if (!process.env.DATABASE_URL) return null;
   try {
-    const { prisma } = await import('@/lib/prisma');
+    const { prisma } = await import('@/lib/db/prisma');
     return prisma;
   } catch {
     return null;

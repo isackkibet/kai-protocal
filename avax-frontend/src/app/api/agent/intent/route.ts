@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
-import { ECOSYSTEM_TOKENS } from '@/lib/tokens';
-import { AgentProposal } from '@/components/AgentProposalCard';
+import { ECOSYSTEM_TOKENS } from '@/lib/blockchain/tokens';
+import { AgentProposal } from '@/components/ai/AgentProposalCard';
 
 export interface AgentIntentResult {
   intentType: 'TRANSFER' | 'STAKE' | 'PAYMENT' | 'NAVIGATE' | 'BALANCE' | 'MRV_AUDIT' | 'QUERY';

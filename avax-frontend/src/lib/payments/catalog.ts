@@ -1,5 +1,5 @@
 /**
- * src/lib/catalog.ts
+ * src/lib/payments/catalog.ts
  *
  * SERVER-SIDE product catalogue. This module is the pricing authority for
  * every chargeable good in the app.

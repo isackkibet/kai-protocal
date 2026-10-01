@@ -10,7 +10,7 @@ import {
   registerReferralCode,
   linkUserWallet,
   maskName,
-} from './airdrop-engine.ts';
+} from './engine.ts';
 
 test('PRD AC-1: brand-new user receives base daily claim with multiplier = 1.0', async () => {
   const summary = await getAirdropSummary('test_user_new_' + Date.now());

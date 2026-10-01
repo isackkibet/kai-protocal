@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import type { Cfa, CfaMember, PrismaClient } from '@prisma/client';
-import { getPrisma } from '@/lib/db';
+import { getPrisma } from '@/lib/db/db';
 import { requireRateLimit } from '@/lib/security/route-guard';
 import { readJsonBody, assertNoPrivilegeEscalation, InputError } from '@/lib/security/input';
 import { explainDbError, getNurseryCfa, getSessionMember } from './db';

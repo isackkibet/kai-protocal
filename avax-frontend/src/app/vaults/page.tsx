@@ -8,7 +8,7 @@
  *   2. Calls deposit(amount)  → receives kvTOKEN share tokens
  *   3. Calls withdraw(shares) → burns shares, receives tokens + yield
  *
- * Contract addresses come from src/lib/defiAddresses.json, written by
+ * Contract addresses come from src/lib/blockchain/defiAddresses.json, written by
  *   npx hardhat run scripts/deploy-defi.ts --network fuji
  */
 
@@ -24,11 +24,11 @@ import {
   ArrowLeft, TrendingUp, ExternalLink, RefreshCw,
   ChevronDown, ChevronUp, Shield,
 } from "lucide-react";
-import WalletConnectModal from "@/components/WalletConnectModal";
-import { ECOSYSTEM_TOKENS } from "@/lib/tokens";
-import { ERC20_ABI } from "@/lib/erc20abi";
-import { VAULT_ABI } from "@/lib/defiAbis";
-import defiAddrs from "@/lib/defiAddresses.json";
+import WalletConnectModal from "@/components/wallet/WalletConnectModal";
+import { ECOSYSTEM_TOKENS } from "@/lib/blockchain/tokens";
+import { ERC20_ABI } from "@/lib/blockchain/erc20abi";
+import { VAULT_ABI } from "@/lib/blockchain/defiAbis";
+import defiAddrs from "@/lib/blockchain/defiAddresses.json";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 interface VaultEntry {

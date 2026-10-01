@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
-import { usePrivyAuth } from '@/lib/privy-auth';
+import { usePrivyAuth } from '@/lib/auth/privy-auth';
 
 export interface NFTItem {
   name: string;

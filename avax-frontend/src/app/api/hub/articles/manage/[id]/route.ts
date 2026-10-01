@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
-import { getById, saveDraft, submitForReview, preReview } from '@/lib/sihu-store';
-import { resolveActor } from '@/lib/hub-actor';
-import type { PostDraftInput } from '@/lib/sihu-types';
+import { getById, saveDraft, submitForReview, preReview } from '@/lib/hubs/sihu-store';
+import { resolveActor } from '@/lib/hubs/hub-actor';
+import type { PostDraftInput } from '@/lib/hubs/sihu-types';
 
 /**
  * SIHU author workflow endpoints (PRD Part A §2).

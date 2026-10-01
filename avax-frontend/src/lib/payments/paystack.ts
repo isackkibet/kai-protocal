@@ -1,5 +1,5 @@
 /**
- * src/lib/paystack.ts
+ * src/lib/payments/paystack.ts
  *
  * Server-side Paystack helper.  Mirrors the shape of lib/mpesa.ts so
  * existing API routes can swap with minimal surface changes.

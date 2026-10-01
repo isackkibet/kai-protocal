@@ -4,8 +4,8 @@ import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { BookOpen, Search } from 'lucide-react';
 import ConservationShell from '@/components/conservation/ConservationShell';
-import { KNOWLEDGE, KNOWLEDGE_CATEGORIES } from '@/lib/conservation-data';
-import { HUB_THEME, labelStyle, MONO, SERIF, SANS } from '@/lib/hub-theme';
+import { KNOWLEDGE, KNOWLEDGE_CATEGORIES } from '@/lib/hubs/conservation-data';
+import { HUB_THEME, labelStyle, MONO, SERIF, SANS } from '@/lib/hubs/hub-theme';
 
 export default function KnowledgePage() {
   const [cat, setCat] = useState<string>('All');

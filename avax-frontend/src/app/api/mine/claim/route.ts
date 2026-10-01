@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
-import { getPrisma } from '@/lib/db';
-import { verifyPrivyUserId } from '@/lib/privy-server';
-import { claimDrop, claimStatus } from '@/lib/mining-engine';
+import { getPrisma } from '@/lib/db/db';
+import { verifyPrivyUserId } from '@/lib/auth/privy-server';
+import { claimDrop, claimStatus } from '@/lib/mining/engine';
 
 /**
  * /api/mine/claim: GET / POST

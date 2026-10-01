@@ -32,7 +32,7 @@ Chained into a payment bypass:
 Webhook signature verification does not help here — the attacker's payment is
 real. The defect was that the server had no authoritative price of its own.
 
-**Fixed:** the server resolves every price from `src/lib/catalog.ts` and mints
+**Fixed:** the server resolves every price from `src/lib/payments/catalog.ts` and mints
 every reference itself. A client-sent price is ignored entirely. The webhook
 now re-checks the settled amount against the stored `amount_subunits` before
 writing `success`, and refuses to settle on mismatch.
@@ -84,8 +84,8 @@ address".
 | CSP, HSTS, frame, nosniff, permissions policy, CORS | `src/lib/security/headers.ts` |
 | Global request gate | `src/proxy.ts` |
 | Per-route auth + rate limiting helper | `src/lib/security/route-guard.ts` |
-| Server-side price authority | `src/lib/catalog.ts` |
-| M-Pesa pending-transaction tracking | `src/lib/mpesa/transactions.ts` |
+| Server-side price authority | `src/lib/payments/catalog.ts` |
+| M-Pesa pending-transaction tracking | `src/lib/payments/mpesa-transactions.ts` |
 | Tests (48 cases) | `src/lib/security/security.test.ts` |
 
 Run them with `npm run test:security`.
@@ -232,7 +232,7 @@ the app.
   chat, a ticket or a commit history is compromised — rotate it.
 - **Rotate any key that has been shared in plain text**, starting with any
   `NVIDIA_API_KEY` exposed in conversation.
-- Prices live in `src/lib/catalog.ts`. The client copy in
+- Prices live in `src/lib/payments/catalog.ts`. The client copy in
   `app/connft/page.tsx` is display-only; if they disagree, the server wins.
 - Do not treat a self-declared header (`x-wallet-address`, `x-admin-key`) as
   identity. Verify a signature.

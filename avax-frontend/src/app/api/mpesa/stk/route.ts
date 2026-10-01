@@ -16,10 +16,10 @@
  */
 
 import { NextResponse } from "next/server";
-import { stkPush, usdToKes } from "@/lib/mpesa";
-import { createPendingStkTransaction } from "@/lib/mpesa/transactions";
-import { verifyPrivyUserId } from "@/lib/privy-server";
-import { verifyWalletOwnership } from "@/lib/wallet-signature";
+import { stkPush, usdToKes } from "@/lib/payments/mpesa";
+import { createPendingStkTransaction } from "@/lib/payments/mpesa-transactions";
+import { verifyPrivyUserId } from "@/lib/auth/privy-server";
+import { verifyWalletOwnership } from "@/lib/auth/wallet-signature";
 
 export const dynamic = "force-dynamic";
 

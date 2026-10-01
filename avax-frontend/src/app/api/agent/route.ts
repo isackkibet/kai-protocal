@@ -3,9 +3,9 @@ import { KAI_ORCHESTRATOR_DID } from '@/lib/agent/escrowAbi';
 import { appendFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { runKai, BrainUnavailableError } from '@/lib/ai/brain';
-import { verifyPrivyUserId } from '@/lib/privy-server';
+import { verifyPrivyUserId } from '@/lib/auth/privy-server';
 import { readJsonBody, InputError } from '@/lib/security/input';
-import { isAuthorizedAdmin } from '@/lib/admin-auth';
+import { isAuthorizedAdmin } from '@/lib/auth/admin-auth';
 
 /**
  * POST /api/agent — KAI Voice Agent (PRD §3, §5, §10, §20).

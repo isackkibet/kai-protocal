@@ -62,8 +62,8 @@ async function main() {
   updateEnvFile(path.join(__dirname, '..', '.env.local'), deployments);
   updateEnvFile(path.join(__dirname, '..', '.env'), deployments);
   fs.writeFileSync(path.join(__dirname, '..', 'token-addresses.json'), JSON.stringify(payload, null, 2) + '\n');
-  fs.writeFileSync(path.join(__dirname, '..', 'src', 'lib', 'deployedAddresses.json'), JSON.stringify(payload, null, 2) + '\n');
-  console.log('Addresses written to .env.local, token-addresses.json, and src/lib/deployedAddresses.json');
+  fs.writeFileSync(path.join(__dirname, '..', 'src', 'lib', 'blockchain', 'deployedAddresses.json'), JSON.stringify(payload, null, 2) + '\n');
+  console.log('Addresses written to .env.local, token-addresses.json, and src/lib/blockchain/deployedAddresses.json');
 }
 
 main().catch(error => {

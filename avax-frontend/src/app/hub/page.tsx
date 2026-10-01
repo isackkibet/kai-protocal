@@ -7,7 +7,7 @@ import {
   BookOpen, MessageCircle, Mic, FileText, ShieldCheck, Library,
   Users, Coins, Gift, Search, Sparkles, Send,
 } from 'lucide-react';
-import { SIHU_THEME, OLOOLUA_THEME, MONO, SERIF, SANS } from '@/lib/hub-theme';
+import { SIHU_THEME, OLOOLUA_THEME, MONO, SERIF, SANS } from '@/lib/hubs/hub-theme';
 
 /* Full external portals, only shown when they are actually deployed. */
 const SIHU_PORTAL_URL = process.env.NEXT_PUBLIC_SIHU_PORTAL_URL || '';

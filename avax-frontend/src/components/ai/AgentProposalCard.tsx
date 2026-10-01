@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { useAccount, useWriteContract, useSwitchChain, usePublicClient } from 'wagmi';
 import { avalancheFuji } from 'wagmi/chains';
 import { parseUnits } from 'viem';
-import { ERC20_ABI } from '@/lib/erc20abi';
+import { ERC20_ABI } from '@/lib/blockchain/erc20abi';
 import { 
   ShieldCheck, ArrowRight, ExternalLink, Loader2, CheckCircle2, AlertTriangle, Cpu
 } from 'lucide-react';

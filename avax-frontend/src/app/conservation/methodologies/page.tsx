@@ -2,8 +2,8 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { Leaf, ArrowRight, Layers } from 'lucide-react';
 import ConservationShell from '@/components/conservation/ConservationShell';
-import { METHODOLOGIES } from '@/lib/conservation-data';
-import { HUB_THEME, labelStyle, MONO, SERIF } from '@/lib/hub-theme';
+import { METHODOLOGIES } from '@/lib/hubs/conservation-data';
+import { HUB_THEME, labelStyle, MONO, SERIF } from '@/lib/hubs/hub-theme';
 
 export const metadata: Metadata = {
   title: 'Methodologies — KAI Nuvari Conservation Hub',

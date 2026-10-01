@@ -1,8 +1,8 @@
 "use client";
 
 import React, { useEffect, useMemo, useState } from "react";
-import { useAnimNumber } from "@/lib/useAnimNumber";
-import { formatTokenAmount } from "@/lib/tokens";
+import { useAnimNumber } from "@/hooks/useAnimNumber";
+import { formatTokenAmount } from "@/lib/blockchain/tokens";
 import { Zap, Activity } from "lucide-react";
 
 /* ─── Deterministic-but-live sparkline ─────────────────────────────────── */

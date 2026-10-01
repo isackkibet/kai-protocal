@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
-import { resolveAirdropUser } from '@/lib/airdrop-auth';
-import { registerReferralCode } from '@/lib/airdrop-engine';
+import { resolveAirdropUser } from '@/lib/auth/airdrop-auth';
+import { registerReferralCode } from '@/lib/airdrop/engine';
 
 export async function POST(req: Request) {
   try {

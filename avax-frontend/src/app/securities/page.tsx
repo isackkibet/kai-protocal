@@ -23,10 +23,10 @@ import {
 } from "lucide-react";
 import { useKaivaxStore } from "@/store/useKaivaxStore";
 import { useEcosystemBalances } from "@/hooks/useEcosystemBalances";
-import WalletConnectModal from "@/components/WalletConnectModal";
-import { ERC20_ABI } from "@/lib/erc20abi";
-import { ECOSYSTEM_TOKENS } from "@/lib/tokens";
-import { TREASURY as TREASURY_ADDR } from "@/lib/addresses";
+import WalletConnectModal from "@/components/wallet/WalletConnectModal";
+import { ERC20_ABI } from "@/lib/blockchain/erc20abi";
+import { ECOSYSTEM_TOKENS } from "@/lib/blockchain/tokens";
+import { TREASURY as TREASURY_ADDR } from "@/lib/blockchain/addresses";
 
 // ─── Treasury — receives token deposits as policy collateral ─────────────────
 const TREASURY = (TREASURY_ADDR ?? "0xB13727161583e38185530755a1A96D00fcCae870") as `0x${string}`;

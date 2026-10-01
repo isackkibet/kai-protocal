@@ -5,10 +5,10 @@ import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { Sparkles, Send, ExternalLink, Globe2 } from 'lucide-react';
 import ConservationShell from '@/components/conservation/ConservationShell';
-import { HUB_THEME, labelStyle, MONO, SERIF, SANS } from '@/lib/hub-theme';
-import type { AskKaiResult } from '@/lib/conservation-data';
+import { HUB_THEME, labelStyle, MONO, SERIF, SANS } from '@/lib/hubs/hub-theme';
+import type { AskKaiResult } from '@/lib/hubs/conservation-data';
 import { recentHistory } from '@/lib/ai/client';
-import { formatChat } from '@/lib/formatChat';
+import { formatChat } from '@/lib/ai/formatChat';
 
 interface Message {
   role: 'user' | 'kai';

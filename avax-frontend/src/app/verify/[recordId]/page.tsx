@@ -2,9 +2,9 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { ArrowLeft, ShieldCheck, ShieldAlert, Clock, Link2 } from 'lucide-react';
-import { getPrisma } from '@/lib/db';
+import { getPrisma } from '@/lib/db/db';
 import { checkRecordIntegrity } from '@/lib/mrv/records';
-import { HUB_THEME as C, MONO, SERIF } from '@/lib/hub-theme';
+import { HUB_THEME as C, MONO, SERIF } from '@/lib/hubs/hub-theme';
 
 export const dynamic = 'force-dynamic';
 

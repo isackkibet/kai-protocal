@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
-import { addComment, getBySlug, recordView, reportPost, toggleLike, toggleSave } from '@/lib/sihu-store';
-import { resolveActor } from '@/lib/hub-actor';
+import { addComment, getBySlug, recordView, reportPost, toggleLike, toggleSave } from '@/lib/hubs/sihu-store';
+import { resolveActor } from '@/lib/hubs/hub-actor';
 
 /**
  * SIHU public article + engagement endpoints (PRD Part A §5).

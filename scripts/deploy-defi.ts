@@ -7,12 +7,12 @@
  *
  * Prerequisites:
  *   - .env must have AVAX_PRIVATE_KEY and AVAX_RPC_URL
- *   - avax-frontend/src/lib/deployedAddresses.json must exist
+ *   - avax-frontend/src/lib/blockchain/deployedAddresses.json must exist
  *     (i.e. deploy.ts already ran and minted the 6 ecosystem tokens)
  *
  * Writes:
  *   defi-addresses.json        (project root)
- *   avax-frontend/src/lib/defiAddresses.json   (consumed by the frontend)
+ *   avax-frontend/src/lib/blockchain/defiAddresses.json   (consumed by the frontend)
  */
 
 import { writeFile, readFile } from "node:fs/promises";
@@ -25,12 +25,12 @@ import { parseEther, formatEther } from "viem";
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
 // ─── Load already-deployed token addresses ───────────────────────────────────
-const tokenAddrFile = resolve(__dirname, "..", "avax-frontend", "src", "lib", "deployedAddresses.json");
-const tokenAddrPath = new URL("../avax-frontend/src/lib/deployedAddresses.json", import.meta.url);
+const tokenAddrFile = resolve(__dirname, "..", "avax-frontend", "src", "lib", "blockchain", "deployedAddresses.json");
+const tokenAddrPath = new URL("../avax-frontend/src/lib/blockchain/deployedAddresses.json", import.meta.url);
 
 if (!existsSync(tokenAddrFile)) {
   throw new Error(
-    "avax-frontend/src/lib/deployedAddresses.json not found.\n" +
+    "avax-frontend/src/lib/blockchain/deployedAddresses.json not found.\n" +
     "Run  npx hardhat run scripts/deploy.ts --network fuji  first to deploy the ERC-20 tokens.",
   );
 }
@@ -180,13 +180,13 @@ const payload = {
 };
 
 const rootPath     = resolve(__dirname, "..", "defi-addresses.json");
-const frontendPath = resolve(__dirname, "..", "avax-frontend", "src", "lib", "defiAddresses.json");
+const frontendPath = resolve(__dirname, "..", "avax-frontend", "src", "lib", "blockchain", "defiAddresses.json");
 
 await writeFile(rootPath,     `${JSON.stringify(payload, null, 2)}\n`);
 await writeFile(frontendPath, `${JSON.stringify(payload, null, 2)}\n`);
 
 console.log("\n─────────────────────────────────────────");
-console.log("✓ defi-addresses.json written (root + avax-frontend/src/lib/)");
+console.log("✓ defi-addresses.json written (root + avax-frontend/src/lib/blockchain/)");
 console.log(`  KaiAMM   : ${amm.address}`);
 for (const [sym, v] of Object.entries(vaults)) {
   console.log(`  kv${sym.padEnd(6)} : ${v.address}`);

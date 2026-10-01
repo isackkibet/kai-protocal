@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
-import { createDraft, listContributorPosts } from '@/lib/sihu-store';
-import { resolveActor } from '@/lib/hub-actor';
-import type { PostDraftInput } from '@/lib/sihu-types';
+import { createDraft, listContributorPosts } from '@/lib/hubs/sihu-store';
+import { resolveActor } from '@/lib/hubs/hub-actor';
+import type { PostDraftInput } from '@/lib/hubs/sihu-types';
 
 /**
  * SIHU authoring endpoints (PRD Part A §2).

@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
-import { getPrisma } from '@/lib/db';
+import { getPrisma } from '@/lib/db/db';
 import { Prisma } from '@prisma/client';
-import { verifyPrivyUserId } from '@/lib/privy-server';
+import { verifyPrivyUserId } from '@/lib/auth/privy-server';
 
 type KaiUserWithWallets = Prisma.KaiUserGetPayload<{ include: { wallets: true } }>;
 

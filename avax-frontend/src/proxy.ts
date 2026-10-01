@@ -17,7 +17,7 @@
  * Next's own docs are explicit that it must not be your only authorization —
  * a request that reaches a route handler is not thereby trusted. Every
  * sensitive route still authenticates and authorizes in its own handler
- * (see lib/privy-server.ts, lib/admin-auth.ts). That is deliberate
+ * (see lib/auth/privy-server.ts, lib/auth/admin-auth.ts). That is deliberate
  * defence-in-depth: if the proxy is ever mis-scoped by `config.matcher`, the
  * route handler is still the thing that refuses the request.
  */

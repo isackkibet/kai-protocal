@@ -4,15 +4,15 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAccount } from 'wagmi';
-import WalletConnectModal from '@/components/WalletConnectModal';
-import ClaimCelebration from '@/components/ClaimCelebration';
-import { usePrivyAuth } from '@/lib/privy-auth';
+import WalletConnectModal from '@/components/wallet/WalletConnectModal';
+import ClaimCelebration from '@/components/rewards/ClaimCelebration';
+import { usePrivyAuth } from '@/lib/auth/privy-auth';
 import {
   AlertCircle, ArrowLeft, CheckCircle, Clock, Gift,
   Sparkles, TrendingUp, Zap, Copy, Check, ShieldCheck,
   Users, Activity, Award, Flame, Lock, Info
 } from 'lucide-react';
-import type { AirdropSummary, ReferralItem, LedgerActivityItem, MissionItem, LeaderboardEntry } from '@/lib/airdrop-engine';
+import type { AirdropSummary, ReferralItem, LedgerActivityItem, MissionItem, LeaderboardEntry } from '@/lib/airdrop/engine';
 
 const C = {
   bg:        '#06140D',

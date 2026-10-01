@@ -17,9 +17,9 @@
  */
 
 import { NextResponse } from "next/server";
-import { initiateTransfer } from "@/lib/paystack";
-import { prisma } from "@/lib/prisma";
-import { verifyPrivyUserId } from "@/lib/privy-server";
+import { initiateTransfer } from "@/lib/payments/paystack";
+import { prisma } from "@/lib/db/prisma";
+import { verifyPrivyUserId } from "@/lib/auth/privy-server";
 
 export const dynamic = "force-dynamic";
 

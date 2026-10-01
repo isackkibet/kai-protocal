@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { useAccount } from 'wagmi';
-import { usePrivyAuth } from '@/lib/privy-auth';
+import { usePrivyAuth } from '@/lib/auth/privy-auth';
 import { SDGGoalStat, SDGActionDefinition } from '@/app/api/sdg/route';
 
 export interface SDGImpactState {

@@ -10,10 +10,10 @@ import {
   ChevronRight, CheckCircle2, Loader2, ImageIcon, ShieldCheck,
   ListChecks, Mountain,
 } from 'lucide-react';
-import { usePrivyAuth } from '@/lib/privy-auth';
+import { usePrivyAuth } from '@/lib/auth/privy-auth';
 import { useNFTs } from '@/hooks/useNFTs';
-import { ECOSYSTEM_TOKENS, AVAX_CONFIG, formatTokenAmount } from '@/lib/tokens';
-import { ERC20_ABI } from '@/lib/erc20abi';
+import { ECOSYSTEM_TOKENS, AVAX_CONFIG, formatTokenAmount } from '@/lib/blockchain/tokens';
+import { ERC20_ABI } from '@/lib/blockchain/erc20abi';
 import RealisticQR from '@/components/ui/RealisticQR';
 
 /* Same editorial system as the home page and the connect-wallet modal —

@@ -1,8 +1,8 @@
 import { NextResponse } from 'next/server';
-import { getPrisma } from '@/lib/db';
-import { verifyPrivyUserId } from '@/lib/privy-server';
+import { getPrisma } from '@/lib/db/db';
+import { verifyPrivyUserId } from '@/lib/auth/privy-server';
 import { MiningTier } from '@prisma/client';
-import { awardXp } from '@/lib/mining-engine';
+import { awardXp } from '@/lib/mining/engine';
 
 /**
  * /api/kai-bar/tasks/complete  —  POST

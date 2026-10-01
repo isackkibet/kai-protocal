@@ -1,8 +1,8 @@
 import { NextResponse } from 'next/server';
-import { VAULT_ADDRESSES, AMM_ADDRESS, EXPLORER_BASE } from '@/lib/addresses';
+import { VAULT_ADDRESSES, AMM_ADDRESS, EXPLORER_BASE } from '@/lib/blockchain/addresses';
 import { requireRateLimit } from '@/lib/security/route-guard';
 import { readJsonBody } from '@/lib/security/input';
-import { verifyPrivyUserId } from '@/lib/privy-server';
+import { verifyPrivyUserId } from '@/lib/auth/privy-server';
 import { runKai, BrainUnavailableError } from '@/lib/ai/brain';
 
 // Vercel Hobby plan cap is 300s

@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
-import { getPrisma } from '@/lib/db';
-import { isAuthorizedAdmin } from '@/lib/admin-auth';
+import { getPrisma } from '@/lib/db/db';
+import { isAuthorizedAdmin } from '@/lib/auth/admin-auth';
 
 /**
  * /api/whitelist/members  —  GET / POST  (admin only)

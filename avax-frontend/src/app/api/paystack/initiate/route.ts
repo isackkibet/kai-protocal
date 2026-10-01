@@ -42,14 +42,14 @@
  */
 
 import { NextResponse } from "next/server";
-import { initializeTransaction, usdToKobo, usdToKes } from "@/lib/paystack";
-import { prisma } from "@/lib/prisma";
-import { verifyPrivyUserId } from "@/lib/privy-server";
+import { initializeTransaction, usdToKobo, usdToKes } from "@/lib/payments/paystack";
+import { prisma } from "@/lib/db/prisma";
+import { verifyPrivyUserId } from "@/lib/auth/privy-server";
 import {
   resolveCatalogItem,
   isValidTransferAmount,
   TRANSFER_LIMITS_USD,
-} from "@/lib/catalog";
+} from "@/lib/payments/catalog";
 import { readJsonBody, requireString, optionalString, InputError } from "@/lib/security/input";
 import { requireRateLimit } from "@/lib/security/route-guard";
 

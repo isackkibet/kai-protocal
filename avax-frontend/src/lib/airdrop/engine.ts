@@ -1,6 +1,6 @@
 import type { PrismaClient } from '@prisma/client';
-import { getPrisma } from './db.ts';
-import { claimStreak } from './mining-engine-math.ts';
+import { getPrisma } from '../db/db.ts';
+import { claimStreak } from '../mining/engine-math.ts';
 
 /**
  * KAI Airdrop & Referral Power Engine (PRD v1.2 Implementation)

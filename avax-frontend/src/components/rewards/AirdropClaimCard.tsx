@@ -2,8 +2,8 @@
 
 import { useState } from 'react';
 import { Loader2, Rocket, ExternalLink, CheckCircle2 } from 'lucide-react';
-import { usePrivyAuth } from '@/lib/privy-auth';
-import { AIRDROP_VAULT_ADDRESS, EXPLORER_BASE } from '@/lib/addresses';
+import { usePrivyAuth } from '@/lib/auth/privy-auth';
+import { AIRDROP_VAULT_ADDRESS, EXPLORER_BASE } from '@/lib/blockchain/addresses';
 
 const C = { gold: '#C89B3C', goldLight: '#E4C878', paper: '#F6F2E7', inkLight: '#9BA396', hairline: 'rgba(200,155,60,0.14)', red: '#E88C7D' };
 

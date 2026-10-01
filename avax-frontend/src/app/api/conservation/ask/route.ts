@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { askConservation } from '@/lib/conservation-data';
+import { askConservation } from '@/lib/hubs/conservation-data';
 import { requireRateLimit } from '@/lib/security/route-guard';
 import { readJsonBody } from '@/lib/security/input';
 import { runKai } from '@/lib/ai/brain';

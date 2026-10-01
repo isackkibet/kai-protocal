@@ -73,7 +73,7 @@ async function deploy(name, args = []) {
 }
 
 // ── Load existing deployments ─────────────────────────────────────────────────
-const tokenFile = resolve(ROOT, "avax-frontend", "src", "lib", "deployedAddresses.json");
+const tokenFile = resolve(ROOT, "avax-frontend", "src", "lib", "blockchain", "deployedAddresses.json");
 if (!existsSync(tokenFile)) {
   console.error("❌ deployedAddresses.json not found — ERC-20 tokens already deployed, file should exist");
   process.exit(1);
@@ -216,9 +216,9 @@ const agentPayload = {
 const write = (path, data) => { writeFileSync(path, JSON.stringify(data, null, 2) + "\n"); console.log(`  ✓ ${path}`); };
 
 write(resolve(ROOT, "defi-addresses.json"),                              defiPayload);
-write(resolve(ROOT, "avax-frontend", "src", "lib", "defiAddresses.json"), defiPayload);
+write(resolve(ROOT, "avax-frontend", "src", "lib", "blockchain", "defiAddresses.json"), defiPayload);
 write(resolve(ROOT, "agent-infra.json"),                                  agentPayload);
-write(resolve(ROOT, "avax-frontend", "src", "lib", "agentInfra.json"),   agentPayload);
+write(resolve(ROOT, "avax-frontend", "src", "lib", "blockchain", "agentInfra.json"),   agentPayload);
 
 // Append to ai-agent/.env
 const envPath = resolve(ROOT, "ai-agent", ".env");

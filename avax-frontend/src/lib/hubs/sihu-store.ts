@@ -1,7 +1,7 @@
 import type { Prisma } from '@prisma/client';
-import { getPrisma } from '@/lib/db';
-import { SIHU_SEED_POSTS } from '@/lib/sihu-seed';
-import { runAiPreReview } from '@/lib/sihu-ai-review';
+import { getPrisma } from '@/lib/db/db';
+import { SIHU_SEED_POSTS } from '@/lib/hubs/sihu-seed';
+import { runAiPreReview } from '@/lib/hubs/sihu-ai-review';
 import type {
   AiReviewReport,
   ContentPost,
@@ -9,7 +9,7 @@ import type {
   PostDraftInput,
   ReviewDecision,
   SihuPostStatus,
-} from '@/lib/sihu-types';
+} from '@/lib/hubs/sihu-types';
 
 /**
  * Data layer for the SIHU information hub (PRD Part A).

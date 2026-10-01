@@ -6,8 +6,8 @@ import {
   Wallet, ShieldCheck, BookOpen,
 } from 'lucide-react';
 import ConservationShell from '@/components/conservation/ConservationShell';
-import { METHODOLOGIES } from '@/lib/conservation-data';
-import { HUB_THEME, labelStyle, MONO, SERIF, SANS } from '@/lib/hub-theme';
+import { METHODOLOGIES } from '@/lib/hubs/conservation-data';
+import { HUB_THEME, labelStyle, MONO, SERIF, SANS } from '@/lib/hubs/hub-theme';
 
 export const dynamic = 'force-dynamic';
 

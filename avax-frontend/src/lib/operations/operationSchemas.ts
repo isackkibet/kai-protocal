@@ -1,5 +1,5 @@
 
-import { walletAddress } from '@/lib/addresses';
+import { walletAddress } from '@/lib/blockchain/addresses';
 
 export type OpCategory = "transaction" | "query" | "template" | "quick" | "automation";
 

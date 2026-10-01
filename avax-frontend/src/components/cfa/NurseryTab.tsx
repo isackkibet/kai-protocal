@@ -7,7 +7,7 @@ import {
   Sprout, Warehouse, Leaf, HeartPulse, Plus, X, Loader2, MapPin,
   PackagePlus, ClipboardList, Trees, CheckCircle2, Activity, Droplets,
 } from 'lucide-react';
-import { usePrivyAuth } from '@/lib/privy-auth';
+import { usePrivyAuth } from '@/lib/auth/privy-auth';
 
 /* Same editorial system as the rest of the app — pine + gold + paper,
    flat rows separated by a hairline, no gradient card shells. The

@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { VAULT_ADDRESSES } from '@/lib/addresses';
+import { VAULT_ADDRESSES } from '@/lib/blockchain/addresses';
 
 // Returns rich mock data shaped exactly like the Prisma CFA schema.
 // When a live DB is connected, replace the mock with prisma queries.

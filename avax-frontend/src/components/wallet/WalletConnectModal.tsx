@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { useConnect, useAccount, useDisconnect, type Connector } from 'wagmi';
 import { X, LogOut, RefreshCw, Wallet, Mail, Check } from 'lucide-react';
-import { usePrivyAuth } from '@/lib/privy-auth';
+import { usePrivyAuth } from '@/lib/auth/privy-auth';
 
 interface WalletConnectModalProps {
   onClose: () => void;

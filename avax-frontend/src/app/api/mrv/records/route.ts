@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { getPrisma } from '@/lib/db';
+import { getPrisma } from '@/lib/db/db';
 import { getNurseryCfa } from '@/lib/nursery/db';
 
 /**

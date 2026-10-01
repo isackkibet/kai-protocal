@@ -9,11 +9,11 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
-import AgentProposalCard, { AgentProposal } from '@/components/AgentProposalCard';
-import { ECOSYSTEM_TOKENS } from '@/lib/tokens';
-import { VAULT_ADDRESSES } from '@/lib/addresses';
-import { formatChat } from '@/lib/formatChat';
-import { usePrivyAuth } from '@/lib/privy-auth';
+import AgentProposalCard, { AgentProposal } from '@/components/ai/AgentProposalCard';
+import { ECOSYSTEM_TOKENS } from '@/lib/blockchain/tokens';
+import { VAULT_ADDRESSES } from '@/lib/blockchain/addresses';
+import { formatChat } from '@/lib/ai/formatChat';
+import { usePrivyAuth } from '@/lib/auth/privy-auth';
 import { authHeader, recentHistory } from '@/lib/ai/client';
 
 interface Msg {

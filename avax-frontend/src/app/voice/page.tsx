@@ -10,13 +10,13 @@ import {
   Coins,
 } from 'lucide-react';
 import { motion } from 'framer-motion';
-import { formatChat } from '@/lib/formatChat';
+import { formatChat } from '@/lib/ai/formatChat';
 import { useAccount, useWriteContract, useSwitchChain, useSignMessage } from 'wagmi';
 import { avalancheFuji } from 'wagmi/chains';
 import { parseUnits } from 'viem';
-import { ERC20_ABI } from '@/lib/erc20abi';
-import { buildOwnershipChallenge } from '@/lib/wallet-signature';
-import { usePrivyAuth } from '@/lib/privy-auth';
+import { ERC20_ABI } from '@/lib/blockchain/erc20abi';
+import { buildOwnershipChallenge } from '@/lib/auth/wallet-signature';
+import { usePrivyAuth } from '@/lib/auth/privy-auth';
 import { authHeader, recentHistory } from '@/lib/ai/client';
 
 // ─── Types ────────────────────────────────────────────────────────────────────

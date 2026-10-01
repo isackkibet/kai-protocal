@@ -1,5 +1,5 @@
 import type { CfaMember, Prisma, PrismaClient } from '@prisma/client';
-import { verifyPrivyUserId } from '@/lib/privy-server';
+import { verifyPrivyUserId } from '@/lib/auth/privy-server';
 
 /**
  * Oloolua CFA nursery data access (Kanuvari nursery DB design v1.0).

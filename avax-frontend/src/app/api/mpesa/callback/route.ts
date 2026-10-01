@@ -32,11 +32,11 @@
  */
 
 import { NextResponse } from 'next/server';
-import { parseCallback, type MpesaCallback } from '@/lib/mpesa';
+import { parseCallback, type MpesaCallback } from '@/lib/payments/mpesa';
 import {
   confirmStkTransaction,
   isAllowedSafaricomIp,
-} from '@/lib/mpesa/transactions';
+} from '@/lib/payments/mpesa-transactions';
 import { getClientIp } from '@/lib/security/client-ip';
 
 export const dynamic = 'force-dynamic';
@@ -127,7 +127,7 @@ export async function POST(request: Request) {
  * the lookup so one buyer cannot enumerate another buyer's transactions.
  */
 export async function GET(request: Request) {
-  const { verifyPrivyUserId } = await import('@/lib/privy-server');
+  const { verifyPrivyUserId } = await import('@/lib/auth/privy-server');
   const caller = await verifyPrivyUserId(request.headers.get('authorization'));
   if (!caller) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -139,7 +139,7 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: 'reference required' }, { status: 400 });
   }
 
-  const { prisma } = await import('@/lib/prisma');
+  const { prisma } = await import('@/lib/db/prisma');
 
   /*
    * Scoped at the QUERY level, not by fetching then comparing: filtering in

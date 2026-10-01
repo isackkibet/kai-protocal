@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { verifyPrivyUserId } from '@/lib/privy-server';
+import { verifyPrivyUserId } from '@/lib/auth/privy-server';
 
 /** Demo identity for local exploration when no DATABASE_URL is configured. */
 export const DEMO_AIRDROP_USER = 'did:privy:demo_user_austin';

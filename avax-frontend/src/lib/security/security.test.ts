@@ -548,7 +548,7 @@ describe('CSRF protection', () => {
  * Price-authority drift guard.
  *
  * The original payment bypass existed because the price lived in client
- * JavaScript. We now resolve every price from src/lib/catalog.ts, but the
+ * JavaScript. We now resolve every price from src/lib/payments/catalog.ts, but the
  * storefront still keeps its own display copy in METADATA_MAP. If those two
  * ever disagree, the bug is back — a user sees one price and is charged
  * another, and the discrepancy is invisible until someone complains.
@@ -577,7 +577,7 @@ describe('catalog price authority', () => {
   };
 
   const client = parseClientPrices(read('src/app/connft/page.tsx'));
-  const server = parseServerPrices(read('src/lib/catalog.ts'));
+  const server = parseServerPrices(read('src/lib/payments/catalog.ts'));
 
   test('parses a non-trivial number of items from both files', () => {
     assert.ok(Object.keys(client).length > 30, 'client catalogue looks empty');
@@ -589,7 +589,7 @@ describe('catalog price authority', () => {
     for (const [id, clientPrice] of Object.entries(client)) {
       const serverPrice = server[id];
       if (serverPrice === undefined) {
-        drift.push(`${id}: priced ${clientPrice} on storefront but MISSING from src/lib/catalog.ts`);
+        drift.push(`${id}: priced ${clientPrice} on storefront but MISSING from src/lib/payments/catalog.ts`);
       } else if (serverPrice !== clientPrice) {
         drift.push(`${id}: storefront ${clientPrice} vs server ${serverPrice}`);
       }

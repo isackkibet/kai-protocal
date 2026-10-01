@@ -1,5 +1,5 @@
 /**
- * src/lib/mpesa.ts
+ * src/lib/payments/mpesa.ts
  * M-Pesa Daraja API service module (Safaricom Kenya).
  *
  * Supports:

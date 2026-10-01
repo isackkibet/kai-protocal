@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
-import { resolveAirdropUser } from '@/lib/airdrop-auth';
-import { getPrisma } from '@/lib/db';
+import { resolveAirdropUser } from '@/lib/auth/airdrop-auth';
+import { getPrisma } from '@/lib/db/db';
 
 /** Auto-Miner accrual rate (AIRDROP_SPEC.md §AC-5). */
 const POINTS_PER_SECOND = 0.05;

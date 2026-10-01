@@ -16,10 +16,10 @@ import { ArrowLeft, Leaf, ShoppingCart, ExternalLink, RefreshCw, Mail, Check, Lo
 import { useAccount, useSwitchChain, useWriteContract, useReadContract, usePublicClient } from 'wagmi';
 import { avalancheFuji } from 'wagmi/chains';
 import { parseUnits, formatUnits, maxUint256 } from 'viem';
-import WalletConnectModal from '@/components/WalletConnectModal';
-import { ERC20_ABI } from '@/lib/erc20abi';
-import { ECOSYSTEM_TOKENS } from '@/lib/tokens';
-import { TREASURY as TREASURY_ADDR } from '@/lib/addresses';
+import WalletConnectModal from '@/components/wallet/WalletConnectModal';
+import { ERC20_ABI } from '@/lib/blockchain/erc20abi';
+import { ECOSYSTEM_TOKENS } from '@/lib/blockchain/tokens';
+import { TREASURY as TREASURY_ADDR } from '@/lib/blockchain/addresses';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 const TREASURY = (TREASURY_ADDR ?? '0xB13727161583e38185530755a1A96D00fcCae870') as `0x${string}`;

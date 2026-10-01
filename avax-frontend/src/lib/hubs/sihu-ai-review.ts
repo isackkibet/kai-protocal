@@ -1,4 +1,4 @@
-import type { AiCheck, AiReviewReport, ContentPost, PostDraftInput } from '@/lib/sihu-types';
+import type { AiCheck, AiReviewReport, ContentPost, PostDraftInput } from '@/lib/hubs/sihu-types';
 
 /**
  * AI editorial pre-review for SIHU (PRD Part A §2–3).

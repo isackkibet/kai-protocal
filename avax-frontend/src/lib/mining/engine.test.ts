@@ -7,8 +7,8 @@ import {
   claimMultiplier,
   applyTreasuryCut,
   claimStreak,
-} from './mining-engine-math.ts';
-import { MINING_CONFIG } from './mining-config.ts';
+} from './engine-math.ts';
+import { MINING_CONFIG } from './config.ts';
 
 const {
   HP_DECAY_RATE_PER_DAY,

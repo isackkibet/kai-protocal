@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
-import { listReviewQueue } from '@/lib/sihu-store';
-import { resolveActor, isHubEditor } from '@/lib/hub-actor';
+import { listReviewQueue } from '@/lib/hubs/sihu-store';
+import { resolveActor, isHubEditor } from '@/lib/hubs/hub-actor';
 
 /**
  * SIHU editor endpoints (PRD Part A §4, §6).

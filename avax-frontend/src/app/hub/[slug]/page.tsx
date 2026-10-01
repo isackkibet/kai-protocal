@@ -1,9 +1,9 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { ArrowLeft, ShieldCheck, Newspaper, PenLine } from 'lucide-react';
-import { getBySlug } from '@/lib/sihu-store';
+import { getBySlug } from '@/lib/hubs/sihu-store';
 import ArticleEngage from '@/components/hub/ArticleEngage';
-import { HUB_THEME, MONO, SERIF, SANS } from '@/lib/hub-theme';
+import { HUB_THEME, MONO, SERIF, SANS } from '@/lib/hubs/hub-theme';
 
 export const dynamic = 'force-dynamic';
 

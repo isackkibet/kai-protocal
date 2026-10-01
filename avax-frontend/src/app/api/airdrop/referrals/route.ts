@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
-import { resolveAirdropUser } from '@/lib/airdrop-auth';
-import { getUserReferrals } from '@/lib/airdrop-engine';
+import { resolveAirdropUser } from '@/lib/auth/airdrop-auth';
+import { getUserReferrals } from '@/lib/airdrop/engine';
 
 export async function GET(req: Request) {
   try {

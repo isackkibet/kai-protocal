@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { getPrisma } from '@/lib/db';
+import { getPrisma } from '@/lib/db/db';
 import { canReadAudit, getSessionMember } from '@/lib/nursery/db';
 
 const ENTITY_TYPES = new Set(['members', 'species', 'nursery_locations', 'seedling_inventory', 'nursery_activities', 'survival_observations']);

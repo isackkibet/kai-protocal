@@ -1,6 +1,6 @@
-import { verifyPrivyUserId } from '@/lib/privy-server';
-import { getPrisma } from '@/lib/db';
-import type { Actor } from '@/lib/sihu-store';
+import { verifyPrivyUserId } from '@/lib/auth/privy-server';
+import { getPrisma } from '@/lib/db/db';
+import type { Actor } from '@/lib/hubs/sihu-store';
 
 /** The member's account name and email, when they have a KaiUser row. */
 async function memberProfile(privyUserId: string): Promise<{ name: string; email: string } | null> {

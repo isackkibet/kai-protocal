@@ -1,4 +1,4 @@
-import type { ContentPost } from '@/lib/sihu-types';
+import type { ContentPost } from '@/lib/hubs/sihu-types';
 
 /**
  * Seed / fallback content for the SIHU information hub. Mirrors what a live

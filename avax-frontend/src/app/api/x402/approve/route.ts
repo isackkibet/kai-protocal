@@ -11,8 +11,8 @@
  */
 
 import { NextResponse } from 'next/server';
-import { walletAddress } from '@/lib/addresses';
-import { verifyWalletOwnership } from '@/lib/wallet-signature';
+import { walletAddress } from '@/lib/blockchain/addresses';
+import { verifyWalletOwnership } from '@/lib/auth/wallet-signature';
 
 const OWNER = walletAddress(process.env.WALLET_ADDRESS)?.toLowerCase() ?? '';
 

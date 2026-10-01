@@ -15,8 +15,8 @@
  *   node scripts/seed-liquidity.mjs
  *
  * Reads .env for AVAX_PRIVATE_KEY and AVAX_RPC_URL.
- * Reads avax-frontend/src/lib/defiAddresses.json for AMM address.
- * Reads avax-frontend/src/lib/deployedAddresses.json for token addresses.
+ * Reads avax-frontend/src/lib/blockchain/defiAddresses.json for AMM address.
+ * Reads avax-frontend/src/lib/blockchain/deployedAddresses.json for token addresses.
  */
 
 import { ethers } from "ethers";
@@ -53,8 +53,8 @@ if (balance < ethers.parseEther("0.05")) {
 console.log("─────────────────────────────────────────────────\n");
 
 // ── Load addresses ────────────────────────────────────────────────────────────
-const defiFile  = resolve(ROOT, "avax-frontend", "src", "lib", "defiAddresses.json");
-const tokenFile = resolve(ROOT, "avax-frontend", "src", "lib", "deployedAddresses.json");
+const defiFile  = resolve(ROOT, "avax-frontend", "src", "lib", "blockchain", "defiAddresses.json");
+const tokenFile = resolve(ROOT, "avax-frontend", "src", "lib", "blockchain", "deployedAddresses.json");
 
 if (!existsSync(defiFile) || !existsSync(tokenFile)) {
   console.error("❌ defiAddresses.json or deployedAddresses.json not found.");

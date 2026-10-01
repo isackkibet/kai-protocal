@@ -1,9 +1,9 @@
 import { NextResponse } from 'next/server';
-import { getPrisma } from '@/lib/db';
-import { isAuthorizedAdmin } from '@/lib/admin-auth';
+import { getPrisma } from '@/lib/db/db';
+import { isAuthorizedAdmin } from '@/lib/auth/admin-auth';
 import { isAllowedOrigin, CSRF_COOKIE, CSRF_HEADER } from '@/lib/security/csrf';
 import { POLICIES } from '@/lib/security/rate-limit';
-import { CATALOG, TRANSFER_LIMITS_USD } from '@/lib/catalog';
+import { CATALOG, TRANSFER_LIMITS_USD } from '@/lib/payments/catalog';
 
 /**
  * GET /api/admin/diagnostics

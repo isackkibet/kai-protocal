@@ -1,5 +1,5 @@
 import ConservationHeader from '@/components/conservation/ConservationHeader';
-import { HUB_THEME, MONO } from '@/lib/hub-theme';
+import { HUB_THEME, MONO } from '@/lib/hubs/hub-theme';
 import Link from 'next/link';
 
 /**

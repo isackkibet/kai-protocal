@@ -1,7 +1,7 @@
 import type { PrismaClient } from '@prisma/client';
 import { MiningTier } from '@prisma/client';
-import { MINING_CONFIG } from '@/lib/mining-config';
-import { decayHashPower, gainHashPower, claimMultiplier, applyTreasuryCut, claimStreak, DAY_MS } from '@/lib/mining-engine-math';
+import { MINING_CONFIG } from '@/lib/mining/config';
+import { decayHashPower, gainHashPower, claimMultiplier, applyTreasuryCut, claimStreak, DAY_MS } from '@/lib/mining/engine-math';
 
 const {
   XP_PER_TIER,

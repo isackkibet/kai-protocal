@@ -1,7 +1,7 @@
 "use client";
 
-import { Operation, OPERATIONS, KAI_ACCOUNT, OWNER_ACCOUNT } from "../../shared/operationSchemas";
-import { TREASURY as TREASURY_FROM_LIB } from "@/lib/addresses";
+import { Operation, OPERATIONS, KAI_ACCOUNT, OWNER_ACCOUNT } from "@/lib/operations/operationSchemas";
+import { TREASURY as TREASURY_FROM_LIB } from "@/lib/blockchain/addresses";
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { useAccount, useSendTransaction, useSwitchChain } from "wagmi";
 import { avalancheFuji } from "wagmi/chains";

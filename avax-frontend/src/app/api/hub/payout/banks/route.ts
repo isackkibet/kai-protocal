@@ -6,7 +6,7 @@
  */
 
 import { NextResponse } from "next/server";
-import { listBanks } from "@/lib/paystack";
+import { listBanks } from "@/lib/payments/paystack";
 
 export const dynamic = "force-dynamic";
 

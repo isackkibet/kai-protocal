@@ -15,7 +15,7 @@ import {
   Wallet,
   Play
 } from 'lucide-react';
-import WalletConnectModal from './WalletConnectModal';
+import WalletConnectModal from '../wallet/WalletConnectModal';
 
 const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_API_URL || 'http://localhost:8000';
 const NIT_TOKEN_ADDRESS = process.env.NEXT_PUBLIC_NITOKEN_ADDRESS || '0xE1b62649b183617300c3F16cfB47cFEc83130c0B';

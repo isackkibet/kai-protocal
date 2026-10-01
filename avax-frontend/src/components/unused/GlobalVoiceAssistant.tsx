@@ -5,7 +5,7 @@ import { useRouter, usePathname } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Mic, X, Volume2, VolumeX, Keyboard, Send, Loader2 } from 'lucide-react';
 import { useVoiceAgent } from '@/hooks/useVoiceAgent';
-import AgentProposalCard, { AgentProposal } from '@/components/AgentProposalCard';
+import AgentProposalCard, { AgentProposal } from '@/components/ai/AgentProposalCard';
 
 type AgentState = 'idle' | 'listening' | 'thinking' | 'speaking';
 

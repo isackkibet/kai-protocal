@@ -6,9 +6,9 @@ import {
   ArrowLeft, PenLine, Check, AlertTriangle, X, Sparkles, Send,
   Save, Info, ShieldCheck, Coins, Plus, Lock, FileText,
 } from 'lucide-react';
-import { usePrivyAuth } from '@/lib/privy-auth';
-import { HUB_THEME, MONO, SERIF } from '@/lib/hub-theme';
-import type { AiReviewReport, ContentPost, PostDraftInput, SihuContentType } from '@/lib/sihu-types';
+import { usePrivyAuth } from '@/lib/auth/privy-auth';
+import { HUB_THEME, MONO, SERIF } from '@/lib/hubs/hub-theme';
+import type { AiReviewReport, ContentPost, PostDraftInput, SihuContentType } from '@/lib/hubs/sihu-types';
 
 const T = HUB_THEME;
 

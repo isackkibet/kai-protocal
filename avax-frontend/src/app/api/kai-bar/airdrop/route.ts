@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
-import { getPrisma } from '@/lib/db';
-import { AIRDROP_VAULT_ADDRESS } from '@/lib/addresses';
-import { verifyPrivyUserId } from '@/lib/privy-server';
+import { getPrisma } from '@/lib/db/db';
+import { AIRDROP_VAULT_ADDRESS } from '@/lib/blockchain/addresses';
+import { verifyPrivyUserId } from '@/lib/auth/privy-server';
 
 /**
  * /api/kai-bar/airdrop  —  GET

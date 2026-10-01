@@ -18,8 +18,8 @@
 
 import { createPublicClient, getAddress, http, formatUnits } from 'viem';
 import { avalancheFuji } from 'viem/chains';
-import { ERC20_ABI } from '@/lib/erc20abi';
-import { prisma } from '@/lib/prisma';
+import { ERC20_ABI } from '@/lib/blockchain/erc20abi';
+import { prisma } from '@/lib/db/prisma';
 import { ESCROW_ABI, KAI_ESCROW_ADDRESS, KAI_AMM_ADDRESS } from '@/lib/agent/escrowAbi';
 
 export const CHAIN = {

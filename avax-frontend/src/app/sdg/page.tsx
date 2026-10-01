@@ -8,8 +8,8 @@ import {
 } from 'lucide-react';
 import { useAccount } from 'wagmi';
 import { useSDGImpact } from '@/hooks/useSDGImpact';
-import WalletConnectModal from '@/components/WalletConnectModal';
-import { iconForSdg, iconForTier } from '@/lib/sdgIcons';
+import WalletConnectModal from '@/components/wallet/WalletConnectModal';
+import { iconForSdg, iconForTier } from '@/lib/ui/sdgIcons';
 
 /* Same editorial system as the rest of the app — pine + gold + paper,
    flat sections separated by a hairline, no gradient card shells. Real

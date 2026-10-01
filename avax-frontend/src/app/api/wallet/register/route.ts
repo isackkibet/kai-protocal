@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
-import { getPrisma } from '@/lib/db';
-import { verifyWalletOwnership } from '@/lib/wallet-signature';
+import { getPrisma } from '@/lib/db/db';
+import { verifyWalletOwnership } from '@/lib/auth/wallet-signature';
 
 /**
  * POST /api/wallet/register

@@ -12,11 +12,11 @@
  */
 
 import { encodeFunctionData, keccak256, parseUnits, stringToHex } from 'viem';
-import { ERC20_ABI } from '@/lib/erc20abi';
+import { ERC20_ABI } from '@/lib/blockchain/erc20abi';
 import { ESCROW_ABI, KAI_ORCHESTRATOR_ADDRESS, KAI_ORCHESTRATOR_DID } from '@/lib/agent/escrowAbi';
-import { AMM_ABI } from '@/lib/defiAbis';
-import { ESCROW_ADDRESS, AMM_ADDRESS, TOKENS, TREASURY } from '@/lib/addresses';
-import { ECOSYSTEM_TOKENS } from '@/lib/tokens';
+import { AMM_ABI } from '@/lib/blockchain/defiAbis';
+import { ESCROW_ADDRESS, AMM_ADDRESS, TOKENS, TREASURY } from '@/lib/blockchain/addresses';
+import { ECOSYSTEM_TOKENS } from '@/lib/blockchain/tokens';
 
 type RequestTxResult = { txHash: string; explorer: string };
 

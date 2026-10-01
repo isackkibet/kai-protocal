@@ -4,7 +4,7 @@ import { createContext, useContext } from 'react';
 import type { Address } from 'viem';
 import { avalancheFuji } from 'wagmi/chains';
 import { createWalletClient, custom } from 'viem';
-import { ERC20_ABI } from '@/lib/erc20abi';
+import { ERC20_ABI } from '@/lib/blockchain/erc20abi';
 
 /**
  * Context wrapper around the Privy embedded wallet (PRD 1). The provider

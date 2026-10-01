@@ -8,9 +8,9 @@ import {
   PrivyAuthContext,
   type PrivyAuthValue,
   type PrivyAuthSyncResult,
-} from '@/lib/privy-auth';
-import { ERC20_ABI } from '@/lib/erc20abi';
-import { AIRDROP_ABI } from '@/lib/airdropAbi';
+} from '@/lib/auth/privy-auth';
+import { ERC20_ABI } from '@/lib/blockchain/erc20abi';
+import { AIRDROP_ABI } from '@/lib/blockchain/airdropAbi';
 
 const POST_LOGIN_REDIRECT_KEY = 'privy:post-login-redirect';
 

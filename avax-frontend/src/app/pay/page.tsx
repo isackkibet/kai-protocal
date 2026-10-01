@@ -27,10 +27,10 @@ import {
   ArrowLeft, QrCode, Scan, Send, Copy, CheckCircle,
   ExternalLink, RefreshCw, CreditCard, X, ChevronDown,
 } from "lucide-react";
-import WalletConnectModal from "@/components/WalletConnectModal";
+import WalletConnectModal from "@/components/wallet/WalletConnectModal";
 import RealisticQR from "@/components/ui/RealisticQR";
-import { ERC20_ABI } from "@/lib/erc20abi";
-import { ECOSYSTEM_TOKENS } from "@/lib/tokens";
+import { ERC20_ABI } from "@/lib/blockchain/erc20abi";
+import { ECOSYSTEM_TOKENS } from "@/lib/blockchain/tokens";
 
 // ─── Token options ────────────────────────────────────────────────────────────
 const TOKENS = ECOSYSTEM_TOKENS.map(t => ({

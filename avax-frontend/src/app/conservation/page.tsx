@@ -1,8 +1,8 @@
 import Link from 'next/link';
 import { Search, ArrowRight, BookOpen, Leaf, Globe2, FileText, ShieldCheck, Users, ExternalLink } from 'lucide-react';
 import ConservationShell from '@/components/conservation/ConservationShell';
-import { METHODOLOGIES, KNOWLEDGE, RESOURCES } from '@/lib/conservation-data';
-import { HUB_THEME, labelStyle, MONO, SERIF, SANS } from '@/lib/hub-theme';
+import { METHODOLOGIES, KNOWLEDGE, RESOURCES } from '@/lib/hubs/conservation-data';
+import { HUB_THEME, labelStyle, MONO, SERIF, SANS } from '@/lib/hubs/hub-theme';
 
 export const dynamic = 'force-dynamic';
 

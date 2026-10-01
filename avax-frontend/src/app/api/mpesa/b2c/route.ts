@@ -20,8 +20,8 @@
  */
 
 import { NextResponse } from "next/server";
-import { b2cSend } from "@/lib/mpesa";
-import { isAuthorizedAdmin } from "@/lib/admin-auth";
+import { b2cSend } from "@/lib/payments/mpesa";
+import { isAuthorizedAdmin } from "@/lib/auth/admin-auth";
 
 export const dynamic = "force-dynamic";
 

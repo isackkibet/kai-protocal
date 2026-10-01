@@ -84,7 +84,7 @@ avax-frontend/
         └── prisma.ts        ← singleton Prisma client
 ```
 
-### `src/lib/prisma.ts`
+### `src/lib/db/prisma.ts`
 
 ```ts
 import { PrismaClient } from "@prisma/client";

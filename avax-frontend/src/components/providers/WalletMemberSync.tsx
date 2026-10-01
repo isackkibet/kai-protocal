@@ -2,8 +2,8 @@
 
 import { useEffect, useRef } from 'react';
 import { useAccount, useSignMessage } from 'wagmi';
-import { usePrivyAuth } from '@/lib/privy-auth';
-import { buildOwnershipChallenge } from '@/lib/wallet-signature';
+import { usePrivyAuth } from '@/lib/auth/privy-auth';
+import { buildOwnershipChallenge } from '@/lib/auth/wallet-signature';
 
 const REGISTERED_KEY = (addr: string) => `kai:wallet-registered:${addr}`;
 const DECLINED_KEY = (addr: string) => `kai:wallet-register-declined:${addr}`;

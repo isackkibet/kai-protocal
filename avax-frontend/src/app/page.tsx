@@ -9,12 +9,12 @@ import { useBalance, useReadContracts } from 'wagmi';
 import { formatUnits } from 'viem';
 import { useKaivaxStore } from '@/store/useKaivaxStore';
 import { useAIChatStore } from '@/store/useAIChatStore';
-const WalletConnectModal = dynamic(() => import('@/components/WalletConnectModal'), { ssr: false });
-import { ECOSYSTEM_TOKENS, TICKER_TOKENS } from '@/lib/tokens';
-import { ERC20_ABI } from '@/lib/erc20abi';
-import { usePrivyAuth } from '@/lib/privy-auth';
+const WalletConnectModal = dynamic(() => import('@/components/wallet/WalletConnectModal'), { ssr: false });
+import { ECOSYSTEM_TOKENS, TICKER_TOKENS } from '@/lib/blockchain/tokens';
+import { ERC20_ABI } from '@/lib/blockchain/erc20abi';
+import { usePrivyAuth } from '@/lib/auth/privy-auth';
 import { useActiveAccount } from '@/hooks/useActiveAccount';
-import { formatChat } from '@/lib/formatChat';
+import { formatChat } from '@/lib/ai/formatChat';
 import {
   Mic, Bot, FlaskConical, ScanLine, CircleDollarSign,
   Globe, ShieldCheck, ImageIcon, Droplets, Lock, Gift,

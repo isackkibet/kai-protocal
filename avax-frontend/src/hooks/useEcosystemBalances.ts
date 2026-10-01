@@ -4,8 +4,8 @@ import { useEffect } from 'react';
 import { useBalance, useReadContracts } from 'wagmi';
 import { avalancheFuji } from 'wagmi/chains';
 import { formatUnits } from 'viem';
-import { ECOSYSTEM_TOKENS } from '@/lib/tokens';
-import { ERC20_ABI } from '@/lib/erc20abi';
+import { ECOSYSTEM_TOKENS } from '@/lib/blockchain/tokens';
+import { ERC20_ABI } from '@/lib/blockchain/erc20abi';
 import { useKaivaxStore } from '@/store/useKaivaxStore';
 import { useActiveAccount } from '@/hooks/useActiveAccount';
 

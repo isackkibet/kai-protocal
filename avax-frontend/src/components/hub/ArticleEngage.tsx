@@ -6,9 +6,9 @@ import {
   Heart, Bookmark, Flag, Pause, Loader,
   Share2, Mic, DollarSign,
 } from 'lucide-react';
-import { usePrivyAuth } from '@/lib/privy-auth';
-import { HUB_THEME, labelStyle, MONO, SERIF, SANS } from '@/lib/hub-theme';
-import type { ContentPost, PostComment } from '@/lib/sihu-types';
+import { usePrivyAuth } from '@/lib/auth/privy-auth';
+import { HUB_THEME, labelStyle, MONO, SERIF, SANS } from '@/lib/hubs/hub-theme';
+import type { ContentPost, PostComment } from '@/lib/hubs/sihu-types';
 
 function guestKey(): string {
   if (typeof window === 'undefined') return '';

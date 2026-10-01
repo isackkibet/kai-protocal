@@ -9,7 +9,7 @@
  *   Info      — pool reserves, spot prices, LP balances
  *
  * The interactive bubble canvas + PoolDrawer remain for discovery.
- * Contract addresses from src/lib/defiAddresses.json.
+ * Contract addresses from src/lib/blockchain/defiAddresses.json.
  */
 
 import React, { useState, useCallback } from "react";
@@ -21,17 +21,17 @@ import {
 import { avalancheFuji } from "wagmi/chains";
 import { parseUnits, formatUnits, maxUint256 } from "viem";
 import { ArrowDownUp, Droplets, BarChart3, ExternalLink, RefreshCw, ArrowLeft, TrendingUp, Wallet } from "lucide-react";
-import WalletConnectModal from "@/components/WalletConnectModal";
+import WalletConnectModal from "@/components/wallet/WalletConnectModal";
 import CryptoBubblesCanvas, { KAI_TOKENS } from "@/components/pools/CryptoBubblesCanvas";
 import type { PoolToken } from "@/components/pools/CryptoBubblesCanvas";
 import type { StakePosition } from "@/components/pools/PoolDrawer";
 import PoolDrawer from "@/components/pools/PoolDrawer";
 import PoolStatsCard from "@/components/pools/PoolStatsCard";
-import { useAnimNumber } from "@/lib/useAnimNumber";
-import { ECOSYSTEM_TOKENS } from "@/lib/tokens";
-import { ERC20_ABI } from "@/lib/erc20abi";
-import { POOL_ABI, AMM_ABI } from "@/lib/defiAbis";
-import defiAddrs from "@/lib/defiAddresses.json";
+import { useAnimNumber } from "@/hooks/useAnimNumber";
+import { ECOSYSTEM_TOKENS } from "@/lib/blockchain/tokens";
+import { ERC20_ABI } from "@/lib/blockchain/erc20abi";
+import { POOL_ABI, AMM_ABI } from "@/lib/blockchain/defiAbis";
+import defiAddrs from "@/lib/blockchain/defiAddresses.json";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 type Addr = `0x${string}`;

@@ -7,12 +7,12 @@
  *
  * Prerequisites:
  *   - .env must have AVAX_PRIVATE_KEY and AVAX_RPC_URL
- *   - avax-frontend/src/lib/deployedAddresses.json must exist
+ *   - avax-frontend/src/lib/blockchain/deployedAddresses.json must exist
  *     (deploy.ts must have run so we know the NVR token address)
  *
  * Writes:
  *   airdrop-addresses.json                      (project root)
- *   avax-frontend/src/lib/airdropAddresses.json (consumed by the frontend)
+ *   avax-frontend/src/lib/blockchain/airdropAddresses.json (consumed by the frontend)
  */
 
 import { writeFile } from "node:fs/promises";
@@ -24,10 +24,10 @@ import { parseEther, formatEther } from "viem";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
-const tokenAddrFile = resolve(__dirname, "..", "avax-frontend", "src", "lib", "deployedAddresses.json");
+const tokenAddrFile = resolve(__dirname, "..", "avax-frontend", "src", "lib", "blockchain", "deployedAddresses.json");
 if (!existsSync(tokenAddrFile)) {
   throw new Error(
-    "avax-frontend/src/lib/deployedAddresses.json not found.\n" +
+    "avax-frontend/src/lib/blockchain/deployedAddresses.json not found.\n" +
     "Run  npx hardhat run scripts/deploy.ts --network fuji  first to deploy the ERC-20 tokens.",
   );
 }
@@ -76,13 +76,13 @@ const payload = {
 };
 
 const rootPath = resolve(__dirname, "..", "airdrop-addresses.json");
-const frontendPath = resolve(__dirname, "..", "avax-frontend", "src", "lib", "airdropAddresses.json");
+const frontendPath = resolve(__dirname, "..", "avax-frontend", "src", "lib", "blockchain", "airdropAddresses.json");
 
 await writeFile(rootPath, JSON.stringify(payload, null, 2) + "\n");
 await writeFile(frontendPath, JSON.stringify(payload, null, 2) + "\n");
 
 console.log("\n─────────────────────────────────────────");
-console.log("✓ airdrop-addresses.json written (root + avax-frontend/src/lib/)");
+console.log("✓ airdrop-addresses.json written (root + avax-frontend/src/lib/blockchain/)");
 console.log(`  KAIAirdropVault : ${vault.address}`);
 console.log("\nNext steps:");
 console.log("  1. When KAI exists, call setToken(KAI) on the vault (admin).");

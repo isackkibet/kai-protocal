@@ -13,10 +13,10 @@
  */
 
 import { NextResponse } from "next/server";
-import { stkQuery } from "@/lib/mpesa";
-import { confirmStkTransaction } from "@/lib/mpesa/transactions";
-import { prisma } from "@/lib/prisma";
-import { verifyPrivyUserId } from "@/lib/privy-server";
+import { stkQuery } from "@/lib/payments/mpesa";
+import { confirmStkTransaction } from "@/lib/payments/mpesa-transactions";
+import { prisma } from "@/lib/db/prisma";
+import { verifyPrivyUserId } from "@/lib/auth/privy-server";
 import { requireRateLimit } from "@/lib/security/route-guard";
 import { readJsonBody } from "@/lib/security/input";
 

@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { VAULT_ADDRESSES } from '@/lib/addresses';
+import { VAULT_ADDRESSES } from '@/lib/blockchain/addresses';
 
 // Responsible-treasury snapshot for the CFA dashboard. Mirrors the
 // governance model in the KAI Nuvari PRD: every movement is logged with an

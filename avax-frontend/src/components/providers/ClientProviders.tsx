@@ -3,7 +3,7 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { WagmiProvider } from 'wagmi';
 import { useState } from 'react';
-import { config } from '@/lib/wagmi';
+import { config } from '@/lib/blockchain/wagmi';
 import { PrivyAuthProvider } from '@/components/providers/PrivyAuthProvider';
 import { WalletMemberSync } from '@/components/providers/WalletMemberSync';
 

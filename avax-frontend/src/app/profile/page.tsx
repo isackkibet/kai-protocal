@@ -2,8 +2,8 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { useAccount, useDisconnect, useSignMessage } from 'wagmi';
-import { buildOwnershipChallenge } from '@/lib/wallet-signature';
-import { usePrivyAuth } from '@/lib/privy-auth';
+import { buildOwnershipChallenge } from '@/lib/auth/wallet-signature';
+import { usePrivyAuth } from '@/lib/auth/privy-auth';
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
 import {

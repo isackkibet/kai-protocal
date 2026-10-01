@@ -7,10 +7,10 @@ import {
   Flame, Users, CheckCircle2, Gift, Copy, ChevronRight,
   Lock, Trophy, Bird, ArrowLeft, Share2, Loader2,
 } from 'lucide-react';
-import { usePrivyAuth } from '@/lib/privy-auth';
+import { usePrivyAuth } from '@/lib/auth/privy-auth';
 import { useKaiBar } from '@/hooks/useKaiBar';
-import { AirdropClaimCard } from '@/components/AirdropClaimCard';
-import DailyCheckInCard from '@/components/DailyCheckInCard';
+import { AirdropClaimCard } from '@/components/rewards/AirdropClaimCard';
+import DailyCheckInCard from '@/components/rewards/DailyCheckInCard';
 
 /* Same editorial system as the home page, wallet modal and wallet
    dashboard — pine + gold + paper, flat sections separated by a

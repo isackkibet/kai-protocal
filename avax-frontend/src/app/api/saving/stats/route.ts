@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { REGISTRY_ADDRESS } from '@/lib/addresses';
+import { REGISTRY_ADDRESS } from '@/lib/blockchain/addresses';
 
 // Sample data only — this route doesn't read the database yet. `demo: true`
 // makes the page label it, so it's never presented as a real group/business.

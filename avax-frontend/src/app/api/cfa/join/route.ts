@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { randomUUID } from 'node:crypto';
-import { getPrisma } from '@/lib/db';
-import { verifyPrivyUserId } from '@/lib/privy-server';
+import { getPrisma } from '@/lib/db/db';
+import { verifyPrivyUserId } from '@/lib/auth/privy-server';
 import { requireRateLimit } from '@/lib/security/route-guard';
 import { explainDbError, getNurseryCfa, isConfiguredAdmin, withMember } from '@/lib/nursery/db';
 

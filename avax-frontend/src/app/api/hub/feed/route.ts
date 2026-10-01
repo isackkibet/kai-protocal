@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { listPublishedPosts } from '@/lib/sihu-store';
+import { listPublishedPosts } from '@/lib/hubs/sihu-store';
 
 // Returns the published SIHU feed, shaped exactly like the old seed-driven
 // page consumed it so the frontend contract is unchanged. Unknown categories

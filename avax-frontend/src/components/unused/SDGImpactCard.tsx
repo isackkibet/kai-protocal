@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Globe, Leaf, Zap, Loader2, ArrowUpRight } from 'lucide-react';
 import Link from 'next/link';
 import { useSDGImpact } from '@/hooks/useSDGImpact';
-import { iconForSdg, iconForTier } from '@/lib/sdgIcons';
+import { iconForSdg, iconForTier } from '@/lib/ui/sdgIcons';
 
 /* Same editorial system as the rest of the app — pine + gold + paper,
    flat rows separated by a hairline, no filled "surface" boxes. */

@@ -7,7 +7,7 @@
  *
  * Writes:
  *   agent-infra.json              (project root)
- *   avax-frontend/src/lib/agentInfra.json
+ *   avax-frontend/src/lib/blockchain/agentInfra.json
  *   ai-agent/.env  (appends KAI_AGENT_REGISTRY, KAI_ESCROW_ADDRESS)
  *
  * Prerequisites:
@@ -203,7 +203,7 @@ const payload = {
 };
 
 const rootOut     = resolve(__dirname, "..", "agent-infra.json");
-const frontendOut = resolve(__dirname, "..", "avax-frontend", "src", "lib", "agentInfra.json");
+const frontendOut = resolve(__dirname, "..", "avax-frontend", "src", "lib", "blockchain", "agentInfra.json");
 const envPath     = resolve(__dirname, "..", "ai-agent", ".env");
 
 await writeFile(rootOut,     `${JSON.stringify(payload, null, 2)}\n`);
@@ -226,7 +226,7 @@ if (existsSync(envPath2)) {
 }
 
 console.log("\n─────────────────────────────────────────────────");
-console.log("✓ agent-infra.json written (root + avax-frontend/src/lib/)");
+console.log("✓ agent-infra.json written (root + avax-frontend/src/lib/blockchain/)");
 console.log(`  Registry : ${registry.address}`);
 console.log(`  Escrow   : ${escrow.address}`);
 console.log(`  Agents   : ${Object.keys(registeredAgents).length} registered`);

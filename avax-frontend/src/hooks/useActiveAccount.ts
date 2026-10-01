@@ -2,7 +2,7 @@
 
 import { useAccount } from 'wagmi';
 import type { Address } from 'viem';
-import { usePrivyAuth } from '@/lib/privy-auth';
+import { usePrivyAuth } from '@/lib/auth/privy-auth';
 
 /**
  * The single account used across the app.

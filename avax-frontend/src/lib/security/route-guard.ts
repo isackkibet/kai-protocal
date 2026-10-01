@@ -21,8 +21,8 @@
 import { NextResponse } from 'next/server';
 import { assessRisk } from './client-ip.ts';
 import { checkPolicy, rateLimitHeaders, type Policy, type CheckResult } from './rate-limit.ts';
-import { verifyPrivyUserId } from '@/lib/privy-server';
-import { verifyWalletOwnership } from '@/lib/wallet-signature';
+import { verifyPrivyUserId } from '@/lib/auth/privy-server';
+import { verifyWalletOwnership } from '@/lib/auth/wallet-signature';
 
 export interface GuardFailure {
   ok: false;

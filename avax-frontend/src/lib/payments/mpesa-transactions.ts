@@ -1,5 +1,5 @@
 /**
- * src/lib/mpesa/transactions.ts
+ * src/lib/payments/mpesa-transactions.ts
  *
  * Durable pending-transaction tracking for M-Pesa STK Push.
  *
@@ -31,8 +31,8 @@
  * storage is required for correctness here, not just for convenience.
  */
 
-import { prisma } from '@/lib/prisma';
-import { stkQuery } from '@/lib/mpesa';
+import { prisma } from '@/lib/db/prisma';
+import { stkQuery } from '@/lib/payments/mpesa';
 
 // ── Types ────────────────────────────────────────────────────────────────────
 

@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { Mail, Wallet, Trophy, Gift, Loader2, CheckCircle2, Clock, ChevronRight, ArrowLeft, ShieldCheck, UserCheck } from 'lucide-react';
-import { usePrivyAuth } from '@/lib/privy-auth';
+import { usePrivyAuth } from '@/lib/auth/privy-auth';
 import { useKaiBar } from '@/hooks/useKaiBar';
 
 /* Same editorial system as the home page, wallet modal and wallet

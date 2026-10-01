@@ -12,8 +12,8 @@
  */
 
 import { NextResponse } from "next/server";
-import { verifyTransaction } from "@/lib/paystack";
-import { prisma } from "@/lib/prisma";
+import { verifyTransaction } from "@/lib/payments/paystack";
+import { prisma } from "@/lib/db/prisma";
 
 export const dynamic = "force-dynamic";
 

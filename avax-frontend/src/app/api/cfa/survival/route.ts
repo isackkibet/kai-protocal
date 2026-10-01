@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { MiningTier } from '@prisma/client';
-import { awardXp } from '@/lib/mining-engine';
+import { awardXp } from '@/lib/mining/engine';
 import { withMember } from '@/lib/nursery/db';
 import { nurseryRead, nurseryWrite, toDate } from '@/lib/nursery/route';
 import { day, id, survivalCounts, text } from '@/lib/nursery/validate';

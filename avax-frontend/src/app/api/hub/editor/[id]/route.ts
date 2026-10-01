@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
-import { getById, makeDecision } from '@/lib/sihu-store';
-import { resolveActor, isHubEditor } from '@/lib/hub-actor';
-import type { ReviewDecision } from '@/lib/sihu-types';
+import { getById, makeDecision } from '@/lib/hubs/sihu-store';
+import { resolveActor, isHubEditor } from '@/lib/hubs/hub-actor';
+import type { ReviewDecision } from '@/lib/hubs/sihu-types';
 
 /**
  * Editor decision endpoint. Kept as its own route so the editor dashboard can
