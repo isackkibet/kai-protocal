@@ -55,7 +55,10 @@ src/
     │                   *.json files here are WRITTEN by the deploy scripts.
     ├── db/             Prisma client; getPrisma() returns null when DATABASE_URL is missing
     ├── defi/           Portfolio Agent tools: live pool/vault/token reads (chain.ts),
-    │                   swap/LP/vault/IL math matching the contracts (math.ts), plans (+ tests)
+    │                   swap/LP/vault/IL math matching the contracts (math.ts), plans,
+    │                   Yield Optimizer (yield.ts), admin-created vaults (vaults.ts) (+ tests)
+    ├── identity/       DIDs (did:web for the CFA, did:pkh for wallets) and verifiable
+    │                   credentials signed with EIP-712 in the issuer's own wallet
     ├── hubs/           SIHU + Oloolua hub data, theme, AI review
     ├── mining/         Daily drop engine, config, math (+ tests)
     ├── mrv/            MRV records: canonical JSON + SHA-256 (records.ts), human
@@ -97,6 +100,10 @@ docs/                   PRDs and design notes (SECURITY.md, db-integration.md, .
 | Portfolio / swap / vault numbers look off | `src/lib/defi/chain.ts` (live Fuji reads, 1-minute cache) and `src/lib/defi/math.ts` (same formulas as the contracts) |
 | Reports, quality metrics, "inventory does not reconcile" | `src/lib/nursery/quality.ts`; rules in `src/lib/nursery/quality-rules.ts` |
 | Audit download fails | `src/app/api/cfa/audit/export/route.ts` (admins, auditors, verifiers only) |
+| Compliance score / anomalies look wrong | `src/lib/nursery/compliance.ts`; scoring in `compliance-rules.ts` |
+| Credential "not valid" | `src/lib/identity/credentials.ts` `verifyCredential` names the failing check; CFA keys at `/cfa/<cfa id>/did.json` |
+| "Only a DeFi admin wallet can create vaults" | `DEFI_ADMIN_WALLETS` in Vercel (comma-separated), default the deployer; `src/lib/defi/vaults.ts` |
+| Members get "only site managers…" | Manage the CFA → CFA details: the site-manager switch (`cfa.metadata.inventory_requires_site_manager`) |
 | AI answer about the nursery or account | `src/lib/nursery/tools.ts` (the data), `src/lib/ai/nursery-agent.ts` (rules), `appDataTools` in `src/lib/ai/brain.ts` |
 | Nursery "Confirm and save" card fails | The error text comes from the `/api/cfa/*` route named in the draft; card is `src/components/cfa/NurseryConfirmCard.tsx` |
 | Nursery forms / CFA data | `src/app/api/cfa/`, `src/lib/nursery/`, `src/components/cfa/NurseryTab.tsx` |

@@ -5,6 +5,7 @@ import { POOL_ABI, VAULT_ABI } from '@/lib/blockchain/defiAbis';
 import { TOKENS } from '@/lib/blockchain/addresses';
 import defi from '@/lib/blockchain/defiAddresses.json';
 import { REFERENCE_PRICE_USD } from '@/lib/agent/tools';
+import { getPrisma } from '@/lib/db/db';
 import { fromUnits } from './math';
 
 /**
@@ -55,6 +56,24 @@ export function findPool(q: string) {
   const s = q.trim().toLowerCase().replace(/\s+/g, '');
   return POOL_LIST.find((p) => p.address.toLowerCase() === s || p.id.toLowerCase() === s || p.id.toLowerCase().split('/').reverse().join('/') === s) ?? null;
 }
+type VaultRef = (typeof VAULT_LIST)[number];
+
+/** Deploy-time vaults plus vaults a DeFi admin created later (defi_vaults, PRD create_vault). */
+export async function allVaults(): Promise<VaultRef[]> {
+  const extra = await cached('registeredVaults', async () => {
+    const prisma = await getPrisma();
+    const rows = prisma ? await prisma.defiVault.findMany({ orderBy: { createdAt: 'asc' } }).catch(() => []) : [];
+    return rows.map((r) => ({ id: r.shareSymbol, symbol: r.assetSymbol, address: getAddress(r.address), asset: getAddress(r.asset) }));
+  });
+  return [...VAULT_LIST, ...extra.value.filter((x) => !VAULT_LIST.some((v) => v.address === x.address))];
+}
+
+export async function findVaultAny(q: string): Promise<VaultRef | null> {
+  const s = q.trim().toLowerCase();
+  const list = await allVaults();
+  return list.find((v) => v.address.toLowerCase() === s || v.id.toLowerCase() === s) ?? list.find((v) => v.symbol.toLowerCase() === s) ?? null;
+}
+
 export function findVault(q: string) {
   const s = q.trim().toLowerCase();
   return VAULT_LIST.find((v) => v.address.toLowerCase() === s || v.id.toLowerCase() === s || v.symbol.toLowerCase() === s) ?? null;
@@ -93,7 +112,7 @@ export interface VaultState {
   tvlUsd: number | null;
 }
 
-export async function vaultState(vault: (typeof VAULT_LIST)[number]) {
+export async function vaultState(vault: VaultRef) {
   return cached(`vault:${vault.address}`, async (): Promise<VaultState> => {
     const r = (fn: 'totalAssets' | 'totalSupply' | 'sharePrice' | 'apyBps') => client.readContract({ address: vault.address, abi: VAULT_ABI, functionName: fn }) as Promise<bigint>;
     const [totalAssets, totalShares, sharePrice, apyBps] = await Promise.all([r('totalAssets'), r('totalSupply'), r('sharePrice'), r('apyBps')]);
@@ -109,7 +128,7 @@ export async function walletPositions(wallet: Address) {
       client.getBalance({ address: wallet }),
       Promise.all(TOKEN_LIST.map(async (t) => ({ ...t, balance: (await client.readContract({ address: t.address, abi: ERC20_ABI, functionName: 'balanceOf', args: [wallet] })) as bigint }))),
       Promise.all(POOL_LIST.map(async (p) => ({ pool: p, lp: (await client.readContract({ address: p.address, abi: POOL_ABI, functionName: 'balanceOf', args: [wallet] })) as bigint }))),
-      Promise.all(VAULT_LIST.map(async (v) => ({ vault: v, shares: (await client.readContract({ address: v.address, abi: VAULT_ABI, functionName: 'balanceOf', args: [wallet] })) as bigint }))),
+      Promise.all((await allVaults()).map(async (v) => ({ vault: v, shares: (await client.readContract({ address: v.address, abi: VAULT_ABI, functionName: 'balanceOf', args: [wallet] })) as bigint }))),
     ]);
     return { avax, tokens, lps, vaultShares };
   });

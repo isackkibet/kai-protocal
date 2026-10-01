@@ -7,6 +7,7 @@ import { checkRecordIntegrity } from '@/lib/mrv/records';
 import { HUB_THEME as C, MONO, SERIF } from '@/lib/hubs/hub-theme';
 import EvidencePanel from '@/components/cfa/EvidencePanel';
 import AnchorCheck from '@/components/mrv/AnchorCheck';
+import CredentialsPanel from '@/components/mrv/CredentialsPanel';
 import type { EvidenceEntity } from '@/lib/nursery/evidence-rules';
 
 export const dynamic = 'force-dynamic';
@@ -150,6 +151,12 @@ export default async function VerifyRecordPage({ params }: { params: Promise<{ r
           <p style={{ margin: 0, fontSize: 12, color: C.inkLight }}>{fmt(r.createdAt)}</p>
         </div>
       ))}
+
+      <h2 style={{ ...SERIF, fontSize: 18, fontWeight: 600, margin: '30px 0 10px' }}>Signed credentials</h2>
+      <p style={{ color: C.inkLight, fontSize: 13, margin: '0 0 12px', lineHeight: 1.55 }}>
+        A credential is a statement that this record was verified, signed by a CFA verifier&apos;s wallet. Anyone can check it.
+      </p>
+      <CredentialsPanel recordId={record.id} verified={record.verificationStatus === 'VERIFIED'} />
 
       <h2 style={{ ...SERIF, fontSize: 18, fontWeight: 600, margin: '30px 0 10px' }}>Evidence</h2>
       <p style={{ color: C.inkLight, fontSize: 13, margin: '0 0 12px', lineHeight: 1.55 }}>

@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { withMember } from '@/lib/nursery/db';
+import { inventoryPermissionError, withMember } from '@/lib/nursery/db';
 import { nurseryWrite, toDate } from '@/lib/nursery/route';
 import { FieldError, count, day, id, text } from '@/lib/nursery/validate';
 
@@ -17,6 +17,8 @@ import { FieldError, count, day, id, text } from '@/lib/nursery/validate';
  */
 export async function POST(req: Request) {
   return nurseryWrite(req, 'cfa/transfer', async ({ prisma, cfa, member, body }) => {
+    const notAllowed = inventoryPermissionError(member, cfa);
+    if (notAllowed) return NextResponse.json({ error: notAllowed }, { status: 403 });
     const inventoryId = id(body, 'inventoryId', { required: true })!;
     const quantity = count(body, 'quantity', { required: true, min: 1 })!;
     const toLocationId = id(body, 'toLocationId');

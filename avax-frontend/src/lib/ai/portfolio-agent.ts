@@ -13,11 +13,14 @@ import type { ToolResult } from '@/lib/nursery/agent-logic';
 import {
   computeLpShare, computeSwapAmount, computeVaultDeposit, computeVaultWithdrawal, estimateGasCost, getPoolInfo, getPortfolioSummary,
   getTokenInfo, getTxHistory, getUnrealizedIl, getVaultInfo, getVaultYieldHistory, listAllPools, listAllVaults, listUserWallets,
-  prepareAddLiquidity, prepareRemoveLiquidity, prepareVaultDeposit, prepareVaultWithdrawal, resolveAddress, type DefiPlan, type WalletContext,
+  prepareAddLiquidity, prepareRemoveLiquidity, prepareVaultDeposit, prepareVaultWithdrawal, recommendYieldStrategy, resolveAddress,
+  verifyPaymentReceipt, type DefiPlan, type WalletContext,
 } from '@/lib/defi/tools';
+import { defiAdminWallets } from '@/lib/defi/vaults';
+import { fail, ok as okResult } from '@/lib/nursery/agent-logic';
 
 export const PORTFOLIO_WORDS =
-  /\b(portfolio|holdings?|my (wallet|tokens|money|funds|balance)|net worth|allocation|exposure|risk|pools?|liquidity|lp|vaults?|yield|apy|deposit|withdraw\w*|impermanent|il|gas|fees?|transactions?|tx history|history of my|price impact|slippage|stablecoin|diversif\w*|rebalanc\w*|shares?|nvr|ybob|ytoken|ygold|gami|cents|avax)\b/i;
+  /\b(optimi[sz]\w*|best (yield|return|place)|where (should|to) (i )?(put|invest)|invest\w*|returns?|payments?|receipt|paid|reference|create (a )?vault|new vault|deploy\w*|portfolio|holdings?|my (wallet|tokens|money|funds|balance)|net worth|allocation|exposure|risk|pools?|liquidity|lp|vaults?|yield|apy|deposit|withdraw\w*|impermanent|il|gas|fees?|transactions?|tx history|history of my|price impact|slippage|stablecoin|diversif\w*|rebalanc\w*|shares?|nvr|ybob|ytoken|ygold|gami|cents|avax)\b/i;
 
 type Opt = <T extends z.ZodTypeAny>(schema: T) => z.ZodTypeAny;
 type NoNull<T> = { [K in keyof T]: Exclude<T[K], null> };
@@ -47,7 +50,7 @@ export function portfolioTools(ctx: WalletContext, onPlan: (plan: DefiPlan) => v
       description: "The user's own wallets: linked to their sign-in, and the one connected in the browser.",
       schema: z.object({}),
     }),
-    tool(async ({ query }) => render(resolveAddress(query)), {
+    tool(async ({ query }) => render(await resolveAddress(query)), {
       name: 'resolve_ens_or_address',
       description: 'Check an address, or turn a KAI token / pool / vault name into its address.',
       schema: z.object({ query: z.string() }),
@@ -117,6 +120,33 @@ export function portfolioTools(ctx: WalletContext, onPlan: (plan: DefiPlan) => v
       description: "Recent transactions of the user's own wallet.",
       schema: z.object({ wallet: o(z.string()), limit: o(z.number().int()) }),
     }),
+    tool(async (i) => render(await recommendYieldStrategy(ctx, clean(i) as never)), {
+      name: 'recommend_yield_strategy',
+      description: "Yield Optimizer: rank vaults and pools for the user's capital, risk tolerance and time horizon, with expected yield, IL risk, break-even days, risks, and a split of at most 30% per option.",
+      schema: z.object({
+        capitalUsd: o(z.number()).describe('USD to invest; default: the wallet balance'),
+        riskTolerance: o(z.enum(['conservative', 'moderate', 'aggressive'])),
+        horizonDays: o(z.number().int()),
+        token: o(z.string()).describe('Only options for this token'),
+      }),
+    }),
+    tool(async ({ reference }) => render(await verifyPaymentReceipt(ctx, reference)), {
+      name: 'verify_payment_receipt',
+      description: "Status (completed / pending / failed) of the user's own Paystack or M-Pesa payment by its reference.",
+      schema: z.object({ reference: z.string() }),
+    }),
+    tool(async ({ token, apyPct }) => {
+      const wallet = ctx.connectedWallet?.toLowerCase() ?? '';
+      if (!defiAdminWallets().includes(wallet)) return render(fail('create_vault', 'FORBIDDEN', 'Only a DeFi admin wallet can create vaults.'));
+      return render(okResult('create_vault', {
+        page: `/vaults/new`, token, apyPct,
+        note: 'Deploying is done from the admin\'s own wallet on /vaults/new; the chat cannot deploy. The app checks the deployment and lists the vault.',
+      }));
+    }, {
+      name: 'create_vault',
+      description: 'Admin only: start creating a new yield vault (points to /vaults/new where the admin wallet deploys it).',
+      schema: z.object({ token: z.string(), apyPct: z.number() }),
+    }),
     tool(async (i) => render(await prepareVaultDeposit(ctx, i as never), onPlan), {
       name: 'execute_vault_deposit_tx',
       description: 'PREPARE (never sends) a vault deposit plan; the user signs it on /vaults. Checks the balance.',
@@ -148,4 +178,8 @@ PORTFOLIO AGENT (the user's own wallet, pools and vaults on Fuji testnet)
 - If a tool result has stale: true, say the data may be out of date.
 - Explain impermanent loss plainly: the LP is compared with simply holding the same tokens; fees are not included.
 - Point out risks the tools report (concentration over 50%, low-liquidity pools under $10,000, high price impact) and say how to reduce them; never promise yields.
-- To act (deposit, withdraw, add or remove liquidity, swap) use the execute_* / prepare_swap tools: they only PREPARE a plan. Never say a transaction happened; the user signs on the page named in the plan.`;
+- To act (deposit, withdraw, add or remove liquidity, swap) use the execute_* / prepare_swap tools: they only PREPARE a plan. Never say a transaction happened; the user signs on the page named in the plan.
+
+YIELD OPTIMIZER (recommend_yield_strategy)
+- Ask for risk tolerance and time horizon if not given (default moderate, 90 days) and say what you assumed.
+- State the tool's assumptions, always include impermanent-loss risk, warn about pools under $10,000 TVL and illiquid assets, never put more than 30% in one option, and never suggest more than the wallet holds.`;

@@ -2,12 +2,13 @@ import { getAddress, type Address } from 'viem';
 import { getPrisma } from '@/lib/db/db';
 import { fail, ok, type ToolResult } from '@/lib/nursery/agent-logic';
 import {
-  POOL_LIST, VAULT_LIST, findPool, findVault, gasPriceWei, poolState, referencePrice, symbolOf, tokenBySymbolOrAddress,
+  POOL_LIST, VAULT_LIST, allVaults, findPool, findVault, findVaultAny, gasPriceWei, poolState, referencePrice, symbolOf, tokenBySymbolOrAddress,
   tokenInfo, txHistory, vaultState, walletPositions,
 } from './chain';
 import {
   fromUnits, impermanentLoss, isStale, quoteAddLiquidity, quoteRemoveLiquidity, quoteSwap, toUnits, vaultAssetsFor, vaultSharesFor,
 } from './math';
+import { ASSUMED_VOLATILITY, RISK_PREMIUM_PCT_PER_YEAR, allocate, scoreOptions, type RiskTolerance, type YieldOption } from './yield';
 
 /**
  * KAI wallet, token, pool, vault and portfolio tools (Ecosystem PRD v1.1
@@ -89,7 +90,7 @@ export async function listUserWallets(ctx: WalletContext) {
 }
 
 /** §4.13 resolve_ens_or_address: Avalanche has no ENS here, so: address check, or a KAI token / pool / vault name. */
-export function resolveAddress(q: string) {
+export async function resolveAddress(q: string) {
   const tool = 'resolve_ens_or_address';
   const s = q.trim();
   if (ADDRESS.test(s)) {
@@ -100,7 +101,7 @@ export function resolveAddress(q: string) {
   if (token) return ok(tool, { isValid: true, resolvedAddress: token.address, knownAs: `${token.symbol} token` });
   const pool = findPool(s);
   if (pool) return ok(tool, { isValid: true, resolvedAddress: pool.address, knownAs: `${pool.id} pool` });
-  const vault = findVault(s);
+  const vault = await findVaultAny(s);
   if (vault) return ok(tool, { isValid: true, resolvedAddress: vault.address, knownAs: `${vault.id} vault` });
   return ok(tool, { isValid: false, resolvedAddress: null, note: 'Not an address, and not a KAI token, pool or vault name. Names like .eth are not used on Avalanche here.' });
 }
@@ -226,7 +227,7 @@ function vaultView(v: Awaited<ReturnType<typeof vaultState>>['value']) {
 
 export async function listAllVaults(filter?: { minApyPct?: number; token?: string }) {
   const tool = 'list_all_vaults';
-  const r = await rpc(tool, () => Promise.all(VAULT_LIST.map(vaultState)));
+  const r = await rpc(tool, async () => Promise.all((await allVaults()).map(vaultState)));
   if (isFail(r)) return r;
   const vaults = r.map((x) => vaultView(x.value))
     .filter((v) => filter?.minApyPct == null || v.apyPct >= filter.minApyPct)
@@ -237,8 +238,8 @@ export async function listAllVaults(filter?: { minApyPct?: number; token?: strin
 
 export async function getVaultInfo(q: string) {
   const tool = 'get_vault_info';
-  const vault = findVault(q);
-  if (!vault) return fail(tool, 'NOT_FOUND', `No vault "${q}".`, VAULT_LIST.map((v) => v.id));
+  const vault = await findVaultAny(q);
+  if (!vault) return fail(tool, 'NOT_FOUND', `No vault "${q}".`, (await allVaults()).map((v) => v.id));
   const r = await rpc(tool, () => vaultState(vault));
   if (isFail(r)) return r;
   return ok(tool, { ...vaultView(r.value), ...stamp(r.fetchedAt) });
@@ -246,8 +247,8 @@ export async function getVaultInfo(q: string) {
 
 export async function computeVaultDeposit(input: { vault: string; amount: string | number }) {
   const tool = 'compute_vault_deposit';
-  const vault = findVault(input.vault);
-  if (!vault) return fail(tool, 'NOT_FOUND', `No vault "${input.vault}".`, VAULT_LIST.map((v) => v.id));
+  const vault = await findVaultAny(input.vault);
+  if (!vault) return fail(tool, 'NOT_FOUND', `No vault "${input.vault}".`, (await allVaults()).map((v) => v.id));
   let amount: bigint;
   try { amount = toUnits(input.amount); } catch { return fail(tool, 'INVALID_QUANTITY', 'The amount must be a positive number.'); }
   const r = await rpc(tool, () => vaultState(vault));
@@ -263,8 +264,8 @@ export async function computeVaultDeposit(input: { vault: string; amount: string
 
 export async function computeVaultWithdrawal(input: { vault: string; shares: string | number }) {
   const tool = 'compute_vault_withdrawal';
-  const vault = findVault(input.vault);
-  if (!vault) return fail(tool, 'NOT_FOUND', `No vault "${input.vault}".`, VAULT_LIST.map((v) => v.id));
+  const vault = await findVaultAny(input.vault);
+  if (!vault) return fail(tool, 'NOT_FOUND', `No vault "${input.vault}".`, (await allVaults()).map((v) => v.id));
   let shares: bigint;
   try { shares = toUnits(input.shares); } catch { return fail(tool, 'INVALID_QUANTITY', 'Shares must be a positive number.'); }
   const r = await rpc(tool, () => vaultState(vault));
@@ -325,7 +326,8 @@ export async function getPortfolioSummary(ctx: WalletContext, wallet?: string) {
   if (total > 0 && stable / total > 0.5) risks.push({ risk: 'stablecoin exposure', level: 'low', why: `${Math.round((stable / total) * 100)}% is in yBOB/CENTS, which track a reference price.`, mitigation: 'Fine for stability; yields are lower.' });
   if (vaultPositions.length) risks.push({ risk: 'smart contract', level: 'low', why: 'Vaults and pools are testnet contracts with an internal review only.', mitigation: 'Testnet only; do not treat as audited.' });
 
-  const idle = holdings.filter((h) => h.asset !== 'AVAX' && (h.usd ?? 0) > 1 && VAULT_LIST.some((v) => v.symbol.toLowerCase() === h.asset.toLowerCase()));
+  const vaultSymbols = new Set((await allVaults()).map((v) => v.symbol.toLowerCase()));
+  const idle = holdings.filter((h) => h.asset !== 'AVAX' && (h.usd ?? 0) > 1 && vaultSymbols.has(h.asset.toLowerCase()));
   const opportunities = idle.map((h) => ({ idea: `Idle ${h.asset} could earn yield in kv${h.asset}`, action: 'compute_vault_deposit to see the shares first' }));
 
   return ok(tool, {
@@ -418,8 +420,8 @@ async function balanceOf(addr: Address, symbol: string) {
 
 export async function prepareVaultDeposit(ctx: WalletContext, input: { vault: string; amount: string | number }): Promise<ToolResult<DefiPlan>> {
   const tool = 'execute_vault_deposit_tx';
-  const vault = findVault(input.vault);
-  if (!vault) return fail(tool, 'NOT_FOUND', `No vault "${input.vault}".`, VAULT_LIST.map((v) => v.id));
+  const vault = await findVaultAny(input.vault);
+  if (!vault) return fail(tool, 'NOT_FOUND', `No vault "${input.vault}".`, (await allVaults()).map((v) => v.id));
   const addr = await ownWallet(tool, ctx);
   if (isFail(addr)) return addr;
   let amount: bigint;
@@ -433,8 +435,8 @@ export async function prepareVaultDeposit(ctx: WalletContext, input: { vault: st
 
 export async function prepareVaultWithdrawal(ctx: WalletContext, input: { vault: string; shares: string | number }): Promise<ToolResult<DefiPlan>> {
   const tool = 'execute_vault_withdrawal_tx';
-  const vault = findVault(input.vault);
-  if (!vault) return fail(tool, 'NOT_FOUND', `No vault "${input.vault}".`, VAULT_LIST.map((v) => v.id));
+  const vault = await findVaultAny(input.vault);
+  if (!vault) return fail(tool, 'NOT_FOUND', `No vault "${input.vault}".`, (await allVaults()).map((v) => v.id));
   const addr = await ownWallet(tool, ctx);
   if (isFail(addr)) return addr;
   let shares: bigint;
@@ -485,3 +487,88 @@ export async function prepareRemoveLiquidity(ctx: WalletContext, input: { pool: 
 }
 
 export { POOL_LIST, VAULT_LIST };
+
+// ── Yield Optimizer (§5.7, Phase 2) ──────────────────────────────────────────
+
+/**
+ * Ranks vaults and pools for the user's capital, risk tolerance and horizon
+ * (lib/defi/yield.ts), checks the wallet can actually do it, and caps any
+ * one option at 30%. Every assumption is returned so the agent can state it.
+ */
+export async function recommendYieldStrategy(
+  ctx: WalletContext,
+  input: { capitalUsd?: number; riskTolerance?: RiskTolerance; horizonDays?: number; token?: string },
+) {
+  const tool = 'recommend_yield_strategy';
+  const risk: RiskTolerance = input.riskTolerance ?? 'moderate';
+  const horizonDays = Math.min(Math.max(Math.round(input.horizonDays ?? 90), 1), 3650);
+  const r = await rpc(tool, async () => ({
+    vaults: await Promise.all((await allVaults()).map(vaultState)),
+    pools: await Promise.all(POOL_LIST.map(poolState)),
+    gas: await gasPriceWei(),
+  }));
+  if (isFail(r)) return r;
+
+  // What the wallet can actually invest (never recommend what it cannot do).
+  let walletUsd: number | null = null;
+  const owned = await ownedWallets(ctx);
+  if (owned.length) {
+    const summary = await getPortfolioSummary(ctx, owned[0]);
+    if (summary.success) walletUsd = summary.data!.holdings.filter((h) => h.asset !== 'AVAX').reduce((a, h) => a + (h.usd ?? 0), 0);
+  }
+  const capitalUsd = input.capitalUsd ?? walletUsd ?? 0;
+  if (!(capitalUsd > 0)) return fail(tool, 'MISSING_INFORMATION', 'How much (in USD) do you want to put to work? Or connect your wallet so I can use its balance.');
+  if (walletUsd != null && capitalUsd > walletUsd * 1.0001) {
+    return fail(tool, 'INSUFFICIENT_BALANCE', `The wallet holds about $${walletUsd.toFixed(2)} in KAI tokens, less than $${capitalUsd}.`);
+  }
+
+  const gasUsd = (Number((BigInt(GAS_UNITS.approve + GAS_UNITS.vault_deposit + GAS_UNITS.vault_withdrawal) * r.gas.value)) / 1e18) * (referencePrice('AVAX') ?? 0);
+  const options: YieldOption[] = [
+    ...r.vaults.map((v) => ({ id: v.value.id, kind: 'vault' as const, token: v.value.symbol, apyPct: v.value.apyBps / 100, tvlUsd: v.value.tvlUsd, complexity: 1 as const })),
+    ...r.pools.map((p) => ({ id: p.value.id, kind: 'pool' as const, token: `${p.value.symbolA}/${p.value.symbolB}`, apyPct: null, tvlUsd: p.value.tvlUsd, complexity: 2 as const, stablePair: /ybob|cents/i.test(p.value.symbolA) && /ybob|cents/i.test(p.value.symbolB) })),
+  ].filter((o) => !input.token || o.token.toLowerCase().includes(input.token.toLowerCase()));
+  const scored = scoreOptions(options, { capitalUsd, horizonDays, risk, gasUsd });
+  const { plan, keepInWalletPct } = allocate(scored, capitalUsd);
+
+  return ok(tool, {
+    capitalUsd, riskTolerance: risk, horizonDays,
+    recommendation: plan.length ? plan.map((p) => `${p.pct}% ($${p.usd}) → ${p.id}`).join(', ') + (keepInWalletPct ? `; keep ${keepInWalletPct}% in the wallet` : '') : 'No option fits this risk level and horizon.',
+    options: scored.map((s) => ({
+      id: s.id, kind: s.kind, apyPct: s.apyPct, expectedYieldUsd: s.expectedYieldUsd == null ? null : Math.round(s.expectedYieldUsd * 100) / 100,
+      expectedIlPct: Math.round(s.expectedIlPct * 100) / 100, breakEvenDays: s.breakEvenDays, riskLevel: s.riskLevel, riskFactors: s.riskFactors,
+      suitable: s.suitable, why: s.why,
+    })),
+    assumptions: [
+      `Pool price-ratio volatility assumed ${ASSUMED_VOLATILITY.volatile * 100}%/year (${ASSUMED_VOLATILITY.stable * 100}% for stable pairs): testnet has no market history.`,
+      `Risk premium ${RISK_PREMIUM_PCT_PER_YEAR}%/year per risk point for a moderate investor (x2 conservative, x0.4 aggressive).`,
+      `Gas for approve + deposit + withdraw ≈ $${gasUsd.toPrecision(2)} at the current Fuji gas price.`,
+      'Vault APY is the rate set in the contract; yield is added by the vault owner and is not guaranteed.',
+      'No more than 30% in any one option.',
+      'Pool APY is unknown until trading-volume history exists, so pools are not ranked.',
+    ],
+    note: `${PRICE_NOTE} Nothing is moved: the user acts with execute_vault_deposit_tx (a plan they sign).`,
+  });
+}
+
+// ── Payments (§4.18, Phase 2) ────────────────────────────────────────────────
+
+/** §4.18 verify_payment_receipt: status of the user's OWN Paystack / M-Pesa payment. */
+export async function verifyPaymentReceipt(ctx: WalletContext, reference: string) {
+  const tool = 'verify_payment_receipt';
+  const ref = reference.trim();
+  if (!/^[\w.-]{6,100}$/.test(ref)) return fail(tool, 'INVALID_INPUT', 'That is not a payment reference.');
+  const prisma = await getPrisma();
+  if (!prisma) return fail(tool, 'DATABASE_ERROR', 'The database is not available right now.');
+  const p = await prisma.payment.findUnique({ where: { reference: ref } });
+  if (!p) return fail(tool, 'NOT_FOUND', 'No payment with that reference.');
+  const owned = await ownedWallets(ctx);
+  const user = ctx.privyUserId ? await prisma.kaiUser.findUnique({ where: { privyUserId: ctx.privyUserId }, select: { email: true } }) : null;
+  const mine = (p.wallet && owned.includes(p.wallet.toLowerCase())) || (!!user?.email && !!p.email && user.email.toLowerCase() === p.email.toLowerCase());
+  if (!mine) return fail(tool, 'FORBIDDEN', "I can only check the user's own payments.");
+  const status = p.status === 'success' || p.status === 'completed' ? 'completed' : p.status === 'failed' || p.status === 'abandoned' ? 'failed' : 'pending';
+  return ok(tool, {
+    reference: p.reference, status, amount: `${(Number(p.amount_subunits) / 100).toFixed(2)} ${p.currency}`,
+    item: p.nft_name ?? null, createdAt: p.createdAt.toISOString(), updatedAt: p.updatedAt.toISOString(),
+    note: status === 'pending' ? 'Still waiting for the payment provider. M-Pesa usually confirms within a minute.' : null,
+  });
+}

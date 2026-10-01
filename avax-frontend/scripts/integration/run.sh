@@ -24,6 +24,8 @@ psql_file() { docker exec -i "$NAME" psql -U postgres -d kai -q -v ON_ERROR_STOP
 psql_file scripts/integration/base.sql
 psql_file prisma/sql/2026-10-01_verification_evidence_anchoring.sql
 psql_file prisma/sql/2026-10-01_verification_evidence_anchoring.sql
+psql_file prisma/sql/2026-10-02_phase2_identity_vaults_roles.sql
+psql_file prisma/sql/2026-10-02_phase2_identity_vaults_roles.sql
 
 status=0
 env -i PATH="$PATH" HOME="$HOME" DATABASE_URL="$URL" node scripts/integration/run.mjs 2>&1 | grep -v '^prisma:' || status=$?

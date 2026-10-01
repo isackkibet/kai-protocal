@@ -386,6 +386,94 @@ await step('proof route: data → hash → Merkle → chain all pass', async () 
   const d = await res.json();
   assert.equal(d.anchored, true, JSON.stringify(d.steps));
 });
+console.log('Phase 2: compliance, identity, vaults, payments, site managers');
+const compliance = await load('lib/nursery/compliance.ts');
+await step('compliance: members refused; the +7 edit is flagged; score and custody trail', async () => {
+  assert.equal((await compliance.detectAnomalies('did:member')).error.code, 'FORBIDDEN');
+  const a = await compliance.detectAnomalies('did:verifier');
+  assert.ok(a.data.anomalies.some((x) => x.kind === 'inventory_increase' && x.severity === 'high'), JSON.stringify(a.data.anomalies));
+  const rep = await compliance.generateComplianceReport('did:admin');
+  assert.equal(typeof rep.data.dataIntegrityScore, 'number');
+  assert.ok(rep.data.scoreBreakdown.length >= 5);
+  const coc = await compliance.chainOfCustody('did:auditor-not-member', recordId);
+  assert.equal(coc.error.code, 'FORBIDDEN');
+  const trail = await compliance.chainOfCustody('did:verifier', recordId);
+  const steps = trail.data.events.map((e) => e.step).join(' | ');
+  assert.match(steps, /Recorded in the nursery/);
+  assert.match(steps, /Verification: VERIFIED/);
+  assert.match(steps, /Anchored on Avalanche/);
+});
+
+const ident = await load('lib/identity/credentials.ts');
+const { privateKeyToAccount, generatePrivateKey } = await import('viem/accounts');
+const verifierKey = privateKeyToAccount(generatePrivateKey());
+let credId;
+await step('credential: verifier signs in their wallet (EIP-712); server checks and stores it', async () => {
+  await assert.rejects(ident.prepareRecordCredential(prisma, cfa, MEMBER, recordId), /admin or verifier/);
+  const prep = await ident.prepareRecordCredential(prisma, cfa, VERIFIER, recordId);
+  assert.equal(prep.claim.record.sha256, (await prisma.conservationRecord.findUnique({ where: { id: recordId } })).dataHash);
+  const signature = await verifierKey.signTypedData(prep.typedData);
+  // A signature over a different issuedAt does not match the rebuilt claim.
+  await assert.rejects(ident.issueRecordCredential(prisma, cfa, VERIFIER, { recordId, issuedAt: new Date(Date.now() - 1000).toISOString(), signer: verifierKey.address, signature }), /signature does not match/);
+  const vc = await ident.issueRecordCredential(prisma, cfa, VERIFIER, { recordId, issuedAt: prep.typedData.message.issuedAt, signer: verifierKey.address, signature });
+  credId = vc.id;
+  const doc = await ident.resolveDid(prisma, ident.cfaDid(cfa));
+  assert.ok(doc.verificationMethod.some((m) => m.blockchainAccountId.endsWith(verifierKey.address)), 'signer not in CFA DID document');
+});
+await step('credential verifies; claim cannot be edited; revoke makes it invalid', async () => {
+  const v = await ident.verifyCredential(prisma, credId);
+  assert.equal(v.valid, true, JSON.stringify(v.steps));
+  assert.equal(v.credential.proof.type, 'EthereumEip712Signature2021');
+  await assert.rejects(prisma.verifiableCredential.update({ where: { id: credId }, data: { claim: { forged: true } } }), /only be revoked/);
+  await assert.rejects(ident.revokeCredential(prisma, cfa, VERIFIER, credId, 'x'), /Only a CFA admin/);
+  await ident.revokeCredential(prisma, cfa, ADMIN, credId, 'Issued by mistake');
+  const after = await ident.verifyCredential(prisma, credId);
+  assert.equal(after.valid, false);
+  assert.equal(after.steps.find((s) => s.step === 'Not revoked').ok, false);
+});
+await step('DIDs: did:pkh resolves, unknown DIDs do not', async () => {
+  const doc = await ident.resolveDid(prisma, `did:pkh:eip155:43113:${verifierKey.address}`);
+  assert.equal(doc.verificationMethod[0].blockchainAccountId, `eip155:43113:${verifierKey.address}`);
+  assert.equal(await ident.resolveDid(prisma, 'did:web:evil.example:cfa:123'), null);
+});
+
+await step('create_vault: only the exact KaiVault creation code decodes', async () => {
+  const vaults = await load('lib/defi/vaults.ts');
+  const { encodeDeployData } = await import('viem');
+  const data = encodeDeployData({ abi: vaults.VAULT_ABI_FULL, bytecode: vaults.VAULT_BYTECODE, args: ['0x6489Ea8302b00A8eEd4D82a78A5f9e71Fe2DaC62', 'KAI NVR Vault 2', 'kvNVR2', BigInt(900)] });
+  assert.deepEqual(vaults.decodeVaultCreation(data), { asset: '0x6489Ea8302b00A8eEd4D82a78A5f9e71Fe2DaC62', name: 'KAI NVR Vault 2', symbol: 'kvNVR2', apyBps: 900 });
+  assert.equal(vaults.decodeVaultCreation(('0x6080' + data.slice(6))), null);
+  assert.ok(vaults.defiAdminWallets().length >= 1);
+});
+
+await step('payment receipt: own payment only', async () => {
+  const defiTools = await load('lib/defi/tools.ts');
+  await prisma.payment.create({ data: { reference: 'KAI-TEST-001', amount_subunits: BigInt(15000), currency: 'KES', status: 'success', wallet: verifierKey.address } });
+  const mine = await defiTools.verifyPaymentReceipt({ privyUserId: null, connectedWallet: verifierKey.address }, 'KAI-TEST-001');
+  assert.equal(mine.data.status, 'completed');
+  assert.equal(mine.data.amount, '150.00 KES');
+  const other = await defiTools.verifyPaymentReceipt({ privyUserId: null, connectedWallet: '0x000000000000000000000000000000000000dEaD' }, 'KAI-TEST-001');
+  assert.equal(other.error.code, 'FORBIDDEN');
+});
+
+await step('site managers: when switched on, members cannot add/transfer/lose stock but can still plant', async () => {
+  const profile = (await load('app/api/cfa/profile/route.ts')).PATCH;
+  assert.equal((await call(profile, '/api/cfa/profile', { method: 'PATCH', user: 'did:admin', body: { metadata: { inventory_requires_site_manager: true } } })).status, 200);
+  const inv = (await load('app/api/cfa/inventory/route.ts')).POST;
+  const add = { speciesId, locationId: main.data.location.id, quantity: 10 };
+  assert.equal((await call(inv, '/api/cfa/inventory', { user: 'did:member', body: add })).status, 403);
+  assert.equal((await call(transfer, '/api/cfa/transfer', { user: 'did:member', body: { inventoryId: batchId, quantity: 1, destination: 'x' } })).status, 403);
+  assert.equal((await tools.prepareSeedlingAddition('did:member', { species: 'Croton', quantity: 5 })).error.code, 'FORBIDDEN');
+  assert.equal((await call(inv, '/api/cfa/inventory', { user: 'did:admin', body: add })).status, 200);
+  const one = (await load('app/api/cfa/members/[id]/route.ts')).PATCH;
+  assert.equal((await call(one, '/x', { method: 'PATCH', user: 'did:admin', params: { id: MEMBER.id }, body: { role: 'site_manager' } })).status, 200);
+  assert.equal((await call(inv, '/api/cfa/inventory', { user: 'did:member', body: add })).status, 200);
+  await call(one, '/x', { method: 'PATCH', user: 'did:admin', params: { id: MEMBER.id }, body: { role: 'member' } });
+  const plantOk = await call(planting, '/api/cfa/planting', { user: 'did:member', body: { inventoryId: batchId, quantity: 1, plantingDate: '2026-09-25', notes: 'Planted at Site B' } });
+  assert.equal(plantOk.status, 200, JSON.stringify(plantOk.data));
+  await call(profile, '/api/cfa/profile', { method: 'PATCH', user: 'did:admin', body: { metadata: { inventory_requires_site_manager: false } } });
+});
+
 await step('tampering with stored data is caught by the proof', async () => {
   await prisma.$executeRawUnsafe(`ALTER TABLE record_versions DISABLE TRIGGER USER`);
   await prisma.$executeRawUnsafe(`UPDATE record_versions SET data = jsonb_set(data, '{quantity}', '900') WHERE "recordId" = '${recordId}' AND version = 2`);

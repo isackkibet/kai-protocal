@@ -59,6 +59,18 @@ export function canManageCatalogue(member: CfaMember) {
   return member.role === 'admin';
 }
 
+/**
+ * Ecosystem PRD v1.1 §7.3: members submit activities; site managers and
+ * admins create inventory events (seedlings added, transferred, lost). Off by
+ * default so existing members keep working; an admin turns it on per CFA
+ * (cfa.metadata.inventory_requires_site_manager). Returns why not, or null.
+ */
+export function inventoryPermissionError(member: CfaMember, cfa: { metadata: unknown }): string | null {
+  const strict = (cfa.metadata as Record<string, unknown> | null)?.inventory_requires_site_manager === true;
+  if (!strict || member.role === 'site_manager' || member.role === 'admin') return null;
+  return 'In this CFA only site managers and admins record seedlings added, transferred or lost. Ask an admin, or record the planting or nursery work instead.';
+}
+
 /** Who may read the full change history. */
 export function canReadAudit(member: CfaMember) {
   return member.role === 'admin' || member.role === 'auditor' || member.role === 'verifier';

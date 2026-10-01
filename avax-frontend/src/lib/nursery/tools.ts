@@ -1,6 +1,6 @@
 import type { Cfa, CfaMember, PrismaClient, Species } from '@prisma/client';
 import { getPrisma } from '@/lib/db/db';
-import { getNurseryCfa } from './db';
+import { getNurseryCfa, inventoryPermissionError } from './db';
 import { ACTIVITY_TYPES, FieldError, day, type ActivityTypeValue } from './validate';
 import {
   LOSS_REASONS, fail, matchByName, matchSpecies, ok, pickBatch, speciesLabel, summarizeInventory,
@@ -351,6 +351,8 @@ export async function prepareSeedlingAddition(
   if (isFail(c)) return c;
   const member = await actingMember(tool, c.prisma, c.cfa, privyUserId);
   if (isFail(member)) return member;
+  const notAllowed = inventoryPermissionError(member, c.cfa);
+  if (notAllowed) return fail(tool, 'FORBIDDEN', notAllowed);
   const bad = checkQuantity(tool, input.quantity);
   if (bad) return bad;
   const date = checkDate(tool, 'dateReceived', input.dateReceived, false);
@@ -424,6 +426,8 @@ export async function prepareSeedlingLoss(
   if (isFail(c)) return c;
   const member = await actingMember(tool, c.prisma, c.cfa, privyUserId);
   if (isFail(member)) return member;
+  const notAllowed = inventoryPermissionError(member, c.cfa);
+  if (notAllowed) return fail(tool, 'FORBIDDEN', notAllowed);
   const bad = checkQuantity(tool, input.quantity);
   if (bad) return bad;
   if (!(LOSS_REASONS as readonly string[]).includes(input.reason)) {
@@ -535,6 +539,8 @@ export async function prepareSeedlingTransfer(
   if (isFail(c)) return c;
   const member = await actingMember(tool, c.prisma, c.cfa, privyUserId);
   if (isFail(member)) return member;
+  const notAllowed = inventoryPermissionError(member, c.cfa);
+  if (notAllowed) return fail(tool, 'FORBIDDEN', notAllowed);
   const bad = checkQuantity(tool, input.quantity);
   if (bad) return bad;
   if (!input.toNursery?.trim() === !input.destination?.trim()) {

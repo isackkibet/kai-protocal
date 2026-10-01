@@ -24,6 +24,7 @@ const option: React.CSSProperties = { background: C.bg };
 /** What each role may do, in the words shown to admins. */
 const ROLES: { id: string; label: string; can: string }[] = [
   { id: 'member', label: 'Member', can: 'Records seedlings, planting and nursery work.' },
+  { id: 'site_manager', label: 'Site manager', can: 'Manages inventory (add, transfer, loss) when that is limited.' },
   { id: 'verifier', label: 'Verifier', can: 'Also checks and approves other people’s records.' },
   { id: 'admin', label: 'Admin', can: 'Everything: team, species, nurseries, approving, anchoring.' },
   { id: 'auditor', label: 'Auditor', can: 'Reads the full change history. Cannot approve.' },
@@ -69,7 +70,7 @@ export default function CfaAdminPanel({ myMemberId, onChanged }: { myMemberId: s
   const { getAccessToken } = usePrivyAuth();
   const [members, setMembers] = useState<Member[]>([]);
   const [locations, setLocations] = useState<Location[]>([]);
-  const [profile, setProfile] = useState<{ location: string; description: string } | null>(null);
+  const [profile, setProfile] = useState<{ location: string; description: string; strictInventory: boolean } | null>(null);
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<{ text: string; error?: boolean } | null>(null);
   const [invite, setInvite] = useState({ name: '', email: '', role: 'member' });
@@ -88,7 +89,7 @@ export default function CfaAdminPanel({ myMemberId, onChanged }: { myMemberId: s
     ]);
     setMembers(m.members ?? []);
     setLocations(l.locations ?? []);
-    if (p.cfa) setProfile({ location: p.cfa.location ?? '', description: p.cfa.description ?? '' });
+    if (p.cfa) setProfile({ location: p.cfa.location ?? '', description: p.cfa.description ?? '', strictInventory: p.cfa.metadata?.inventory_requires_site_manager === true });
   }, [headers]);
 
   // Fetch-on-mount.
@@ -144,7 +145,7 @@ export default function CfaAdminPanel({ myMemberId, onChanged }: { myMemberId: s
         <Section id="cfa-team" icon={<Users size={17} />} title="Team"
           summary={`${active.length} active · ${checkers} can check records${checkers < 2 ? ' (need 2)' : ''}`}>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 6 }}>
-            {ROLES.slice(0, 3).map((r) => (
+            {ROLES.slice(0, 4).map((r) => (
               <p key={r.id} style={{ fontSize: 11.5, color: C.inkLight, margin: 0 }}><strong style={{ color: C.paperDim }}>{r.label}:</strong> {r.can}</p>
             ))}
           </div>
@@ -210,8 +211,12 @@ export default function CfaAdminPanel({ myMemberId, onChanged }: { myMemberId: s
                 <Field label="Location" hint="Shown on reports and verification pages."><input id="cfa-location" value={profile.location} onChange={(e) => setProfile({ ...profile, location: e.target.value })} placeholder="e.g. Karen, Nairobi" style={input} /></Field>
                 <Field label="About the CFA"><input id="cfa-description" value={profile.description} onChange={(e) => setProfile({ ...profile, description: e.target.value })} placeholder="One sentence about your CFA" style={input} /></Field>
               </div>
+              <label style={{ display: 'flex', gap: 10, alignItems: 'flex-start', fontSize: 12.5, color: C.paperDim, cursor: 'pointer' }}>
+                <input id="cfa-strict-inventory" type="checkbox" checked={profile.strictInventory} onChange={(e) => setProfile({ ...profile, strictInventory: e.target.checked })} style={{ marginTop: 3 }} />
+                <span>Only <strong>site managers and admins</strong> record seedlings added, transferred or lost. Members still record planting, nursery work and survival checks.</span>
+              </label>
               <div>
-                <SaveButton disabled={busy} onClick={() => send('PATCH', '/api/cfa/profile', { location: profile.location, description: profile.description || null }, 'CFA details saved.')}>
+                <SaveButton disabled={busy} onClick={() => send('PATCH', '/api/cfa/profile', { location: profile.location, description: profile.description || null, metadata: { inventory_requires_site_manager: profile.strictInventory } }, 'CFA details saved.')}>
                   <Save size={13} /> Save details
                 </SaveButton>
               </div>

@@ -36,6 +36,7 @@ import {
   type NurseryToolGroups,
 } from './nursery-agent';
 import { PORTFOLIO_PROMPT, PORTFOLIO_WORDS, portfolioTools } from './portfolio-agent';
+import { COMPLIANCE_PROMPT, COMPLIANCE_WORDS, IDENTITY_PROMPT, IDENTITY_WORDS, complianceTools, identityTools } from './trust-agents';
 
 export type BrainMode = 'chat' | 'voice' | 'ask';
 
@@ -373,8 +374,12 @@ function nurseryGroups(input: BrainInput): NurseryToolGroups {
 
 /** Portfolio Agent tools (lib/ai/portfolio-agent.ts), same routing idea. */
 function wantsPortfolio(input: BrainInput): boolean {
+  return mentions(input, PORTFOLIO_WORDS);
+}
+
+function mentions(input: BrainInput, re: RegExp): boolean {
   const recent = sanitizeHistory(input.history).slice(-3).map((t) => t.content).join('\n');
-  return PORTFOLIO_WORDS.test(input.message) || PORTFOLIO_WORDS.test(recent);
+  return re.test(input.message) || re.test(recent);
 }
 
 /** Today's date in Kenya (UTC+3), so "today" / "yesterday" become real dates. */
@@ -393,6 +398,8 @@ export async function runKai(input: BrainInput): Promise<BrainResult> {
   // Quality/report tools alone (no other nursery words) still need the CFA context.
   const withNursery = groups.nursery || groups.admin || groups.verify || !!groups.quality;
   const withPortfolio = wantsPortfolio(input);
+  const withCompliance = mentions(input, COMPLIANCE_WORDS);
+  const withIdentity = mentions(input, IDENTITY_WORDS);
   const walletCtx = { privyUserId: input.privyUserId, connectedWallet: input.wallet ?? null };
   const shared = [
     ...AGENT_TOOLS
@@ -405,10 +412,14 @@ export async function runKai(input: BrainInput): Promise<BrainResult> {
   // Groq rejects that against a plain "optional"), but not for Gemini (which
   // rejects null types). Tools are always RUN from the null-tolerant set.
   const onNurseryPlan = (plan: object) => plans.push({ ...plan });
+  // Optional field style per provider (see the comment above).
+  const optional = (nullable: boolean) => <T extends z.ZodTypeAny>(schema: T): z.ZodTypeAny => (nullable ? schema.nullish() : schema.optional());
   const variant = (nullable: boolean) => [
     ...shared,
     ...(withNursery ? nurseryTools(input.privyUserId, onNurseryPlan, groups, nullable) : []),
     ...(withPortfolio ? portfolioTools(walletCtx, onNurseryPlan, nullable) : []),
+    ...(withCompliance ? complianceTools(input.privyUserId, optional(nullable)) : []),
+    ...(withIdentity ? identityTools(input.privyUserId, walletCtx.connectedWallet, optional(nullable)) : []),
   ];
   const tools = variant(true);
   const geminiTools = variant(false);
@@ -464,6 +475,7 @@ export async function runKai(input: BrainInput): Promise<BrainResult> {
     new SystemMessage(BASE_PROMPT
       + (withNursery ? NURSERY_PROMPT : '') + (groups.admin ? ADMIN_PROMPT : '') + (groups.verify ? VERIFY_PROMPT : '')
       + (groups.quality ? QUALITY_PROMPT : '') + (withPortfolio ? PORTFOLIO_PROMPT : '')
+      + (withCompliance ? COMPLIANCE_PROMPT : '') + (withIdentity ? IDENTITY_PROMPT : '')
       + MODE_PROMPT[input.mode] + (facts ? `\n\nCONTEXT\n${facts}` : '')),
     ...sanitizeHistory(input.history).map((t) => (t.role === 'user' ? new HumanMessage(t.content) : new AIMessage(t.content))),
     new HumanMessage(redactSecrets(input.message)),

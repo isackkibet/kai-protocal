@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { LOSS_REASONS } from '@/lib/nursery/agent-logic';
-import { withMember } from '@/lib/nursery/db';
+import { inventoryPermissionError, withMember } from '@/lib/nursery/db';
 import { nurseryWrite, toDate } from '@/lib/nursery/route';
 import { count, day, id, oneOf, text } from '@/lib/nursery/validate';
 
@@ -17,6 +17,8 @@ import { count, day, id, oneOf, text } from '@/lib/nursery/validate';
  */
 export async function POST(req: Request) {
   return nurseryWrite(req, 'cfa/loss', async ({ prisma, cfa, member, body }) => {
+    const notAllowed = inventoryPermissionError(member, cfa);
+    if (notAllowed) return NextResponse.json({ error: notAllowed }, { status: 403 });
     const inventoryId = id(body, 'inventoryId', { required: true })!;
     const quantity = count(body, 'quantity', { required: true, min: 1 })!;
     const reason = oneOf(body, 'reason', LOSS_REASONS, { required: true })!;

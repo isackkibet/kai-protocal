@@ -899,6 +899,61 @@ model AnchorBatchRecord {
   @@map("anchor_batch_records")
 }
 
+// ── Phase 2 (Ecosystem PRD v1.1 §4.15, §4.17) ───────────────────
+// Created by prisma/sql/2026-10-02_phase2_identity_vaults_roles.sql.
+
+/// A stored DID document (CFA: did:web). Rebuilt when admins/verifiers change.
+model DidDocument {
+  did         String   @id
+  subjectType String   @map("subject_type")
+  subjectId   String   @map("subject_id")
+  document    Json
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt   DateTime @default(now()) @map("updated_at") @db.Timestamptz(6)
+
+  @@unique([subjectType, subjectId], map: "did_documents_subject")
+  @@map("did_documents")
+}
+
+/// A claim signed (EIP-712) in the issuer's own wallet. Only revocable (DB trigger).
+model VerifiableCredential {
+  id             String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  cfaId          String    @map("cfa_id") @db.Uuid
+  credentialType String    @map("credential_type")
+  issuerDid      String    @map("issuer_did")
+  subjectDid     String    @map("subject_did")
+  recordId       String?   @map("record_id")
+  claim          Json
+  claimHash      String    @map("claim_hash") @db.Char(66)
+  signerAddress  String    @map("signer_address") @db.VarChar(42)
+  signature      String
+  issuedBy       String    @map("issued_by") @db.Uuid
+  status         String    @default("active")
+  revokedReason  String?   @map("revoked_reason")
+  issuedAt       DateTime  @default(now()) @map("issued_at") @db.Timestamptz(6)
+  revokedAt      DateTime? @map("revoked_at") @db.Timestamptz(6)
+
+  @@index([recordId], map: "vc_record_idx")
+  @@index([subjectDid], map: "vc_subject_idx")
+  @@map("verifiable_credentials")
+}
+
+/// A KaiVault deployed by a DeFi admin's wallet and checked on Fuji.
+model DefiVault {
+  address     String   @id @db.VarChar(42)
+  name        String
+  shareSymbol String   @map("share_symbol")
+  asset       String   @db.VarChar(42)
+  assetSymbol String   @map("asset_symbol")
+  strategy    String   @default("single-asset")
+  feeBps      Int      @default(0) @map("fee_bps")
+  owner       String   @db.VarChar(42)
+  deployTx    String   @unique @map("deploy_tx") @db.Char(66)
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  @@map("defi_vaults")
+}
+
 // ═══════════════════════════════════════════════════════════════
 //  OLOOLUA CFA NURSERY (Kanuvari nursery DB design, v1.0 MVP)
 //  Created by prisma/sql/2026-09-30_oloolua_nursery.sql, which also holds
@@ -917,6 +972,8 @@ enum CfaMemberRole {
   verifier
   auditor
   partner
+  /// Manages inventory when the CFA turns on cfa.metadata.inventory_requires_site_manager.
+  site_manager
 
   @@map("user_role")
 }
