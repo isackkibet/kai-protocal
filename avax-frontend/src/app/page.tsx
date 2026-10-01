@@ -15,10 +15,11 @@ import { ERC20_ABI } from '@/lib/blockchain/erc20abi';
 import { usePrivyAuth } from '@/lib/auth/privy-auth';
 import { useActiveAccount } from '@/hooks/useActiveAccount';
 import { formatChat } from '@/lib/ai/formatChat';
+import NurseryShortcut from '@/components/cfa/NurseryShortcut';
 import {
   Mic, Bot, FlaskConical, ScanLine, CircleDollarSign,
   Globe, ShieldCheck, ImageIcon, Droplets, Lock, Gift,
-  LayoutGrid, Copy, RefreshCw, Link2, UserRound,
+  LayoutGrid, Copy, RefreshCw, Link2, UserRound, Sprout, Sparkles,
   type LucideIcon,
 } from 'lucide-react';
 
@@ -69,6 +70,15 @@ const reveal = {} as const;
 
 const QUICK_GROUPS = [
   {
+    // First, so the nursery is easy to find (it was missing from this grid).
+    title: 'Conservation',
+    items: [
+      { name: 'Nursery',      href: '/nursery',   icon: Sprout,      featured: true },
+      { name: 'Kanuvari AI',  href: '/workspace', icon: Sparkles,    featured: true },
+      { name: 'Verification', href: '/mrv',       icon: ShieldCheck, featured: true },
+    ],
+  },
+  {
     title: 'Agents',
     items: [
       { name: 'Voice Agent', href: '/voice', icon: Mic },
@@ -105,7 +115,7 @@ const QUICK_GROUPS = [
 
 /* All quick actions flattened into one grid, so they sit together in a
    single spot — no group boxes stretching tiles wide. */
-const QUICK_ACTIONS = QUICK_GROUPS.flatMap(g => g.items);
+const QUICK_ACTIONS: { name: string; href: string; icon: LucideIcon; featured?: boolean }[] = QUICK_GROUPS.flatMap(g => g.items);
 
 function buildCalls(addr: `0x${string}` | undefined) {
   if (!addr) return [];
@@ -316,6 +326,9 @@ export default function Home() {
             normal flow, so the seam is a clean flat line. */}
         <div style={{ height:1, background:C.hairline }} />
 
+        {/* NURSERY — easy to find, with live numbers */}
+        <NurseryShortcut />
+
         {/* SECTION 2 — PROFILE */}
         <motion.section className="home-section" aria-label="Profile" style={{ marginTop: 40 }} {...reveal}>
           <SectionHeader icon={UserRound} eyebrow="Profile" badge={connected ? '● Active' : undefined} />
@@ -378,12 +391,12 @@ export default function Home() {
             visible at once and arranged in one place. */}
         <motion.section className="home-section home-section--qa" id="actions"
           style={{ scrollMarginTop:70 }} {...reveal}>
-          <SectionHeader icon={LayoutGrid} eyebrow="Quick actions" badge="● 13 apps" />
+          <SectionHeader icon={LayoutGrid} eyebrow="Quick actions" badge={`● ${QUICK_ACTIONS.length} apps`} />
           <div className="qa-wrap">
             {QUICK_ACTIONS.map(a => {
               const Icon = a.icon;
               return (
-                <Link key={a.name} href={a.href} className="qa-tile" prefetch={false}>
+                <Link key={a.name} href={a.href} className={a.featured ? 'qa-tile qa-tile--featured' : 'qa-tile'} prefetch={false}>
                   <Icon size={18} className="qa-tile-icon" strokeWidth={1.6}/>
                   <span className="qa-tile-label">{a.name}</span>
                 </Link>

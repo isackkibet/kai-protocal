@@ -893,6 +893,9 @@ body {
   transition: background-color 0.15s ease;
 }
 .qa-tile:hover { background: rgba(200,155,60,0.06); }
+/* Conservation tiles (Nursery, Kanuvari AI, Verification) stand out so they are easy to find. */
+.qa-tile--featured { background: rgba(200,155,60,0.08); border: 1px solid rgba(200,155,60,0.28); }
+.qa-tile--featured .qa-tile-icon { color: var(--home-accent); }
 .qa-tile-icon { color: var(--home-muted); transition: color 0.15s ease; flex-shrink: 0; }
 .qa-tile:hover .qa-tile-icon { color: var(--home-accent); }
 .qa-tile-label {
