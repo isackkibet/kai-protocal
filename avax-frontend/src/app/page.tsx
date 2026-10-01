@@ -181,25 +181,25 @@ export default function Home() {
 
       <div className="home-container" style={{ position:'relative', zIndex:5 }}>
 
-        {/* SECTION 1 — HERO (photo): what KAI Nuvari is; nursery first, wallet second. Colors are the original
+        {/* SECTION 1 — CONNECT WALLET (hero photo). Colors are the original
             KAI palette only; the photo is a mask. */}
         <div style={{
           width: '100vw', marginLeft: '50%', transform: 'translateX(-50%)',
           position: 'relative', zIndex: 5,
           minHeight: 'clamp(420px, 56vh, 560px)',
-          display: 'flex', alignItems: 'center',
-          padding: '72px 0 64px',
+          display: 'flex', alignItems: 'flex-start',
+          padding: '80px 0 56px',
           boxSizing: 'border-box',
           backgroundImage:
             `linear-gradient(180deg, rgba(11,28,20,0.15) 0%, rgba(11,28,20,0.75) 60%, ${C.bg} 88%, ${C.bg} 100%),` +
-            'linear-gradient(0deg, rgba(11,28,20,0.55), rgba(11,28,20,0.55)),' +
+            `linear-gradient(90deg, rgba(11,28,20,0.97) 0%, rgba(11,28,20,0.80) 32%, rgba(11,28,20,0.32) 64%, rgba(11,28,20,0.10) 100%),` +
             'url("/images/home-hero.jpg")',
           backgroundSize: 'cover', backgroundPosition: 'center 30%',
-          textAlign: 'center',
+          textAlign: 'left',
         }}>
           {/* Same content width as .home-container (1120px - 2 × 24px), so every left edge lines up. */}
           <div style={{ width: 'min(1072px, calc(100% - 48px))', marginInline: 'auto', boxSizing: 'border-box', position: 'relative', zIndex: 2 }}>
-            <div style={{ maxWidth: 820, marginInline: 'auto', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+            <div style={{ maxWidth: 660 }}>
               {/* Pill badge — original gold dot, not the screenshot's orange */}
               <div style={{ display: 'inline-flex', alignItems: 'center', gap: 9, padding: '7px 14px', borderRadius: 999, background: 'rgba(246,242,231,0.06)', border: `1px solid rgba(228,200,120,0.28)` }}>
                 <span style={{ width: 8, height: 8, borderRadius: '50%', background: C.goldLight, boxShadow: '0 0 10px rgba(228,200,120,0.9)' }} />
@@ -209,26 +209,21 @@ export default function Home() {
               <h1 style={{ ...SERIF, fontSize: 'clamp(2.6rem, 1.9rem + 3vw, 4.3rem)', fontWeight: 700, margin: '24px 0 0', letterSpacing: '-0.5px', lineHeight: 1.08 }}>
                 <span style={HL.green}>KAI</span> <span style={{ color: C.paper }}>Nuvari</span>
               </h1>
-              <p style={{ fontSize: 'clamp(1rem, 0.95rem + 0.3vw, 1.15rem)', color: C.paperDim, margin: '24px 0 0', maxWidth: 680, lineHeight: 1.65, textWrap: 'balance' }}>
-                Community conservation and forest finance on Avalanche. Record your nursery and planting,
-                prove your impact with verified records, and grow value with KAI tokens, vaults and pools.
+              <p style={{ fontSize: 16, color: C.paperDim, margin: '32px 0 0', maxWidth: 490, lineHeight: 1.6 }}>
+                A DeFi ecosystem on Avalanche C-Chain with six tokens, yield vaults, liquidity pools, and DAO governance,
+                plus community savings groups and a KAI agent that can check balances and find yield for you.
+                Connect a wallet to see your portfolio, join a dashboard, and get started.
               </p>
-
-              <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', justifyContent: 'center', marginTop: 36 }}>
-                <Link href="/nursery" prefetch={false} style={{
-                  display: 'inline-flex', alignItems: 'center', justifyContent: 'center', padding: '16px 30px', borderRadius: 999,
-                  background: C.gold, color: C.ink, fontSize: 14, fontWeight: 700, textDecoration: 'none',
-                }}>Open the nursery</Link>
 
               <motion.button whileTap={{ scale: 0.98 }} onClick={() => {
                 if (privyAuthenticated) { router.push('/wallet'); return; }
                 setShowModal(true);
               }}
                 style={{
-                  display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 10,
-                  padding: '15px 28px', borderRadius: 999, cursor: 'pointer', border: `1px solid ${C.goldLight}`,
-                  background: 'rgba(11,28,20,0.35)',
-                  fontSize: 14, fontWeight: 700, color: C.goldLight, fontFamily: 'inherit',
+                  marginTop: 40, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 10,
+                  padding: '16px 32px', borderRadius: 999, cursor: 'pointer', border: 'none',
+                  background: C.gold,
+                  fontSize: 14, fontWeight: 700, color: C.ink, fontFamily: 'inherit',
                 }}>
                 <Link2 size={16}/>
                 {connected
@@ -236,9 +231,8 @@ export default function Home() {
                   : privyAuthenticated && privyAddress
                     ? `Your Wallet: ${privyAddress.slice(0,6)}…${privyAddress.slice(-4)}`
                     : 'Connect Wallet'}
-                {(connected || privyAuthenticated) && <span style={{ width: 8, height: 8, borderRadius: '50%', background: C.goldLight }} />}
+                {(connected || privyAuthenticated) && <span style={{ width: 8, height: 8, borderRadius: '50%', background: C.ink }} />}
               </motion.button>
-              </div>
 
               <p style={{ marginTop: 18, ...MONO, fontSize: 11, letterSpacing: 1, textTransform: 'uppercase', color: C.inkLight }}>MetaMask and Core Wallet supported</p>
             </div>

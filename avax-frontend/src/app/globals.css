@@ -841,7 +841,9 @@ body {
   box-shadow: 0 10px 30px rgba(0,0,0,0.18);
 }
 .home-band + .home-band, .home-section + .home-band { margin-top: 18px; padding-top: 26px; border-top: 1px solid rgba(255,255,255,0.04); }
-.home-band:first-of-type { margin-top: -28px; position: relative; z-index: 6; }
+.home-band:first-of-type { margin-top: 8px; }
+/* Each panel's small title (icon + uppercase label) so sections are easy to tell apart. */
+.home-band-title { display: flex; align-items: center; gap: 8px; margin: 0 0 14px; font-family: 'IBM Plex Mono', monospace; font-size: 10.5px; font-weight: 600; letter-spacing: 1.4px; text-transform: uppercase; color: var(--home-accent); }
 .home-band--nursery { background: linear-gradient(135deg, #1F5638 0%, #17432C 100%); }
 .home-band--profile { background: #102A1E; }
 .home-band--qa      { background: linear-gradient(180deg, #19412D 0%, #143726 100%); }
