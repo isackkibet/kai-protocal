@@ -1,0 +1,9 @@
+
+# type(area): what changed (max ~72 chars)
+#
+# type: feat | fix | refactor | perf | security | db | test | docs | chore
+# area: ai, agent, auth, blockchain, db, mining, airdrop, payments, mpesa,
+#       nursery, mrv, hubs, security, ui, or a page name
+#
+# Body: why this was needed, and how you checked it (tsc, npm test, ...).
+# Lines starting with # are ignored. See avax-frontend/CONTRIBUTING.md.

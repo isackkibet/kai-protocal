@@ -1,36 +1,113 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# KAI Nuvari — web app (`avax-frontend`)
 
-## Getting Started
+Next.js 16 app for the KAI Nuvari / Canuvari ecosystem: wallet + Privy login,
+daily KAI drop, airdrop, swaps and vaults on Avalanche Fuji, M-Pesa / Paystack
+payments, the Oloolua CFA tree nursery (MRV), the information hubs, and the
+KAI AI assistant (chat + voice).
 
-First, run the development server:
+- Live: https://avax-frontend-seven.vercel.app (deploys from `main` on Vercel)
+- Database: Neon Postgres through Prisma
+- Read `AGENTS.md` first: this Next.js version differs from older docs
+  (`proxy.ts` instead of middleware, `params` is a Promise, ...).
+
+## Run it
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm install
+cp .env.example .env.local   # fill in the values
+npm run dev                  # http://localhost:3000
+npm test                     # all unit tests (no DB or network needed)
+npx tsc --noEmit             # type check
+npx eslint src               # lint
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Folder map
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```
+src/
+├── proxy.ts            Runs before every request: rate limits, CSRF, security headers
+├── app/                Pages and API routes. The folder path IS the URL.
+│   ├── <page>/page.tsx     e.g. app/nursery/page.tsx  ->  /nursery
+│   └── api/<name>/route.ts e.g. app/api/mine/claim    ->  POST /api/mine/claim
+├── components/         React pieces used by pages
+│   ├── ai/             KAI chat window, approval cards
+│   ├── cfa/            Nursery and treasury tabs on /cfa
+│   ├── conservation/   Conservation hub header and shell
+│   ├── hub/            Information hub article widgets
+│   ├── pools/          Pools page: bubbles canvas, drawer, stats
+│   ├── providers/      Privy, wagmi, React Query wrappers (wrap the whole app)
+│   ├── rewards/        Daily check-in, airdrop claim, claim celebration
+│   ├── shared/         Top header, bottom nav, page layout
+│   ├── wallet/         Wallet connect modal
+│   ├── ui/             Small generic UI (QR code)
+│   └── unused/         Not imported anywhere. Reuse or delete; see its README.
+├── hooks/              React hooks (balances, NFTs, voice agent, animated numbers)
+├── store/              Zustand client state (chat, approvals)
+└── lib/                Server + shared logic. No React pages here.
+    ├── ai/             KAI brain (LangChain, model fallback), secret redaction, chat formatting
+    ├── agent/          AI tools: prices, balances, swap/pay plans, escrow ABI
+    ├── airdrop/        Airdrop engine (+ tests)
+    ├── auth/           Who is calling: Privy token check, admin check, wallet signatures
+    ├── blockchain/     Contract addresses, ABIs, token list, wagmi config.
+    │                   *.json files here are WRITTEN by the deploy scripts.
+    ├── db/             Prisma client; getPrisma() returns null when DATABASE_URL is missing
+    ├── hubs/           SIHU + Oloolua hub data, theme, AI review
+    ├── mining/         Daily drop engine, config, math (+ tests)
+    ├── mrv/            MRV records: canonical JSON + SHA-256 hashing (+ tests)
+    ├── nursery/        Nursery DB helpers, input validation (+ tests)
+    ├── operations/     Nuvari operation schemas
+    ├── payments/       M-Pesa, Paystack, server-side price catalogue
+    ├── security/       Rate limit, CSRF, CSP headers, input limits (+ tests)
+    └── ui/             SDG icons
+prisma/
+├── schema.prisma       Prisma models
+└── sql/*.sql           Database changes. Apply with `prisma db execute`, see below.
+scripts/                One-off scripts (token deploy, M-Pesa credentials)
+docs/                   PRDs and design notes (SECURITY.md, db-integration.md, ...)
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Where does this error come from?
 
-## Learn More
+| You see... | Look in |
+|---|---|
+| A page looks wrong or crashes | `src/app/<page>/page.tsx`, then the components it imports |
+| `500` from `/api/xyz` | `src/app/api/xyz/route.ts`; Vercel → Logs, filter by that path |
+| `401 Unauthorized` | `src/lib/auth/` (Privy token or admin key) |
+| `403 Forbidden` / CSRF / "origin" | `src/lib/security/csrf.ts`, and `CSRF_ALLOWED_ORIGINS` in Vercel env |
+| `429 Too many requests` | `src/lib/security/rate-limit.ts` (`POLICIES`) |
+| Page blocked by CSP in browser console | `src/lib/security/headers.ts` (`buildCsp`) |
+| "database unavailable" / Prisma `P1001`, `P1017` | `DATABASE_URL` in Vercel; `src/lib/db/` |
+| Prisma "column does not exist" | `prisma/schema.prisma` vs the SQL in `prisma/sql/` |
+| Daily drop / mining claim fails | `src/app/api/mine/claim/route.ts`, `src/lib/mining/` |
+| Airdrop, missions, referrals | `src/app/api/airdrop/`, `src/lib/airdrop/` |
+| M-Pesa STK push or callback | `src/app/api/mpesa/`, `src/lib/payments/mpesa*.ts` |
+| Wrong price charged | `src/lib/payments/catalog.ts` (the only price authority) |
+| Wrong token / contract address | `src/lib/blockchain/` JSON files (re-run the deploy script) |
+| AI says "no AI provider is reachable" | Vercel logs, search `[kai-brain]`; API keys in Vercel env; `src/lib/ai/brain.ts` |
+| AI gives a wrong number (price, APY, balance) | The tool that fetched it: `src/lib/agent/tools.ts` |
+| AI answer about the nursery or account | `appDataTools` in `src/lib/ai/brain.ts` |
+| Nursery forms / CFA data | `src/app/api/cfa/`, `src/lib/nursery/`, `src/components/cfa/NurseryTab.tsx` |
+| Login (Privy) fails | `src/components/providers/PrivyAuthProvider.tsx`; allowed origins in the Privy dashboard |
 
-To learn more about Next.js, take a look at the following resources:
+Server logs prefix their source in square brackets, e.g. `[kai-brain]`,
+`[/api/agent]`. Search the code for that prefix to find where the log line
+is written.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Database rules (important)
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+- **Never run `prisma db push`.** The database also holds tables, views,
+  triggers and CHECK rules that exist only in `prisma/sql/*.sql` (and tables
+  used by the Oloolua hub). `db push` would drop them.
+- To change the schema: add a new file `prisma/sql/YYYY-MM-DD_what.sql`, apply it with
+  `npx prisma db execute --file prisma/sql/<file>.sql --schema prisma/schema.prisma`,
+  then update `prisma/schema.prisma` to match and run `npx prisma generate`.
 
-## Deploy on Vercel
+## AI providers
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+`src/lib/ai/brain.ts` tries the models in order and skips one that is rate
+limited: Gemini → Groq (`GROQ_MODEL`, then `GROQ_FALLBACK_MODEL`) → NVIDIA.
+Keys live only in Vercel env / `.env.local`, never in code.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Commits
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for the commit message format.
