@@ -20,7 +20,7 @@ export default function NurseryShortcut() {
 
   const n = (v: number | undefined) => (v ?? 0).toLocaleString();
   return (
-    <section className="home-section" aria-label="Oloolua CFA nursery" style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+    <section className="home-section home-band home-band--nursery" aria-label="Oloolua CFA nursery" style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
       <Link href="/nursery" prefetch={false} style={{ display: 'flex', alignItems: 'center', gap: 12, textDecoration: 'none', color: 'inherit' }}>
         <span style={{ width: 42, height: 42, borderRadius: 12, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(125,195,131,0.14)', flexShrink: 0 }}>
           <Sprout size={20} color="#7DC383" />

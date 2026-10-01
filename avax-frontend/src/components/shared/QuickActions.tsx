@@ -116,7 +116,7 @@ export default function QuickActions() {
           const Icon = a.icon;
           return (
             <Link key={a.name} href={a.href} prefetch={false} className="qa3-app" title={a.hint} style={{ ['--tint' as string]: a.tint }}>
-              <span className="qa3-app-icon"><Icon size={20} strokeWidth={1.8} /></span>
+              <span className="qa3-app-icon"><Icon size={22} strokeWidth={2} /></span>
               <span className="qa3-app-name">{a.name}</span>
             </Link>
           );

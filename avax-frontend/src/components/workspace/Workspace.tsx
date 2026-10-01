@@ -148,7 +148,7 @@ export default function Workspace({ embedded = false }: { embedded?: boolean } =
   }, [userKey]);
 
   // Scroll the conversation box only (scrollIntoView would also scroll the page around an embedded panel).
-  useEffect(() => { const box = scrollRef.current; if (box) box.scrollTop = box.scrollHeight; }, [msgs, orb]);
+  useEffect(() => { const box = scrollRef.current; if (box && msgs.length) box.scrollTop = box.scrollHeight; }, [msgs, orb]);
 
   // Offline tolerance: queue confirmed records; send them when the signal is back.
   const flushQueue = useCallback(async () => {
@@ -490,7 +490,7 @@ export default function Workspace({ embedded = false }: { embedded?: boolean } =
 
   return (
     <div style={embedded
-      ? { display: 'flex', height: 'min(78dvh, 720px)', minHeight: 460, background: C.panel, color: C.paper, border: `1px solid ${C.hairline}`, borderRadius: 18, overflow: 'hidden', fontFamily: 'inherit' }
+      ? { display: 'flex', height: 'calc(100dvh - 120px)', minHeight: 480, background: C.panel, color: C.paper, border: `1px solid ${C.hairline}`, borderRadius: 18, overflow: 'hidden', fontFamily: 'inherit' }
       : { display: 'flex', height: '100dvh', background: C.bg, color: C.paper, fontFamily: "'Poppins', 'IBM Plex Sans', var(--font-sans)" }}>
       <style>{`
         .kv-nav:hover { background: rgba(200,155,60,0.08) !important; }
@@ -518,9 +518,7 @@ export default function Workspace({ embedded = false }: { embedded?: boolean } =
           {embedded && msgs.length > 0 && (
             <button onClick={newChat} style={{ fontSize: 11.5, color: C.paperDim, background: 'none', border: `1px solid ${C.hairline}`, borderRadius: 999, padding: '4px 10px', cursor: 'pointer' }}>New chat</button>
           )}
-          {embedded && (
-            <Link href="/workspace" style={{ fontSize: 11.5, color: C.goldLight, textDecoration: 'none', whiteSpace: 'nowrap' }}>Full screen</Link>
-          )}
+
           {!online && <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: 11.5, color: C.red }}><CloudOff size={14} /> Offline</span>}
           {queued > 0 && <button onClick={() => void flushQueue()} style={{ fontSize: 11.5, color: C.goldLight, background: 'none', border: `1px solid ${C.gold}`, borderRadius: 999, padding: '3px 10px', cursor: 'pointer' }}>{queued} waiting to send</button>}
           <button onClick={() => { const l = lang === 'en' ? 'sw' : 'en'; setLang(l); try { localStorage.setItem('kanuvari.lang', l); } catch { /* optional */ } }} aria-label="Language"

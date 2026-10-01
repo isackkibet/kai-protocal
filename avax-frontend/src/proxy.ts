@@ -44,7 +44,7 @@ const CSP_ENFORCE = process.env.CSP_ENFORCE === 'true';
 // ── Route classification ─────────────────────────────────────────────────────
 
 /** Routes where every request is either expensive or fraud-attractive. */
-function policyFor(pathname: string): readonly typeof POLICIES[keyof typeof POLICIES][] {
+function policyFor(pathname: string, method = 'GET'): readonly typeof POLICIES[keyof typeof POLICIES][] {
   // Order matters: most specific first, so a payment route gets the tight
   // payment budget rather than the generic API one.
   // Provider webhooks first: Safaricom and Paystack send every confirmation
@@ -59,7 +59,12 @@ function policyFor(pathname: string): readonly typeof POLICIES[keyof typeof POLI
       pathname.startsWith('/api/agent') ||
       pathname.startsWith('/api/sdg')) return [POLICIES.ai];
 
-  if (pathname.startsWith('/api/mrv') || pathname.startsWith('/api/cfa')) return [POLICIES.write];
+  // Reads of nursery / MRV data (dashboards, the nursery page, quick-action
+  // counts) get the read budget; only saving data uses the tight write one.
+  // They used to share the write budget, so a few page loads hit 429.
+  if (pathname.startsWith('/api/mrv') || pathname.startsWith('/api/cfa')) {
+    return [method === 'GET' || method === 'HEAD' ? POLICIES.read : POLICIES.write];
+  }
 
   if (pathname.startsWith('/api/whitelist') || pathname.startsWith('/api/cfa/join')) {
     return [POLICIES.public];
@@ -147,7 +152,7 @@ export function proxy(req: NextRequest) {
       return finalize(tooManyRequests(req, globalResult), req, nonce);
     }
 
-    for (const policy of policyFor(pathname)) {
+    for (const policy of policyFor(pathname, req.method)) {
       const result = checkPolicy(policy, req, { risk });
       if (!result.allowed) {
         return finalize(tooManyRequests(req, result), req, nonce);

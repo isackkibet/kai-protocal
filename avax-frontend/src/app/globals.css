@@ -834,6 +834,19 @@ body {
   .home-section + .home-section { margin-top: 44px; padding-top: 36px; }
 }
 
+/* Home sections as coloured bands instead of hairlines: each section is its
+   own panel in a different green, from deep pine to a lighter forest green. */
+.home-band {
+  border-radius: 22px; padding: 26px 24px; border: 1px solid rgba(255,255,255,0.04);
+  box-shadow: 0 10px 30px rgba(0,0,0,0.18);
+}
+.home-band + .home-band, .home-section + .home-band { margin-top: 18px; padding-top: 26px; border-top: 1px solid rgba(255,255,255,0.04); }
+.home-band:first-of-type { margin-top: -28px; position: relative; z-index: 6; }
+.home-band--nursery { background: linear-gradient(135deg, #1F5638 0%, #17432C 100%); }
+.home-band--profile { background: #102A1E; }
+.home-band--qa      { background: linear-gradient(180deg, #19412D 0%, #143726 100%); }
+@media (max-width: 639px) { .home-band { padding: 20px 16px; border-radius: 18px; } }
+
 /* Shared stat row (profile + portfolio): values aligned on a grid, hairlines
    between cells. No shells. */
 .home-stats { display: grid; grid-template-columns: repeat(4, 1fr); }
@@ -914,8 +927,8 @@ body {
 .qa3-card {
   display: flex; flex-direction: column; align-items: flex-start; gap: 6px; min-width: 0;
   padding: 12px; border-radius: 14px; text-decoration: none;
-  background: color-mix(in srgb, var(--tint) 8%, transparent);
-  border: 1px solid color-mix(in srgb, var(--tint) 30%, transparent);
+  background: rgba(11,28,20,0.45);
+  border: 1px solid color-mix(in srgb, var(--tint) 35%, transparent);
   transition: transform .18s ease, border-color .18s ease, box-shadow .18s ease;
 }
 .qa3-card:hover { transform: translateY(-2px); border-color: var(--tint); box-shadow: 0 8px 22px rgba(0,0,0,.25); }
@@ -945,11 +958,13 @@ body {
 }
 .qa3-app:hover { background: rgba(255,255,255,0.04); }
 .qa3-app-icon {
-  width: 46px; height: 46px; border-radius: 14px; display: flex; align-items: center; justify-content: center;
-  color: var(--tint); background: color-mix(in srgb, var(--tint) 14%, transparent);
-  transition: background-color .15s ease, color .15s ease, transform .15s ease;
+  width: 52px; height: 52px; border-radius: 16px; display: flex; align-items: center; justify-content: center;
+  color: #0E2418;
+  background: linear-gradient(145deg, color-mix(in srgb, var(--tint) 100%, white 18%), var(--tint));
+  box-shadow: 0 6px 16px color-mix(in srgb, var(--tint) 35%, transparent), inset 0 1px 0 rgba(255,255,255,0.35);
+  transition: transform .15s ease, box-shadow .15s ease;
 }
-.qa3-app:hover .qa3-app-icon { background: var(--tint); color: #0E2418; transform: translateY(-2px); }
+.qa3-app:hover .qa3-app-icon { transform: translateY(-3px); box-shadow: 0 10px 22px color-mix(in srgb, var(--tint) 45%, transparent), inset 0 1px 0 rgba(255,255,255,0.35); }
 .qa3-app-name {
   font-size: 11.5px; font-weight: 600; color: var(--home-text); text-align: center; line-height: 1.25;
   max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;

@@ -171,7 +171,9 @@ export default function NurseryTab() {
     setLoading(true);
     try {
       const res = await fetch('/api/cfa/nursery/summary');
-      setSummary(await res.json());
+      const d = await res.json().catch(() => null);
+      // An error body ({ error }) must not replace the data: keep what we had.
+      if (res.ok && d && Array.isArray(d.species)) setSummary(d);
     } catch {
       /* offline — summary stays null */
     } finally {

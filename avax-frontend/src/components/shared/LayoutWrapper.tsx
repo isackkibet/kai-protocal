@@ -5,9 +5,9 @@ import dynamic from 'next/dynamic';
 import BottomNav from '@/components/shared/BottomNav';
 const AIChatOverlay = dynamic(() => import('@/components/ai/AIChatOverlay'), { ssr: false });
 
-const FULLSCREEN_ROUTES = ['/nuvari', '/ai', '/chat', '/voice', '/workspace'];
+const FULLSCREEN_ROUTES = ['/nuvari', '/ai', '/chat', '/voice', '/workspace', '/nursery'];
 /* Pages that ARE an AI chat: the floating AI button would only cover their input bar. */
-const NO_AI_OVERLAY_ROUTES = ['/workspace'];
+const NO_AI_OVERLAY_ROUTES = ['/workspace', '/nursery'];
 /* Exact matches only — '/kai' would otherwise prefix-match '/kai-bar' */
 const FULLSCREEN_EXACT_ROUTES = ['/kai'];
 
