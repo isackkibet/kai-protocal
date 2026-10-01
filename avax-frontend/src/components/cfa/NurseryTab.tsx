@@ -11,6 +11,7 @@ import {
 import { usePrivyAuth } from '@/lib/auth/privy-auth';
 import EvidencePanel from '@/components/cfa/EvidencePanel';
 import CfaAdminPanel from '@/components/cfa/CfaAdminPanel';
+import AdminHome, { type AdminAction } from '@/components/cfa/AdminHome';
 
 /* Same editorial system as the rest of the app — pine + gold + paper,
    flat rows separated by a hairline, no gradient card shells. The
@@ -266,12 +267,27 @@ export default function NurseryTab() {
   const needsSetup = (summary?.species.length ?? 0) === 0 || (summary?.locations.length ?? 0) === 0;
   const allSet = authenticated && isMember && !needsSetup && batches.length > 0;
 
+  /** The admin checklist's buttons: open a form, or open the Team section. */
+  const adminAction = (a: AdminAction) => {
+    if (a !== 'team') { setModal(a); return; }
+    const team = document.getElementById('cfa-team') as HTMLDetailsElement | null;
+    if (team) { team.open = true; team.scrollIntoView({ behavior: 'smooth', block: 'start' }); }
+  };
+
   return (
     <div>
       <style>{`.nursery-action:hover:not(:disabled) { color: ${C.goldLight}; }`}</style>
 
+      {/* Admins: one checklist that says what to do next. */}
+      {isAdmin && (
+        <AdminHome
+          counts={{ species: summary?.species.length ?? 0, locations: summary?.locations.length ?? 0, batches: batches.length }}
+          onAction={adminAction}
+        />
+      )}
+
       {/* Getting started: one numbered path from "signed out" to "recording" */}
-      {!allSet && (
+      {!isAdmin && !allSet && (
         <section style={{ marginBottom: 28, paddingBottom: 8, borderBottom: `1px solid ${C.hairline}` }}>
           <p style={{ ...label, marginBottom: 6 }}>Get started</p>
           <p style={{ fontSize: 12, color: C.inkLight, margin: '0 0 8px' }}>Follow these steps in order. Each one ticks when it is done.</p>
@@ -321,7 +337,7 @@ export default function NurseryTab() {
           </Step>
         </section>
       )}
-      {allSet && (
+      {!isAdmin && allSet && (
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 20 }}>
           <CheckCircle2 size={15} color={C.goldLight} />
           <p style={{ fontSize: 11.5, color: C.goldLight, margin: 0, fontWeight: 600 }}>

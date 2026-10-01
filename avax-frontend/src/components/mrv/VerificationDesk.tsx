@@ -63,7 +63,11 @@ function Button({ onClick, children, kind = 'primary', disabled }: { onClick: ()
 
 export default function VerificationDesk() {
   const { authenticated, getAccessToken, signInWithGoogle } = usePrivyAuth();
-  const [tab, setTab] = useState<'review' | 'fix' | 'anchor'>('review');
+  // /mrv#anchor, /mrv#fix or /mrv#review open that tab (links from the admin checklist).
+  const [tab, setTab] = useState<'review' | 'fix' | 'anchor'>(() => {
+    const h = typeof window === 'undefined' ? '' : window.location.hash.slice(1);
+    return h === 'fix' || h === 'anchor' ? h : 'review';
+  });
   const [queue, setQueue] = useState<{ role: string; canReview: boolean; queue: QueueRecord[]; mine: QueueRecord[] } | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [toast, setToast] = useState<string | null>(null);
