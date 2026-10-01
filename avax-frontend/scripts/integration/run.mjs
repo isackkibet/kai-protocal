@@ -341,6 +341,25 @@ await step('duplicate photo: near-identical dHash on another batch is flagged, n
   assert.equal(m.data.possibleDuplicatePhotos, 1);
 });
 
+await step('photo GPS is kept only with consent; capture time is kept', async () => {
+  const up = async (consent) => {
+    const form = new FormData();
+    form.append('file', new File([Buffer.concat([Buffer.from([0xff, 0xd8, 0xff]), Buffer.from('gps ' + consent + Math.random())])], 'g.jpg', { type: 'image/jpeg' }));
+    form.append('entityType', 'seedling_inventory'); form.append('entityId', batchId);
+    form.append('capturedAt', '2026-09-30T08:15:00.000Z');
+    form.append('latitude', '-1.358212'); form.append('longitude', '36.709113'); form.append('accuracy', '12');
+    if (consent) form.append('gpsConsent', 'yes');
+    const res = await evidence.POST(new Request('http://localhost/api/cfa/evidence', { method: 'POST', body: form, headers: { authorization: 'Bearer did:member', 'x-forwarded-for': `10.3.0.${Math.floor(Math.random() * 250)}` } }));
+    const d = await res.json();
+    return prisma.evidence.findUnique({ where: { id: d.evidence.id } });
+  };
+  const withGps = await up(true);
+  assert.deepEqual(withGps.metadata.location, { latitude: -1.358212, longitude: 36.709113, accuracyM: 12, consent: true });
+  assert.equal(withGps.metadata.capturedAt, '2026-09-30T08:15:00.000Z');
+  const noGps = await up(false);
+  assert.equal(noGps.metadata.location, undefined);
+});
+
 console.log('Anchoring');
 const anchor = await load('lib/mrv/anchor.ts');
 const merkle = await load('lib/mrv/merkle.ts');

@@ -98,6 +98,17 @@ export function checkQuantity(tool: string, quantity: number): ToolResult<never>
   return null;
 }
 
+
+/** Same species, quantity and day already recorded → shown on the draft card (PRD: flag likely repeats before saving). */
+async function duplicateWarning(c: Ctx, kind: 'addition' | 'planting', speciesId: string, quantity: number, day: string | null): Promise<string | null> {
+  if (!day) return null;
+  const date = new Date(`${day}T00:00:00Z`);
+  const dup = kind === 'planting'
+    ? await c.prisma.seedlingBatch.findFirst({ where: { cfaId: c.cfa.id, speciesId, quantity, status: 'planted', plantingDate: date }, select: { id: true } })
+    : await c.prisma.seedlingBatch.findFirst({ where: { cfaId: c.cfa.id, speciesId, quantity, dateReceived: date }, select: { id: true } });
+  return dup ? `Possible duplicate: ${quantity} of this species was already recorded on ${day}. Check before saving.` : null;
+}
+
 // ── READ tools ────────────────────────────────────────────────────────────────
 
 /** PRD §4.2 list_nurseries */
@@ -362,6 +373,9 @@ export async function prepareSeedlingAddition(
   const assumptions: string[] = [];
   const nursery = await resolveNursery(tool, c.prisma, c.cfa, input.nursery, assumptions);
   if (isFail(nursery)) return nursery;
+  const dupAdd = await duplicateWarning(c, 'addition', species.id, input.quantity, date);
+  if (dupAdd) assumptions.push(dupAdd);
+  if (input.quantity > 1000) assumptions.push('More than 1,000 seedlings: add a photo as evidence.');
   return ok(tool, {
     kind: 'nursery', name: tool, method: 'POST', endpoint: '/api/cfa/inventory',
     body: { speciesId: species.id, locationId: nursery.id, quantity: input.quantity, dateReceived: date, source: input.source?.trim() || null },
@@ -408,6 +422,9 @@ export async function prepareSeedlingPlanting(
   const batch = await batchFor(tool, c, species.id, nursery.id, input.quantity, 'plant');
   if (isFail(batch)) return batch;
   const site = input.site.trim().slice(0, 200);
+  const dupPlant = await duplicateWarning(c, 'planting', species.id, input.quantity, date);
+  if (dupPlant) assumptions.push(dupPlant);
+  if (input.quantity > 1000) assumptions.push('More than 1,000 seedlings: add a photo as evidence.');
   return ok(tool, {
     kind: 'nursery', name: tool, method: 'POST', endpoint: '/api/cfa/planting',
     body: { inventoryId: batch.id, plantingDate: date, quantity: input.quantity, notes: `Planted at ${site}${input.notes ? `. ${input.notes.trim()}` : ''}`.slice(0, 2000) },

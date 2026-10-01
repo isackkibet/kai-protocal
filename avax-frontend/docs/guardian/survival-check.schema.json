@@ -1,0 +1,21 @@
+{
+  "$id": "#KanuvariSurvivalCheck",
+  "title": "Kanuvari Survival Check",
+  "description": "A survival count of a planted batch (Kanuvari survival/v1).",
+  "type": "object",
+  "properties": {
+    "kanuvariRecordId": { "type": "string", "title": "Kanuvari record id" },
+    "kanuvariSha256": { "type": "string", "pattern": "^[0-9a-f]{64}$", "title": "SHA-256 of the canonical record JSON" },
+    "cfaId": { "type": "string", "title": "CFA id" },
+    "speciesName": { "type": "string", "title": "Species" },
+    "batchId": { "type": "string", "title": "Planted batch id" },
+    "initialQuantity": { "type": "integer", "minimum": 0, "title": "Planted" },
+    "aliveQuantity": { "type": "integer", "minimum": 0, "title": "Alive" },
+    "deadQuantity": { "type": "integer", "minimum": 0, "title": "Dead" },
+    "observedOn": { "type": "string", "format": "date", "title": "Date of check" },
+    "submittedById": { "type": "string", "title": "Checked by (member id)" },
+    "evidenceHashes": { "type": "array", "items": { "type": "string", "pattern": "^[0-9a-f]{64}$" }, "title": "Evidence file SHA-256 hashes" }
+  },
+  "required": ["kanuvariRecordId", "kanuvariSha256", "cfaId", "batchId", "initialQuantity", "aliveQuantity", "deadQuantity", "observedOn"],
+  "additionalProperties": false
+}

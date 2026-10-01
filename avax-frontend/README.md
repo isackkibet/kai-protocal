@@ -33,7 +33,8 @@ src/
 ├── components/         React pieces used by pages
 │   ├── ai/             KAI chat window, approval cards
 │   ├── cfa/            Nursery screen, CFA admin panel, evidence (photos), AI confirm card
-│   ├── mrv/            Verification desk (/mrv) and the Avalanche proof check
+│   ├── mrv/            Verification desk (/mrv), proof check, signed credentials
+│   ├── workspace/      Kanuvari AI workspace (/workspace): sidebar, orb, input bar, record card
 │   ├── conservation/   Conservation hub header and shell
 │   ├── hub/            Information hub article widgets
 │   ├── pools/          Pools page: bubbles canvas, drawer, stats
@@ -105,7 +106,9 @@ docs/                   PRDs and design notes (SECURITY.md, db-integration.md, .
 | "Only a DeFi admin wallet can create vaults" | `DEFI_ADMIN_WALLETS` in Vercel (comma-separated), default the deployer; `src/lib/defi/vaults.ts` |
 | Members get "only site managers…" | Manage the CFA → CFA details: the site-manager switch (`cfa.metadata.inventory_requires_site_manager`) |
 | AI answer about the nursery or account | `src/lib/nursery/tools.ts` (the data), `src/lib/ai/nursery-agent.ts` (rules), `appDataTools` in `src/lib/ai/brain.ts` |
-| Nursery "Confirm and save" card fails | The error text comes from the `/api/cfa/*` route named in the draft; card is `src/components/cfa/NurseryConfirmCard.tsx` |
+| Nursery "Confirm and save" card fails | The error text comes from the `/api/cfa/*` route named in the draft; card is `src/components/cfa/NurseryConfirmCard.tsx` (chat) or `src/components/workspace/RecordCard.tsx` (workspace) |
+| Workspace orb stuck on "Thinking…" / no answer | `src/app/api/workspace/chat/route.ts` (SSE: status → tool → plan → token → done); Vercel logs `[workspace/chat]` |
+| Records saved offline never arrive | `src/lib/workspace/storage.ts` queue; sent on reconnect by `Workspace.tsx` `flushQueue` |
 | Nursery forms / CFA data | `src/app/api/cfa/`, `src/lib/nursery/`, `src/components/cfa/NurseryTab.tsx` |
 | Transfer / loss of seedlings | `src/app/api/cfa/transfer/route.ts`, `src/app/api/cfa/loss/route.ts` |
 | Members, roles, CFA profile | `src/app/api/cfa/members/`, `src/app/api/cfa/profile/`, `src/components/cfa/CfaAdminPanel.tsx` |
@@ -127,6 +130,10 @@ is written.
 - To change the schema: add a new file `prisma/sql/YYYY-MM-DD_what.sql`, apply it with
   `npx prisma db execute --file prisma/sql/<file>.sql --schema prisma/schema.prisma`,
   then update `prisma/schema.prisma` to match and run `npx prisma generate`.
+
+## Hedera Guardian
+
+Design and schemas only so far: see [docs/guardian/README.md](docs/guardian/README.md).
 
 ## AI providers
 

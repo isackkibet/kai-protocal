@@ -56,6 +56,8 @@ export interface BrainInput {
   wallet?: string | null;
   /** Extra facts the page already knows, e.g. the home page's wallet balances. */
   pageContext?: string;
+  /** Called as each tool starts, so a UI can show "Querying nursery records…". */
+  onToolStart?: (toolName: string) => void;
 }
 
 export interface BrainResult {
@@ -499,6 +501,7 @@ export async function runKai(input: BrainInput): Promise<BrainResult> {
       messages.push(new AIMessage({ content: textOf(ai), tool_calls: calls }));
       for (const call of calls) {
         const t = byName.get(call.name);
+        try { input.onToolStart?.(call.name); } catch { /* a UI callback must never break the answer */ }
         let output: string;
         try {
           output = t ? String(await invokeWithReconnect(t, call.args)) : JSON.stringify({ error: `Unknown tool ${call.name}` });

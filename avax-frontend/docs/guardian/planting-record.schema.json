@@ -1,0 +1,24 @@
+{
+  "$id": "#KanuvariPlantingRecord",
+  "title": "Kanuvari Planting Record",
+  "description": "One planted seedling batch from a Community Forest Association nursery (Kanuvari planting/v1).",
+  "type": "object",
+  "properties": {
+    "kanuvariRecordId": { "type": "string", "title": "Kanuvari record id" },
+    "kanuvariSha256": { "type": "string", "title": "SHA-256 of the canonical record JSON", "pattern": "^[0-9a-f]{64}$" },
+    "cfaId": { "type": "string", "title": "CFA id" },
+    "cfaName": { "type": "string", "title": "CFA name" },
+    "region": { "type": "string", "title": "Region" },
+    "speciesId": { "type": "string", "title": "Species id" },
+    "speciesName": { "type": "string", "title": "Species (common and scientific name)" },
+    "seedlingsPlanted": { "type": "integer", "minimum": 1, "title": "Seedlings planted" },
+    "plantingDate": { "type": "string", "format": "date-time", "title": "Planting date" },
+    "siteDescription": { "type": "string", "title": "Planting site" },
+    "submittedById": { "type": "string", "title": "Submitted by (member id)" },
+    "submittedByName": { "type": "string", "title": "Submitted by (name)" },
+    "evidenceHashes": { "type": "array", "items": { "type": "string", "pattern": "^[0-9a-f]{64}$" }, "title": "Evidence file SHA-256 hashes" },
+    "avalancheAnchorTx": { "type": "string", "title": "Avalanche Fuji anchor transaction (optional)" }
+  },
+  "required": ["kanuvariRecordId", "kanuvariSha256", "cfaId", "cfaName", "speciesName", "seedlingsPlanted", "plantingDate", "submittedById"],
+  "additionalProperties": false
+}

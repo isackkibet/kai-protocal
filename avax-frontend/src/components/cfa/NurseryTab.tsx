@@ -370,6 +370,9 @@ export default function NurseryTab() {
         {isAdmin && <ActionTile icon={<MapPin size={16} color="#C48FE0" />} label="Add Location" onClick={() => setModal('location')} />}
       </div>
 
+      <Link href="/workspace" style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12, color: C.goldLight, fontSize: 12.5, fontWeight: 600, textDecoration: 'none' }}>
+        <Sprout size={15} /> Kanuvari AI — just say what happened, review, confirm →
+      </Link>
       <Link href="/mrv" style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 28, color: C.goldLight, fontSize: 12.5, fontWeight: 600, textDecoration: 'none' }}>
         <ShieldCheck size={15} /> Verification desk — review, correct and anchor records on Avalanche →
       </Link>

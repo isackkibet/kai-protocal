@@ -73,6 +73,13 @@ export async function POST(req: Request) {
     const entityId = String(form.get('entityId') ?? '').trim().slice(0, 64);
     const caption = String(form.get('caption') ?? '').trim().slice(0, 500) || null;
     const dhash = String(form.get('dhash') ?? '').trim().toLowerCase() || null;
+    // Photo time from the file; GPS only when the user ticked the consent box.
+    const capturedRaw = String(form.get('capturedAt') ?? '');
+    const capturedAt = !Number.isNaN(Date.parse(capturedRaw)) && Date.parse(capturedRaw) <= Date.now() + 86_400_000 ? new Date(capturedRaw).toISOString() : null;
+    const lat = Number(form.get('latitude')), lng = Number(form.get('longitude')), acc = Number(form.get('accuracy'));
+    const location = form.get('gpsConsent') === 'yes' && Number.isFinite(lat) && Number.isFinite(lng) && Math.abs(lat) <= 90 && Math.abs(lng) <= 180
+      ? { latitude: Math.round(lat * 1e6) / 1e6, longitude: Math.round(lng * 1e6) / 1e6, accuracyM: Number.isFinite(acc) && acc > 0 ? Math.round(acc) : null }
+      : null;
     if (!(file instanceof File)) return NextResponse.json({ error: 'Choose a file to upload.', field: 'file' }, { status: 400 });
     if (!entityType || !entityId) return NextResponse.json({ error: 'entityType and entityId are required.' }, { status: 400 });
     if (file.size > MAX_EVIDENCE_BYTES) return NextResponse.json({ error: 'The file is larger than 3 MB.', field: 'file' }, { status: 413 });
@@ -83,6 +90,8 @@ export async function POST(req: Request) {
       declaredType: file.type,
       fileName: file.name,
       dhash,
+      capturedAt,
+      location,
     });
     const dup = (evidence.metadata as { duplicateOf?: { entityType: string } } | null)?.duplicateOf;
     return NextResponse.json({

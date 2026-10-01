@@ -40,6 +40,9 @@ export async function saveEvidence(
     entityType: EvidenceEntity; entityId: string; bytes: Uint8Array; declaredType: string; fileName: string; caption: string | null;
     /** 64-bit perceptual hash (16 hex) computed by the browser for photos. A hint for duplicate detection only. */
     dhash?: string | null;
+    /** When the photo was taken (from the file), and GPS only if the user consented. */
+    capturedAt?: string | null;
+    location?: { latitude: number; longitude: number; accuracyM: number | null } | null;
   },
 ) {
   const fileName = cleanFileName(input.fileName);
@@ -86,7 +89,11 @@ export async function saveEvidence(
         sizeBytes: input.bytes.length,
         sha256,
         caption: input.caption,
-        metadata: { ...(dhash ? { dhash } : {}), ...(duplicateOf ? { duplicateOf } : {}) },
+        metadata: {
+          ...(dhash ? { dhash } : {}), ...(duplicateOf ? { duplicateOf } : {}),
+          ...(input.capturedAt ? { capturedAt: input.capturedAt } : {}),
+          ...(input.location ? { location: { ...input.location, consent: true } } : {}),
+        },
         createdBy: member.id,
       },
     });
