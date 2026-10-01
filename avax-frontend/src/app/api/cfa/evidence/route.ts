@@ -72,6 +72,7 @@ export async function POST(req: Request) {
     const entityType = entityFrom(form.get('entityType'));
     const entityId = String(form.get('entityId') ?? '').trim().slice(0, 64);
     const caption = String(form.get('caption') ?? '').trim().slice(0, 500) || null;
+    const dhash = String(form.get('dhash') ?? '').trim().toLowerCase() || null;
     if (!(file instanceof File)) return NextResponse.json({ error: 'Choose a file to upload.', field: 'file' }, { status: 400 });
     if (!entityType || !entityId) return NextResponse.json({ error: 'entityType and entityId are required.' }, { status: 400 });
     if (file.size > MAX_EVIDENCE_BYTES) return NextResponse.json({ error: 'The file is larger than 3 MB.', field: 'file' }, { status: 413 });
@@ -81,10 +82,13 @@ export async function POST(req: Request) {
       bytes: new Uint8Array(await file.arrayBuffer()),
       declaredType: file.type,
       fileName: file.name,
+      dhash,
     });
+    const dup = (evidence.metadata as { duplicateOf?: { entityType: string } } | null)?.duplicateOf;
     return NextResponse.json({
       ok: true,
       evidence: { id: evidence.id, fileName: evidence.fileName, sha256: evidence.sha256, sizeBytes: evidence.sizeBytes, url: `/api/cfa/evidence/${evidence.id}` },
+      warning: dup ? 'This photo looks very similar to one already attached to another record. It was saved, and a verifier will see the warning.' : null,
     });
   } catch (e) {
     if (e instanceof FieldError) return NextResponse.json({ error: e.message, field: e.field }, { status: 400 });

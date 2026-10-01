@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
-import { Building2, ChevronDown, Loader2, MapPin, Save, UserPlus, Users } from 'lucide-react';
+import { Building2, ChevronDown, Download, History, Loader2, MapPin, Save, UserPlus, Users } from 'lucide-react';
 import { usePrivyAuth } from '@/lib/auth/privy-auth';
 
 /**
@@ -111,6 +111,25 @@ export default function CfaAdminPanel({ myMemberId, onChanged }: { myMemberId: s
     }
   };
 
+  /** The export needs the sign-in token, so fetch it and save it from a blob. */
+  const downloadAudit = async (format: 'csv' | 'json') => {
+    setBusy(true);
+    setMsg(null);
+    try {
+      const res = await fetch(`/api/cfa/audit/export?format=${format}`, { headers: await headers() });
+      if (!res.ok) { const d = await res.json().catch(() => ({})); setMsg({ text: d.error ?? 'Could not export.', error: true }); return; }
+      const blob = await res.blob();
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = `oloolua-audit-${new Date().toISOString().slice(0, 10)}.${format}`;
+      a.click();
+      setTimeout(() => URL.revokeObjectURL(a.href), 30_000);
+      setMsg({ text: `Downloaded ${res.headers.get('x-row-count') ?? ''} changes.` });
+    } finally {
+      setBusy(false);
+    }
+  };
+
   const active = members.filter((m) => m.status === 'active');
   const checkers = active.filter((m) => m.role === 'admin' || m.role === 'verifier').length;
 
@@ -198,6 +217,14 @@ export default function CfaAdminPanel({ myMemberId, onChanged }: { myMemberId: s
               </div>
             </>
           )}
+        </Section>
+        {/* ── Audit log ── */}
+        <Section icon={<History size={17} />} title="Audit log" summary="Every change, with who made it. Download for reports or compliance.">
+          <p style={{ fontSize: 12, color: C.inkLight, margin: 0 }}>The file lists who changed what and when, with the before and after values. Emails and phone numbers are left out.</p>
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+            <SaveButton disabled={busy} onClick={() => downloadAudit('csv')}><Download size={13} /> Download CSV (Excel)</SaveButton>
+            <SaveButton disabled={busy} onClick={() => downloadAudit('json')}><Download size={13} /> Download JSON</SaveButton>
+          </div>
         </Section>
       </div>
 

@@ -2,6 +2,7 @@ import { createHash } from 'node:crypto';
 import type { Cfa, CfaMember, PrismaClient } from '@prisma/client';
 import { withMember } from './db';
 import { cleanFileName, evidenceProblems, sniffMime, type EvidenceEntity } from './evidence-rules';
+import { DUPLICATE_BITS, hammingHex } from './quality-rules';
 import { FieldError } from './validate';
 
 /**
@@ -35,7 +36,11 @@ export async function saveEvidence(
   prisma: PrismaClient,
   cfa: Cfa,
   member: CfaMember,
-  input: { entityType: EvidenceEntity; entityId: string; bytes: Uint8Array; declaredType: string; fileName: string; caption: string | null },
+  input: {
+    entityType: EvidenceEntity; entityId: string; bytes: Uint8Array; declaredType: string; fileName: string; caption: string | null;
+    /** 64-bit perceptual hash (16 hex) computed by the browser for photos. A hint for duplicate detection only. */
+    dhash?: string | null;
+  },
 ) {
   const fileName = cleanFileName(input.fileName);
   const problems = evidenceProblems({ bytes: input.bytes, declaredType: input.declaredType, fileName });
@@ -51,6 +56,25 @@ export async function saveEvidence(
   });
   if (duplicate) throw new FieldError('file', 'This exact file is already attached here.');
 
+  // Ecosystem PRD §4.12 detect_duplicate_images: a photo that looks like one
+  // already attached elsewhere in this CFA (re-saved, resized) is flagged for
+  // the verifier, not refused. The perceptual hash comes from the browser, so
+  // it is only a hint; the SHA-256 above is the server's own.
+  const dhash = input.dhash && /^[0-9a-f]{16}$/.test(input.dhash) ? input.dhash : null;
+  let duplicateOf: { evidenceId: string; entityType: string; entityId: string; bitsDifferent: number } | null = null;
+  if (dhash) {
+    const recent = await prisma.$queryRaw<{ id: string; entity_type: string; entity_id: string; dhash: string }[]>`
+      SELECT id::text, entity_type, entity_id, metadata->>'dhash' AS dhash FROM evidence
+      WHERE cfa_id = ${cfa.id}::uuid AND metadata ? 'dhash' ORDER BY created_at DESC LIMIT 500`;
+    for (const r of recent) {
+      if (r.entity_type === input.entityType && r.entity_id === input.entityId) continue;
+      const bits = hammingHex(dhash, r.dhash);
+      if (bits <= DUPLICATE_BITS && (!duplicateOf || bits < duplicateOf.bitsDifferent)) {
+        duplicateOf = { evidenceId: r.id, entityType: r.entity_type, entityId: r.entity_id, bitsDifferent: bits };
+      }
+    }
+  }
+
   return withMember(prisma, member.id, async (tx) => {
     const evidence = await tx.evidence.create({
       data: {
@@ -62,6 +86,7 @@ export async function saveEvidence(
         sizeBytes: input.bytes.length,
         sha256,
         caption: input.caption,
+        metadata: { ...(dhash ? { dhash } : {}), ...(duplicateOf ? { duplicateOf } : {}) },
         createdBy: member.id,
       },
     });

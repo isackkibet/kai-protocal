@@ -29,6 +29,29 @@ async function shrinkIfNeeded(file: File): Promise<File> {
   return new File([blob], file.name.replace(/\.\w+$/, '') + '.jpg', { type: 'image/jpeg' });
 }
 
+/**
+ * 64-bit difference hash: shrink to 9×8 grey pixels and record whether each
+ * pixel is brighter than its right neighbour. Re-saved or resized copies of
+ * a photo keep almost the same bits, so the server can flag reused photos.
+ */
+async function dHash(file: File): Promise<string | null> {
+  if (!file.type.startsWith('image/')) return null;
+  try {
+    const bitmap = await createImageBitmap(file);
+    const canvas = document.createElement('canvas');
+    canvas.width = 9; canvas.height = 8;
+    const ctx = canvas.getContext('2d', { willReadFrequently: true })!;
+    ctx.drawImage(bitmap, 0, 0, 9, 8);
+    const px = ctx.getImageData(0, 0, 9, 8).data;
+    const grey = (x: number, y: number) => { const i = (y * 9 + x) * 4; return px[i] * 0.299 + px[i + 1] * 0.587 + px[i + 2] * 0.114; };
+    let bits = '';
+    for (let y = 0; y < 8; y++) for (let x = 0; x < 8; x++) bits += grey(x, y) > grey(x + 1, y) ? '1' : '0';
+    return BigInt(`0b${bits}`).toString(16).padStart(16, '0');
+  } catch {
+    return null;
+  }
+}
+
 export default function EvidencePanel({ entityType, entityId, canUpload, quietWhenEmpty }: {
   entityType: EvidenceEntity; entityId: string; canUpload: boolean;
   /** Render nothing when there is no evidence and no upload button (for secondary lists). */
@@ -98,12 +121,16 @@ export default function EvidencePanel({ entityType, entityId, canUpload, quietWh
       form.append('entityType', entityType);
       form.append('entityId', entityId);
       if (caption.trim()) form.append('caption', caption.trim());
+      const hash = await dHash(file);
+      if (hash) form.append('dhash', hash);
       const token = await getAccessToken();
       const res = await fetch('/api/cfa/evidence', { method: 'POST', body: form, headers: token ? { Authorization: `Bearer ${token}` } : {} });
       const d = await res.json().catch(() => ({}));
       if (!res.ok) { setMessage({ text: d.error ?? 'Upload failed.', error: true }); return; }
       setCaption('');
-      setMessage({ text: `Saved. Fingerprint ${String(d.evidence?.sha256 ?? '').slice(0, 12)}…` });
+      setMessage(d.warning
+        ? { text: d.warning, error: true }
+        : { text: `Saved. Fingerprint ${String(d.evidence?.sha256 ?? '').slice(0, 12)}…` });
       await load();
     } catch {
       setMessage({ text: 'Could not read or send that file.', error: true });

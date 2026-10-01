@@ -221,7 +221,7 @@ const upload = async (user, bytes, type = 'image/jpeg', entityId = batchId) => {
   form.append('entityType', 'seedling_inventory');
   form.append('entityId', entityId);
   form.append('caption', 'Croton beds');
-  const req = new Request('http://localhost/api/cfa/evidence', { method: 'POST', body: form, headers: user ? { authorization: 'Bearer ' + user } : {} });
+  const req = new Request('http://localhost/api/cfa/evidence', { method: 'POST', body: form, headers: { 'x-forwarded-for': `10.2.0.${Math.floor(Math.random() * 250)}`, ...(user ? { authorization: 'Bearer ' + user } : {}) } });
   const res = await evidence.POST(req);
   return { status: res.status, data: await res.json() };
 };
@@ -245,6 +245,100 @@ await step('file download: members only, bytes + hash header match; files immuta
   assert.equal(anon.status, 401);
   await assert.rejects(prisma.evidenceFile.update({ where: { evidenceId: ev.id }, data: { content: Buffer.from('x') } }), /cannot be changed/);
   assert.equal(await prisma.auditLog.count({ where: { entityType: 'evidence' } }), 1);
+});
+
+console.log('Data quality, reports, audit (PRD v1.1)');
+const quality = await load('lib/nursery/quality.ts');
+await step('inventory reconciles after transfers, losses and plantings', async () => {
+  const r = await quality.reconcileInventory();
+  assert.equal(r.success, true, JSON.stringify(r));
+  assert.equal(r.data.isReconciled, true, JSON.stringify(r.data));
+  assert.ok(r.data.batchesChecked >= 1);
+});
+await step('reconcile catches seedlings that appear from nowhere', async () => {
+  await prisma.$transaction(async (tx) => {
+    await tx.$executeRaw`SELECT set_config('app.current_member_id', ${ADMIN.id}, true)`;
+    await tx.seedlingBatch.update({ where: { id: batchId }, data: { quantity: { increment: 7 }, updatedBy: ADMIN.id } });
+  });
+  const r = await quality.reconcileInventory();
+  assert.equal(r.data.isReconciled, false);
+  assert.equal(r.data.discrepancies[0].difference, 7);
+  await prisma.$transaction(async (tx) => {
+    await tx.$executeRaw`SELECT set_config('app.current_member_id', ${ADMIN.id}, true)`;
+    await tx.seedlingBatch.update({ where: { id: batchId }, data: { quantity: { decrement: 7 }, updatedBy: ADMIN.id } });
+  });
+});
+await step('validate: missing site/date, future date, duplicate planting, >1000 photo reminder', async () => {
+  const a = await quality.validateConservationData({ kind: 'planting', species: 'Croton', quantity: 300 });
+  assert.equal(a.data.valid, false);
+  assert.ok(a.data.errors.some((e) => /site/.test(e)) && a.data.errors.some((e) => /date/.test(e)));
+  const b = await quality.validateConservationData({ kind: 'addition', species: 'Croton', quantity: 5, date: '2099-01-01' });
+  assert.ok(b.data.errors.some((e) => /future/.test(e)));
+  const dup = await quality.validateConservationData({ kind: 'planting', species: 'croton', quantity: 300, date: '2026-09-20', site: 'Site A' });
+  assert.ok(dup.data.warnings.some((w) => /duplicate/.test(w)), JSON.stringify(dup.data));
+  const big = await quality.validateConservationData({ kind: 'addition', species: 'Croton', quantity: 5000, date: '2026-09-01' });
+  assert.ok(big.data.warnings.some((w) => /photo/.test(w)));
+});
+await step('clean data: "500 trees", "jana", species typo', async () => {
+  const r = await quality.cleanConservationData({ quantity: '500 trees', date: 'jana', species: 'Krotonn' });
+  assert.equal(r.data.cleaned.quantity, 500);
+  assert.match(r.data.cleaned.date, /^\d{4}-\d{2}-\d{2}$/);
+  assert.ok(r.data.notes.some((n) => /did you mean Croton/.test(n)));
+});
+await step('activities by site, activity detail, site and CFA reports', async () => {
+  const list = await quality.listActivities({ site: 'Site A' });
+  assert.equal(list.data.count, 1);
+  assert.equal(list.data.activities[0].site, 'Site A');
+  const detail = await quality.getActivityDetail(list.data.activities[0].activityId);
+  assert.equal(detail.data.verification.status, 'VERIFIED');
+  const site = await quality.generateSiteReport('site a');
+  assert.equal(site.data.totalPlanted, 300);
+  assert.equal(site.data.survival.ratePct, 90);
+  const cfaReport = await quality.generateCfaReport({});
+  assert.deepEqual(cfaReport.data.plantingSites, ['Site A']);
+  assert.ok(cfaReport.data.dataQuality.totalSubmissions >= 2);
+});
+await step('quality metrics', async () => {
+  const m = await quality.getQualityMetrics({});
+  assert.equal(m.data.totalSubmissions, 2);
+  assert.equal(m.data.verifiedPct, 100);
+  assert.equal(m.data.correctedPct, 50);
+  assert.equal(m.data.inventoryReconciled, true);
+});
+await step('audit history: members refused, verifier sees changes without emails', async () => {
+  assert.equal((await quality.getAuditHistory('did:member', {})).error.code, 'FORBIDDEN');
+  const h = await quality.getAuditHistory('did:verifier', { entityType: 'members' });
+  assert.ok(h.data.events.length >= 1);
+  assert.ok(!JSON.stringify(h.data).includes('@x.ke'), 'emails leaked');
+});
+await step('audit export: CSV for verifiers, 403 for members, formula-safe', async () => {
+  const exp = (await load('app/api/cfa/audit/export/route.ts')).GET;
+  const no = await exp(new Request('http://x/api/cfa/audit/export', { headers: { authorization: 'Bearer did:member' } }));
+  assert.equal(no.status, 403);
+  const res = await exp(new Request('http://x/api/cfa/audit/export?format=csv', { headers: { authorization: 'Bearer did:verifier' } }));
+  assert.equal(res.status, 200);
+  const csv = await res.text();
+  assert.match(csv.split('\r\n')[0], /^at,actor,actor_id,action,entity_type,entity_id,changes$/);
+  assert.ok(Number(res.headers.get('x-row-count')) > 10);
+  assert.ok(!csv.includes('@x.ke'), 'emails leaked');
+  const json = await (await exp(new Request('http://x/api/cfa/audit/export?format=json', { headers: { authorization: 'Bearer did:admin' } }))).json();
+  assert.equal(json.events.length, Number(res.headers.get('x-row-count')));
+});
+await step('duplicate photo: near-identical dHash on another batch is flagged, not refused', async () => {
+  const otherBatch = await prisma.seedlingBatch.findFirst({ where: { status: 'planted' } });
+  const send = async (entityId, dhash, bytes) => {
+    const form = new FormData();
+    form.append('file', new File([bytes], 'p.jpg', { type: 'image/jpeg' }));
+    form.append('entityType', 'seedling_inventory'); form.append('entityId', entityId); form.append('dhash', dhash);
+    const res = await evidence.POST(new Request('http://localhost/api/cfa/evidence', { method: 'POST', body: form, headers: { authorization: 'Bearer did:member', 'x-forwarded-for': `10.1.0.${Math.floor(Math.random() * 250)}` } }));
+    return res.json();
+  };
+  const first = await send(batchId, 'f0f0f0f0f0f0f0f0', Buffer.concat([Buffer.from([0xff, 0xd8, 0xff]), Buffer.from('photo one')]));
+  assert.equal(first.warning, null, JSON.stringify(first));
+  const second = await send(otherBatch.id, 'f0f0f0f0f0f0f0f1', Buffer.concat([Buffer.from([0xff, 0xd8, 0xff]), Buffer.from('photo one re-saved')]));
+  assert.match(second.warning, /similar/);
+  const m = await quality.getQualityMetrics({});
+  assert.equal(m.data.possibleDuplicatePhotos, 1);
 });
 
 console.log('Anchoring');

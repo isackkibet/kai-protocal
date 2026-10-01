@@ -54,14 +54,16 @@ src/
     ├── blockchain/     Contract addresses, ABIs, token list, wagmi config.
     │                   *.json files here are WRITTEN by the deploy scripts.
     ├── db/             Prisma client; getPrisma() returns null when DATABASE_URL is missing
+    ├── defi/           Portfolio Agent tools: live pool/vault/token reads (chain.ts),
+    │                   swap/LP/vault/IL math matching the contracts (math.ts), plans (+ tests)
     ├── hubs/           SIHU + Oloolua hub data, theme, AI review
     ├── mining/         Daily drop engine, config, math (+ tests)
     ├── mrv/            MRV records: canonical JSON + SHA-256 (records.ts), human
     │                   verification (verification.ts), Merkle tree (merkle.ts),
     │                   Avalanche anchoring (anchor.ts), Verification Agent tools (+ tests)
     ├── nursery/        Nursery DB helpers, validation, evidence storage, and the
-    │                   agent TOOLS (tools.ts, cfa-tools.ts: plain functions,
-    │                   PRD tool contract) (+ tests)
+    │                   agent TOOLS (tools.ts, cfa-tools.ts, quality.ts: reports,
+    │                   data quality, audit; plain functions, PRD tool contract) (+ tests)
     ├── operations/     Nuvari operation schemas
     ├── payments/       M-Pesa, Paystack, server-side price catalogue
     ├── security/       Rate limit, CSRF, CSP headers, input limits (+ tests)
@@ -91,7 +93,10 @@ docs/                   PRDs and design notes (SECURITY.md, db-integration.md, .
 | Wrong price charged | `src/lib/payments/catalog.ts` (the only price authority) |
 | Wrong token / contract address | `src/lib/blockchain/` JSON files (re-run the deploy script) |
 | AI says "no AI provider is reachable" | Vercel logs, search `[kai-brain]`; API keys in Vercel env; `src/lib/ai/brain.ts` |
-| AI gives a wrong number (price, APY, balance) | The tool that fetched it: `src/lib/agent/tools.ts` |
+| AI gives a wrong number (price, APY, balance) | The tool that fetched it: `src/lib/agent/tools.ts`, or `src/lib/defi/` for pools, vaults and portfolio |
+| Portfolio / swap / vault numbers look off | `src/lib/defi/chain.ts` (live Fuji reads, 1-minute cache) and `src/lib/defi/math.ts` (same formulas as the contracts) |
+| Reports, quality metrics, "inventory does not reconcile" | `src/lib/nursery/quality.ts`; rules in `src/lib/nursery/quality-rules.ts` |
+| Audit download fails | `src/app/api/cfa/audit/export/route.ts` (admins, auditors, verifiers only) |
 | AI answer about the nursery or account | `src/lib/nursery/tools.ts` (the data), `src/lib/ai/nursery-agent.ts` (rules), `appDataTools` in `src/lib/ai/brain.ts` |
 | Nursery "Confirm and save" card fails | The error text comes from the `/api/cfa/*` route named in the draft; card is `src/components/cfa/NurseryConfirmCard.tsx` |
 | Nursery forms / CFA data | `src/app/api/cfa/`, `src/lib/nursery/`, `src/components/cfa/NurseryTab.tsx` |

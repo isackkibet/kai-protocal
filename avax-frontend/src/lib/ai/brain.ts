@@ -32,8 +32,10 @@ import { getNurseryCfa } from '@/lib/nursery/db';
 import { checkRecordIntegrity } from '@/lib/mrv/records';
 import { redactSecrets } from './redact';
 import {
-  ADMIN_PROMPT, CFA_ADMIN_WORDS, NURSERY_PROMPT, NURSERY_WORDS, VERIFY_PROMPT, VERIFY_WORDS, nurseryTools, type NurseryToolGroups,
+  ADMIN_PROMPT, CFA_ADMIN_WORDS, NURSERY_PROMPT, NURSERY_WORDS, QUALITY_PROMPT, QUALITY_WORDS, VERIFY_PROMPT, VERIFY_WORDS, nurseryTools,
+  type NurseryToolGroups,
 } from './nursery-agent';
+import { PORTFOLIO_PROMPT, PORTFOLIO_WORDS, portfolioTools } from './portfolio-agent';
 
 export type BrainMode = 'chat' | 'voice' | 'ask';
 
@@ -366,7 +368,13 @@ const MONEY_WORDS = /\b(nvr|ybob|ytoken|ygold|gami|cents|avax|usdc|kes|ksh|shill
 function nurseryGroups(input: BrainInput): NurseryToolGroups {
   const recent = sanitizeHistory(input.history).slice(-3).map((t) => t.content).join('\n');
   const hit = (re: RegExp) => re.test(input.message) || re.test(recent);
-  return { nursery: hit(NURSERY_WORDS), admin: hit(CFA_ADMIN_WORDS), verify: hit(VERIFY_WORDS) };
+  return { nursery: hit(NURSERY_WORDS), admin: hit(CFA_ADMIN_WORDS), verify: hit(VERIFY_WORDS), quality: hit(QUALITY_WORDS) };
+}
+
+/** Portfolio Agent tools (lib/ai/portfolio-agent.ts), same routing idea. */
+function wantsPortfolio(input: BrainInput): boolean {
+  const recent = sanitizeHistory(input.history).slice(-3).map((t) => t.content).join('\n');
+  return PORTFOLIO_WORDS.test(input.message) || PORTFOLIO_WORDS.test(recent);
 }
 
 /** Today's date in Kenya (UTC+3), so "today" / "yesterday" become real dates. */
@@ -382,7 +390,10 @@ export async function runKai(input: BrainInput): Promise<BrainResult> {
   const toolsUsed: string[] = [];
   const withActions = wantsActionTools(input);
   const groups = nurseryGroups(input);
-  const withNursery = groups.nursery || groups.admin || groups.verify;
+  // Quality/report tools alone (no other nursery words) still need the CFA context.
+  const withNursery = groups.nursery || groups.admin || groups.verify || !!groups.quality;
+  const withPortfolio = wantsPortfolio(input);
+  const walletCtx = { privyUserId: input.privyUserId, connectedWallet: input.wallet ?? null };
   const shared = [
     ...AGENT_TOOLS
       .filter((t) => withActions || CORE_AGENT_TOOLS.has(t.name))
@@ -394,8 +405,13 @@ export async function runKai(input: BrainInput): Promise<BrainResult> {
   // Groq rejects that against a plain "optional"), but not for Gemini (which
   // rejects null types). Tools are always RUN from the null-tolerant set.
   const onNurseryPlan = (plan: object) => plans.push({ ...plan });
-  const tools = [...shared, ...(withNursery ? nurseryTools(input.privyUserId, onNurseryPlan, groups, true) : [])];
-  const geminiTools = [...shared, ...(withNursery ? nurseryTools(input.privyUserId, onNurseryPlan, groups, false) : [])];
+  const variant = (nullable: boolean) => [
+    ...shared,
+    ...(withNursery ? nurseryTools(input.privyUserId, onNurseryPlan, groups, nullable) : []),
+    ...(withPortfolio ? portfolioTools(walletCtx, onNurseryPlan, nullable) : []),
+  ];
+  const tools = variant(true);
+  const geminiTools = variant(false);
   const byName = new Map(tools.map((t) => [t.name, t]));
 
   const bound = models.map((m) => ({
@@ -447,6 +463,7 @@ export async function runKai(input: BrainInput): Promise<BrainResult> {
   const messages: BaseMessage[] = [
     new SystemMessage(BASE_PROMPT
       + (withNursery ? NURSERY_PROMPT : '') + (groups.admin ? ADMIN_PROMPT : '') + (groups.verify ? VERIFY_PROMPT : '')
+      + (groups.quality ? QUALITY_PROMPT : '') + (withPortfolio ? PORTFOLIO_PROMPT : '')
       + MODE_PROMPT[input.mode] + (facts ? `\n\nCONTEXT\n${facts}` : '')),
     ...sanitizeHistory(input.history).map((t) => (t.role === 'user' ? new HumanMessage(t.content) : new AIMessage(t.content))),
     new HumanMessage(redactSecrets(input.message)),

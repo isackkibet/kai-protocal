@@ -26,6 +26,11 @@ import {
   getAnchoring, getEvidenceForRecord, getVerificationQueue, prepareDecision, prepareSubmitForVerification, reviewRecordDetails,
 } from '@/lib/mrv/tools';
 import { MEMBER_ROLES } from '@/lib/nursery/validate';
+import {
+  cleanConservationData, generateCfaReport, generateSiteReport, getActivityDetail, getAuditHistory, getNursery, getQualityMetrics,
+  getSpecies, listActivities, reconcileInventory, validateConservationData,
+} from '@/lib/nursery/quality';
+import { validateDateRange, validateTreeCountVsArea } from '@/lib/nursery/quality-rules';
 import type { ToolResult } from '@/lib/nursery/agent-logic';
 
 /** Words that mean a message is about the nursery (English + Swahili). */
@@ -40,7 +45,11 @@ export const CFA_ADMIN_WORDS =
 export const VERIFY_WORDS =
   /\b(verif\w*|approv\w*|reject\w*|correction|correct it|review\w*|queue|submit\w*|evidence|photos?|pictures?|documents?|anchor\w*|blockchain|merkle|proof|on-?chain|avalanche|fuji|hash|fingerprint|record id|cm[a-z0-9]{8,})\b/i;
 
-export interface NurseryToolGroups { nursery: boolean; admin: boolean; verify: boolean }
+/** Reports, data quality and the audit trail. */
+export const QUALITY_WORDS =
+  /\b(reports?|summary|summari[sz]e|quality|duplicates?|reconcil\w*|audit|history|log|export|download|sites?|activities|activity|details?|validate|check (the )?data|clean|plausible|density|hectares?|ha|metrics?)\b/i;
+
+export interface NurseryToolGroups { nursery: boolean; admin: boolean; verify: boolean; quality?: boolean }
 
 /**
  * A NEW schema per field: a reused zod object becomes a JSON-schema "$ref",
@@ -88,6 +97,82 @@ export function nurseryTools(
     ...(groups.nursery ? coreTools(privyUserId, onPlan, o) : []),
     ...(groups.admin ? adminTools(privyUserId, onPlan, o) : []),
     ...(groups.verify ? verifyTools(privyUserId, onPlan, o) : []),
+    ...(groups.quality ? qualityTools(privyUserId, o) : []),
+  ];
+}
+
+function qualityTools(privyUserId: string | null, o: Opt): StructuredToolInterface[] {
+  const today = () => new Date(Date.now() + 3 * 3600_000).toISOString().slice(0, 10);
+  return [
+    tool(async (f) => render(await generateCfaReport(clean(f))), {
+      name: 'generate_cfa_report',
+      description: 'Whole-CFA report for a period: team, nurseries, planting sites, conservation metrics, activity, data quality.',
+      schema: z.object({ from: o(date()), to: o(date()) }),
+    }),
+    tool(async ({ site }) => render(await generateSiteReport(site)), {
+      name: 'generate_site_report',
+      description: 'One planting site: plantings, species, totals, survival, verification.',
+      schema: z.object({ site: z.string() }),
+    }),
+    tool(async (f) => render(await listActivities(clean(f))), {
+      name: 'list_activities',
+      description: 'Activities filtered by planting site, nursery, type or dates (list_activities_by_site / by_cfa).',
+      schema: z.object({ site: o(z.string()), nursery: o(z.string()), type: o(z.enum(ACTIVITY_TYPES)), from: o(date()), to: o(date()), limit: o(z.number().int()) }),
+    }),
+    tool(async ({ activityId }) => render(await getActivityDetail(activityId)), {
+      name: 'get_activity_detail',
+      description: 'One activity with its batch, evidence, verification notes and quality issues.',
+      schema: z.object({ activityId: z.string() }),
+    }),
+    tool(async (f) => render(await getQualityMetrics(clean(f))), {
+      name: 'get_quality_metrics',
+      description: 'Data-quality summary: submissions, % verified / rejected / corrected, % with photos, possible duplicate photos, inventory reconciled.',
+      schema: z.object({ from: o(date()), to: o(date()) }),
+    }),
+    tool(async () => render(await reconcileInventory()), {
+      name: 'reconcile_inventory',
+      description: 'Check that every batch still adds up after plantings, losses and transfers (nothing appeared or vanished).',
+      schema: z.object({}),
+    }),
+    tool(async (f) => render(await getAuditHistory(privyUserId, clean(f))), {
+      name: 'get_audit_history',
+      description: 'Who changed what and when (admins, auditors, verifiers). Optional entity type / id.',
+      schema: z.object({ entityType: o(z.enum(['members', 'species', 'nursery_locations', 'seedling_inventory', 'nursery_activities', 'survival_observations', 'evidence', 'cfa'])), entityId: o(z.string()), limit: o(z.number().int()) }),
+    }),
+    tool(async (i) => render(await validateConservationData(clean(i) as never)), {
+      name: 'validate_conservation_data',
+      description: 'Check a record BEFORE drafting it: species, quantity, dates, site, duplicates, plausibility. Returns errors and warnings.',
+      schema: z.object({
+        kind: z.enum(['addition', 'planting', 'loss', 'survival', 'transfer']),
+        species: o(z.string()), quantity: o(z.number().int()), date: o(z.string()), nursery: o(z.string()), site: o(z.string()),
+        reason: o(z.string()), areaHectares: o(z.number()), initialQuantity: o(z.number().int()), surviving: o(z.number().int()),
+      }),
+    }),
+    tool(async (i) => render(await cleanConservationData(clean(i))), {
+      name: 'clean_conservation_data',
+      description: 'Turn free text into standard values: "500 trees" → 500, "jana"/"30/09/2026" → a date, a species typo → the catalogue name.',
+      schema: z.object({ quantity: o(z.string()), date: o(z.string()), species: o(z.string()) }),
+    }),
+    tool(async (i) => JSON.stringify(validateDateRange({ ...clean(i), today: today() } as never)), {
+      name: 'validate_date_range',
+      description: 'Check dates for an activity: real dates, not in the future, end after start, sensible span.',
+      schema: z.object({ startDate: date(), endDate: o(date()), activityType: o(z.string()) }),
+    }),
+    tool(async ({ treeCount, areaHectares, context }) => JSON.stringify(validateTreeCountVsArea(treeCount, areaHectares, context ?? 'planting')), {
+      name: 'validate_tree_count_vs_area',
+      description: 'Is this many trees plausible for this area? (planting: up to ~2,500/ha).',
+      schema: z.object({ treeCount: z.number().int(), areaHectares: z.number(), context: o(z.enum(['planting', 'nursery'])) }),
+    }),
+    tool(async ({ name }) => render(await getNursery(name)), {
+      name: 'get_nursery',
+      description: 'One nursery: description, GPS, area and seedlings by status.',
+      schema: z.object({ name: z.string() }),
+    }),
+    tool(async ({ name }) => render(await getSpecies(name)), {
+      name: 'get_species',
+      description: 'One species from the catalogue with its seedling counts.',
+      schema: z.object({ name: z.string() }),
+    }),
   ];
 }
 
@@ -288,7 +373,10 @@ NURSERY AGENT (Oloolua CFA nursery data)
 - If required information is missing, do not call the tool and do not guess: ask for everything missing in ONE short question. Planting needs species, quantity, site and date. A loss needs species, quantity and reason. An addition needs species and quantity.
 - If a tool returns INVALID_SPECIES with options, ask the user to choose ("Did you mean Acacia?"). Never pick for them.
 - There is no tool to overwrite a count. If the user wants to "change the inventory to N", ask which nursery and species and WHY the number changed (new seedlings → addition, deaths → loss, planted → planting), then use that tool.
-- If a tool returns UNAUTHORIZED or FORBIDDEN, tell the user to sign in or join the CFA on /nursery.`;
+- If a tool returns UNAUTHORIZED or FORBIDDEN, tell the user to sign in or join the CFA on /nursery.
+- Guide a new record step by step: what happened, which species, how many, where/which nursery, when, then any notes. Ask about anything ambiguous ("50 or 500?").
+- More than 1,000 seedlings: after the draft, ask for a photo as evidence (camera button on the batch).
+- When you suggest correcting a value, say why (e.g. "that date is in the future").`;
 
 export const ADMIN_PROMPT = `
 
@@ -300,4 +388,12 @@ export const VERIFY_PROMPT = `
 VERIFICATION AGENT (you assist a human verifier; you never decide)
 - Use review_record to lay out the data, versions, evidence, history and flags. Recommend what to check, but the verifier makes the decision and confirms it.
 - A decision is a draft until the verifier presses Confirm. Rejection or correction needs the verifier's reason; ask for it.
-- Nobody can verify their own submission. Anchoring on Avalanche is done on the /mrv page with the verifier's own wallet.`;
+- Nobody can verify their own submission. Anchoring on Avalanche is done on the /mrv page with the verifier's own wallet.
+- review_record flags (no photo, a photo that looks reused, unusual quantity, low survival) are for the human to check; mention each one.`;
+
+export const QUALITY_PROMPT = `
+
+REPORTS, DATA QUALITY AND AUDIT
+- Reports and metrics come only from the tools; quote their numbers. Say "no data yet" when a count is zero rather than guessing.
+- Quality checks (validate, reconcile, duplicates) are flags for a person to look at, not judgements.
+- The audit history is read-only. Exports are downloaded by an admin or auditor from Manage the CFA → Audit log.`;

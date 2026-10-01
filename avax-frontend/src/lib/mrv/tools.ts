@@ -68,11 +68,12 @@ export async function reviewRecordDetails(recordId: string) {
     checkRecordIntegrity(c.prisma, record.id),
     c.prisma.evidence.findMany({
       where: { cfaId: c.cfa.id, OR: [{ entityType: 'conservation_records', entityId: record.id }, ...(record.sourceTable && record.sourceId ? [{ entityType: record.sourceTable, entityId: record.sourceId }] : [])] },
-      select: { fileName: true, mimeType: true, sha256: true, caption: true },
+      select: { fileName: true, mimeType: true, sha256: true, caption: true, metadata: true },
     }),
   ]);
 
   const flags: string[] = [];
+  if (evidence.some((e) => (e.metadata as Record<string, unknown> | null)?.duplicateOf)) flags.push('A photo looks very similar to one attached to a different record (possible reuse).');
   if (!integrity?.ok) flags.push(`INTEGRITY FAILED: ${integrity?.problems.join('; ')}`);
   if (!evidence.length) flags.push('No photo or document is attached.');
   if (record.versions.length > 1) flags.push(`Corrected ${record.versions.length - 1} time(s); compare the versions.`);
@@ -99,7 +100,7 @@ export async function reviewRecordDetails(recordId: string) {
     data,
     versions: record.versions.map((v) => ({ version: v.version, reason: v.reason, at: v.createdAt.toISOString().slice(0, 10) })),
     integrityOk: integrity?.ok ?? false,
-    evidence,
+    evidence: evidence.map((e) => ({ fileName: e.fileName, mimeType: e.mimeType, sha256: e.sha256, caption: e.caption })),
     history: record.reviews.map((r) => ({ decision: r.decision, reason: r.reason, by: reviewers.get(r.reviewerId) ?? 'verifier', at: r.createdAt.toISOString().slice(0, 10) })),
     flags,
     page: `/verify/${record.id}`,

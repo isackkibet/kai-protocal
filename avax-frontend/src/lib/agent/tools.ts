@@ -69,7 +69,7 @@ const PROTOCOL_APY: Record<string, { apyPct: string; apyBps: number; risk: strin
 };
 
 /** Reference testnet prices — informational only (PRD §20: never invent tool data). */
-const REFERENCE_PRICE_USD: Record<string, number> = {
+export const REFERENCE_PRICE_USD: Record<string, number> = {
   AVAX: 42.0,
   KAI: 0.42,
   NVR: 1.5,

@@ -226,6 +226,10 @@ export async function POST(req: Request) {
           prepare_swap: 'the Swap page (/swap)',
           prepare_mpesa_payment: 'the Pay page (/pay)',
           prepare_nft_purchase: 'the Conservation NFTs page (/connft)',
+          execute_vault_deposit_tx: 'the Vaults page (/vaults)',
+          execute_vault_withdrawal_tx: 'the Vaults page (/vaults)',
+          execute_add_liquidity_tx: 'the Pools page (/pools)',
+          execute_remove_liquidity_tx: 'the Pools page (/pools)',
         };
         const pages = [...new Set(walletPlans.map((p) => where[String(p.name)] ?? 'the Voice agent (/voice)'))];
         text = text.replace(/please review and approve it in your wallet\.?/i, '').trim();
