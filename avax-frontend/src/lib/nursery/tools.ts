@@ -4,8 +4,10 @@ import { getNurseryCfa } from './db';
 import { ACTIVITY_TYPES, FieldError, day, type ActivityTypeValue } from './validate';
 import {
   LOSS_REASONS, fail, matchByName, matchSpecies, ok, pickBatch, speciesLabel, summarizeInventory,
-  type LossReason, type ToolResult,
+  type LossReason, type NurseryPlan, type ToolResult,
 } from './agent-logic';
+
+export type { NurseryPlan } from './agent-logic';
 
 /**
  * Nursery tool layer (Kanuvari Tools & Agents PRD §4). Plain functions that
@@ -23,22 +25,6 @@ import {
  * Agent → Tool → Authorization → Database (PRD §3.5); an agent can never
  * write on its own.
  */
-
-/** Endpoints a confirmed plan may be sent to. The client refuses any other. */
-export const NURSERY_PLAN_ENDPOINTS = [
-  '/api/cfa/inventory', '/api/cfa/planting', '/api/cfa/loss', '/api/cfa/activities', '/api/cfa/survival',
-] as const;
-
-export interface NurseryPlan {
-  kind: 'nursery';
-  name: string;
-  endpoint: (typeof NURSERY_PLAN_ENDPOINTS)[number];
-  body: Record<string, unknown>;
-  /** One line the user reads before confirming. */
-  summary: string;
-  /** Anything the tool chose that the user did not say (e.g. the only nursery). */
-  assumptions: string[];
-}
 
 type Ctx = { prisma: PrismaClient; cfa: Cfa };
 

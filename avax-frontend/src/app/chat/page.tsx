@@ -9,6 +9,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { formatChat } from '@/lib/ai/formatChat';
 import { usePrivyAuth } from '@/lib/auth/privy-auth';
 import { authHeader, recentHistory } from '@/lib/ai/client';
+import NurseryConfirmCard from '@/components/cfa/NurseryConfirmCard';
+import { isNurseryPlan, type NurseryPlan } from '@/lib/nursery/agent-logic';
 
 const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_API_URL || 'http://localhost:8000';
 
@@ -30,7 +32,7 @@ const QUICK_PROMPTS = [
   { label: 'RAG context', q: 'RAG context available?' },
 ];
 
-interface Msg { role: 'ai' | 'user'; text: string; agent?: string; isRag?: boolean; }
+interface Msg { role: 'ai' | 'user'; text: string; agent?: string; isRag?: boolean; nurseryPlans?: NurseryPlan[]; }
 
 export default function AVAXChatPage() {
   const { getAccessToken } = usePrivyAuth();
@@ -90,6 +92,7 @@ export default function AVAXChatPage() {
         role: 'ai', text: aiText,
         agent: data.agent || 'KAI AVAX Agent',
         isRag: data.rag_used,
+        nurseryPlans: Array.isArray(data.nurseryPlans) ? data.nurseryPlans.filter(isNurseryPlan) : [],
       };
       setMessages(p => [...p, newMsg]);
       if (voiceOn) speak(aiText);
@@ -320,6 +323,7 @@ export default function AVAXChatPage() {
                   </p>
                 )}
                 <div dangerouslySetInnerHTML={{ __html: formatChat(m.text) }} />
+                {m.nurseryPlans?.map((p, j) => <NurseryConfirmCard key={j} plan={p} />)}
               </div>
             </motion.div>
           ))}

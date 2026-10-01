@@ -15,6 +15,8 @@ import { VAULT_ADDRESSES } from '@/lib/blockchain/addresses';
 import { formatChat } from '@/lib/ai/formatChat';
 import { usePrivyAuth } from '@/lib/auth/privy-auth';
 import { authHeader, recentHistory } from '@/lib/ai/client';
+import NurseryConfirmCard from '@/components/cfa/NurseryConfirmCard';
+import { isNurseryPlan, type NurseryPlan } from '@/lib/nursery/agent-logic';
 
 interface Msg {
   role: 'ai' | 'user';
@@ -22,6 +24,8 @@ interface Msg {
   agent?: string;
   sources?: number;
   proposal?: AgentProposal;
+  /** Nursery drafts from the agent, each with a "Confirm and save" card. */
+  nurseryPlans?: NurseryPlan[];
 }
 
 const TOOLS = [
@@ -206,6 +210,10 @@ export default function KaiAgentChat({ onClose }: KaiAgentChatProps) {
               aiText = next;
               setMsgs(prev => { const c = [...prev]; c[c.length-1] = { ...c[c.length-1], text: next }; return c; });
             }
+            if (isNurseryPlan(evt.nurseryPlan)) {
+              const plan = evt.nurseryPlan;
+              setMsgs(prev => { const c = [...prev]; const last = c[c.length-1]; c[c.length-1] = { ...last, nurseryPlans: [...(last.nurseryPlans ?? []), plan] }; return c; });
+            }
             if (evt.done) setMsgs(prev => { const c = [...prev]; c[c.length-1] = { ...c[c.length-1], sources: evt.sources ?? 0 }; return c; });
           } catch { /* skip */ }
         }
@@ -340,6 +348,7 @@ export default function KaiAgentChat({ onClose }: KaiAgentChatProps) {
                       <div dangerouslySetInnerHTML={{ __html: fmt(m.text || (loading && i === msgs.length - 1 ? '…' : '')) }} />
                     </div>
                     {m.proposal && <AgentProposalCard proposal={m.proposal} />}
+                    {m.nurseryPlans?.map((p, j) => <NurseryConfirmCard key={j} plan={p} />)}
                   </div>
                 </motion.div>
               );

@@ -10,6 +10,8 @@ import {
   Coins,
 } from 'lucide-react';
 import { motion } from 'framer-motion';
+import NurseryConfirmCard from '@/components/cfa/NurseryConfirmCard';
+import { isNurseryPlan, type NurseryPlan } from '@/lib/nursery/agent-logic';
 import { formatChat } from '@/lib/ai/formatChat';
 import { useAccount, useWriteContract, useSwitchChain, useSignMessage } from 'wagmi';
 import { avalancheFuji } from 'wagmi/chains';
@@ -67,6 +69,8 @@ interface Msg {
   text: string;
   intent?: IntentResult;
   streaming?: boolean;
+  /** Nursery drafts from the agent, each with a "Confirm and save" card. */
+  nurseryPlans?: NurseryPlan[];
 }
 
 type MicState = 'idle' | 'listening' | 'thinking' | 'speaking';
@@ -452,6 +456,19 @@ export default function VoiceAgentPage() {
           let frameJson: SseFrame;
           try { frameJson = JSON.parse(data); } catch { continue; }
 
+          // A nursery draft: show its confirm card on this answer and keep
+          // streaming the spoken reply (it is not a wallet transaction).
+          if (event === 'approval' && isNurseryPlan(frameJson.plan)) {
+            const plan = frameJson.plan;
+            setMessages((p) => {
+              const clone = [...p];
+              const lastIdx = clone.length - 1;
+              if (clone[lastIdx]?.streaming) clone[lastIdx] = { ...clone[lastIdx], nurseryPlans: [...(clone[lastIdx].nurseryPlans ?? []), plan] };
+              return clone;
+            });
+            continue;
+          }
+
           // If the agent produced a plan (swap, escrow, etc.), emit it
           if (event === 'approval' && frameJson.plan) {
             const plan = frameJson.plan;
@@ -731,6 +748,7 @@ export default function VoiceAgentPage() {
                   boxShadow: m.role === 'user' ? '0 4px 18px rgba(16,185,129,0.28)' : '0 4px 20px rgba(0,0,0,0.4)',
                 }}>
                   <div dangerouslySetInnerHTML={{ __html: formatChat(m.text) }} />
+                  {m.nurseryPlans?.map((plan, j) => <NurseryConfirmCard key={j} plan={plan} />)}
                   {m.streaming && (
                     <div style={{ display: 'flex', gap: 4, marginTop: 4 }}>
                       {[0, 1, 2].map((j) => (

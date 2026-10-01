@@ -44,7 +44,8 @@ src/
 ├── hooks/              React hooks (balances, NFTs, voice agent, animated numbers)
 ├── store/              Zustand client state (chat, approvals)
 └── lib/                Server + shared logic. No React pages here.
-    ├── ai/             KAI brain (LangChain, model fallback), secret redaction, chat formatting
+    ├── ai/             KAI brain (LangChain, model fallback), Nursery Agent
+    │                   (nursery-agent.ts), secret redaction, chat formatting
     ├── agent/          AI tools: prices, balances, swap/pay plans, escrow ABI
     ├── airdrop/        Airdrop engine (+ tests)
     ├── auth/           Who is calling: Privy token check, admin check, wallet signatures
@@ -54,7 +55,8 @@ src/
     ├── hubs/           SIHU + Oloolua hub data, theme, AI review
     ├── mining/         Daily drop engine, config, math (+ tests)
     ├── mrv/            MRV records: canonical JSON + SHA-256 hashing (+ tests)
-    ├── nursery/        Nursery DB helpers, input validation (+ tests)
+    ├── nursery/        Nursery DB helpers, validation, and the nursery TOOLS
+    │                   (tools.ts: plain functions, PRD tool contract) (+ tests)
     ├── operations/     Nuvari operation schemas
     ├── payments/       M-Pesa, Paystack, server-side price catalogue
     ├── security/       Rate limit, CSRF, CSP headers, input limits (+ tests)
@@ -85,7 +87,8 @@ docs/                   PRDs and design notes (SECURITY.md, db-integration.md, .
 | Wrong token / contract address | `src/lib/blockchain/` JSON files (re-run the deploy script) |
 | AI says "no AI provider is reachable" | Vercel logs, search `[kai-brain]`; API keys in Vercel env; `src/lib/ai/brain.ts` |
 | AI gives a wrong number (price, APY, balance) | The tool that fetched it: `src/lib/agent/tools.ts` |
-| AI answer about the nursery or account | `appDataTools` in `src/lib/ai/brain.ts` |
+| AI answer about the nursery or account | `src/lib/nursery/tools.ts` (the data), `src/lib/ai/nursery-agent.ts` (rules), `appDataTools` in `src/lib/ai/brain.ts` |
+| Nursery "Confirm and save" card fails | The error text comes from the `/api/cfa/*` route named in the draft; card is `src/components/cfa/NurseryConfirmCard.tsx` |
 | Nursery forms / CFA data | `src/app/api/cfa/`, `src/lib/nursery/`, `src/components/cfa/NurseryTab.tsx` |
 | Login (Privy) fails | `src/components/providers/PrivyAuthProvider.tsx`; allowed origins in the Privy dashboard |
 

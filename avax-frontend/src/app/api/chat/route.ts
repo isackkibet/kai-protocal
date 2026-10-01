@@ -115,12 +115,16 @@ function personalAnswer(message: string, context?: WalletContext): string | null
 }
 
 /** Stream a plain string as SSE events (token by token) */
-function streamText(text: string): Response {
+function streamText(text: string, nurseryPlans: Record<string, unknown>[] = []): Response {
   const { readable, writable } = new TransformStream();
   const writer = writable.getWriter();
   const enc = new TextEncoder();
 
   (async () => {
+    // Nursery drafts first, so the chat can show their "Confirm and save" card.
+    for (const plan of nurseryPlans) {
+      await writer.write(enc.encode(`data: ${JSON.stringify({ nurseryPlan: plan })}\n\n`));
+    }
     // Split into word-sized chunks for a realistic typing effect
     const words = text.split(' ');
     for (let i = 0; i < words.length; i++) {
@@ -197,6 +201,7 @@ export async function POST(req: Request) {
     let text: string;
     let agent: string;
     let toolsUsed: string[] = [];
+    let nurseryPlans: Record<string, unknown>[] = [];
     try {
       const result = await runKai({
         message,
@@ -212,13 +217,17 @@ export async function POST(req: Request) {
       // The chat window can't show the brain's approval cards (only the voice
       // agent can), so say where each prepared plan is completed instead of
       // leaving "approve it in your wallet" with nothing to approve.
-      if (result.plans.length) {
+      // Nursery drafts are confirmed right in the chat window (a card the
+      // client renders); wallet plans still need their own page.
+      nurseryPlans = result.plans.filter((p) => p.kind === 'nursery');
+      const walletPlans = result.plans.filter((p) => p.kind !== 'nursery');
+      if (walletPlans.length) {
         const where: Record<string, string> = {
           prepare_swap: 'the Swap page (/swap)',
           prepare_mpesa_payment: 'the Pay page (/pay)',
           prepare_nft_purchase: 'the Conservation NFTs page (/connft)',
         };
-        const pages = [...new Set(result.plans.map((p) => where[String(p.name)] ?? 'the Voice agent (/voice)'))];
+        const pages = [...new Set(walletPlans.map((p) => where[String(p.name)] ?? 'the Voice agent (/voice)'))];
         text = text.replace(/please review and approve it in your wallet\.?/i, '').trim();
         text += `${text ? '\n\n' : ''}Nothing has been sent. To review and sign this, open ${pages.join(' or ')} — you approve every transaction in your own wallet.`;
       }
@@ -235,8 +244,8 @@ export async function POST(req: Request) {
     }
 
     return stream
-      ? streamText(text)
-      : NextResponse.json({ text, agent, rag_used: toolsUsed.length > 0, sources_count: toolsUsed.length, tools: toolsUsed });
+      ? streamText(text, nurseryPlans)
+      : NextResponse.json({ text, agent, rag_used: toolsUsed.length > 0, sources_count: toolsUsed.length, tools: toolsUsed, nurseryPlans });
   } catch (error: unknown) {
     const msg = error instanceof Error ? error.message : 'Unknown error';
     console.error('[/api/chat]', msg);

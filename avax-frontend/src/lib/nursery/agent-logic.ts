@@ -30,6 +30,38 @@ export function fail(tool: string, code: ToolErrorCode, message: string, options
   return { success: false, error: options?.length ? { code, message, options } : { code, message }, metadata: meta(tool) };
 }
 
+// ── Plans (drafts the user confirms) ──────────────────────────────────────────
+
+/** Endpoints a confirmed plan may be sent to. The browser refuses any other. */
+export const NURSERY_PLAN_ENDPOINTS = [
+  '/api/cfa/inventory', '/api/cfa/planting', '/api/cfa/loss', '/api/cfa/activities', '/api/cfa/survival',
+] as const;
+
+/**
+ * A nursery write the agent prepared but did not perform. The user confirms
+ * it and their browser POSTs `body` to `endpoint`, where the route checks the
+ * login and membership again, validates and writes with an audit entry.
+ */
+export interface NurseryPlan {
+  kind: 'nursery';
+  name: string;
+  endpoint: (typeof NURSERY_PLAN_ENDPOINTS)[number];
+  body: Record<string, unknown>;
+  /** One line the user reads before confirming. */
+  summary: string;
+  /** Anything the tool chose that the user did not say (e.g. the only nursery). */
+  assumptions: string[];
+}
+
+export function isNurseryPlan(x: unknown): x is NurseryPlan {
+  if (!x || typeof x !== 'object') return false;
+  const p = x as Partial<NurseryPlan>;
+  return p.kind === 'nursery'
+    && typeof p.summary === 'string'
+    && (NURSERY_PLAN_ENDPOINTS as readonly string[]).includes(String(p.endpoint))
+    && !!p.body && typeof p.body === 'object' && !Array.isArray(p.body);
+}
+
 // ── Name matching ─────────────────────────────────────────────────────────────
 
 /** Lower case, accents and punctuation removed, single spaces. */

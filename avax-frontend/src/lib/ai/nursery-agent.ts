@@ -24,7 +24,11 @@ import type { ToolResult } from '@/lib/nursery/agent-logic';
 export const NURSERY_WORDS =
   /\b(nurser(y|ies)|seedlings?|saplings?|trees?|plant(ed|ing|s)?|species|acacia|croton|cedar|grevillea|bamboo|meru oak|survival|survive|surviving|died|dead|lost|loss(es)?|watering|watered|weeding|mulching|pruning|pest|transplant\w*|inventory|stock|cfa|oloolua|report|miche|miti|kupanda|tulipanda|kitalu)\b/i;
 
-const date = z.string().describe('Date as YYYY-MM-DD. Convert words like "today" or "yesterday" using the date in CONTEXT.');
+/**
+ * A NEW schema per field: a reused zod object becomes a JSON-schema "$ref",
+ * which Gemini rejects ("Unknown name $ref", 400 for the whole request).
+ */
+const date = () => z.string().describe('Date as YYYY-MM-DD. Convert words like "today" or "yesterday" using the date in CONTEXT.');
 
 /** ToolResult → text for the model; a plan also goes to the client. */
 function render(result: ToolResult<unknown>, onPlan?: (p: NurseryPlan) => void): string {
@@ -74,7 +78,7 @@ export function nurseryTools(privyUserId: string | null, onPlan: (plan: NurseryP
       description: 'Search nursery activities by type and date range, e.g. "what happened last month", "when did we last water".',
       schema: z.object({
         activityType: z.enum(ACTIVITY_TYPES).optional(),
-        from: date.optional(), to: date.optional(), nursery: z.string().optional(), limit: z.number().int().optional(),
+        from: date().optional(), to: date().optional(), nursery: z.string().optional(), limit: z.number().int().optional(),
       }),
     }),
     tool(async () => render(await getConservationMetrics()), {
@@ -85,7 +89,7 @@ export function nurseryTools(privyUserId: string | null, onPlan: (plan: NurseryP
     tool(async (f) => render(await generateNurseryReport(f)), {
       name: 'generate_nursery_report',
       description: 'Nursery report for a period: current inventory by species, metrics, and seedlings added / planted / lost and activities in the period.',
-      schema: z.object({ from: date.optional(), to: date.optional() }),
+      schema: z.object({ from: date().optional(), to: date().optional() }),
     }),
 
     // ── Write (draft → user confirms) ──
@@ -95,7 +99,7 @@ export function nurseryTools(privyUserId: string | null, onPlan: (plan: NurseryP
       schema: z.object({
         species: z.string(), quantity: z.number().int(),
         nursery: z.string().optional().describe('Only if the user named one'),
-        dateReceived: date.optional(), source: z.string().optional().describe('Where they came from, if the user said'),
+        dateReceived: date().optional(), source: z.string().optional().describe('Where they came from, if the user said'),
       }),
     }),
     tool(async (i) => render(await prepareSeedlingPlanting(privyUserId, i), onPlan), {
@@ -104,7 +108,7 @@ export function nurseryTools(privyUserId: string | null, onPlan: (plan: NurseryP
       schema: z.object({
         species: z.string(), quantity: z.number().int(),
         site: z.string().describe('Where they were planted, as the user said it'),
-        plantingDate: date, nursery: z.string().optional(), notes: z.string().optional(),
+        plantingDate: date(), nursery: z.string().optional(), notes: z.string().optional(),
       }),
     }),
     tool(async (i) => render(await prepareSeedlingLoss(privyUserId, i), onPlan), {
@@ -112,14 +116,14 @@ export function nurseryTools(privyUserId: string | null, onPlan: (plan: NurseryP
       description: 'Draft: seedlings that died or were lost IN THE NURSERY. Needs species, quantity and reason.',
       schema: z.object({
         species: z.string(), quantity: z.number().int(), reason: z.enum(LOSS_REASONS),
-        lossDate: date.optional(), nursery: z.string().optional(), notes: z.string().optional(),
+        lossDate: date().optional(), nursery: z.string().optional(), notes: z.string().optional(),
       }),
     }),
     tool(async (i) => render(await prepareNurseryActivity(privyUserId, i), onPlan), {
       name: 'record_nursery_activity',
       description: 'Draft: nursery work such as watering, weeding, mulching, pruning, pest control, transplanting. Not for planting out.',
       schema: z.object({
-        activityType: z.enum(ACTIVITY_TYPES), activityDate: date.optional(), nursery: z.string().optional(),
+        activityType: z.enum(ACTIVITY_TYPES), activityDate: date().optional(), nursery: z.string().optional(),
         quantity: z.number().int().optional().describe('Seedlings affected, if the user said'), notes: z.string().optional(),
       }),
     }),
@@ -127,7 +131,7 @@ export function nurseryTools(privyUserId: string | null, onPlan: (plan: NurseryP
       name: 'record_survival_audit',
       description: 'Draft: a survival check of the most recently planted batch of a species — how many are still alive.',
       schema: z.object({
-        species: z.string(), surviving: z.number().int(), observationDate: date.optional(),
+        species: z.string(), surviving: z.number().int(), observationDate: date().optional(),
         nursery: z.string().optional(), notes: z.string().optional(),
       }),
     }),
