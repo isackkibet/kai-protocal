@@ -38,15 +38,15 @@ export const QUICK_GROUPS: Group[] = [
     items: [
       { name: 'Securities', hint: 'Tokenised assets', href: '/securities', icon: ShieldCheck, image: '/images/apps/securities.jpg' },
       { name: 'Pools', hint: 'Swap and add liquidity', href: '/pools', icon: Droplets, image: '/images/apps/pools.jpg' },
-      { name: 'Vaults', hint: 'Earn yield', href: '/vaults', icon: Lock },
-      { name: 'TaaS', hint: 'Tokens as a service', href: '/taas', icon: LayoutGrid },
+      { name: 'Vaults', hint: 'Earn yield', href: '/vaults', icon: Lock, image: '/images/apps/vaults.jpg' },
+      { name: 'TaaS', hint: 'Tokens as a service', href: '/taas', icon: LayoutGrid, image: '/images/apps/taas.jpg' },
     ],
   },
   {
     title: 'Shop · Pay', tint: '#C48FE0',
     items: [
-      { name: 'Scan & Pay', hint: 'M-Pesa and QR', href: '/pay', icon: ScanLine },
-      { name: 'Products', hint: 'Buy with yBOB', href: '/products', icon: CircleDollarSign },
+      { name: 'Scan & Pay', hint: 'M-Pesa and QR', href: '/pay', icon: ScanLine, image: '/images/apps/scan-pay.jpg' },
+      { name: 'Products', hint: 'Buy with yBOB', href: '/products', icon: CircleDollarSign, image: '/images/apps/products.jpg' },
       { name: 'NFT Mkt', hint: 'Conservation NFTs', href: '/connft', icon: ImageIcon },
       { name: 'Airdrop', hint: 'Daily drop and points', href: '/mine', icon: Gift },
     ],

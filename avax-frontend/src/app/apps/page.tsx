@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import {
   ArrowLeft, Bot, CircleDollarSign, Droplets, FlaskConical, Gift,
-  Globe, ImageIcon, LayoutGrid, Link2, Lock, Mic, ScanLine, ShieldCheck,
+  Globe, ImageIcon, LayoutGrid, Link2, Lock, Mic, ScanLine, ShieldCheck, type LucideIcon,
 } from 'lucide-react';
 
 /* Same palette/fonts as the home page — pine + gold + paper, Poppins heads. */
@@ -20,7 +20,10 @@ const POPPIN = { fontFamily: "'Poppins', sans-serif" } as const;
 
 const label: React.CSSProperties = { ...MONO, fontSize: 10, letterSpacing: 1.4, textTransform: 'uppercase', color: C.goldLight, fontWeight: 600, margin: '0 0 16px' };
 
-const GROUPS = [
+interface AppItem { name: string; href: string; icon: LucideIcon; image?: string }
+interface AppGroup { title: string; items: AppItem[] }
+
+const GROUPS: AppGroup[] = [
   {
     title: 'Agents',
     items: [
@@ -33,15 +36,15 @@ const GROUPS = [
     items: [
       { name: 'Securities', href: '/securities', icon: ShieldCheck, image: '/images/apps/securities.jpg' },
       { name: 'Pools',      href: '/pools',      icon: Droplets, image: '/images/apps/pools.jpg' },
-      { name: 'Vaults',     href: '/vaults',     icon: Lock },
-      { name: 'TaaS',       href: '/taas',       icon: LayoutGrid },
+      { name: 'Vaults',     href: '/vaults',     icon: Lock, image: '/images/apps/vaults.jpg' },
+      { name: 'TaaS',       href: '/taas',       icon: LayoutGrid, image: '/images/apps/taas.jpg' },
     ],
   },
   {
     title: 'Shop · Pay',
     items: [
-      { name: 'Scan & Pay', href: '/pay',      icon: ScanLine },
-      { name: 'Products',   href: '/products', icon: CircleDollarSign },
+      { name: 'Scan & Pay', href: '/pay',      icon: ScanLine, image: '/images/apps/scan-pay.jpg' },
+      { name: 'Products',   href: '/products', icon: CircleDollarSign, image: '/images/apps/products.jpg' },
       { name: 'NFT Mkt',    href: '/connft',   icon: ImageIcon },
       { name: 'Airdrop',    href: '/mine',     icon: Gift },
     ],
