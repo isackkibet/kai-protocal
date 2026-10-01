@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { ArrowLeft, Sprout } from 'lucide-react';
 import NurseryTab from '@/components/cfa/NurseryTab';
+import Workspace from '@/components/workspace/Workspace';
 
 export const metadata: Metadata = {
   title: 'Oloolua CFA Nursery | KAI Nuvari',
@@ -31,6 +32,11 @@ export default function NurseryPage() {
           Record the seedlings you raise, when they are planted, the work done in the nursery, and how many survive.
           Every entry is saved under your name.
         </p>
+
+        {/* The Nursery AI lives here; the main KAI assistant stays on the rest of the app. */}
+        <section aria-label="Nursery AI" style={{ marginBottom: 32 }}>
+          <Workspace embedded />
+        </section>
 
         <NurseryTab />
       </div>

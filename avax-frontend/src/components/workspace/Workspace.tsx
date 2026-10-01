@@ -93,10 +93,15 @@ function PromptButton({ q, icon, label, onPick }: { q: string; icon: React.React
   );
 }
 
-export default function Workspace() {
+/**
+ * `embedded`: the Nursery AI inside /nursery — no sidebar, a fixed-height
+ * panel, its own chat history, and answers kept to nursery work (the main
+ * KAI assistant stays everywhere else).
+ */
+export default function Workspace({ embedded = false }: { embedded?: boolean } = {}) {
   const { authenticated, getAccessToken, privyUserId, name, signInWithGoogle } = usePrivyAuth();
   const { address } = useAccount();
-  const userKey = privyUserId ?? 'guest';
+  const userKey = `${privyUserId ?? 'guest'}${embedded ? ':nursery' : ''}`;
 
   const [threads, setThreads] = useState<Thread[]>([]);
   const [threadId, setThreadId] = useState<string>(() => newThreadId());
@@ -122,6 +127,7 @@ export default function Workspace() {
   const [clock] = useState(nowMs);
   const recRef = useRef<Recognizer | null>(null);
   const endRef = useRef<HTMLDivElement | null>(null);
+  const scrollRef = useRef<HTMLElement | null>(null);
   const fileRef = useRef<HTMLInputElement | null>(null);
   const cameraRef = useRef<HTMLInputElement | null>(null);
   /** Photos/PDFs sent with the message that produced the current draft; attached once it is saved. */
@@ -141,7 +147,8 @@ export default function Workspace() {
     try { const p = localStorage.getItem('kanuvari.project'); if (p) setProject(p); const l = localStorage.getItem('kanuvari.lang'); if (l === 'sw') setLang('sw'); } catch { /* optional */ }
   }, [userKey]);
 
-  useEffect(() => { endRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' }); }, [msgs, orb]);
+  // Scroll the conversation box only (scrollIntoView would also scroll the page around an embedded panel).
+  useEffect(() => { const box = scrollRef.current; if (box) box.scrollTop = box.scrollHeight; }, [msgs, orb]);
 
   // Offline tolerance: queue confirmed records; send them when the signal is back.
   const flushQueue = useCallback(async () => {
@@ -367,7 +374,7 @@ export default function Workspace() {
       const res = await fetch('/api/workspace/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', ...(await authHeader()) },
-        body: JSON.stringify({ message, history: recentHistory(before), project: project || undefined, wallet: address, language: lang }),
+        body: JSON.stringify({ message, history: recentHistory(before), project: project || undefined, wallet: address, language: lang, scope: embedded ? 'nursery' : undefined }),
       });
       if (!res.ok || !res.body) throw new Error(String(res.status));
       const reader = res.body.getReader();
@@ -482,7 +489,9 @@ export default function Workspace() {
   );
 
   return (
-    <div style={{ display: 'flex', height: '100dvh', background: C.bg, color: C.paper, fontFamily: "'Poppins', 'IBM Plex Sans', var(--font-sans)" }}>
+    <div style={embedded
+      ? { display: 'flex', height: 'min(78dvh, 720px)', minHeight: 460, background: C.panel, color: C.paper, border: `1px solid ${C.hairline}`, borderRadius: 18, overflow: 'hidden', fontFamily: 'inherit' }
+      : { display: 'flex', height: '100dvh', background: C.bg, color: C.paper, fontFamily: "'Poppins', 'IBM Plex Sans', var(--font-sans)" }}>
       <style>{`
         .kv-nav:hover { background: rgba(200,155,60,0.08) !important; }
         .kv-nav:focus-visible, button:focus-visible, textarea:focus-visible { outline: 2px solid #E4C878; outline-offset: 2px; }
@@ -496,16 +505,22 @@ export default function Workspace() {
         summary::-webkit-details-marker { display: none; }
         .kv-quick { scrollbar-width: none; } .kv-quick::-webkit-scrollbar { display: none; }
       `}</style>
-      <aside className="kv-side" data-open={sidebarOpen}>{sidebar}</aside>
-      {sidebarOpen && <div onClick={() => setSidebarOpen(false)} style={{ position: 'fixed', inset: 0, zIndex: 70, background: 'rgba(0,0,0,.45)' }} />}
+      {!embedded && <aside className="kv-side" data-open={sidebarOpen}>{sidebar}</aside>}
+      {!embedded && sidebarOpen && <div onClick={() => setSidebarOpen(false)} style={{ position: 'fixed', inset: 0, zIndex: 70, background: 'rgba(0,0,0,.45)' }} />}
 
       <main style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column' }}>
         {/* top bar */}
         <header style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 16px', borderBottom: `1px solid ${C.hairline}` }}>
-          <button onClick={() => setSidebarOpen(true)} className="kv-mobile-only" aria-label="Open menu" style={{ background: 'none', border: 'none', color: C.paperDim, cursor: 'pointer', padding: 6 }}><Menu size={20} /></button>
+          {!embedded && <button onClick={() => setSidebarOpen(true)} className="kv-mobile-only" aria-label="Open menu" style={{ background: 'none', border: 'none', color: C.paperDim, cursor: 'pointer', padding: 6 }}><Menu size={20} /></button>}
           <p style={{ margin: 0, fontWeight: 700, fontSize: 14.5, flex: 1, minWidth: 0 }}>
-            Nursery Assistant{project ? <span style={{ color: C.inkLight, fontWeight: 500 }}> · {project}</span> : null}
+            {embedded ? 'Nursery AI' : 'Nursery Assistant'}{project ? <span style={{ color: C.inkLight, fontWeight: 500 }}> · {project}</span> : null}
           </p>
+          {embedded && msgs.length > 0 && (
+            <button onClick={newChat} style={{ fontSize: 11.5, color: C.paperDim, background: 'none', border: `1px solid ${C.hairline}`, borderRadius: 999, padding: '4px 10px', cursor: 'pointer' }}>New chat</button>
+          )}
+          {embedded && (
+            <Link href="/workspace" style={{ fontSize: 11.5, color: C.goldLight, textDecoration: 'none', whiteSpace: 'nowrap' }}>Full screen</Link>
+          )}
           {!online && <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: 11.5, color: C.red }}><CloudOff size={14} /> Offline</span>}
           {queued > 0 && <button onClick={() => void flushQueue()} style={{ fontSize: 11.5, color: C.goldLight, background: 'none', border: `1px solid ${C.gold}`, borderRadius: 999, padding: '3px 10px', cursor: 'pointer' }}>{queued} waiting to send</button>}
           <button onClick={() => { const l = lang === 'en' ? 'sw' : 'en'; setLang(l); try { localStorage.setItem('kanuvari.lang', l); } catch { /* optional */ } }} aria-label="Language"
@@ -515,10 +530,10 @@ export default function Workspace() {
         </header>
 
         {/* AI workspace */}
-        <section style={{ flex: 1, overflowY: 'auto', padding: '20px 16px' }}>
+        <section ref={scrollRef} style={{ flex: 1, overflowY: 'auto', padding: embedded ? '14px 12px' : '20px 16px' }}>
           <div style={{ maxWidth: 760, margin: '0 auto', display: 'flex', flexDirection: 'column', gap: 16 }}>
-            <div style={{ display: 'flex', justifyContent: 'center', padding: msgs.length ? '4px 0 8px' : '40px 0 12px' }}>
-              <Orb state={shownOrb} detail={orbDetail} size={msgs.length ? 56 : 104} />
+            <div style={{ display: 'flex', justifyContent: 'center', padding: msgs.length ? '4px 0 8px' : (embedded ? '12px 0 6px' : '40px 0 12px') }}>
+              <Orb state={shownOrb} detail={orbDetail} size={msgs.length ? (embedded ? 44 : 56) : (embedded ? 72 : 104)} />
             </div>
 
             {!authenticated && (
@@ -529,7 +544,7 @@ export default function Workspace() {
 
             {msgs.length === 0 && (
               <div style={{ textAlign: 'center' }}>
-                <h1 style={{ fontSize: 22, fontWeight: 700, margin: '0 0 6px', textWrap: 'balance' }}>{name ? `Habari ${name.split(' ')[0]},` : 'Habari,'} what happened in the nursery?</h1>
+                <h1 style={{ fontSize: embedded ? 17 : 22, fontWeight: 700, margin: '0 0 6px', textWrap: 'balance' }}>{name ? `Habari ${name.split(' ')[0]},` : 'Habari,'} what happened in the nursery?</h1>
                 <p style={{ fontSize: 13.5, color: C.inkLight, margin: '0 auto 18px', maxWidth: 520, lineHeight: 1.6 }}>
                   Say it the way you would tell a colleague, for example “We planted 250 Croton seedlings today at the Nasari nursery.” I will ask for anything missing and show the record before anything is saved.
                 </p>

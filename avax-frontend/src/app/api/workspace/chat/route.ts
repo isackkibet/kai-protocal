@@ -28,7 +28,7 @@ export async function POST(req: Request) {
   const limited = await requireRateLimit(req, [{ scope: 'ip', limit: 20, windowMs: 60_000 }]);
   if (!limited.ok) return limited.response;
 
-  let body: { message?: unknown; history?: unknown; project?: unknown; wallet?: unknown; language?: unknown };
+  let body: { message?: unknown; history?: unknown; project?: unknown; wallet?: unknown; language?: unknown; scope?: unknown };
   try {
     body = (await readJsonBody(req, 64 * 1024)) as typeof body;
   } catch (e) {
@@ -46,6 +46,9 @@ export async function POST(req: Request) {
     'The user is in the Kanuvari AI workspace. Writes are shown as a draft card they review, can edit, and confirm.',
     project ? `Current project (nursery): ${project}. Use it as the nursery unless the user names another; it is shown on every draft.` : '',
     swahili ? 'The user chose Swahili: reply in Swahili (mixed Swahili-English is fine).' : '',
+    body.scope === 'nursery'
+      ? 'You are the NURSERY AI on the nursery page: help only with the CFA nursery (seedlings, planting, nursery work, survival, transfers, losses, evidence, verification, reports). For money, tokens, wallets or other app topics, say in one sentence that the main KAI assistant (the AI button, or /workspace) handles that.'
+      : '',
   ].filter(Boolean).join('\n');
 
   const { readable, writable } = new TransformStream();
