@@ -848,9 +848,9 @@ body {
 .home-band:first-of-type { margin-top: 0; }
 /* Each band's small title (icon + uppercase label) so sections are easy to tell apart. */
 .home-band-title { display: flex; align-items: center; gap: 8px; margin: 0 0 14px; font-family: 'IBM Plex Mono', monospace; font-size: 10.5px; font-weight: 600; letter-spacing: 1.4px; text-transform: uppercase; color: var(--home-accent); }
-.home-band--nursery { --band: #1B4D33; }   /* green */
-.home-band--profile { --band: #0C2016; }   /* dark green */
-.home-band--qa      { --band: #23593C; }   /* lighter green */
+.home-band--nursery { --band: #12301F; }   /* soft forest green */
+.home-band--profile { --band: #0D2318; }   /* dark green */
+.home-band--qa      { --band: #15352A; }   /* soft green, a touch lighter */
 @media (max-width: 639px) { .home-band, .home-band + .home-band, .home-section + .home-band { padding: 32px 0; } }
 
 /* Shared stat row (profile + portfolio): values aligned on a grid, hairlines
@@ -942,7 +942,8 @@ body {
 .qa3-card:focus-visible, .qa3-app:focus-visible, .qa3-chip:focus-visible { outline: 2px solid var(--home-accent); outline-offset: 2px; }
 .qa3-card-icon {
   width: 36px; height: 36px; border-radius: 10px; display: flex; align-items: center; justify-content: center;
-  color: #0E2418; background: var(--tint);
+  color: var(--tint); background: color-mix(in srgb, var(--tint) 18%, #0E2418);
+  border: 1px solid color-mix(in srgb, var(--tint) 22%, transparent);
 }
 .qa3-card-name { font-size: 13.5px; font-weight: 700; color: var(--home-text); }
 .qa3-card-hint { font-size: 11px; color: var(--home-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; font-variant-numeric: tabular-nums; }
@@ -965,12 +966,12 @@ body {
 .qa3-app:hover { background: rgba(255,255,255,0.04); }
 .qa3-app-icon {
   width: 52px; height: 52px; border-radius: 16px; display: flex; align-items: center; justify-content: center;
-  color: #0E2418;
-  background: linear-gradient(145deg, color-mix(in srgb, var(--tint) 100%, white 18%), var(--tint));
-  box-shadow: 0 6px 16px color-mix(in srgb, var(--tint) 35%, transparent), inset 0 1px 0 rgba(255,255,255,0.35);
-  transition: transform .15s ease, box-shadow .15s ease;
+  color: var(--tint);
+  background: color-mix(in srgb, var(--tint) 18%, #0E2418);
+  border: 1px solid color-mix(in srgb, var(--tint) 22%, transparent);
+  transition: transform .15s ease, background-color .15s ease, color .15s ease;
 }
-.qa3-app:hover .qa3-app-icon { transform: translateY(-3px); box-shadow: 0 10px 22px color-mix(in srgb, var(--tint) 45%, transparent), inset 0 1px 0 rgba(255,255,255,0.35); }
+.qa3-app:hover .qa3-app-icon { transform: translateY(-2px); background: var(--tint); color: #0E2418; }
 .qa3-app-name {
   font-size: 11.5px; font-weight: 600; color: var(--home-text); text-align: center; line-height: 1.25;
   max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
