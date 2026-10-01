@@ -14,7 +14,7 @@ import {
  * comes first so the nursery is easy to find.
  */
 
-interface Item { name: string; hint: string; href: string; icon: LucideIcon; live?: 'nursery' | 'verify' }
+interface Item { name: string; hint: string; href: string; icon: LucideIcon; image?: string; live?: 'nursery' | 'verify' }
 interface Group { title: string; tint: string; items: Item[] }
 
 export const QUICK_GROUPS: Group[] = [
@@ -29,14 +29,14 @@ export const QUICK_GROUPS: Group[] = [
   {
     title: 'Agents', tint: '#6FA8DC',
     items: [
-      { name: 'Voice Agent', hint: 'Talk to KAI', href: '/voice', icon: Mic },
-      { name: 'AI Agent', hint: 'Ask about tokens and DeFi', href: '/ai', icon: Bot },
+      { name: 'Voice Agent', hint: 'Talk to KAI', href: '/voice', icon: Mic, image: '/images/apps/voice-agent.jpg' },
+      { name: 'AI Agent', hint: 'Ask about tokens and DeFi', href: '/ai', icon: Bot, image: '/images/apps/ai-agent.jpg' },
     ],
   },
   {
     title: 'DeFi · Earn', tint: '#C89B3C',
     items: [
-      { name: 'Securities', hint: 'Tokenised assets', href: '/securities', icon: ShieldCheck },
+      { name: 'Securities', hint: 'Tokenised assets', href: '/securities', icon: ShieldCheck, image: '/images/apps/securities.jpg' },
       { name: 'Pools', hint: 'Swap and add liquidity', href: '/pools', icon: Droplets },
       { name: 'Vaults', hint: 'Earn yield', href: '/vaults', icon: Lock },
       { name: 'TaaS', hint: 'Tokens as a service', href: '/taas', icon: LayoutGrid },
@@ -95,7 +95,7 @@ export default function QuickActions() {
           const badge = a.live ? live[a.live] : undefined;
           return (
             <Link key={a.name} href={a.href} prefetch={false} className="qa3-card" style={{ ['--tint' as string]: featured.tint }}>
-              <span className="qa3-card-icon"><Icon size={20} strokeWidth={1.8} /></span>
+              <span className="qa3-card-icon">{a.image ? <img src={a.image} alt="" /> : <Icon size={20} strokeWidth={1.8} />}</span>
               <span className="qa3-card-name">{a.name}</span>
               <span className="qa3-card-hint">{badge ?? a.hint}</span>
             </Link>
@@ -116,7 +116,7 @@ export default function QuickActions() {
           const Icon = a.icon;
           return (
             <Link key={a.name} href={a.href} prefetch={false} className="qa3-app" title={a.hint} style={{ ['--tint' as string]: a.tint }}>
-              <span className="qa3-app-icon"><Icon size={22} strokeWidth={2} /></span>
+              <span className="qa3-app-icon">{a.image ? <img src={a.image} alt="" /> : <Icon size={22} strokeWidth={2} />}</span>
               <span className="qa3-app-name">{a.name}</span>
             </Link>
           );
