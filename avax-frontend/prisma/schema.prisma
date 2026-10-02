@@ -1591,3 +1591,21 @@ model ChamaYieldLog {
   @@index([chamaId])
   @@map("chama_yield_logs")
 }
+
+/// KAI Playground (/nuvari) policies. Written only after the fee payment is
+/// checked on Avalanche Fuji; one payment = one policy. SQL:
+/// prisma/sql/2026-10-03_playground_policies.sql
+model PlaygroundPolicy {
+  policyId      String   @id @map("policy_id")
+  serviceType   String   @map("service_type")
+  /// Lowercase wallet address that paid.
+  owner         String
+  config        Json
+  paymentAmount Decimal  @default(0) @map("payment_amount") @db.Decimal(20, 8)
+  paymentTxHash String   @unique @map("payment_tx_hash")
+  status        String   @default("active")
+  createdAt     DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  @@index([owner, createdAt(sort: Desc)], map: "playground_policies_owner")
+  @@map("playground_policies")
+}

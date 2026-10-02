@@ -116,6 +116,7 @@ docs/                   PRDs and design notes (SECURITY.md, db-integration.md, .
 | "Only a verifier…", verify/reject errors | `src/lib/mrv/verification.ts` (who may decide, allowed status changes) |
 | Anchoring on Avalanche fails | `src/lib/mrv/anchor.ts`, `src/components/mrv/VerificationDesk.tsx` (wallet step); Fuji RPC `AVAX_RPC_URL` |
 | /verify page says the proof fails | `src/lib/mrv/anchor.ts` `verifyRecordAnchor` — the failing step is named |
+| Playground policy won't save / "payment…" errors | `src/app/api/policies/route.ts` (checks the fee on Fuji), rules in `src/lib/policies/payment.ts`; table `playground_policies` |
 | Login (Privy) fails | `src/components/providers/PrivyAuthProvider.tsx`; allowed origins in the Privy dashboard |
 
 Server logs prefix their source in square brackets, e.g. `[kai-brain]`,

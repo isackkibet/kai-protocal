@@ -15,7 +15,7 @@
     "test:mrv": "node --test src/lib/mrv/canonical.test.ts src/lib/mrv/merkle.test.ts src/lib/mrv/verification.test.ts",
     "test:nursery": "node --test src/lib/nursery/validate.test.ts src/lib/nursery/agent-logic.test.ts src/lib/nursery/evidence-rules.test.ts src/lib/nursery/quality-rules.test.ts src/lib/nursery/compliance-rules.test.ts",
     "test:ai": "node --test src/lib/ai/redact.test.ts",
-    "test:defi": "node --test src/lib/defi/math.test.ts src/lib/defi/yield.test.ts",
+    "test:defi": "node --test src/lib/defi/math.test.ts src/lib/defi/yield.test.ts src/lib/policies/payment.test.ts",
     "test:integration": "bash scripts/integration/run.sh",
     "tokens:compile": "hardhat compile",
     "tokens:deploy:fuji": "hardhat run scripts/deploy-ecosystem-tokens.cjs --network fuji",

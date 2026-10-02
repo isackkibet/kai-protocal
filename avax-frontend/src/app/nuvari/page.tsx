@@ -60,6 +60,8 @@ interface Run {
   state: "idle" | "running" | "done" | "failed";
   step: number; // 0 switch network, 1 pay, 2 save, 3 finished
   message?: string; txUrl?: string; policyId?: string; faucet?: boolean;
+  /** Paid on-chain but not saved yet: "Try again" saves with this payment. */
+  unsavedTx?: `0x${string}`;
 }
 
 // ── Services (step 1) ────────────────────────────────────────
@@ -191,27 +193,28 @@ export default function KaiPlayground() {
   const [aiLoading, setAiLoading] = useState(false);
   const formRef = useRef<HTMLDivElement>(null);
 
-  const loadPolicies = async (): Promise<Policy[]> => {
-    let server: Policy[] = [];
+  // The server keeps policies by wallet; this phone keeps a copy too, so the
+  // list still shows when offline.
+  const fetchPolicies = async (query: string): Promise<Policy[] | null> => {
     try {
-      const res = await fetch("/api/policies");
-      if (res.ok) server = ((await res.json()).policies ?? []) as Policy[];
-    } catch { /* offline: show this phone's copy */ }
-    const seen = new Set(server.map((p) => p.policyId));
-    const all = [...server, ...readLocal().filter((p) => !seen.has(p.policyId))];
-    setPolicies(all);
-    return all;
+      const res = await fetch(`/api/policies?${query}`);
+      return res.ok ? (((await res.json()).policies ?? []) as Policy[]) : null;
+    } catch { return null; }
+  };
+  const merge = (server: Policy[] | null) => {
+    const list = server ?? [];
+    const seen = new Set(list.map((p) => p.policyId));
+    return [...list, ...readLocal().filter((p) => !seen.has(p.policyId))];
+  };
+  const loadPolicies = async () => {
+    if (address) setPolicies(merge(await fetchPolicies(`owner=${address}`)));
   };
   useEffect(() => {
+    if (!address) return;
     let on = true;
-    fetch("/api/policies").then((r) => (r.ok ? r.json() : { policies: [] })).catch(() => ({ policies: [] })).then((d: { policies?: Policy[] }) => {
-      if (!on) return;
-      const server = d.policies ?? [];
-      const seen = new Set(server.map((p) => p.policyId));
-      setPolicies([...server, ...readLocal().filter((p) => !seen.has(p.policyId))]);
-    });
+    fetchPolicies(`owner=${address}`).then((server) => { if (on) setPolicies(merge(server)); });
     return () => { on = false; };
-  }, []);
+  }, [address]);
 
   const mine = useMemo(
     () => (address ? policies.filter((p) => p.owner?.toLowerCase() === address.toLowerCase()) : []),
@@ -278,37 +281,49 @@ export default function KaiPlayground() {
       const idField = action.fields.find((f) => /Id$/.test(f.key));
       const id = idField ? String(values[idField.key] ?? "").trim() : "";
       if (!id) { setFieldError("Type or pick a policy ID to look up."); return; }
-      const all = await loadPolicies();
-      setLookup(all.find((p) => p.policyId === id) ?? "none");
+      const found = (await fetchPolicies(`id=${encodeURIComponent(id)}`))?.[0] ?? readLocal().find((p) => p.policyId === id);
+      setLookup(found ?? "none");
       return;
     }
 
     if (!address) { setShowWallet(true); return; }
-    setLog([]);
-    setRun({ state: "running", step: 0 });
+    // Paid already but saving failed: save again with the same payment, don't pay twice.
+    const paidTx = run.state === "failed" && run.unsavedTx ? run.unsavedTx : null;
+    if (!paidTx) setLog([]);
+    setRun({ state: "running", step: paidTx ? 2 : 0, txUrl: paidTx ? run.txUrl : undefined });
+    let txHash: `0x${string}` | null = paidTx;
     try {
-      note(`Switching to Avalanche Fuji (chain ${FUJI_CHAIN_ID})`);
-      await switchChainAsync({ chainId: FUJI_CHAIN_ID });
-      setRun({ state: "running", step: 1 });
-      note(`Asking the wallet to send ${FEE_AVAX} AVAX to the treasury ${TREASURY}`);
-      const txHash = await sendTransactionAsync({ to: TREASURY, value: parseEther(FEE_AVAX) });
+      if (!txHash) {
+        note(`Switching to Avalanche Fuji (chain ${FUJI_CHAIN_ID})`);
+        await switchChainAsync({ chainId: FUJI_CHAIN_ID });
+        setRun({ state: "running", step: 1 });
+        note(`Asking the wallet to send ${FEE_AVAX} AVAX to the treasury ${TREASURY}`);
+        txHash = await sendTransactionAsync({ to: TREASURY, value: parseEther(FEE_AVAX) });
+        note(`Paid. Transaction ${txHash}`);
+      }
       const txUrl = `https://testnet.snowtrace.io/tx/${txHash}`;
-      note(`Paid. Transaction ${txHash}`);
       setRun({ state: "running", step: 2, txUrl });
+      note("Saving: the server checks the payment on Avalanche Fuji first");
       const res = await fetch("/api/policies", {
         method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ owner: address, serviceType: action.serviceType, config: config(action), paymentAmount: Number(FEE_AVAX), paymentTxHash: txHash }),
+        body: JSON.stringify({ owner: address, serviceType: action.serviceType, config: config(action), paymentTxHash: txHash }),
       });
-      if (!res.ok) throw new Error("The payment went through, but the policy could not be saved. Keep the transaction link and try again.");
-      const { policy } = (await res.json()) as { policy: Policy };
-      saveLocal(policy);
-      note(`Saved as ${policy.policyId}`);
-      setRun({ state: "done", step: 3, txUrl, policyId: policy.policyId });
+      const d = (await res.json().catch(() => ({}))) as { policy?: Policy; error?: string };
+      if (!res.ok || !d.policy) {
+        const message = d.error ?? `Could not save the policy (error ${res.status}).`;
+        note(`Error: ${message}`);
+        // Wrong payment (400) can't be fixed by retrying; anything else can.
+        setRun({ state: "failed", step: 2, txUrl, message, unsavedTx: res.status === 400 ? undefined : txHash });
+        return;
+      }
+      saveLocal(d.policy);
+      note(`Saved as ${d.policy.policyId}`);
+      setRun({ state: "done", step: 3, txUrl, policyId: d.policy.policyId });
       void loadPolicies();
     } catch (e) {
       const f = friendlyError(e);
       note(`Error: ${e instanceof Error ? e.message : String(e)}`);
-      setRun((r) => ({ ...r, state: "failed", message: f.message, faucet: f.faucet }));
+      setRun((r) => ({ ...r, state: "failed", message: f.message, faucet: f.faucet, unsavedTx: txHash ?? undefined }));
     }
   };
 
@@ -522,10 +537,10 @@ export default function KaiPlayground() {
               {/* Confirm */}
               <div className="pg-confirm">
                 <p className="pg-muted" style={{ margin: 0 }}>
-                  {action.free ? "Free. Nothing to sign." : !address ? "Connect a wallet first. It will ask you to approve the fee." : <>Cost: <b>{FEE_AVAX} test AVAX</b> plus a tiny network fee. Your wallet will ask you to approve.</>}
+                  {action.free ? "Free. Nothing to sign." : run.state === "failed" && run.unsavedTx ? "You already paid. Saving again is free." : !address ? "Connect a wallet first. It will ask you to approve the fee." : <>Cost: <b>{FEE_AVAX} test AVAX</b> plus a tiny network fee. Your wallet will ask you to approve.</>}
                 </p>
                 <button className="pg-btn" onClick={() => void submit()} disabled={busy}>
-                  {busy ? <><Loader2 size={15} className="pg-spin" /> Working…</> : action.free ? <><Search size={15} /> Look it up</> : !address ? <><Wallet size={15} /> Connect wallet</> : <>Confirm <ChevronRight size={15} /></>}
+                  {busy ? <><Loader2 size={15} className="pg-spin" /> Working…</> : action.free ? <><Search size={15} /> Look it up</> : !address ? <><Wallet size={15} /> Connect wallet</> : run.state === "failed" && run.unsavedTx ? <>Try saving again <ChevronRight size={15} /></> : <>Confirm <ChevronRight size={15} /></>}
                 </button>
               </div>
 
