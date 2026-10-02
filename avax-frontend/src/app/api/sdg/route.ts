@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getPrisma } from '@/lib/db/db';
 import { verifyPrivyUserId } from '@/lib/auth/privy-server';
+import { tierFor } from '@/lib/sdg/tiers';
 
 export interface SDGGoalStat {
   sdgNumber: number;
@@ -102,29 +103,21 @@ export const SDG_ACTIONS: SDGActionDefinition[] = [
 // Fallback in-memory ledger for wallets when DB connection is offline
 const inMemorySDGLedger: Record<string, { actions: Array<{ actionId: string; points: number; timestamp: string }>; totalPoints: number }> = {};
 
+const TIER_BADGE = ['🌱', '🌿', '🌟', '👑']; // kept in the response for old clients; the page shows icons
+
 function calculateTier(points: number): { tier: string; badge: string; multiplier: string; nextTierPts: number } {
-  if (points >= 2000) return { tier: 'Planetary Steward', badge: '👑', multiplier: '2.5x', nextTierPts: 5000 };
-  if (points >= 750)  return { tier: 'Climate Champion',  badge: '🌟', multiplier: '1.8x', nextTierPts: 2000 };
-  if (points >= 250)  return { tier: 'Eco Guardian',      badge: '🌿', multiplier: '1.3x', nextTierPts: 750 };
-  return { tier: 'Seedling Explorer', badge: '🌱', multiplier: '1.0x', nextTierPts: 250 };
+  const { tier, index, nextAt } = tierFor(points);
+  return { tier: tier.name, badge: TIER_BADGE[index], multiplier: tier.boost, nextTierPts: nextAt };
 }
+
+const WALLET = /^0x[0-9a-f]{40}$/;
 
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
   const wallet = (searchParams.get('wallet') || '').toLowerCase();
 
-  let userLedger = inMemorySDGLedger[wallet];
-  if (!userLedger) {
-    // Default initial demonstration state for new users
-    userLedger = {
-      actions: [
-        { actionId: 'cfa_tree_plant', points: 150, timestamp: new Date(Date.now() - 86400000 * 2).toISOString() },
-        { actionId: 'chama_savings_pool', points: 75, timestamp: new Date(Date.now() - 86400000).toISOString() },
-      ],
-      totalPoints: 225,
-    };
-    inMemorySDGLedger[wallet] = userLedger;
-  }
+  // Everyone starts at 0: no demo points that were never earned.
+  const userLedger = (WALLET.test(wallet) && inMemorySDGLedger[wallet]) || { actions: [], totalPoints: 0 };
 
   // Count points by SDG Goal
   const pointsBySDG: Record<number, { points: number; count: number }> = {
@@ -238,7 +231,7 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   try {
-    let body: any = {};
+    let body: { wallet?: unknown; actionId?: unknown } = {};
     try {
       body = await req.json();
     } catch {
@@ -255,7 +248,10 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Invalid actionId' }, { status: 400 });
     }
 
-    const userWalletKey = (wallet || '0x_anonymous').toLowerCase();
+    const userWalletKey = typeof wallet === 'string' ? wallet.toLowerCase() : '';
+    if (!WALLET.test(userWalletKey)) {
+      return NextResponse.json({ error: 'Connect a wallet first, so the points are saved to you.' }, { status: 400 });
+    }
     if (!inMemorySDGLedger[userWalletKey]) {
       inMemorySDGLedger[userWalletKey] = { actions: [], totalPoints: 0 };
     }

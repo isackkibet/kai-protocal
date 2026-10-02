@@ -2,277 +2,341 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { motion, AnimatePresence } from 'framer-motion';
-import {
-  ArrowLeft, Globe, Sparkles, Loader2, Wallet,
-} from 'lucide-react';
+import { ArrowLeft, Check, ChevronDown, ChevronRight, Loader2, Plus, Wallet } from 'lucide-react';
 import { useAccount } from 'wagmi';
 import { useSDGImpact } from '@/hooks/useSDGImpact';
 import WalletConnectModal from '@/components/wallet/WalletConnectModal';
-import { iconForSdg, iconForTier } from '@/lib/ui/sdgIcons';
+import { SdgGlyph, TierGlyph } from '@/lib/ui/sdgIcons';
+import { SDG_TIERS, tierFor } from '@/lib/sdg/tiers';
 
-/* Same editorial system as the rest of the app — pine + gold + paper,
-   flat sections separated by a hairline, no gradient card shells. Real
-   lucide icons throughout instead of the emoji this page used to render
-   directly (🌍/🌿/⚡ headings, an emoji badge, an emoji per goal/action). */
+/**
+ * SDG Impact (/sdg): how a person's actions in KAI help the UN Sustainable
+ * Development Goals, in plain words.
+ *
+ *   1. Your impact: points, level, what the next level needs, airdrop boost
+ *   2. Ways to earn: each action says what it is, which goal it helps, where
+ *      to do it, and then "Add points" once it is done
+ *   3. Your impact by goal: the six goals KAI tracks and your share of each
+ *
+ * No emoji and no star icons; goals keep their official UN colours.
+ */
+
 const C = {
-  bg:        '#0B1C14',
-  gold:      '#C89B3C',
-  goldLight: '#E4C878',
-  paper:     '#F6F2E7',
-  paperDim:  '#EFE9D9',
-  inkLight:  '#9BA396',
-  hairline:  'rgba(200,155,60,0.14)',
+  bg: '#0E2418', band: '#12301F', card: '#15352A', cardHi: '#1B4032', line: 'rgba(246,242,231,0.08)',
+  paper: '#F6F2E7', dim: '#C9CFC2', ink: '#9BA396', gold: '#C89B3C', goldLight: '#E4C878', green: '#7DC383',
 };
-const MONO: React.CSSProperties = { fontFamily: 'var(--font-plex-mono), monospace' };
-const SERIF: React.CSSProperties = { fontFamily: "'Poppins', sans-serif" };
-const label: React.CSSProperties = { ...MONO, fontSize: 10, letterSpacing: 1.4, textTransform: 'uppercase', color: C.goldLight, fontWeight: 600, margin: 0 };
-const W: React.CSSProperties = { width: '100%', maxWidth: 1080, margin: '0 auto', padding: '0 24px', boxSizing: 'border-box' };
+
+/** Everyday words for each action, and the page where it is really done. */
+const ACTION_WORDS: Record<string, { title: string; desc: string; href: string; where: string }> = {
+  cfa_tree_plant: { title: 'Plant a tree', desc: 'Record a seedling you planted in the community nursery, with a photo.', href: '/nursery', where: 'Nursery' },
+  forest_patrol_log: { title: 'Report a forest patrol', desc: 'Log a ranger patrol that protects the forest from illegal logging.', href: '/nursery', where: 'Nursery' },
+  carbon_credit_stake: { title: 'Lock carbon credits', desc: 'Put charcoal carbon credits in a vault so the pollution they stand for is removed for good.', href: '/vaults', where: 'Vaults' },
+  water_rights_guard: { title: 'Help protect water', desc: 'Fund sensors that watch water levels where herders graze their animals.', href: '/vaults', where: 'Vaults' },
+  artisan_nft_support: { title: 'Support a local artisan', desc: 'Buy beadwork or textile NFTs made by Maasai and Turkana groups.', href: '/connft', where: 'NFT market' },
+  chama_savings_pool: { title: 'Save with a chama', desc: 'Add money to a community savings group that lends to its members.', href: '/pools', where: 'Pools' },
+  heritage_seed_bank: { title: 'Protect traditional seeds', desc: 'Support a seed bank that keeps drought-resistant local seeds safe.', href: '/nuvari', where: 'Playground' },
+};
+
+/** What each goal means, in one short line. */
+const GOAL_WORDS: Record<number, string> = {
+  13: 'Less pollution in the air, through trees and carbon credits.',
+  15: 'Forests, trees and the animals that live in them.',
+  8: 'Good work and fair income for local makers.',
+  1: 'Savings and support so families are not poor.',
+  6: 'Safe water for people and animals.',
+  2: 'Enough food, through good seeds and farming.',
+};
 
 const CATEGORIES = ['All', 'Environment', 'Economy', 'Community', 'Agriculture'] as const;
 
 export default function SDGPage() {
   const { address, isConnected } = useAccount();
   const [showModal, setShowModal] = useState(false);
-  const [activeCategory, setActiveCategory] = useState<typeof CATEGORIES[number]>('All');
+  const [category, setCategory] = useState<typeof CATEGORIES[number]>('All');
   const [submittingId, setSubmittingId] = useState<string | null>(null);
+  const [doneIds, setDoneIds] = useState<string[]>([]);
+  const [aboutOpen, setAboutOpen] = useState(false);
 
-  const {
-    totalPoints,
-    tier,
-    multiplier,
-    nextTierPts,
-    progressToNextTier,
-    goals,
-    availableActions,
-    toast,
-    logAction,
-  } = useSDGImpact();
+  const { totalPoints, goals, availableActions, toast, logAction, loading, refresh } = useSDGImpact();
+  const { tier, index: tierIndex, nextAt } = tierFor(totalPoints);
+  const next = SDG_TIERS[tierIndex + 1];
+  const progress = next ? Math.min(100, Math.round(((totalPoints - tier.from) / (next.from - tier.from)) * 100)) : 100;
+  const goalPointsTotal = goals.reduce((n, g) => n + g.points, 0);
 
-  const handleClaim = async (actionId: string) => {
+  const addPoints = async (actionId: string) => {
+    if (!isConnected) { setShowModal(true); return; }
     if (submittingId) return;
     setSubmittingId(actionId);
-    await logAction(actionId);
+    if (await logAction(actionId)) setDoneIds((d) => [...d, actionId]);
     setSubmittingId(null);
   };
 
-  const filteredActions = activeCategory === 'All'
-    ? availableActions
-    : availableActions.filter(a => a.category === activeCategory);
-
-  const TierIcon = iconForTier(tier);
+  const actions = category === 'All' ? availableActions : availableActions.filter((a) => a.category === category);
+  const goalOf = (n: number) => goals.find((g) => g.sdgNumber === n);
 
   return (
-    <main style={{ minHeight: '100dvh', background: C.bg, color: C.paper, fontFamily: "'Poppins', 'IBM Plex Sans', var(--font-sans)", position: 'relative', paddingBottom: 100 }}>
-      <style>{`.sdg-cat:hover { color: ${C.goldLight}; }`}</style>
+    <main className="sdg">
+      {toast && <div className="sdg-toast" role="status">{toast}</div>}
 
-      {/* Toast */}
-      <AnimatePresence>
-        {toast && (
-          <motion.div
-            initial={{ opacity: 0, y: -12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -12 }}
-            style={{
-              position: 'fixed', top: 24, left: '50%', transform: 'translateX(-50%)',
-              padding: '11px 22px', borderRadius: 999, background: C.bg, border: `1px solid ${C.hairline}`,
-              color: C.goldLight, fontSize: 13, fontWeight: 700, zIndex: 100, textAlign: 'center',
-            }}
-          >
-            {toast}
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      <div style={{ ...W, paddingTop: 32 }}>
-
-        {/* Header */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 32, gap: 16, flexWrap: 'wrap' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
-            <Link href="/" style={{ display: 'flex', alignItems: 'center', color: C.inkLight }}>
-              <ArrowLeft size={18} />
-            </Link>
-            <Globe size={20} color={C.goldLight} strokeWidth={1.7} />
-            <div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                <h1 style={{ ...SERIF, fontSize: 21, fontWeight: 600, margin: 0, color: C.paper }}>
-                  SDG Impact &amp; Effort Score
-                </h1>
-                <span style={{ ...MONO, fontSize: 9.5, fontWeight: 700, color: C.goldLight, letterSpacing: 0.4 }}>UN 2030 ALIGNED</span>
-              </div>
-              <p style={{ fontSize: 11.5, color: C.inkLight, margin: '3px 0 0' }}>
-                On-chain sustainability metrics · Community MRV verification · Avalanche C-Chain
-              </p>
-            </div>
+      {/* Top bar */}
+      <header className="sdg-top">
+        <div className="sdg-wrap sdg-top-inner">
+          <Link href="/" className="sdg-back" aria-label="Back to home"><ArrowLeft size={18} /></Link>
+          <div style={{ minWidth: 0 }}>
+            <h1 className="sdg-title">SDG Impact</h1>
+            <p className="sdg-sub">How your actions help the world</p>
           </div>
+          <button className={isConnected ? 'sdg-wallet sdg-wallet--on' : 'sdg-wallet'} onClick={() => setShowModal(true)}>
+            <Wallet size={15} />
+            <span>{isConnected && address ? `${address.slice(0, 6)}…${address.slice(-4)}` : 'Connect'}</span>
+          </button>
+        </div>
+      </header>
 
-          {!isConnected ? (
-            <button
-              onClick={() => setShowModal(true)}
-              style={{ padding: '9px 20px', borderRadius: 999, background: C.gold, color: '#1B1A14', fontSize: 12.5, fontWeight: 700, border: 'none', cursor: 'pointer', fontFamily: 'inherit' }}
-            >
-              Connect Wallet
-            </button>
-          ) : (
-            <div style={{ display: 'flex', alignItems: 'center', gap: 7, fontSize: 12.5, color: C.goldLight, fontWeight: 600 }}>
-              <Wallet size={13} /> {address?.slice(0, 6)}…{address?.slice(-4)}
-            </div>
+      <div className="sdg-wrap sdg-body">
+        {/* What is this? */}
+        <div className="sdg-about">
+          <button className="sdg-about-btn" onClick={() => setAboutOpen((o) => !o)} aria-expanded={aboutOpen}>
+            <span>What are SDGs, and how do points work?</span>
+            <ChevronDown size={16} style={{ transform: aboutOpen ? 'rotate(180deg)' : undefined, transition: 'transform .15s' }} />
+          </button>
+          {aboutOpen && (
+            <ol>
+              <li>The United Nations has <b>17 goals for a better world by 2030</b>, called SDGs (Sustainable Development Goals). KAI tracks <b>6</b> of them.</li>
+              <li>When you do something good in KAI, like planting a tree or saving in a chama, you <b>earn points</b> for the goal it helps.</li>
+              <li>More points move you up a <b>level</b>. A higher level gives a <b>bigger boost on your airdrop</b>.</li>
+            </ol>
           )}
         </div>
 
-        {/* Hero: score + tier */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: 32, marginBottom: 36, paddingBottom: 32, borderBottom: `1px solid ${C.hairline}` }}>
-          <div>
-            <p style={label}>Your Verified Impact</p>
-            <div style={{ display: 'flex', alignItems: 'baseline', gap: 10, marginTop: 10 }}>
-              <span style={{ ...SERIF, fontSize: 40, fontWeight: 600, color: C.goldLight, letterSpacing: '-1px' }}>
-                {totalPoints.toLocaleString()}
-              </span>
-              <span style={{ fontSize: 15, fontWeight: 600, color: C.inkLight }}>SDG points</span>
+        {/* 1. Your impact */}
+        <section className="sdg-card sdg-me">
+          {!isConnected ? (
+            <div className="sdg-me-empty">
+              <p className="sdg-h2" style={{ margin: 0 }}>See your impact</p>
+              <p className="sdg-muted">Connect your wallet to see your points and level, and to start earning.</p>
+              <button className="sdg-btn" onClick={() => setShowModal(true)}><Wallet size={15} /> Connect wallet</button>
             </div>
-            <p style={{ margin: '8px 0 0', fontSize: 12.5, color: C.inkLight, lineHeight: 1.6, maxWidth: 340 }}>
-              Your activities contribute to real-world carbon offset and African community development.
-            </p>
-          </div>
-
-          <div>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
-              <p style={label}>Tier &amp; Reward Multiplier</p>
-              <span style={{ fontSize: 11.5, color: C.goldLight, fontWeight: 700 }}>{multiplier} airdrop boost</span>
-            </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
-              <TierIcon size={22} color={C.goldLight} strokeWidth={1.7} />
-              <div>
-                <p style={{ ...SERIF, margin: 0, fontSize: 16, fontWeight: 600, color: C.paper }}>{tier}</p>
-                <p style={{ margin: 0, fontSize: 11.5, color: C.goldLight, fontWeight: 600 }}>
-                  {progressToNextTier}% to {nextTierPts} pts milestone
-                </p>
+          ) : (
+            <>
+              <div className="sdg-me-row">
+                <div>
+                  <p className="sdg-kicker">Your points</p>
+                  <p className="sdg-big">{totalPoints.toLocaleString()}</p>
+                </div>
+                <div className="sdg-level">
+                  <span className="sdg-level-icon"><TierGlyph name={tier.name} size={20} strokeWidth={1.8} /></span>
+                  <div>
+                    <p className="sdg-kicker">Your level</p>
+                    <p className="sdg-level-name">{tier.name}</p>
+                  </div>
+                </div>
               </div>
-            </div>
-            <div style={{ height: 3, borderRadius: 2, background: C.hairline, overflow: 'hidden' }}>
-              <div style={{ width: `${progressToNextTier}%`, height: '100%', background: C.gold }} />
-            </div>
-          </div>
-        </div>
 
-        {/* Goals breakdown */}
-        <div style={{ marginBottom: 36, paddingBottom: 32, borderBottom: `1px solid ${C.hairline}` }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
-            <div>
-              <h2 style={{ ...SERIF, fontSize: 17, fontWeight: 600, margin: 0, color: C.paper }}>
-                UN Sustainable Development Goals
-              </h2>
-              <p style={{ fontSize: 12, color: C.inkLight, margin: '3px 0 0' }}>
-                Your contribution breakdown across the six goals KAI tracks
+              <div className="sdg-bar" aria-label={`${progress}% of the way to the next level`}><i style={{ width: `${progress}%` }} /></div>
+              <p className="sdg-muted" style={{ margin: '8px 0 0' }}>
+                {next
+                  ? <><b>{(nextAt - totalPoints).toLocaleString()} more points</b> to reach {next.name}.</>
+                  : <>You are at the top level.</>}
+                {' '}Your airdrop boost is <b>{tier.boost}</b>{totalPoints === 0 ? ' — earn your first points below.' : '.'}
               </p>
-            </div>
-            <span style={{ fontSize: 11.5, color: C.goldLight, fontWeight: 600 }}>6 active</span>
-          </div>
+            </>
+          )}
 
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '24px 32px' }}>
-            {goals.map((g) => {
-              const GoalIcon = iconForSdg(g.sdgNumber);
+          {/* The level ladder, always visible so the goal is clear */}
+          <div className="sdg-ladder">
+            {SDG_TIERS.map((t, i) => {
+              const state = isConnected && i < tierIndex ? 'done' : isConnected && i === tierIndex ? 'now' : 'later';
               return (
-                <div key={g.code}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
-                    <GoalIcon size={16} color={g.color} strokeWidth={1.7} />
-                    <span style={{ ...MONO, fontSize: 9.5, fontWeight: 700, color: g.color }}>{g.code}</span>
-                    <p style={{ margin: 0, fontSize: 13.5, fontWeight: 700, color: C.paper }}>{g.name}</p>
-                  </div>
-                  <p style={{ margin: '0 0 12px', fontSize: 11.5, color: C.inkLight, lineHeight: 1.5 }}>
-                    {g.description}
-                  </p>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', paddingTop: 10, borderTop: `1px solid ${C.hairline}` }}>
-                    <div>
-                      <p style={{ margin: '0 0 2px', fontSize: 9.5, color: C.inkLight, fontWeight: 600, textTransform: 'uppercase', letterSpacing: 0.4 }}>{g.impactMetric}</p>
-                      <p style={{ ...SERIF, margin: 0, fontSize: 14, fontWeight: 600, color: g.color }}>{g.impactValue}</p>
-                    </div>
-                    <div style={{ textAlign: 'right' }}>
-                      <p style={{ margin: '0 0 2px', fontSize: 9.5, color: C.inkLight, fontWeight: 600, textTransform: 'uppercase', letterSpacing: 0.4 }}>Points</p>
-                      <p style={{ ...SERIF, margin: 0, fontSize: 14, fontWeight: 600, color: g.points > 0 ? C.goldLight : C.paper }}>{g.points} pts</p>
-                    </div>
-                  </div>
+                <div key={t.name} className={`sdg-step sdg-step--${state}`}>
+                  <span className="sdg-step-icon">{state === 'done' ? <Check size={14} /> : <TierGlyph name={t.name} size={15} strokeWidth={1.8} />}</span>
+                  <span className="sdg-step-name">{t.name}</span>
+                  <span className="sdg-step-meta">{t.from.toLocaleString()}+ pts · {t.boost}</span>
                 </div>
               );
             })}
           </div>
-        </div>
+        </section>
 
-        {/* Earn points */}
-        <div>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20, flexWrap: 'wrap', gap: 14 }}>
-            <div>
-              <h2 style={{ ...SERIF, fontSize: 17, fontWeight: 600, margin: 0, color: C.paper }}>
-                Earn SDG points &amp; level up
-              </h2>
-              <p style={{ fontSize: 12, color: C.inkLight, margin: '3px 0 0' }}>
-                Perform on-chain actions or log community verification activities
-              </p>
-            </div>
+        {/* 2. Ways to earn */}
+        <section>
+          <h2 className="sdg-h2">Ways to earn points</h2>
+          <p className="sdg-muted" style={{ marginTop: 0 }}>Do the action on its page first, then press <b>Add points</b>.</p>
 
-            <div style={{ display: 'flex', gap: 18 }}>
-              {CATEGORIES.map(cat => (
-                <button
-                  key={cat}
-                  onClick={() => setActiveCategory(cat)}
-                  className="sdg-cat"
-                  style={{
-                    padding: 0, border: 'none', background: 'none', cursor: 'pointer', fontFamily: 'inherit',
-                    fontSize: 12, fontWeight: activeCategory === cat ? 700 : 500,
-                    color: activeCategory === cat ? C.goldLight : C.inkLight,
-                    transition: 'color 0.15s ease',
-                  }}
-                >
-                  {cat}
+          <div className="sdg-chips" role="tablist" aria-label="Filter actions">
+            {CATEGORIES.map((cat) => {
+              const n = cat === 'All' ? availableActions.length : availableActions.filter((a) => a.category === cat).length;
+              return (
+                <button key={cat} role="tab" aria-selected={category === cat} onClick={() => setCategory(cat)} className={category === cat ? 'sdg-chip sdg-chip--on' : 'sdg-chip'}>
+                  {cat} <em>{n}</em>
                 </button>
-              ))}
-            </div>
+              );
+            })}
           </div>
 
-          {filteredActions.map((act) => {
-            const ActIcon = iconForSdg(act.sdgNumber);
-            return (
-              <div key={act.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16, padding: '14px 0', borderBottom: `1px solid ${C.hairline}` }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 14, flex: 1, minWidth: 0 }}>
-                  <ActIcon size={18} color={C.goldLight} strokeWidth={1.7} style={{ flexShrink: 0 }} />
-                  <div style={{ minWidth: 0 }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-                      <p style={{ margin: 0, fontSize: 14, fontWeight: 700, color: C.paper }}>{act.title}</p>
-                      <span style={{ ...MONO, fontSize: 9.5, fontWeight: 700, color: C.goldLight }}>SDG {act.sdgNumber}</span>
-                      <span style={{ fontSize: 10.5, color: C.inkLight, fontWeight: 600 }}>{act.category}</span>
-                    </div>
-                    <p style={{ margin: '3px 0 0', fontSize: 12, color: C.inkLight, lineHeight: 1.4 }}>
-                      {act.desc}
+          {availableActions.length === 0 && (
+            <div className="sdg-empty">
+              {loading ? <><Loader2 size={16} className="sdg-spin" /> Loading…</> : <>Could not load the actions. <button className="sdg-btn sdg-btn--quiet" onClick={() => void refresh()}>Try again</button></>}
+            </div>
+          )}
+
+          <div className="sdg-actions">
+            {actions.map((act) => {
+              const words = ACTION_WORDS[act.id];
+              const goal = goalOf(act.sdgNumber);
+              const tint = goal?.color ?? C.green;
+              const done = doneIds.includes(act.id);
+              return (
+                <article key={act.id} className="sdg-action" style={{ ['--tint' as string]: tint }}>
+                  <span className="sdg-action-icon"><SdgGlyph n={act.sdgNumber} size={20} strokeWidth={1.8} /></span>
+                  <div className="sdg-action-text">
+                    <p className="sdg-action-title">{words?.title ?? act.title}</p>
+                    <p className="sdg-action-desc">{words?.desc ?? act.desc}</p>
+                    <p className="sdg-action-meta">
+                      <span className="sdg-goal-pill">SDG {act.sdgNumber} · {goal?.name ?? act.category}</span>
+                      <span>Result: {act.metricIncrease.replace(/^\+/, '')}</span>
                     </p>
                   </div>
-                </div>
+                  <div className="sdg-action-side">
+                    <p className="sdg-points">+{act.points}<small> points</small></p>
+                    <div className="sdg-action-btns">
+                      {words && (
+                        <Link href={words.href} prefetch={false} className="sdg-btn sdg-btn--quiet">
+                          Go to {words.where} <ChevronRight size={14} />
+                        </Link>
+                      )}
+                      <button className="sdg-btn" onClick={() => void addPoints(act.id)} disabled={submittingId === act.id || done}>
+                        {submittingId === act.id ? <Loader2 size={14} className="sdg-spin" /> : done ? <><Check size={14} /> Added</> : <><Plus size={14} /> Add points</>}
+                      </button>
+                    </div>
+                  </div>
+                </article>
+              );
+            })}
+          </div>
+        </section>
 
-                <motion.button
-                  whileTap={{ scale: 0.96 }}
-                  onClick={() => handleClaim(act.id)}
-                  disabled={submittingId === act.id}
-                  style={{
-                    padding: '9px 18px', borderRadius: 999, border: 'none',
-                    cursor: submittingId === act.id ? 'default' : 'pointer',
-                    background: C.gold, color: '#1B1A14',
-                    fontSize: 12.5, fontWeight: 700, fontFamily: 'inherit',
-                    display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0,
-                    opacity: submittingId === act.id ? 0.7 : 1,
-                  }}
-                >
-                  {submittingId === act.id ? (
-                    <Loader2 size={14} className="animate-spin" />
-                  ) : (
-                    <>
-                      <Sparkles size={13} /> +{act.points} pts
-                    </>
-                  )}
-                </motion.button>
-              </div>
-            );
-          })}
-        </div>
+        {/* 3. Your impact by goal */}
+        <section>
+          <h2 className="sdg-h2">Your impact by goal</h2>
+          <p className="sdg-muted" style={{ marginTop: 0 }}>The 6 UN goals KAI tracks, and how many of your points went to each.</p>
+          {goals.length === 0 && !loading && <div className="sdg-empty">Could not load the goals. <button className="sdg-btn sdg-btn--quiet" onClick={() => void refresh()}>Try again</button></div>}
+          <div className="sdg-goals">
+            {goals.map((g) => {
+              const share = goalPointsTotal ? Math.round((g.points / goalPointsTotal) * 100) : 0;
+              return (
+                <article key={g.code} className="sdg-goal" style={{ ['--tint' as string]: g.color }}>
+                  <div className="sdg-goal-head">
+                    <span className="sdg-goal-num">{g.sdgNumber}</span>
+                    <div style={{ minWidth: 0 }}>
+                      <p className="sdg-goal-name">{g.name}</p>
+                      <p className="sdg-goal-desc">{GOAL_WORDS[g.sdgNumber] ?? g.description}</p>
+                    </div>
+                    <SdgGlyph n={g.sdgNumber} size={20} strokeWidth={1.8} className="sdg-goal-icon" />
+                  </div>
+                  <div className="sdg-goal-bar"><i style={{ width: `${share}%` }} /></div>
+                  <div className="sdg-goal-foot">
+                    <span><b>{g.points}</b> points{g.points > 0 ? ` · ${share}% of yours` : ''}</span>
+                    {g.points > 0 ? <span>{g.impactValue}</span> : <span className="sdg-ink">Not started</span>}
+                  </div>
+                </article>
+              );
+            })}
+          </div>
+        </section>
       </div>
 
       {showModal && <WalletConnectModal onClose={() => setShowModal(false)} />}
+
+      <style>{`
+        .sdg { min-height: 100dvh; background: ${C.bg}; color: ${C.paper}; font-family: 'Inter', system-ui, sans-serif; padding-bottom: 110px; }
+        .sdg-wrap { width: min(1080px, calc(100% - 32px)); margin: 0 auto; }
+        .sdg-top { position: sticky; top: 0; z-index: 30; background: ${C.band}; border-bottom: 1px solid ${C.line}; }
+        .sdg-top-inner { display: flex; align-items: center; gap: 12px; padding: 12px 0; }
+        .sdg-back { display: grid; place-items: center; width: 36px; height: 36px; border-radius: 50%; color: ${C.paper}; background: rgba(246,242,231,0.06); flex-shrink: 0; }
+        .sdg-title { margin: 0; font-size: 18px; font-weight: 700; }
+        .sdg-sub { margin: 1px 0 0; font-size: 12.5px; color: ${C.ink}; }
+        .sdg-wallet { margin-left: auto; display: inline-flex; align-items: center; gap: 7px; padding: 9px 14px; border-radius: 999px; border: none; background: ${C.gold}; color: #1B1A14; font-weight: 700; font-size: 13px; cursor: pointer; font-family: inherit; flex-shrink: 0; }
+        .sdg-wallet--on { background: rgba(125,195,131,0.14); color: ${C.green}; font-family: ui-monospace, monospace; font-weight: 600; }
+
+        .sdg-body { display: grid; grid-template-columns: minmax(0, 1fr); gap: 32px; padding-top: 20px; }
+        .sdg-body > * { min-width: 0; }
+        .sdg-h2 { margin: 0 0 6px; font-size: 17px; font-weight: 700; }
+        .sdg-muted { font-size: 13.5px; line-height: 1.55; color: ${C.dim}; }
+        .sdg-muted b { color: ${C.paper}; }
+        .sdg-ink { color: ${C.ink}; }
+        .sdg-kicker { margin: 0; font-size: 11.5px; font-weight: 700; letter-spacing: .8px; text-transform: uppercase; color: ${C.ink}; }
+
+        .sdg-about { border-radius: 14px; background: ${C.band}; }
+        .sdg-about-btn { display: flex; align-items: center; justify-content: space-between; gap: 10px; width: 100%; padding: 14px 16px; border: none; background: none; color: ${C.paper}; font-size: 14px; font-weight: 600; cursor: pointer; font-family: inherit; text-align: left; }
+        .sdg-about ol { margin: 0; padding: 0 16px 16px 36px; display: grid; gap: 8px; font-size: 13.5px; line-height: 1.55; color: ${C.dim}; }
+        .sdg-about b { color: ${C.paper}; }
+
+        .sdg-card { padding: 20px; border-radius: 18px; background: ${C.band}; }
+        .sdg-me-empty { display: grid; gap: 4px; justify-items: start; }
+        .sdg-me-row { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 16px; }
+        .sdg-big { margin: 2px 0 0; font-size: 44px; font-weight: 700; line-height: 1; color: ${C.goldLight}; letter-spacing: -1px; }
+        .sdg-level { display: flex; align-items: center; gap: 10px; }
+        .sdg-level-icon { display: grid; place-items: center; width: 44px; height: 44px; border-radius: 50%; color: ${C.green}; background: rgba(125,195,131,0.14); }
+        .sdg-level-name { margin: 2px 0 0; font-size: 16px; font-weight: 700; }
+        .sdg-bar { margin-top: 18px; height: 8px; border-radius: 999px; background: rgba(246,242,231,0.08); overflow: hidden; }
+        .sdg-bar i { display: block; height: 100%; border-radius: 999px; background: ${C.gold}; }
+
+        .sdg-ladder { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin-top: 18px; }
+        @media (min-width: 720px) { .sdg-ladder { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+        .sdg-step { display: grid; grid-template-columns: auto 1fr; column-gap: 8px; align-items: center; padding: 10px; border-radius: 12px; background: ${C.card}; border: 1.5px solid transparent; }
+        .sdg-step-icon { grid-row: span 2; display: grid; place-items: center; width: 30px; height: 30px; border-radius: 50%; background: rgba(246,242,231,0.08); color: ${C.ink}; }
+        .sdg-step-name { font-size: 12.5px; font-weight: 700; color: ${C.dim}; }
+        .sdg-step-meta { font-size: 11.5px; color: ${C.ink}; }
+        .sdg-step--now { border-color: ${C.gold}; }
+        .sdg-step--now .sdg-step-icon { background: rgba(200,155,60,0.2); color: ${C.goldLight}; }
+        .sdg-step--now .sdg-step-name { color: ${C.paper}; }
+        .sdg-step--done .sdg-step-icon { background: ${C.green}; color: #10231A; }
+
+        .sdg-chips { display: flex; gap: 8px; overflow-x: auto; padding: 4px 0 12px; scrollbar-width: none; }
+        .sdg-chip { display: inline-flex; align-items: center; gap: 6px; padding: 8px 14px; border-radius: 999px; border: 1px solid rgba(246,242,231,0.14); background: none; color: ${C.dim}; font-size: 13px; font-weight: 600; cursor: pointer; font-family: inherit; white-space: nowrap; min-height: 38px; }
+        .sdg-chip em { font-style: normal; font-size: 11.5px; color: ${C.ink}; }
+        .sdg-chip--on { background: ${C.gold}; border-color: ${C.gold}; color: #1B1A14; }
+        .sdg-chip--on em { color: #1B1A14; }
+
+        .sdg-actions { display: grid; gap: 10px; }
+        .sdg-action { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 12px 14px; padding: 16px; border-radius: 16px; background: ${C.card}; }
+        @media (min-width: 760px) { .sdg-action { grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; } }
+        .sdg-action-icon { display: grid; place-items: center; width: 44px; height: 44px; border-radius: 50%; color: var(--tint); background: color-mix(in srgb, var(--tint) 18%, ${C.bg}); }
+        .sdg-action-title { margin: 0; font-size: 15px; font-weight: 700; }
+        .sdg-action-desc { margin: 3px 0 0; font-size: 13.5px; line-height: 1.5; color: ${C.dim}; }
+        .sdg-action-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 12px; margin: 8px 0 0; font-size: 12.5px; color: ${C.ink}; }
+        .sdg-goal-pill { padding: 2px 9px; border-radius: 999px; font-weight: 600; color: ${C.paper}; background: color-mix(in srgb, var(--tint) 30%, ${C.bg}); }
+        .sdg-action-side { grid-column: 1 / -1; display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; padding-top: 12px; border-top: 1px solid ${C.line}; }
+        @media (min-width: 760px) { .sdg-action-side { grid-column: auto; flex-direction: column; align-items: flex-end; padding-top: 0; border-top: none; } }
+        .sdg-points { margin: 0; font-size: 20px; font-weight: 700; color: ${C.goldLight}; }
+        .sdg-points small { font-size: 12.5px; font-weight: 600; color: ${C.ink}; }
+        .sdg-action-btns { display: flex; gap: 8px; flex-wrap: wrap; }
+
+        .sdg-btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; padding: 10px 16px; border-radius: 999px; border: none; background: ${C.gold}; color: #1B1A14; font-weight: 700; font-size: 13.5px; cursor: pointer; font-family: inherit; min-height: 42px; text-decoration: none; white-space: nowrap; }
+        .sdg-btn:disabled { opacity: .65; cursor: default; }
+        .sdg-btn--quiet { background: rgba(246,242,231,0.08); color: ${C.paper}; }
+        .sdg-me-empty .sdg-btn { margin-top: 8px; }
+
+        .sdg-goals { display: grid; gap: 10px; grid-template-columns: 1fr; }
+        @media (min-width: 640px) { .sdg-goals { grid-template-columns: 1fr 1fr; } }
+        @media (min-width: 980px) { .sdg-goals { grid-template-columns: 1fr 1fr 1fr; } }
+        .sdg-goal { padding: 16px; border-radius: 16px; background: ${C.card}; }
+        .sdg-goal-head { display: flex; align-items: flex-start; gap: 12px; }
+        .sdg-goal-num { display: grid; place-items: center; width: 40px; height: 40px; border-radius: 10px; background: var(--tint); color: #fff; font-size: 17px; font-weight: 800; flex-shrink: 0; }
+        .sdg-goal-name { margin: 0; font-size: 14.5px; font-weight: 700; }
+        .sdg-goal-desc { margin: 3px 0 0; font-size: 13px; line-height: 1.45; color: ${C.dim}; }
+        .sdg-goal-icon { margin-left: auto; flex-shrink: 0; color: var(--tint); opacity: .9; }
+        .sdg-goal-bar { margin-top: 14px; height: 6px; border-radius: 999px; background: rgba(246,242,231,0.08); overflow: hidden; }
+        .sdg-goal-bar i { display: block; height: 100%; border-radius: 999px; background: var(--tint); }
+        .sdg-goal-foot { display: flex; justify-content: space-between; gap: 10px; flex-wrap: wrap; margin-top: 8px; font-size: 12.5px; color: ${C.dim}; }
+        .sdg-goal-foot b { color: ${C.paper}; }
+
+        .sdg-empty { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; padding: 16px; border-radius: 14px; background: ${C.card}; font-size: 14px; color: ${C.dim}; }
+        .sdg-toast { position: fixed; top: 76px; left: 50%; transform: translateX(-50%); z-index: 100; max-width: calc(100% - 32px); padding: 11px 20px; border-radius: 999px; background: ${C.cardHi}; color: ${C.goldLight}; font-size: 13.5px; font-weight: 600; text-align: center; box-shadow: 0 8px 24px rgba(0,0,0,.35); }
+        .sdg-spin { animation: sdg-spin 1s linear infinite; }
+        @keyframes sdg-spin { to { transform: rotate(360deg); } }
+      `}</style>
     </main>
   );
 }

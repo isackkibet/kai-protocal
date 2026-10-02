@@ -54,6 +54,8 @@ function policyFor(pathname: string, method = 'GET'): readonly typeof POLICIES[k
   if (pathname.startsWith('/api/paystack')) return [POLICIES.paystack];
   if (pathname.startsWith('/api/mpesa')) return [POLICIES.mpesa];
 
+  // Opening the SDG page only reads points; logging an action stays on the AI budget.
+  if (pathname.startsWith('/api/sdg') && (method === 'GET' || method === 'HEAD')) return [POLICIES.read];
   if (pathname.startsWith('/api/chat') ||
       pathname.startsWith('/api/conservation/ask') ||
       pathname.startsWith('/api/agent') ||

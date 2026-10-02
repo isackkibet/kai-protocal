@@ -23,43 +23,41 @@ export interface SDGImpactState {
 export function useSDGImpact(): SDGImpactState {
   const { address } = useAccount();
   const { getAccessToken } = usePrivyAuth();
-  const [totalPoints, setTotalPoints] = useState(225);
+  const [totalPoints, setTotalPoints] = useState(0);
   const [tier, setTier] = useState('Seedling Explorer');
   const [badge, setBadge] = useState('🌱');
   const [multiplier, setMultiplier] = useState('1.0x');
   const [nextTierPts, setNextTierPts] = useState(250);
-  const [progressToNextTier, setProgressToNextTier] = useState(90);
+  const [progressToNextTier, setProgressToNextTier] = useState(0);
   const [goals, setGoals] = useState<SDGGoalStat[]>([]);
   const [availableActions, setAvailableActions] = useState<SDGActionDefinition[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [toast, setToast] = useState<string | null>(null);
 
-  const fetchStats = useCallback(async () => {
-    setLoading(true);
-    try {
-      const q = address ? `?wallet=${encodeURIComponent(address)}` : '';
-      const res = await fetch(`/api/sdg${q}`);
-      if (!res.ok) throw new Error('Failed to fetch SDG statistics');
-      const data = await res.json();
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- the /api/sdg GET body
+  const apply = useCallback((data: any) => {
+    setTotalPoints(data.totalPoints);
+    setTier(data.tier);
+    setBadge(data.badge);
+    setMultiplier(data.multiplier);
+    setNextTierPts(data.nextTierPts);
+    setProgressToNextTier(data.progressToNextTier);
+    setGoals(data.goals || []);
+    setAvailableActions(data.availableActions || []);
+  }, []);
 
-      setTotalPoints(data.totalPoints);
-      setTier(data.tier);
-      setBadge(data.badge);
-      setMultiplier(data.multiplier);
-      setNextTierPts(data.nextTierPts);
-      setProgressToNextTier(data.progressToNextTier);
-      setGoals(data.goals || []);
-      setAvailableActions(data.availableActions || []);
-    } catch {
-      // Keep optimistic values if offline
-    } finally {
-      setLoading(false);
-    }
-  }, [address]);
+  const fetchStats = useCallback(async () => {
+    const data = await loadStats(address);
+    if (data) apply(data);
+  }, [address, apply]);
 
   useEffect(() => {
-    fetchStats();
-  }, [fetchStats]);
+    let on = true;
+    loadStats(address)
+      .then((data) => { if (on && data) apply(data); })
+      .finally(() => { if (on) setLoading(false); });
+    return () => { on = false; };
+  }, [address, apply]);
 
   const logAction = async (actionId: string): Promise<boolean> => {
     try {
@@ -69,11 +67,14 @@ export function useSDGImpact(): SDGImpactState {
       const res = await fetch('/api/sdg', {
         method: 'POST',
         headers,
-        body: JSON.stringify({ wallet: address || '0x_anonymous', actionId }),
+        body: JSON.stringify({ wallet: address, actionId }),
       });
-
-      if (!res.ok) throw new Error('Failed to log action');
-      const data = await res.json();
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setToast(data.error || 'Could not add the points. Try again.');
+        setTimeout(() => setToast(null), 3500);
+        return false;
+      }
 
       setToast(data.message || 'SDG effort points logged.');
       setTimeout(() => setToast(null), 3500);
@@ -101,4 +102,15 @@ export function useSDGImpact(): SDGImpactState {
     logAction,
     refresh: fetchStats,
   };
+}
+
+/** GET /api/sdg for a wallet; null when offline (the page keeps what it has). */
+async function loadStats(address: string | undefined) {
+  try {
+    const q = address ? `?wallet=${encodeURIComponent(address)}` : '';
+    const res = await fetch(`/api/sdg${q}`);
+    return res.ok ? await res.json() : null;
+  } catch {
+    return null;
+  }
 }
