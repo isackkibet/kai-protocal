@@ -47,16 +47,16 @@ export const QUICK_GROUPS: Group[] = [
     items: [
       { name: 'Scan & Pay', hint: 'M-Pesa and QR', href: '/pay', icon: ScanLine, image: '/images/apps/scan-pay.jpg' },
       { name: 'Products', hint: 'Buy with yBOB', href: '/products', icon: CircleDollarSign, image: '/images/apps/products.jpg' },
-      { name: 'NFT Mkt', hint: 'Conservation NFTs', href: '/connft', icon: ImageIcon },
-      { name: 'Airdrop', hint: 'Daily drop and points', href: '/mine', icon: Gift },
+      { name: 'NFT Mkt', hint: 'Conservation NFTs', href: '/connft', icon: ImageIcon, image: '/images/apps/nft-mkt.jpg' },
+      { name: 'Airdrop', hint: 'Daily drop and points', href: '/mine', icon: Gift, image: '/images/apps/airdrop.jpg' },
     ],
   },
   {
     title: 'Explore', tint: '#6FC3B8',
     items: [
-      { name: 'Playground', hint: 'Try KAI operations', href: '/nuvari', icon: FlaskConical },
-      { name: 'SDG Impact', hint: 'Impact by goal', href: '/sdg', icon: Globe },
-      { name: 'KAI Web', hint: 'The KAI website', href: '/kai', icon: Link2 },
+      { name: 'Playground', hint: 'Try KAI operations', href: '/nuvari', icon: FlaskConical, image: '/images/apps/playground.jpg' },
+      { name: 'SDG Impact', hint: 'Impact by goal', href: '/sdg', icon: Globe, image: '/images/apps/sdg.jpg' },
+      { name: 'KAI Web', hint: 'The KAI website', href: '/kai', icon: Link2, image: '/images/apps/kai-web.jpg' },
     ],
   },
 ];

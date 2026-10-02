@@ -941,7 +941,7 @@ body {
 .qa3-card:active, .qa3-app:active { transform: scale(0.97); }
 .qa3-card:focus-visible, .qa3-app:focus-visible, .qa3-chip:focus-visible { outline: 2px solid var(--home-accent); outline-offset: 2px; }
 .qa3-card-icon {
-  width: 36px; height: 36px; border-radius: 10px; display: flex; align-items: center; justify-content: center;
+  width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center;
   color: var(--tint); background: color-mix(in srgb, var(--tint) 18%, #0E2418);
   border: 1px solid color-mix(in srgb, var(--tint) 22%, transparent);
 }
@@ -965,18 +965,20 @@ body {
 }
 .qa3-app:hover { background: rgba(255,255,255,0.04); }
 .qa3-app-icon {
-  width: 52px; height: 52px; border-radius: 16px; display: flex; align-items: center; justify-content: center;
+  width: 52px; height: 52px; border-radius: 50%; display: flex; align-items: center; justify-content: center;
   color: var(--tint);
   background: color-mix(in srgb, var(--tint) 18%, #0E2418);
   border: 1px solid color-mix(in srgb, var(--tint) 22%, transparent);
   transition: transform .15s ease, background-color .15s ease, color .15s ease;
 }
-.qa3-app:hover .qa3-app-icon { transform: translateY(-2px); background: var(--tint); color: #0E2418; }
-/* Tiles with a real picture instead of a line icon: fill the badge and clip
-   to its corners so the photo reads as the app's own badge. */
+/* Circular badges get a gentler lift than the old rounded squares — a full
+   disc reads heavier, so it rises less and settles instead of bouncing. */
+.qa3-app:hover .qa3-app-icon { transform: translateY(-1px) scale(1.04); background: var(--tint); color: #0E2418; }
+/* Tiles with a real picture instead of a line icon: fill the disc and clip to
+   it so the photo reads as the app's own badge. */
 .qa3-card-icon img, .qa3-app-icon img {
   display: block; width: 100%; height: 100%;
-  object-fit: cover; object-position: center; border-radius: inherit;
+  object-fit: cover; object-position: center; border-radius: 50%;
 }
 .qa3-app-name {
   font-size: 11.5px; font-weight: 600; color: var(--home-text); text-align: center; line-height: 1.25;
@@ -996,7 +998,7 @@ body {
 /* Apps that ship a real picture instead of a line icon. */
 .apps-tile-icon {
   display: block; width: 44px; height: 44px; object-fit: cover; object-position: center;
-  border-radius: 12px; margin-bottom: 4px;
+  border-radius: 50%; margin-bottom: 4px;
 }
 
 

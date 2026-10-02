@@ -45,16 +45,16 @@ const GROUPS: AppGroup[] = [
     items: [
       { name: 'Scan & Pay', href: '/pay',      icon: ScanLine, image: '/images/apps/scan-pay.jpg' },
       { name: 'Products',   href: '/products', icon: CircleDollarSign, image: '/images/apps/products.jpg' },
-      { name: 'NFT Mkt',    href: '/connft',   icon: ImageIcon },
-      { name: 'Airdrop',    href: '/mine',     icon: Gift },
+      { name: 'NFT Mkt',    href: '/connft',   icon: ImageIcon, image: '/images/apps/nft-mkt.jpg' },
+      { name: 'Airdrop',    href: '/mine',     icon: Gift, image: '/images/apps/airdrop.jpg' },
     ],
   },
   {
     title: 'Explore',
     items: [
-      { name: 'Playground', href: '/nuvari', icon: FlaskConical },
-      { name: 'SDG Impact', href: '/sdg',    icon: Globe },
-      { name: 'KAI Web',    href: '/kai',    icon: Link2 },
+      { name: 'Playground', href: '/nuvari', icon: FlaskConical, image: '/images/apps/playground.jpg' },
+      { name: 'SDG Impact', href: '/sdg',    icon: Globe, image: '/images/apps/sdg.jpg' },
+      { name: 'KAI Web',    href: '/kai',    icon: Link2, image: '/images/apps/kai-web.jpg' },
     ],
   },
 ];
