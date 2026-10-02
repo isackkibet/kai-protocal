@@ -1,776 +1,553 @@
 "use client";
 
 /**
- * Pools page — real on-chain KaiPool / KaiAMM interactions on Avalanche Fuji.
+ * Pools & Swap (/pools): the KaiAMM pools on Avalanche Fuji, in plain words.
  *
- * Three tabs:
- *   Swap      — swaps through KaiAMM router (real ERC-20 transfer on Fuji)
- *   Liquidity — add / remove liquidity from any KaiPool pair
- *   Info      — pool reserves, spot prices, LP balances
+ *   Swap      — give one token, get the other at the pool's price
+ *               (KaiAMM.swap, 0.3% fee, 0.5% price-change guard)
+ *   Add       — put both tokens in a pool and earn a share of its fees.
+ *               The second amount is worked out from the pool price, because
+ *               KaiPool only counts the smaller side of a mismatched deposit.
+ *   My pools  — what you have in each pool, and take it out again
  *
- * The interactive bubble canvas + PoolDrawer remain for discovery.
- * Contract addresses from src/lib/blockchain/defiAddresses.json.
+ * Every number comes from the chain (reserves, LP supply, balances, quotes).
+ * Approvals are for the exact amount, never unlimited. Flat colours, no
+ * animation.
  */
 
-import React, { useState, useCallback } from "react";
+import { useMemo, useState } from "react";
 import Link from "next/link";
-import {
-  useAccount, useSwitchChain, useWriteContract,
-  useReadContracts, usePublicClient, useReadContract,
-} from "wagmi";
+import { useAccount, usePublicClient, useReadContract, useReadContracts, useSwitchChain, useWriteContract } from "wagmi";
 import { avalancheFuji } from "wagmi/chains";
-import { parseUnits, formatUnits, maxUint256 } from "viem";
-import { ArrowDownUp, Droplets, BarChart3, ExternalLink, RefreshCw, ArrowLeft, TrendingUp, Wallet } from "lucide-react";
+import { formatUnits, parseUnits } from "viem";
+import { ArrowDownUp, ArrowLeft, Check, ChevronDown, ChevronRight, ExternalLink, Loader2, RefreshCw, Wallet, X } from "lucide-react";
 import WalletConnectModal from "@/components/wallet/WalletConnectModal";
-import CryptoBubblesCanvas, { KAI_TOKENS } from "@/components/pools/CryptoBubblesCanvas";
-import type { PoolToken } from "@/components/pools/CryptoBubblesCanvas";
-import type { StakePosition } from "@/components/pools/PoolDrawer";
-import PoolDrawer from "@/components/pools/PoolDrawer";
-import PoolStatsCard from "@/components/pools/PoolStatsCard";
-import { useAnimNumber } from "@/hooks/useAnimNumber";
 import { ECOSYSTEM_TOKENS } from "@/lib/blockchain/tokens";
 import { ERC20_ABI } from "@/lib/blockchain/erc20abi";
-import { POOL_ABI, AMM_ABI } from "@/lib/blockchain/defiAbis";
-import defiAddrs from "@/lib/blockchain/defiAddresses.json";
+import { AMM_ABI, POOL_ABI } from "@/lib/blockchain/defiAbis";
+import defi from "@/lib/blockchain/defiAddresses.json";
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
 type Addr = `0x${string}`;
+const C = {
+  bg: "#0E2418", band: "#12301F", card: "#15352A", cardHi: "#1B4032", line: "rgba(246,242,231,0.08)",
+  paper: "#F6F2E7", dim: "#C9CFC2", ink: "#9BA396", gold: "#C89B3C", goldLight: "#E4C878", green: "#7DC383", amber: "#E8B04B", red: "#E88C7D",
+};
+const EXPLORER = defi.explorerBase ?? "https://testnet.snowtrace.io";
+const AMM = (defi.amm?.address ?? null) as Addr | null;
+const FUJI = avalancheFuji.id;
+const SLIPPAGE_BPS = BigInt(50); // 0.5%
 
-function tokenAddr(sym: string): Addr | null {
-  return (ECOSYSTEM_TOKENS.find(t => t.symbol === sym)?.address ?? null) as Addr | null;
-}
-function tokenDec(sym: string): number {
-  return ECOSYSTEM_TOKENS.find(t => t.symbol === sym)?.decimals ?? 18;
-}
-function tokenColor(sym: string): string {
-  return ECOSYSTEM_TOKENS.find(t => t.symbol === sym)?.color ?? "#10b981";
-}
-function tokenEmoji(sym: string): string {
-  return ECOSYSTEM_TOKENS.find(t => t.symbol === sym)?.emoji ?? "";
-}
-
-// ─── Pool definitions from defiAddresses.json ─────────────────────────────────
-interface PoolDef { pair: string; address: string | null; tokenA: string | null; tokenB: string | null }
-const POOLS: PoolDef[] = (defiAddrs.pools as PoolDef[]).length > 0
-  ? (defiAddrs.pools as PoolDef[])
-  : [
-      { pair: "NVR/yBOB",    address: null, tokenA: tokenAddr("NVR"),    tokenB: tokenAddr("yBOB")   },
-      { pair: "YTOKEN/YGOLD", address: null, tokenA: tokenAddr("YTOKEN"), tokenB: tokenAddr("YGOLD")  },
-      { pair: "GAMI/CENTS",  address: null, tokenA: tokenAddr("GAMI"),   tokenB: tokenAddr("CENTS")  },
-    ];
-
-const AMM_ADDR = (defiAddrs.amm?.address ?? null) as Addr | null;
-const EXPLORER = defiAddrs.explorerBase ?? "https://testnet.snowtrace.io";
-
-// ─── Swap token list / pair metadata ─────────────────────────────────────────
-const SWAP_TOKENS = ["NVR","yBOB","YTOKEN","YGOLD","GAMI","CENTS"];
-
-/** Discovery metadata for on-chain pairs → bubble canvas tokens. */
-const PAIR_TO_TOKEN: Record<string, { id: string; apy: number; tvl: number }> = {
-  "NVR/yBOB":     { id: "nvr",    apy: 18.5, tvl: 1250000 },
-  "YTOKEN/YGOLD": { id: "ytoken", apy: 14.8, tvl: 890000  },
-  "GAMI/CENTS":   { id: "gami",   apy: 22.0, tvl: 450000  },
+/** What each token is, in a few words. */
+const TOKEN_WORDS: Record<string, string> = {
+  NVR: "KAI vote token", yBOB: "Stable coin", YTOKEN: "Savings fund", YGOLD: "Gold-backed", GAMI: "Rewards", CENTS: "Small change",
 };
 
-const TOTAL_TVL = POOLS.reduce((s, p) => s + (PAIR_TO_TOKEN[p.pair]?.tvl ?? 0), 0);
-const AVG_APY = POOLS.length ? POOLS.reduce((s, p) => s + (PAIR_TO_TOKEN[p.pair]?.apy ?? 0), 0) / POOLS.length : 0;
+const TOKENS = ECOSYSTEM_TOKENS.filter((t) => t.address).map((t) => ({ symbol: t.symbol, address: t.address as Addr, decimals: t.decimals, color: t.color }));
+const bySymbol = (s: string) => TOKENS.find((t) => t.symbol === s)!;
+const byAddress = (a: string) => TOKENS.find((t) => t.address.toLowerCase() === a.toLowerCase());
 
-// ─── Small animated stat chip ────────────────────────────────────────────────
-function StatChip({ label, value, suffix = "", color = "#34d399", live = false, decimals = 0 }: {
-  label: string; value: number; suffix?: string; color?: string; live?: boolean; decimals?: number;
-}) {
-  const v = useAnimNumber(value);
+const POOLS = (defi.pools ?? []).map((p) => {
+  const a = byAddress(p.tokenA)!, b = byAddress(p.tokenB)!;
+  return { id: p.pair, address: p.address as Addr, a, b };
+}).filter((p) => p.a && p.b);
+type Pool = (typeof POOLS)[number];
+
+const poolFor = (x: string, y: string) => POOLS.find((p) => (p.a.symbol === x && p.b.symbol === y) || (p.a.symbol === y && p.b.symbol === x)) ?? null;
+const partners = (s: string) => POOLS.flatMap((p) => (p.a.symbol === s ? [p.b.symbol] : p.b.symbol === s ? [p.a.symbol] : []));
+
+const n = (v: bigint | undefined, d = 18) => (v == null ? 0 : Number(formatUnits(v, d)));
+const show = (x: number) => (x === 0 ? "0" : x < 0.0001 ? "<0.0001" : x.toLocaleString(undefined, { maximumFractionDigits: x < 1 ? 6 : x < 1000 ? 4 : 2 }));
+const toWei = (s: string, d: number) => { try { return s && Number(s) > 0 ? parseUnits(s, d) : BigInt(0); } catch { return BigInt(0); } };
+const ZERO = BigInt(0);
+
+type Run = { state: "idle" | "running" | "done" | "failed"; step: number; steps: string[]; message?: string; txHash?: string };
+const IDLE: Run = { state: "idle", step: 0, steps: [] };
+
+function friendlyError(e: unknown): string {
+  const m = e instanceof Error ? e.message : String(e);
+  if (/reject|denied|cancel/i.test(m)) return "You cancelled in your wallet. Nothing moved.";
+  if (/insufficient funds/i.test(m)) return "Your wallet needs a little test AVAX for the network fee.";
+  if (/SlippageExceeded/i.test(m)) return "The price moved before your trade went through. Nothing moved; try again.";
+  return m.split("\n")[0].slice(0, 160) || "Something went wrong. Try again.";
+}
+
+function Coin({ s, size = 34 }: { s: string; size?: number }) {
+  const t = TOKENS.find((x) => x.symbol === s);
   return (
-    <div className="glass rounded-xl px-3 py-2.5 min-w-0">
-      <p className="text-[9px] font-bold text-white/40 uppercase tracking-wider mb-1 flex items-center gap-1.5">
-        {live && <span className="w-1.5 h-1.5 rounded-full bg-[#34d399] animate-pulse" />}
-        {label}
-      </p>
-      <p className="text-sm font-black font-mono tabular-nums truncate" style={{ color }}>
-        {live ? suffix : `${v.toLocaleString(undefined, { maximumFractionDigits: decimals })}${suffix}`}
-      </p>
-    </div>
+    <span style={{ display: "grid", placeItems: "center", width: size, height: size, borderRadius: "50%", flexShrink: 0, fontSize: size * 0.34, fontWeight: 800,
+      background: `color-mix(in srgb, ${t?.color ?? C.gold} 20%, ${C.bg})`, color: t?.color ?? C.goldLight }}>{s.slice(0, 2).toUpperCase()}</span>
   );
 }
 
-// ─── Page ─────────────────────────────────────────────────────────────────────
 export default function PoolsPage() {
-  const { address, isConnected }  = useAccount();
-  const { switchChainAsync }       = useSwitchChain();
-  const { writeContractAsync }     = useWriteContract();
-  const publicClient               = usePublicClient();
+  const { address, isConnected } = useAccount();
+  const { switchChainAsync } = useSwitchChain();
+  const { writeContractAsync } = useWriteContract();
+  const publicClient = usePublicClient({ chainId: FUJI });
 
-  const [showModal,        setShowModal]        = useState(false);
-  const [activeTab,        setActiveTab]        = useState<"swap"|"liquidity"|"info">("swap");
-  const [statusMsg,        setStatusMsg]        = useState("");
-  const [txUrl,            setTxUrl]            = useState<string | null>(null);
-  const [busy,             setBusy]             = useState(false);
+  const [tab, setTab] = useState<"swap" | "add" | "mine">("swap");
+  const [showWallet, setShowWallet] = useState(false);
+  const [aboutOpen, setAboutOpen] = useState(false);
+  const [run, setRun] = useState<Run>(IDLE);
 
-  // Bubble canvas state (kept for discovery UX)
-  const [selectedToken,    setSelectedToken]    = useState<PoolToken | null>(null);
-  const [stakedPositions,  setStakedPositions]  = useState<Record<string, StakePosition>>({});
+  // Swap
+  const [from, setFrom] = useState(POOLS[0]?.a.symbol ?? "NVR");
+  const [to, setTo] = useState(POOLS[0]?.b.symbol ?? "yBOB");
+  const [amount, setAmount] = useState("");
+  // Add / remove
+  const [poolId, setPoolId] = useState(POOLS[0]?.id ?? "");
+  const [amtA, setAmtA] = useState("");
+  const [outPct, setOutPct] = useState(100);
 
-  // ── Swap state ────────────────────────────────────────────────────────────
-  const [swapIn,    setSwapIn]    = useState("NVR");
-  const [swapOut,   setSwapOut]   = useState("yBOB");
-  const [swapAmt,   setSwapAmt]   = useState("");
-  const [flipKey,   setFlipKey]   = useState(0);
-
-  // ── Valid output tokens for each input (based on deployed pools) ──────────
-  const validOutputTokens = (tokenIn: string): string[] => {
-    const inAddr = tokenAddr(tokenIn);
-    if (!inAddr) return [];
-    return SWAP_TOKENS.filter(t => {
-      if (t === tokenIn) return false;
-      const outAddr = tokenAddr(t);
-      if (!outAddr) return false;
-      return POOLS.some(p =>
-        (p.tokenA === inAddr && p.tokenB === outAddr) ||
-        (p.tokenB === inAddr && p.tokenA === outAddr)
-      );
-    });
-  };
-
-  // When swapIn changes, auto-correct swapOut to a valid partner
-  const handleSwapInChange = (newIn: string) => {
-    setSwapIn(newIn);
-    setSwapAmt("");
-    const valid = validOutputTokens(newIn);
-    if (valid.length > 0 && !valid.includes(swapOut)) {
-      setSwapOut(valid[0]);
-    }
-  };
-
-  const flipPair = () => {
-    handleSwapInChange(swapOut);
-    setSwapOut(swapIn);
-    setSwapAmt("");
-    setFlipKey(k => k + 1);
-  };
-
-  // ── Resolve which pool serves swapIn → swapOut ────────────────────────────
-  const getRoutingPool = (tokenIn: string, tokenOut: string) => {
-    const inAddr  = tokenAddr(tokenIn);
-    const outAddr = tokenAddr(tokenOut);
-    if (!inAddr || !outAddr) return null;
-    return POOLS.find(p =>
-      (p.tokenA === inAddr && p.tokenB === outAddr) ||
-      (p.tokenB === inAddr && p.tokenA === outAddr)
-    ) ?? null;
-  };
-
-  // ── Live quote: read getAmountOut from the pool contract ──────────────────
-  const routingPool = getRoutingPool(swapIn, swapOut);
-  const inAddr      = tokenAddr(swapIn);
-  const amtWeiForQuote =
-    swapAmt && parseFloat(swapAmt) > 0
-      ? (() => { try { return parseUnits(swapAmt, tokenDec(swapIn)); } catch { return null; } })()
-      : null;
-
-  const { data: quoteRaw, isFetching: quoteFetching } = useReadContract(
-    routingPool?.address && inAddr && amtWeiForQuote
-      ? {
-          address: routingPool.address as `0x${string}`,
-          abi: POOL_ABI,
-          functionName: "getAmountOut" as const,
-          args: [inAddr, amtWeiForQuote],
-          chainId: avalancheFuji.id,
-          query: { enabled: true, staleTime: 3000 },
-        }
-      : {
-          address: "0x0000000000000000000000000000000000000000" as `0x${string}`,
-          abi: POOL_ABI,
-          functionName: "getAmountOut" as const,
-          args: ["0x0000000000000000000000000000000000000000" as `0x${string}`, 0n],
-          query: { enabled: false },
-        },
-  );
-
-  // Derive display values from the on-chain quote
-  const quoteFormatted = quoteRaw
-    ? parseFloat(formatUnits(quoteRaw as bigint, tokenDec(swapOut))).toFixed(6)
-    : "";
-
-  // Slippage guard (0.5%) — derived, no extra effect needed.
-  const minOut = quoteRaw && quoteRaw !== 0n
-    ? formatUnits(((quoteRaw as bigint) * 9950n) / 10000n, tokenDec(swapOut))
-    : "0";
-
-  // ── Liquidity state ───────────────────────────────────────────────────────
-  const [liqPool,  setLiqPool]  = useState(POOLS[0]?.pair ?? "");
-  const [liqAmtA,  setLiqAmtA]  = useState("");
-  const [liqAmtB,  setLiqAmtB]  = useState("");
-  const [liqMode,  setLiqMode]  = useState<"add"|"remove">("add");
-  const [lpAmt,    setLpAmt]    = useState("");
-
-  // ── Read pool reserves ────────────────────────────────────────────────────
-  const poolContracts = POOLS.filter(p => p.address).flatMap(p => [
-    { address: p.address as Addr, abi: POOL_ABI, functionName: "reserveA" as const, args: [] as const },
-    { address: p.address as Addr, abi: POOL_ABI, functionName: "reserveB" as const, args: [] as const },
-    { address: p.address as Addr, abi: POOL_ABI, functionName: "totalSupply" as const, args: [] as const },
-  ]);
-  const lpBalContracts = POOLS.filter(p => p.address && address).map(p => ({
-    address: p.address as Addr, abi: POOL_ABI, functionName: "balanceOf" as const,
-    args: [address ?? "0x0000000000000000000000000000000000000000" as Addr],
-  }));
-
-  const { data: poolData,  refetch: refetchPools } = useReadContracts({ contracts: poolContracts,   query: { enabled: true } });
-  const { data: lpBalData, refetch: refetchLpBals} = useReadContracts({ contracts: lpBalContracts,  query: { enabled: !!address } });
-
-  const handleRefresh = useCallback(async () => {
-    await Promise.allSettled([refetchPools(), refetchLpBals()]);
-  }, [refetchPools, refetchLpBals]);
-
-  // Parse pool data: 3 values per pool (reserveA, reserveB, totalSupply)
-  const poolInfo = POOLS.filter(p => p.address).map((p, i) => {
-    const base = i * 3;
-    return {
-      pair:        p.pair,
-      address:     p.address as Addr,
-      tokenA:      p.tokenA as string,
-      tokenB:      p.tokenB as string,
-      reserveA:    (poolData?.[base]?.result   as bigint | undefined) ?? 0n,
-      reserveB:    (poolData?.[base+1]?.result as bigint | undefined) ?? 0n,
-      totalSupply: (poolData?.[base+2]?.result as bigint | undefined) ?? 0n,
-      lpBal:       (lpBalData?.[i]?.result     as bigint | undefined) ?? 0n,
-    };
+  // ── Live reads ─────────────────────────────────────────────
+  const poolReads = useReadContracts({
+    contracts: POOLS.flatMap((p) => [
+      { address: p.address, abi: POOL_ABI, functionName: "reserveA", chainId: FUJI },
+      { address: p.address, abi: POOL_ABI, functionName: "reserveB", chainId: FUJI },
+      { address: p.address, abi: POOL_ABI, functionName: "totalSupply", chainId: FUJI },
+    ]),
+  });
+  const userReads = useReadContracts({
+    contracts: address && AMM ? [
+      ...TOKENS.flatMap((t) => [
+        { address: t.address, abi: ERC20_ABI, functionName: "balanceOf", args: [address], chainId: FUJI },
+        { address: t.address, abi: ERC20_ABI, functionName: "allowance", args: [address, AMM], chainId: FUJI },
+      ]),
+      ...POOLS.flatMap((p) => [
+        { address: p.address, abi: ERC20_ABI, functionName: "balanceOf", args: [address], chainId: FUJI },
+        { address: p.address, abi: ERC20_ABI, functionName: "allowance", args: [address, AMM], chainId: FUJI },
+      ]),
+    ] : [],
+    query: { enabled: !!address && !!AMM },
   });
 
-  // Derived market overview
-  const deployedCount = POOLS.filter(p => p.address).length;
+  const state = useMemo(() => {
+    const pools: Record<string, { ra: bigint; rb: bigint; supply: bigint; lp: bigint; lpAllow: bigint }> = {};
+    POOLS.forEach((p, i) => {
+      const j = TOKENS.length * 2 + i * 2;
+      pools[p.id] = {
+        ra: (poolReads.data?.[i * 3]?.result as bigint | undefined) ?? ZERO,
+        rb: (poolReads.data?.[i * 3 + 1]?.result as bigint | undefined) ?? ZERO,
+        supply: (poolReads.data?.[i * 3 + 2]?.result as bigint | undefined) ?? ZERO,
+        lp: (userReads.data?.[j]?.result as bigint | undefined) ?? ZERO,
+        lpAllow: (userReads.data?.[j + 1]?.result as bigint | undefined) ?? ZERO,
+      };
+    });
+    const wallet: Record<string, { bal: bigint; allow: bigint }> = {};
+    TOKENS.forEach((t, i) => {
+      wallet[t.symbol] = { bal: (userReads.data?.[i * 2]?.result as bigint | undefined) ?? ZERO, allow: (userReads.data?.[i * 2 + 1]?.result as bigint | undefined) ?? ZERO };
+    });
+    return { pools, wallet };
+  }, [poolReads.data, userReads.data]);
 
-  const openDrawerForPair = (pair: string) => {
-    const meta = PAIR_TO_TOKEN[pair];
-    if (!meta) return;
-    const tok = KAI_TOKENS.find(k => k.id === meta.id);
-    if (tok) setSelectedToken(tok);
+  const refresh = async () => { await Promise.all([poolReads.refetch(), userReads.refetch()]); };
+
+  /** Price of 1 `x` in `y`, from a pool's reserves. */
+  const priceOf = (p: Pool, x: string) => {
+    const s = state.pools[p.id];
+    const ra = n(s.ra, p.a.decimals), rb = n(s.rb, p.b.decimals);
+    if (!ra || !rb) return 0;
+    return x === p.a.symbol ? rb / ra : ra / rb;
   };
 
-  // ── Swap price intelligence (fee + impact from live reserves) ─────────────
-  const swapInNum  = parseFloat(swapAmt) || 0;
-  const swapOutNum = parseFloat(quoteFormatted) || 0;
-  const routeInfo  = poolInfo.find(pi => pi.pair === routingPool?.pair);
+  // ── Swap quote ─────────────────────────────────────────────
+  const swapPool = poolFor(from, to);
+  const fromTok = bySymbol(from), toTok = bySymbol(to);
+  const amountWei = toWei(amount, fromTok?.decimals ?? 18);
+  const quote = useReadContract({
+    address: swapPool?.address, abi: POOL_ABI, functionName: "getAmountOut",
+    args: [fromTok?.address, amountWei], chainId: FUJI,
+    query: { enabled: !!swapPool && amountWei > ZERO, staleTime: 3000 },
+  });
+  const outWei = (quote.data as bigint | undefined) ?? ZERO;
+  const outNum = n(outWei, toTok?.decimals);
+  const inNum = Number(amount) || 0;
+  const spot = swapPool ? priceOf(swapPool, from) : 0;
+  const impact = spot && inNum && outNum ? Math.max(0, (1 - outNum / (inNum * spot)) * 100) : 0;
+  const minOutWei = (outWei * (BigInt(10000) - SLIPPAGE_BPS)) / BigInt(10000);
+  const impactWord = impact > 3 ? { t: "High", c: C.red } : impact > 1 ? { t: "Medium", c: C.amber } : { t: "Low", c: C.green };
+  const fromBal = state.wallet[from]?.bal ?? ZERO;
 
-  let priceImpact = 0;
-  let feeEst      = 0;
-  if (routeInfo && swapInNum > 0 && swapOutNum > 0) {
-    const inResWei  = routingPool!.tokenA === inAddr ? routeInfo.reserveA : routeInfo.reserveB;
-    const outResWei = routingPool!.tokenA === inAddr ? routeInfo.reserveB : routeInfo.reserveA;
-    const rIn  = parseFloat(formatUnits(inResWei,  tokenDec(swapIn)));
-    const rOut = parseFloat(formatUnits(outResWei, tokenDec(swapOut)));
-    const ideal = rIn > 0 ? (swapInNum * rOut) / rIn : 0;
-    if (ideal > 0) priceImpact = Math.max(0, (1 - swapOutNum / ideal) * 100);
-    feeEst = swapOutNum * 0.003; // 0.3% pool fee
-  }
-  const impactColor = priceImpact > 1.5 ? "#F87171" : priceImpact > 0.5 ? "#FBBF24" : "#34d399";
+  const changeFrom = (s: string) => {
+    setFrom(s); setAmount(""); setRun(IDLE);
+    const ps = partners(s);
+    if (!ps.includes(to)) setTo(ps[0]);
+  };
+  const flip = () => { setFrom(to); setTo(from); setAmount(""); setRun(IDLE); };
 
-  // ── Swap handler ──────────────────────────────────────────────────────────
-  const handleSwap = async () => {
-    if (!isConnected || !address) { setShowModal(true); return; }
-    if (!AMM_ADDR) { setStatusMsg("AMM not deployed - run deploy-defi.ts first."); return; }
-    const inAddr  = tokenAddr(swapIn);
-    const outAddr = tokenAddr(swapOut);
-    if (!inAddr || !outAddr) { setStatusMsg("Token address not found."); return; }
-    const amt = parseFloat(swapAmt);
-    if (!amt || amt <= 0) { setStatusMsg("Enter swap amount."); return; }
+  /** Approve exactly `need` for the AMM if the current allowance is lower. */
+  const ensureAllowance = async (token: Addr, have: bigint, need: bigint) => {
+    if (have >= need) return;
+    const tx = await writeContractAsync({ address: token, abi: ERC20_ABI, functionName: "approve", args: [AMM!, need], chainId: FUJI });
+    await publicClient!.waitForTransactionReceipt({ hash: tx });
+  };
 
-    const amtWei    = parseUnits(swapAmt, tokenDec(swapIn));
-    const minOutWei = parseUnits(minOut || "0", tokenDec(swapOut));
-
-    setBusy(true); setStatusMsg(""); setTxUrl(null);
+  /** Runs the wallet steps; resolves true only when the last transaction succeeded. */
+  const go = async (steps: string[], work: (next: () => void) => Promise<`0x${string}`>, done: string): Promise<boolean> => {
+    if (!address) { setShowWallet(true); return false; }
+    if (!AMM) { setRun({ ...IDLE, state: "failed", message: "The KAI pools are not set up on this network yet." }); return false; }
+    let step = 0;
+    setRun({ state: "running", step, steps });
     try {
-      await switchChainAsync({ chainId: avalancheFuji.id });
-
-      // Approve tokenIn to AMM
-      setStatusMsg(`Approving ${swapIn} for AMM router...`);
-      const appTx = await writeContractAsync({
-        address: inAddr, abi: ERC20_ABI,
-        functionName: "approve", args: [AMM_ADDR, maxUint256],
-        chainId: avalancheFuji.id,
-      });
-      await publicClient?.waitForTransactionReceipt({ hash: appTx });
-
-      // Swap
-      setStatusMsg(`Swapping ${swapAmt} ${swapIn} -> ${swapOut}...`);
-      const swapTx = await writeContractAsync({
-        address: AMM_ADDR, abi: AMM_ABI,
-        functionName: "swap",
-        args: [inAddr, outAddr, amtWei, minOutWei],
-        chainId: avalancheFuji.id,
-      });
-      setTxUrl(`${EXPLORER}/tx/${swapTx}`);
-      setStatusMsg(`Swapped ${swapAmt} ${swapIn} -> ${swapOut}! Tx: ${swapTx.slice(0,14)}...`);
-      setSwapAmt("");
-      await handleRefresh();
-    } catch (e: unknown) {
-      setStatusMsg(`${e instanceof Error ? e.message.slice(0, 120) : "Swap failed"}`);
-    } finally {
-      setBusy(false);
+      await switchChainAsync({ chainId: FUJI });
+      const next = () => { step++; setRun({ state: "running", step, steps }); };
+      next();
+      const tx = await work(next);
+      const r = await publicClient!.waitForTransactionReceipt({ hash: tx });
+      if (r.status !== "success") throw new Error("The blockchain did not accept it. Nothing moved.");
+      setRun({ state: "done", step: steps.length, steps, txHash: tx, message: done });
+      await refresh();
+      return true;
+    } catch (e) {
+      setRun((x) => ({ ...x, state: "failed", message: friendlyError(e) }));
+      return false;
     }
   };
 
-  // ── Add liquidity ─────────────────────────────────────────────────────────
-  const handleAddLiquidity = async () => {
-    if (!isConnected || !address) { setShowModal(true); return; }
-    if (!AMM_ADDR) { setStatusMsg("AMM not deployed."); return; }
-    const pool = POOLS.find(p => p.pair === liqPool);
-    if (!pool?.tokenA || !pool?.tokenB) { setStatusMsg("Pool not deployed."); return; }
-    const symA = SWAP_TOKENS.find(s => tokenAddr(s) === pool.tokenA) ?? "";
-    const symB = SWAP_TOKENS.find(s => tokenAddr(s) === pool.tokenB) ?? "";
-    const amtA = parseUnits(liqAmtA || "0", tokenDec(symA));
-    const amtB = parseUnits(liqAmtB || "0", tokenDec(symB));
-    if (amtA === 0n || amtB === 0n) { setStatusMsg("Enter both amounts."); return; }
-
-    setBusy(true); setStatusMsg(""); setTxUrl(null);
-    try {
-      await switchChainAsync({ chainId: avalancheFuji.id });
-      setStatusMsg(`Approving ${symA}...`);
-      const a1 = await writeContractAsync({ address: pool.tokenA as Addr, abi: ERC20_ABI, functionName: "approve", args: [AMM_ADDR, maxUint256], chainId: avalancheFuji.id });
-      await publicClient?.waitForTransactionReceipt({ hash: a1 });
-      setStatusMsg(`Approving ${symB}...`);
-      const a2 = await writeContractAsync({ address: pool.tokenB as Addr, abi: ERC20_ABI, functionName: "approve", args: [AMM_ADDR, maxUint256], chainId: avalancheFuji.id });
-      await publicClient?.waitForTransactionReceipt({ hash: a2 });
-      setStatusMsg(`Adding liquidity to ${liqPool} pool...`);
-      const liqTx = await writeContractAsync({
-        address: AMM_ADDR, abi: AMM_ABI, functionName: "addLiquidity",
-        args: [pool.tokenA as Addr, pool.tokenB as Addr, amtA, amtB, 0n],
-        chainId: avalancheFuji.id,
-      });
-      setTxUrl(`${EXPLORER}/tx/${liqTx}`);
-      setStatusMsg(`Liquidity added to ${liqPool}! You received LP tokens.`);
-      setLiqAmtA(""); setLiqAmtB("");
-      await handleRefresh();
-    } catch (e: unknown) {
-      setStatusMsg(`${e instanceof Error ? e.message.slice(0, 120) : "Failed"}`);
-    } finally {
-      setBusy(false);
-    }
+  const doSwap = () => {
+    if (!swapPool || amountWei === ZERO) return;
+    if (amountWei > fromBal) { setRun({ ...IDLE, state: "failed", message: `You only have ${show(n(fromBal, fromTok.decimals))} ${from}.` }); return; }
+    const needApprove = (state.wallet[from]?.allow ?? ZERO) < amountWei;
+    const steps = ["Switch wallet to Avalanche Fuji", ...(needApprove ? [`Allow ${amount} ${from} to be swapped`] : []), `Swap ${amount} ${from} for ${to}`];
+    void go(steps, async (next) => {
+      if (needApprove) { await ensureAllowance(fromTok.address, ZERO, amountWei); next(); }
+      return writeContractAsync({ address: AMM!, abi: AMM_ABI, functionName: "swap", args: [fromTok.address, toTok.address, amountWei, minOutWei], chainId: FUJI });
+    }, `Done. You got about ${show(outNum)} ${to}.`).then((ok) => { if (ok) setAmount(""); });
   };
 
-  // ── Remove liquidity ──────────────────────────────────────────────────────
-  const handleRemoveLiquidity = async () => {
-    if (!isConnected || !address) { setShowModal(true); return; }
-    if (!AMM_ADDR) { setStatusMsg("AMM not deployed."); return; }
-    const pool = POOLS.find(p => p.pair === liqPool);
-    if (!pool?.address) { setStatusMsg("Pool not deployed."); return; }
-    const lpWei = parseUnits(lpAmt || "0", 18);
-    if (lpWei === 0n) { setStatusMsg("Enter LP amount."); return; }
+  // ── Add / remove ───────────────────────────────────────────
+  const pool = POOLS.find((p) => p.id === poolId) ?? POOLS[0];
+  const ps = pool ? state.pools[pool.id] : undefined;
+  const aWei = pool ? toWei(amtA, pool.a.decimals) : ZERO;
+  const bWei = ps && ps.ra > ZERO ? (aWei * ps.rb) / ps.ra : ZERO; // keep the pool's price
+  const lpOut = ps && ps.ra > ZERO ? (aWei * ps.supply) / ps.ra : ZERO;
+  const balA = pool ? state.wallet[pool.a.symbol]?.bal ?? ZERO : ZERO;
+  const balB = pool ? state.wallet[pool.b.symbol]?.bal ?? ZERO : ZERO;
+  const shareAfter = ps && ps.supply + lpOut > ZERO ? (Number(ps.lp + lpOut) / Number(ps.supply + lpOut)) * 100 : 0;
 
-    setBusy(true); setStatusMsg(""); setTxUrl(null);
-    try {
-      await switchChainAsync({ chainId: avalancheFuji.id });
-      setStatusMsg("Approving LP tokens...");
-      const a1 = await writeContractAsync({ address: pool.address as Addr, abi: POOL_ABI, functionName: "approve", args: [AMM_ADDR, maxUint256], chainId: avalancheFuji.id });
-      await publicClient?.waitForTransactionReceipt({ hash: a1 });
-      setStatusMsg(`Removing ${lpAmt} LP from ${liqPool}...`);
-      const remTx = await writeContractAsync({
-        address: AMM_ADDR, abi: AMM_ABI, functionName: "removeLiquidity",
-        args: [pool.tokenA as Addr, pool.tokenB as Addr, lpWei, 0n, 0n],
-        chainId: avalancheFuji.id,
-      });
-      setTxUrl(`${EXPLORER}/tx/${remTx}`);
-      setStatusMsg(`Removed liquidity from ${liqPool}!`);
-      setLpAmt("");
-      await handleRefresh();
-    } catch (e: unknown) {
-      setStatusMsg(`${e instanceof Error ? e.message.slice(0, 120) : "Failed"}`);
-    } finally {
-      setBusy(false);
-    }
+  const doAdd = () => {
+    if (!pool || !ps || aWei === ZERO || bWei === ZERO) return;
+    if (aWei > balA) { setRun({ ...IDLE, state: "failed", message: `You only have ${show(n(balA, pool.a.decimals))} ${pool.a.symbol}.` }); return; }
+    if (bWei > balB) { setRun({ ...IDLE, state: "failed", message: `You need ${show(n(bWei, pool.b.decimals))} ${pool.b.symbol} but have ${show(n(balB, pool.b.decimals))}.` }); return; }
+    const needA = (state.wallet[pool.a.symbol]?.allow ?? ZERO) < aWei;
+    const needB = (state.wallet[pool.b.symbol]?.allow ?? ZERO) < bWei;
+    const steps = ["Switch wallet to Avalanche Fuji", ...(needA ? [`Allow ${pool.a.symbol}`] : []), ...(needB ? [`Allow ${pool.b.symbol}`] : []), `Add to the ${pool.id} pool`];
+    const minLP = (lpOut * (BigInt(10000) - SLIPPAGE_BPS)) / BigInt(10000);
+    void go(steps, async (next) => {
+      if (needA) { await ensureAllowance(pool.a.address, ZERO, aWei); next(); }
+      if (needB) { await ensureAllowance(pool.b.address, ZERO, bWei); next(); }
+      return writeContractAsync({ address: AMM!, abi: AMM_ABI, functionName: "addLiquidity", args: [pool.a.address, pool.b.address, aWei, bWei, minLP], chainId: FUJI });
+    }, `Added. You now own about ${shareAfter.toFixed(2)}% of the ${pool.id} pool.`).then((ok) => { if (ok) setAmtA(""); });
   };
 
-  const isNotDeployed = !defiAddrs.deployedAt;
+  const doRemove = (p: Pool) => {
+    const s = state.pools[p.id];
+    const lp = (s.lp * BigInt(outPct)) / BigInt(100);
+    if (lp === ZERO || s.supply === ZERO) return;
+    const getA = (lp * s.ra) / s.supply, getB = (lp * s.rb) / s.supply;
+    const slip = (x: bigint) => (x * (BigInt(10000) - SLIPPAGE_BPS)) / BigInt(10000);
+    const needApprove = s.lpAllow < lp;
+    const steps = ["Switch wallet to Avalanche Fuji", ...(needApprove ? ["Allow your pool share to be returned"] : []), `Take ${outPct}% out of ${p.id}`];
+    void go(steps, async (next) => {
+      if (needApprove) { await ensureAllowance(p.address, ZERO, lp); next(); }
+      return writeContractAsync({ address: AMM!, abi: AMM_ABI, functionName: "removeLiquidity", args: [p.a.address, p.b.address, lp, slip(getA), slip(getB)], chainId: FUJI });
+    }, `Done. About ${show(n(getA, p.a.decimals))} ${p.a.symbol} and ${show(n(getB, p.b.decimals))} ${p.b.symbol} are back in your wallet.`);
+  };
+
+  const busy = run.state === "running";
+  const myPools = POOLS.filter((p) => state.pools[p.id].lp > ZERO);
+
+  const progress = run.state !== "idle" && (
+    <div className="pl-progress">
+      {run.steps.map((label, i) => {
+        const done = run.step > i, now = run.step === i, failed = run.state === "failed" && now;
+        return (
+          <div key={label} className="pl-prow">
+            <span className={done ? "pl-dot done" : failed ? "pl-dot fail" : now ? "pl-dot now" : "pl-dot"}>
+              {done ? <Check size={12} /> : failed ? <X size={12} /> : now && busy ? <Loader2 size={12} className="pl-spin" /> : i + 1}
+            </span>
+            <span style={{ color: done || now ? C.paper : C.ink }}>{label}</span>
+          </div>
+        );
+      })}
+      {run.message && <p className={run.state === "done" ? "pl-ok" : "pl-err"}>{run.message}</p>}
+      {run.txHash && <a className="pl-link" href={`${EXPLORER}/tx/${run.txHash}`} target="_blank" rel="noopener noreferrer">See it on Snowtrace <ExternalLink size={13} /></a>}
+    </div>
+  );
+
+  const pickTab = (t: typeof tab, scroll = false) => {
+    setTab(t); setRun(IDLE);
+    if (scroll) document.getElementById("pl-panel")?.scrollIntoView({ behavior: "smooth", block: "start" });
+  };
 
   return (
-    <main className="p-4 pt-6 pb-28 flex flex-col gap-5 relative max-w-2xl mx-auto">
-
-      {/* Header */}
-      <div className="flex items-center gap-3">
-        <Link href="/" style={{ width: 36, height: 36, borderRadius: "50%", background: "rgba(16,185,129,0.1)", border: "1px solid rgba(16,185,129,0.3)", display: "flex", alignItems: "center", justifyContent: "center", textDecoration: "none", flexShrink: 0 }}>
-          <ArrowLeft size={18} color="#10b981" />
-        </Link>
-        <div className="flex-1">
-          <h1 className="text-2xl font-black text-white m-0">KAI Pools & AMM</h1>
-          <p className="text-xs text-white/45 mt-0.5">x*y=k AMM · Real ERC-20 swaps · Fuji C-Chain</p>
-        </div>
-        <button onClick={handleRefresh} className="p-2 rounded-lg border border-white/10 bg-white/5 cursor-pointer hover:bg-white/10 transition-all active:scale-90" aria-label="Refresh pool data">
-          <RefreshCw size={15} color="#10b981" className={busy ? "animate-spin" : ""} />
-        </button>
-      </div>
-
-      {/* Market overview strip */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-        <StatChip label="Platform TVL" value={TOTAL_TVL} suffix="" color="#34d399" />
-        <StatChip label="Active Pools" value={deployedCount} suffix={`/${POOLS.length}`} color="#A78BFA" decimals={0} />
-        <StatChip label="Avg APY" value={AVG_APY} suffix="%" color="#FBBF24" decimals={1} />
-        <StatChip label="Live" value={0} suffix="Fuji C-Chain" color="#22D3EE" live />
-      </div>
-
-      {/* Not deployed warning */}
-      {isNotDeployed && (
-        <div style={{ background: "rgba(249,115,22,0.08)", border: "1px solid rgba(249,115,22,0.3)", borderRadius: 14, padding: "14px 16px", fontSize: 12, color: "rgba(255,255,255,0.7)" }}>
-          <strong style={{ color: "#F97316" }}>Pools not deployed yet.</strong>&nbsp;
-          <code style={{ fontSize: 11, color: "#fbbf24" }}>npx hardhat run scripts/deploy-defi.ts --network fuji</code>
-        </div>
-      )}
-
-      {/* Status */}
-      {statusMsg && (
-        <div style={{           background: "rgba(34,197,94,0.08)", border: "1px solid rgba(34,197,94,0.2)", padding: "12px 14px", borderRadius: 12, fontSize: 12, color: "#fff" }}>
-          {statusMsg}
-          {txUrl && <a href={txUrl} target="_blank" rel="noopener noreferrer" style={{ marginLeft: 8, color: "#60a5fa", display: "inline-flex", alignItems: "center", gap: 4 }}>Snowtrace <ExternalLink size={11} /></a>}
-        </div>
-      )}
-
-      {/* Live pool overview cards (click to open pool drawer) */}
-      <section>
-        <div className="flex items-center justify-between mb-3">
-          <h2 className="text-sm font-black text-white/80 uppercase tracking-widest flex items-center gap-2">
-            <TrendingUp size={14} className="text-[#34d399]" /> Live Pool Overview
-          </h2>
-          <span className="text-[10px] font-mono text-white/40 flex items-center gap-1.5">
-            <span className="w-1.5 h-1.5 rounded-full bg-[#34d399] animate-pulse" /> auto-refresh on-chain
-          </span>
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-          {POOLS.map(p => {
-            const info = poolInfo.find(pi => pi.pair === p.pair);
-            const meta = PAIR_TO_TOKEN[p.pair];
-            const symA = SWAP_TOKENS.find(s => tokenAddr(s) === p.tokenA) ?? p.pair.split("/")[0];
-            const symB = SWAP_TOKENS.find(s => tokenAddr(s) === p.tokenB) ?? p.pair.split("/")[1];
-            const rA   = info ? parseFloat(formatUnits(info.reserveA, tokenDec(symA))) : 0;
-            const rB   = info ? parseFloat(formatUnits(info.reserveB, tokenDec(symB))) : 0;
-            const spot = rA * rB > 0 ? rB / rA : 1;
-            return (
-              <PoolStatsCard
-                key={p.pair}
-                pair={p.pair}
-                symbolA={symA}
-                symbolB={symB}
-                colorA={tokenColor(symA)}
-                colorB={tokenColor(symB)}
-                apy={meta?.apy ?? 0}
-                tvl={meta?.tvl ?? 0}
-                spot={spot}
-                reserveA={rA}
-                reserveB={rB}
-                deployed={!!p.address}
-                staked={!!(meta && stakedPositions[meta.id])}
-                onOpen={() => openDrawerForPair(p.pair)}
-              />
-            );
-          })}
-        </div>
-      </section>
-
-      {/* Bubble canvas */}
-      <CryptoBubblesCanvas onSelectPool={setSelectedToken} stakedPositions={stakedPositions} />
-
-      {/* Tab bar */}
-      <div className="flex gap-2 bg-black/20 p-1 rounded-xl">
-        {([["swap", "Swap", ArrowDownUp], ["liquidity", "Liquidity", Droplets], ["info", "Info", BarChart3]] as const).map(([id, label, Icon]) => (
-          <button key={id} onClick={() => { setActiveTab(id); setStatusMsg(""); setTxUrl(null); }}
-            className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-bold transition-all ${activeTab === id ? "bg-[#10b981] text-white shadow-lg shadow-[#10b981]/30" : "text-white/50 hover:text-white"}`}>
-            <Icon size={13} />{label}
+    <main className="pl">
+      <header className="pl-top">
+        <div className="pl-wrap pl-top-inner">
+          <Link href="/" className="pl-round" aria-label="Back to home"><ArrowLeft size={18} /></Link>
+          <div style={{ minWidth: 0 }}>
+            <h1 className="pl-title">Pools &amp; Swap</h1>
+            <p className="pl-sub">Swap tokens, or earn fees by adding to a pool</p>
+          </div>
+          <button className="pl-round pl-refresh" onClick={() => void refresh()} aria-label="Refresh"><RefreshCw size={16} /></button>
+          <button className={isConnected ? "pl-wallet on" : "pl-wallet"} onClick={() => setShowWallet(true)}>
+            <Wallet size={15} /><span>{isConnected && address ? `${address.slice(0, 6)}…${address.slice(-4)}` : "Connect"}</span>
           </button>
-        ))}
-      </div>
+        </div>
+      </header>
 
-      {/* ── SWAP TAB ── */}
-      {activeTab === "swap" && (
-        <div className="glass rounded-2xl p-5" style={{ border: "1px solid rgba(16,185,129,0.2)" }}>
-          <div className="flex items-center justify-between mb-4">
-            <p className="text-xs font-bold text-white/40 uppercase tracking-wider">Swap Tokens via KaiAMM</p>
-            {routingPool?.address && (
-              <span className="inline-flex items-center gap-1.5 rounded-full border border-[#34d399]/30 bg-[#34d399]/10 px-2.5 py-1 text-[10px] font-bold text-[#34d399]">
-                <span className="w-1.5 h-1.5 rounded-full bg-[#34d399] animate-pulse" />
-                routed via {routingPool.pair}
-              </span>
-            )}
-          </div>
-
-          {/* Token In */}
-          <div style={{ background: "rgba(0,0,0,0.3)", borderRadius: 14, padding: "12px 16px", border: "1px solid rgba(255,255,255,0.06)", marginBottom: 4 }}>
-            <div className="flex justify-between mb-2">
-              <span className="text-xs font-bold text-white/40 uppercase tracking-wide">You Pay</span>
-              <span className="text-xs text-white/30">Available pools: NVR-yBOB · YTOKEN-YGOLD · GAMI-CENTS</span>
-            </div>
-            <div className="flex items-center gap-3">
-              <input type="number" value={swapAmt} onChange={e => setSwapAmt(e.target.value)} placeholder="0.00"
-                style={{ background: "transparent", border: "none", outline: "none", fontSize: 28, fontWeight: 900, color: "#fff", flex: 1, fontFamily: "inherit" }} />
-              <select value={swapIn} onChange={e => handleSwapInChange(e.target.value)}
-                style={{ background: "rgba(16,185,129,0.15)", border: "1px solid rgba(16,185,129,0.4)", borderRadius: 10, padding: "6px 10px", color: "#fff", fontSize: 13, fontWeight: 700, cursor: "pointer" }}>
-                {SWAP_TOKENS.filter(s => validOutputTokens(s).length > 0).map(s => <option key={s} value={s}>{tokenEmoji(s)} {s}</option>)}
-              </select>
-            </div>
-          </div>
-
-          {/* Flip */}
-          <div className="flex justify-center my-1">
-            <button onClick={flipPair}
-              style={{ width: 34, height: 34, borderRadius: "50%", background: "linear-gradient(135deg,#10b981,#064e3b)", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 4px 14px rgba(16,185,129,0.35)" }}>
-              <span key={flipKey} className="flip-inline">
-                <ArrowDownUp size={15} color="#fff" />
-              </span>
-            </button>
-          </div>
-
-          {/* Token Out — live on-chain quote */}
-          <div style={{ background: "rgba(0,0,0,0.3)", borderRadius: 14, padding: "12px 16px", border: `1px solid ${quoteFormatted ? "rgba(34,197,94,0.25)" : "rgba(255,255,255,0.06)"}`, marginBottom: 8, transition: "border-color 0.3s" }}>
-            <div className="flex justify-between mb-2">
-              <span className="text-xs font-bold text-white/40 uppercase tracking-wide">You Receive</span>
-              <span style={{ fontSize: 10, color: quoteFetching ? "#f59e0b" : quoteFormatted ? "#22C55E" : "rgba(255,255,255,0.3)", fontWeight: 700 }}>
-                {quoteFetching ? "fetching..." : routingPool ? `via ${routingPool.pair} pool` : swapAmt ? "no pool for this pair" : "enter amount"}
-              </span>
-            </div>
-            <div className="flex items-center gap-3">
-              {/* Display-only quoted output */}
-              <div key={`${quoteFormatted ?? "empty"}-${quoteFetching}`} className="quote-pop" style={{ flex: 1, fontSize: 28, fontWeight: 900, color: quoteFormatted ? "#fff" : "rgba(255,255,255,0.2)", fontFamily: "inherit", minHeight: 40, display: "flex", alignItems: "center" }}>
-                {quoteFetching ? (
-                  <span style={{ fontSize: 16, color: "#f59e0b" }}>calculating...</span>
-                ) : quoteFormatted ? (
-                  quoteFormatted
-                ) : (
-                  <span style={{ fontSize: 16 }}>-</span>
-                )}
-              </div>
-              <select value={swapOut} onChange={e => { setSwapOut(e.target.value); setSwapAmt(""); }}
-                style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.15)", borderRadius: 10, padding: "6px 10px", color: "#fff", fontSize: 13, fontWeight: 700, cursor: "pointer" }}>
-                {validOutputTokens(swapIn).map(s => <option key={s} value={s}>{tokenEmoji(s)} {s}</option>)}
-              </select>
-            </div>
-          </div>
-
-          {/* Smart swap breakdown */}
-          {quoteFormatted && !quoteFetching && swapInNum > 0 && (
-            <div className="rounded-xl bg-black/20 border border-white/5 px-3 py-2.5 mb-3" style={{ fontSize: 11 }}>
-              <div className="flex justify-between mb-1.5">
-                <span className="text-white/40">Rate</span>
-                <span className="font-bold text-white">1 {swapIn} ≈ {(swapOutNum / swapInNum).toFixed(6)} {swapOut}</span>
-              </div>
-              <div className="flex justify-between mb-1.5">
-                <span className="text-white/40">Inverse</span>
-                <span className="font-bold text-white/80">1 {swapOut} ≈ {(swapInNum / swapOutNum).toFixed(6)} {swapIn}</span>
-              </div>
-              <div className="flex justify-between mb-1.5">
-                <span className="text-white/40">AMM fee (0.3%)</span>
-                <span className="font-bold text-white/80">{feeEst.toFixed(6)} {swapOut}</span>
-              </div>
-              <div className="flex justify-between mb-1.5">
-                <span className="text-white/40">Price impact</span>
-                <span className="font-bold" style={{ color: impactColor }}>
-                  {priceImpact > 1.5 ? "⚠ high" : priceImpact > 0.5 ? "!" : ""} {priceImpact.toFixed(2)}%
-                </span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-white/40">Min received</span>
-                <span className="font-bold text-[#34d399]">{minOut} {swapOut} <span className="text-white/30">(0.5% slip)</span></span>
-              </div>
-              {priceImpact > 1.5 && swapOutNum > 0 && (
-                <div className="mt-2 rounded-lg bg-red-500/10 border border-red-500/25 px-2.5 py-1.5 text-red-300 font-semibold">
-                  Large order for this pool depth — consider splitting to reduce slippage.
-                </div>
-              )}
-            </div>
-          )}
-
-          {/* No pool warning */}
-          {swapAmt && parseFloat(swapAmt) > 0 && !routingPool && (
-            <div style={{ padding: "8px 12px", borderRadius: 8, background: "rgba(249,115,22,0.08)", border: "1px solid rgba(249,115,22,0.25)", fontSize: 11, color: "#F97316", marginBottom: 8 }}>
-              {`No liquidity pool exists for ${swapIn} -> ${swapOut}. Try NVR-yBOB, YTOKEN-YGOLD, or GAMI-CENTS.`}
-            </div>
-          )}
-
-          <button onClick={handleSwap} disabled={busy || !swapAmt || !AMM_ADDR || !quoteFormatted || !routingPool} style={{
-            width: "100%", padding: "13px", borderRadius: 12, border: "none", fontWeight: 800, fontSize: 14,
-            background: busy || !swapAmt || !AMM_ADDR || !quoteFormatted || !routingPool
-              ? "rgba(255,255,255,0.08)"
-              : "linear-gradient(135deg,#10b981,#064e3b)",
-            color: "#fff",
-            cursor: busy || !swapAmt || !AMM_ADDR || !quoteFormatted || !routingPool ? "not-allowed" : "pointer",
-            opacity: busy || !swapAmt ? 0.6 : 1,
-            boxShadow: !busy && swapAmt && AMM_ADDR && quoteFormatted && routingPool ? "0 6px 24px rgba(16,185,129,0.35)" : "none",
-          }}>
-            {busy ? "Signing..."
-              : !AMM_ADDR ? "Deploy AMM first"
-              : !swapAmt ? "Enter an amount"
-              : !routingPool ? "No pool for this pair"
-              : quoteFetching ? "Fetching quote..."
-              : `Swap ${swapAmt} ${swapIn} -> ${quoteFormatted} ${swapOut}`}
+      <div className="pl-wrap pl-body">
+        <div className="pl-about">
+          <button className="pl-about-btn" onClick={() => setAboutOpen((o) => !o)} aria-expanded={aboutOpen}>
+            <span>How do pools work?</span>
+            <ChevronDown size={16} style={{ transform: aboutOpen ? "rotate(180deg)" : undefined, transition: "transform .15s" }} />
           </button>
-          {!isConnected && (
-            <button onClick={() => setShowModal(true)} className="mt-2 w-full py-2.5 rounded-xl border border-white/10 bg-white/5 text-xs font-bold text-white/60 hover:text-white hover:bg-white/10 transition-all flex items-center justify-center gap-1.5">
-              <Wallet size={13} /> Connect wallet to swap
-            </button>
+          {aboutOpen && (
+            <ol>
+              <li>A <b>pool</b> holds two tokens, for example NVR and yBOB. Its price comes from how much of each it holds.</li>
+              <li><b>Swap:</b> you give one token and get the other. A <b>0.3% fee</b> stays in the pool.</li>
+              <li><b>Add to a pool:</b> put in both tokens at the pool&apos;s price. You own a share of the pool and its fees. Take it out any time.</li>
+              <li>This is the Avalanche <b>test network</b>: test tokens, no real money.</li>
+            </ol>
           )}
         </div>
-      )}
 
-      {/* ── LIQUIDITY TAB ── */}
-      {activeTab === "liquidity" && (
-        <div className="glass rounded-2xl p-5" style={{ border: "1px solid rgba(52,211,153,0.2)" }}>
-          <p className="text-xs font-bold text-white/40 uppercase tracking-wider mb-4">Manage Liquidity</p>
-
-          {/* Pool selector */}
-          <div style={{ marginBottom: 14 }}>
-            <label className="text-xs font-bold text-white/40 uppercase tracking-wider block mb-2">Pool</label>
-            <select value={liqPool} onChange={e => { setLiqPool(e.target.value); setLiqAmtA(""); setLiqAmtB(""); setLpAmt(""); }}
-              style={{ width: "100%", background: "rgba(0,0,0,0.3)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 10, padding: "10px 14px", color: "#fff", fontSize: 14, fontWeight: 700 }}>
-              {POOLS.map(p => <option key={p.pair} value={p.pair}>{p.pair} {p.address ? "" : "(not deployed)"}</option>)}
-            </select>
-          </div>
-
-          {/* Add / Remove toggle */}
-          <div className="flex gap-2 bg-black/20 p-1 rounded-xl mb-4">
-            {(["add","remove"] as const).map(m => (
-              <button key={m} onClick={() => setLiqMode(m)}
-                className={`flex-1 py-2 rounded-lg text-xs font-bold transition-all ${liqMode === m ? "bg-[#34d399] text-[#1B4332] shadow-lg shadow-[#34d399]/25" : "text-white/50"}`}>
-                {m === "add" ? "Add Liquidity" : "Remove Liquidity"}
-              </button>
+        {/* Tabs */}
+        <section className="pl-panel" id="pl-panel">
+          <div className="pl-tabs" role="tablist">
+            {([["swap", "Swap"], ["add", "Add to a pool"], ["mine", `My pools${myPools.length ? ` (${myPools.length})` : ""}`]] as const).map(([id, label]) => (
+              <button key={id} role="tab" aria-selected={tab === id} className={tab === id ? "on" : ""} onClick={() => pickTab(id)}>{label}</button>
             ))}
           </div>
 
-          {liqMode === "add" ? (
-            <>
-              {(["A","B"] as const).map((side) => {
-                const pool = POOLS.find(p => p.pair === liqPool);
-                const sym  = side === "A"
-                  ? SWAP_TOKENS.find(s => tokenAddr(s) === pool?.tokenA) ?? liqPool.split("/")[0]
-                  : SWAP_TOKENS.find(s => tokenAddr(s) === pool?.tokenB) ?? liqPool.split("/")[1];
-                const val  = side === "A" ? liqAmtA : liqAmtB;
-                const set  = side === "A" ? setLiqAmtA : setLiqAmtB;
-                const info = poolInfo.find(pi => pi.pair === liqPool);
-                const poolBal = info
-                  ? parseFloat(formatUnits(side === "A" ? info.reserveA : info.reserveB, tokenDec(sym)))
-                  : 0;
-                return (
-                  <div key={side} style={{ background: "rgba(0,0,0,0.25)", borderRadius: 12, padding: "8px 14px 10px", border: "1px solid rgba(255,255,255,0.06)", marginBottom: 8 }}>
-                    <div className="flex justify-between items-center mb-0.5">
-                      <span className="text-xs font-bold text-white/40">{sym}</span>
-                      <button onClick={() => set(poolBal ? String(poolBal) : "")} className="text-[10px] font-bold text-[#34d399] bg-transparent border-0 cursor-pointer hover:underline">
-                        DEPTH {poolBal.toLocaleString(undefined, { maximumFractionDigits: 2 })}
-                      </button>
-                    </div>
-                    <input type="number" value={val} onChange={e => set(e.target.value)} placeholder="0.00"
-                      style={{ background: "transparent", border: "none", outline: "none", fontSize: 20, fontWeight: 800, color: "#fff", width: "100%", fontFamily: "inherit" }} />
-                  </div>
-                );
-              })}
-              <button onClick={handleAddLiquidity} disabled={busy || !liqAmtA || !liqAmtB || !AMM_ADDR} style={{
-                width: "100%", padding: 12, borderRadius: 12, border: "none", fontWeight: 800, fontSize: 14,
-                background: busy || !liqAmtA || !liqAmtB ? "rgba(255,255,255,0.08)" : "linear-gradient(135deg,#34d399,#059669)",
-                color: "#1B4332", cursor: busy ? "not-allowed" : "pointer", opacity: busy ? 0.6 : 1,
-                boxShadow: !busy && liqAmtA && liqAmtB ? "0 6px 24px rgba(52,211,153,0.3)" : "none",
-              }}>
-                {busy ? "Signing..." : "Add Liquidity"}
-              </button>
-            </>
-          ) : (
-            <>
-              {(() => {
-                const pool = POOLS.find(p => p.pair === liqPool);
-                const info = poolInfo.find(p => p.pair === liqPool);
-                const lpB  = info?.lpBal ?? 0n;
-                return (
-                  <div>
-                    <div style={{ background: "rgba(0,0,0,0.25)", borderRadius: 12, padding: "10px 14px", border: "1px solid rgba(255,255,255,0.06)", marginBottom: 8 }}>
-                      <div className="flex justify-between mb-1">
-                        <span className="text-xs font-bold text-white/40">LP TOKENS TO BURN</span>
-                        <button onClick={() => setLpAmt(formatUnits(lpB, 18))} className="text-xs text-[#34d399] font-bold bg-transparent border-0 cursor-pointer">
-                          MAX {parseFloat(formatUnits(lpB, 18)).toFixed(4)}
-                        </button>
-                      </div>
-                      <input type="number" value={lpAmt} onChange={e => setLpAmt(e.target.value)} placeholder="0.00"
-                        style={{ background: "transparent", border: "none", outline: "none", fontSize: 20, fontWeight: 800, color: "#fff", width: "100%", fontFamily: "inherit" }} />
-                    </div>
-                    <button onClick={handleRemoveLiquidity} disabled={busy || !lpAmt || !pool?.address} style={{
-                      width: "100%", padding: 12, borderRadius: 12, border: "none", fontWeight: 800, fontSize: 14,
-                      background: busy || !lpAmt ? "rgba(255,255,255,0.08)" : "linear-gradient(135deg,#F97316,#ea580c)",
-                      color: "#fff", cursor: busy ? "not-allowed" : "pointer", opacity: busy ? 0.6 : 1,
-                      boxShadow: !busy && lpAmt ? "0 6px 24px rgba(249,115,22,0.3)" : "none",
-                    }}>
-                      {busy ? "Signing..." : "Remove Liquidity"}
-                    </button>
-                  </div>
-                );
-              })()}
-            </>
-          )}
-        </div>
-      )}
-
-      {/* ── INFO TAB ── */}
-      {activeTab === "info" && (
-        <div className="flex flex-col gap-3">
-          {POOLS.map(p => {
-            const info = poolInfo.find(pi => pi.pair === p.pair);
-            const meta = PAIR_TO_TOKEN[p.pair];
-            const symA = SWAP_TOKENS.find(s => tokenAddr(s) === p.tokenA) ?? p.pair.split("/")[0];
-            const symB = SWAP_TOKENS.find(s => tokenAddr(s) === p.tokenB) ?? p.pair.split("/")[1];
-            const rA   = info?.reserveA ?? 0n;
-            const rB   = info?.reserveB ?? 0n;
-            const lp   = info?.totalSupply ?? 0n;
-            const myLp = info?.lpBal ?? 0n;
-            const share = lp > 0n ? (Number(myLp) / Number(lp)) * 100 : 0;
-            const dailyYield = meta && lp > 0n ? (Number(myLp) / Number(lp)) * (meta.apy / 100) * meta.tvl / 365 : 0;
-            const myLpFmt = parseFloat(formatUnits(myLp, 18));
-            return (
-              <div key={p.pair} className="glass rounded-2xl" style={{ padding: "14px 16px", border: "1px solid rgba(255,255,255,0.08)" }}>
-                <div className="flex justify-between items-center mb-3">
-                  <span className="font-bold text-white">{p.pair}</span>
-                  {p.address ? (
-                    <a href={`${EXPLORER}/address/${p.address}`} target="_blank" rel="noopener noreferrer"
-                      style={{ fontSize: 10, color: "#60a5fa", display: "flex", alignItems: "center", gap: 3 }}>
-                      {(p.address as string).slice(0,10)}... <ExternalLink size={10} />
-                    </a>
-                  ) : <span className="text-xs text-orange-400">Not deployed</span>}
-                </div>
-                <div className="grid grid-cols-2 gap-2">
-                  {[
-                    { label: `Reserve ${symA}`, val: parseFloat(formatUnits(rA, tokenDec(symA))).toLocaleString(undefined, { maximumFractionDigits: 4 }), color: tokenColor(symA) },
-                    { label: `Reserve ${symB}`, val: parseFloat(formatUnits(rB, tokenDec(symB))).toLocaleString(undefined, { maximumFractionDigits: 4 }), color: tokenColor(symB) },
-                    { label: "LP Supply",        val: parseFloat(formatUnits(lp, 18)).toLocaleString(undefined, { maximumFractionDigits: 4 }), color: "#A78BFA" },
-                    { label: "My LP",            val: myLpFmt.toLocaleString(undefined, { maximumFractionDigits: 4 }), color: "#22C55E" },
-                  ].map(s => (
-                    <div key={s.label} style={{ background: "rgba(0,0,0,0.2)", borderRadius: 8, padding: "8px 10px" }}>
-                      <p style={{ fontSize: 9, color: "rgba(255,255,255,0.35)", margin: "0 0 3px", fontWeight: 700, letterSpacing: 0.5 }}>{s.label.toUpperCase()}</p>
-                      <p style={{ fontSize: 13, fontWeight: 800, color: s.color, margin: 0 }}>{s.val}</p>
-                    </div>
-                  ))}
-                  {[
-                    { label: "Your Share", val: `${share.toFixed(3)}%`, color: "#D8B4FE" },
-                    { label: "Est. Daily Yield", val: dailyYield > 0 ? `$${dailyYield.toFixed(2)}` : "-", color: "#34d399" },
-                  ].map(s => (
-                    <div key={s.label} style={{ background: "rgba(0,0,0,0.2)", borderRadius: 8, padding: "8px 10px", border: "1px solid rgba(16,185,129,0.12)" }}>
-                      <p style={{ fontSize: 9, color: "rgba(255,255,255,0.35)", margin: "0 0 3px", fontWeight: 700, letterSpacing: 0.5 }}>{s.label.toUpperCase()}</p>
-                      <p style={{ fontSize: 13, fontWeight: 800, color: s.color, margin: 0 }}>{s.val}</p>
-                    </div>
-                  ))}
+          {tab === "swap" && (
+            <div className="pl-form">
+              <div className="pl-box">
+                <div className="pl-box-top"><span>You give</span>{isConnected && <button className="pl-mini" onClick={() => setAmount(formatUnits(fromBal, fromTok.decimals))}>You have {show(n(fromBal, fromTok.decimals))} · Use all</button>}</div>
+                <div className="pl-box-row">
+                  <input className="pl-amount" inputMode="decimal" placeholder="0" value={amount} aria-label={`Amount of ${from}`} onChange={(e) => { setAmount(e.target.value.replace(/[^\d.]/g, "")); setRun(IDLE); }} />
+                  <select className="pl-select" value={from} onChange={(e) => changeFrom(e.target.value)} aria-label="Token you give">
+                    {TOKENS.filter((t) => partners(t.symbol).length).map((t) => <option key={t.symbol} value={t.symbol}>{t.symbol}</option>)}
+                  </select>
                 </div>
               </div>
-            );
-          })}
 
-          {AMM_ADDR && (
-            <a href={`${EXPLORER}/address/${AMM_ADDR}`} target="_blank" rel="noopener noreferrer"
-              style={{ fontSize: 11, color: "#60a5fa", display: "flex", alignItems: "center", gap: 4, justifyContent: "center", padding: 8 }}>
-              KaiAMM Factory: {AMM_ADDR} <ExternalLink size={11} />
-            </a>
+              <button className="pl-flip" onClick={flip} aria-label="Swap the two tokens"><ArrowDownUp size={16} /></button>
+
+              <div className="pl-box">
+                <div className="pl-box-top"><span>You get (about)</span></div>
+                <div className="pl-box-row">
+                  <span className="pl-amount" style={{ color: outNum ? C.paper : C.ink }}>{quote.isFetching ? "…" : outNum ? show(outNum) : "0"}</span>
+                  <select className="pl-select" value={to} onChange={(e) => { setTo(e.target.value); setRun(IDLE); }} aria-label="Token you get">
+                    {partners(from).map((s) => <option key={s} value={s}>{s}</option>)}
+                  </select>
+                </div>
+              </div>
+
+              {outNum > 0 && (
+                <dl className="pl-dl pl-details">
+                  <dt>Price</dt><dd>1 {from} = {show(outNum / inNum)} {to}</dd>
+                  <dt>Pool fee (0.3%)</dt><dd>{show(inNum * 0.003)} {from}</dd>
+                  <dt>Price change from your trade</dt><dd style={{ color: impactWord.c }}>{impactWord.t} ({impact.toFixed(2)}%)</dd>
+                  <dt>You get at least</dt><dd>{show(n(minOutWei, toTok.decimals))} {to}</dd>
+                </dl>
+              )}
+              {impact > 3 && <p className="pl-warn">This trade is big for this pool, so the price moves a lot. Try a smaller amount.</p>}
+
+              {!isConnected ? (
+                <button className="pl-btn pl-btn--wide" onClick={() => setShowWallet(true)}><Wallet size={16} /> Connect wallet to swap</button>
+              ) : (
+                <button className="pl-btn pl-btn--wide" onClick={doSwap} disabled={busy || !outNum}>
+                  {busy ? <><Loader2 size={16} className="pl-spin" /> Working…</> : !amount ? "Type an amount" : <>Swap {amount} {from} for {to} <ChevronRight size={16} /></>}
+                </button>
+              )}
+              {progress}
+            </div>
           )}
-        </div>
-      )}
 
-      {/* Pool drawer (legacy simulator — keeping for UX) */}
-      <PoolDrawer
-        token={selectedToken}
-        onClose={() => setSelectedToken(null)}
-        stakedPositions={stakedPositions}
-        onStakeUpdate={(id, pos) =>
-          setStakedPositions(prev => pos ? { ...prev, [id]: pos } : Object.fromEntries(Object.entries(prev).filter(([k]) => k !== id)))
-        }
-      />
+          {tab === "add" && pool && ps && (
+            <div className="pl-form">
+              <label className="pl-label" htmlFor="pl-pool">Which pool</label>
+              <select id="pl-pool" className="pl-select pl-select--wide" value={pool.id} onChange={(e) => { setPoolId(e.target.value); setAmtA(""); setRun(IDLE); }}>
+                {POOLS.map((p) => <option key={p.id} value={p.id}>{p.a.symbol} / {p.b.symbol}</option>)}
+              </select>
 
-      {showModal && <WalletConnectModal onClose={() => setShowModal(false)} />}
+              <div className="pl-box">
+                <div className="pl-box-top"><span>You put in</span>{isConnected && <button className="pl-mini" onClick={() => setAmtA(formatUnits(balA, pool.a.decimals))}>You have {show(n(balA, pool.a.decimals))} · Use all</button>}</div>
+                <div className="pl-box-row">
+                  <input className="pl-amount" inputMode="decimal" placeholder="0" value={amtA} aria-label={`Amount of ${pool.a.symbol}`} onChange={(e) => { setAmtA(e.target.value.replace(/[^\d.]/g, "")); setRun(IDLE); }} />
+                  <span className="pl-token"><Coin s={pool.a.symbol} size={26} /> {pool.a.symbol}</span>
+                </div>
+              </div>
+              <div className="pl-plus">+</div>
+              <div className="pl-box">
+                <div className="pl-box-top"><span>And (worked out for you)</span>{isConnected && <span>You have {show(n(balB, pool.b.decimals))}</span>}</div>
+                <div className="pl-box-row">
+                  <span className="pl-amount" style={{ color: bWei ? C.paper : C.ink }}>{bWei ? show(n(bWei, pool.b.decimals)) : "0"}</span>
+                  <span className="pl-token"><Coin s={pool.b.symbol} size={26} /> {pool.b.symbol}</span>
+                </div>
+              </div>
+              <p className="pl-hint">Both go in at the pool&apos;s price (1 {pool.a.symbol} = {show(priceOf(pool, pool.a.symbol))} {pool.b.symbol}), so nothing is lost.</p>
+              {aWei > ZERO && <dl className="pl-dl pl-details"><dt>Your share after</dt><dd>about {shareAfter.toFixed(2)}% of the pool</dd><dt>You earn</dt><dd>that share of every 0.3% swap fee</dd></dl>}
+
+              {!isConnected ? (
+                <button className="pl-btn pl-btn--wide" onClick={() => setShowWallet(true)}><Wallet size={16} /> Connect wallet to add</button>
+              ) : (
+                <button className="pl-btn pl-btn--wide" onClick={doAdd} disabled={busy || aWei === ZERO}>
+                  {busy ? <><Loader2 size={16} className="pl-spin" /> Working…</> : aWei === ZERO ? "Type an amount" : <>Add to the pool <ChevronRight size={16} /></>}
+                </button>
+              )}
+              {progress}
+            </div>
+          )}
+
+          {tab === "mine" && (
+            <div className="pl-form">
+              {!isConnected ? (
+                <div className="pl-empty"><p>Connect your wallet to see your pools.</p><button className="pl-btn" onClick={() => setShowWallet(true)}><Wallet size={15} /> Connect wallet</button></div>
+              ) : myPools.length === 0 ? (
+                <div className="pl-empty"><p>You are not in any pool yet. Add to a pool to start earning fees.</p><button className="pl-btn" onClick={() => pickTab("add")}>Add to a pool</button></div>
+              ) : (
+                <>
+                  <p className="pl-label">How much to take out</p>
+                  <div className="pl-picks">{[25, 50, 100].map((pc) => <button key={pc} className={outPct === pc ? "pl-pick on" : "pl-pick"} onClick={() => setOutPct(pc)}>{pc === 100 ? "All" : `${pc}%`}</button>)}</div>
+                  {myPools.map((p) => {
+                    const s = state.pools[p.id];
+                    const share = (Number(s.lp) / Number(s.supply)) * 100;
+                    const mineA = (s.lp * s.ra) / s.supply, mineB = (s.lp * s.rb) / s.supply;
+                    return (
+                      <article key={p.id} className="pl-mine">
+                        <div className="pl-pool-head">
+                          <span className="pl-pair"><Coin s={p.a.symbol} /><Coin s={p.b.symbol} /></span>
+                          <div><b>{p.a.symbol} / {p.b.symbol}</b><small>You own {share.toFixed(2)}% of this pool</small></div>
+                        </div>
+                        <p className="pl-hint" style={{ margin: 0 }}>Worth now: <b>{show(n(mineA, p.a.decimals))} {p.a.symbol}</b> + <b>{show(n(mineB, p.b.decimals))} {p.b.symbol}</b></p>
+                        <button className="pl-btn pl-btn--quiet" onClick={() => doRemove(p)} disabled={busy}>Take out {outPct}%</button>
+                      </article>
+                    );
+                  })}
+                  {progress}
+                </>
+              )}
+            </div>
+          )}
+        </section>
+
+        {/* The pools at a glance (real reserves) */}
+        <section>
+          <h2 className="pl-h2">The pools</h2>
+          <div className="pl-pools">
+            {POOLS.map((p) => {
+              const s = state.pools[p.id];
+              const mine = s.supply > ZERO ? (Number(s.lp) / Number(s.supply)) * 100 : 0;
+              return (
+                <article key={p.id} className="pl-pool">
+                  <div className="pl-pool-head">
+                    <span className="pl-pair"><Coin s={p.a.symbol} /><Coin s={p.b.symbol} /></span>
+                    <div style={{ minWidth: 0 }}>
+                      <b>{p.a.symbol} / {p.b.symbol}</b>
+                      <small>{TOKEN_WORDS[p.a.symbol]} and {TOKEN_WORDS[p.b.symbol]?.toLowerCase()}</small>
+                    </div>
+                  </div>
+                  <dl className="pl-dl">
+                    <dt>Price</dt><dd>1 {p.a.symbol} = {poolReads.isLoading ? "…" : show(priceOf(p, p.a.symbol))} {p.b.symbol}</dd>
+                    <dt>In the pool</dt><dd>{show(n(s.ra, p.a.decimals))} {p.a.symbol} + {show(n(s.rb, p.b.decimals))} {p.b.symbol}</dd>
+                    {isConnected && <><dt>Your share</dt><dd>{mine > 0 ? `${mine.toFixed(2)}%` : "None yet"}</dd></>}
+                  </dl>
+                  <div className="pl-pool-btns">
+                    <button className="pl-btn pl-btn--quiet" onClick={() => { setFrom(p.a.symbol); setTo(p.b.symbol); setAmount(""); pickTab("swap", true); }}>Swap</button>
+                    <button className="pl-btn pl-btn--quiet" onClick={() => { setPoolId(p.id); setAmtA(""); pickTab("add", true); }}>Add to pool</button>
+                  </div>
+                </article>
+              );
+            })}
+          </div>
+        </section>
+
+        {AMM && <a className="pl-link" href={`${EXPLORER}/address/${AMM}`} target="_blank" rel="noopener noreferrer">See the KAI swap contract on Snowtrace <ExternalLink size={13} /></a>}
+      </div>
+
+      {showWallet && <WalletConnectModal onClose={() => setShowWallet(false)} />}
+
+      <style>{`
+        .pl { min-height: 100dvh; background: ${C.bg}; color: ${C.paper}; font-family: 'Inter', system-ui, sans-serif; padding-bottom: 110px; }
+        .pl-wrap { width: min(1080px, calc(100% - 32px)); margin: 0 auto; }
+        .pl-top { position: sticky; top: 0; z-index: 30; background: ${C.band}; border-bottom: 1px solid ${C.line}; }
+        .pl-top-inner { display: flex; align-items: center; gap: 10px; padding: 12px 0; }
+        .pl-round { display: grid; place-items: center; width: 36px; height: 36px; border-radius: 50%; border: none; color: ${C.paper}; background: rgba(246,242,231,0.06); flex-shrink: 0; cursor: pointer; }
+        .pl-refresh { margin-left: auto; color: ${C.dim}; }
+        .pl-title { margin: 0; font-size: 18px; font-weight: 700; }
+        .pl-sub { margin: 1px 0 0; font-size: 12.5px; color: ${C.ink}; }
+        .pl-wallet { display: inline-flex; align-items: center; gap: 7px; padding: 9px 14px; border-radius: 999px; border: none; background: ${C.gold}; color: #1B1A14; font-weight: 700; font-size: 13px; cursor: pointer; font-family: inherit; flex-shrink: 0; }
+        .pl-wallet.on { background: rgba(125,195,131,0.14); color: ${C.green}; font-family: ui-monospace, monospace; font-weight: 600; }
+        @media (max-width: 420px) { .pl-wallet span { display: none; } .pl-wallet { padding: 9px 11px; } }
+
+        .pl-body { display: grid; grid-template-columns: minmax(0, 1fr); gap: 22px; padding-top: 20px; }
+        .pl-body > * { min-width: 0; }
+        .pl-h2 { margin: 0 0 12px; font-size: 17px; font-weight: 700; }
+        .pl-about { border-radius: 14px; background: ${C.band}; }
+        .pl-about-btn { display: flex; align-items: center; justify-content: space-between; gap: 10px; width: 100%; padding: 14px 16px; border: none; background: none; color: ${C.paper}; font-size: 14px; font-weight: 600; cursor: pointer; font-family: inherit; text-align: left; }
+        .pl-about ol { margin: 0; padding: 0 16px 16px 36px; display: grid; gap: 8px; font-size: 13.5px; line-height: 1.55; color: ${C.dim}; }
+        .pl-about b { color: ${C.paper}; }
+
+        .pl-pools { display: grid; gap: 10px; grid-template-columns: 1fr; }
+        @media (min-width: 760px) { .pl-pools { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+        .pl-pool, .pl-mine { display: grid; gap: 12px; padding: 16px; border-radius: 16px; background: ${C.card}; min-width: 0; }
+        .pl-pool-head { display: flex; align-items: center; gap: 12px; }
+        .pl-pool-head b { display: block; font-size: 15px; }
+        .pl-pool-head small { display: block; font-size: 12.5px; color: ${C.ink}; }
+        .pl-pair { display: flex; }
+        .pl-pair > span + span { margin-left: -8px; box-shadow: 0 0 0 2px ${C.card}; }
+        .pl-pool-btns { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+
+        .pl-dl { display: grid; grid-template-columns: auto 1fr; gap: 6px 12px; margin: 0; font-size: 13.5px; }
+        .pl-dl dt { color: ${C.ink}; }
+        .pl-dl dd { margin: 0; text-align: right; overflow-wrap: anywhere; }
+        .pl-details { padding: 12px 14px; border-radius: 12px; background: ${C.bg}; }
+
+        .pl-panel { scroll-margin-top: 76px; box-sizing: border-box; padding: 16px; border-radius: 18px; background: ${C.band}; max-width: 560px; width: 100%; justify-self: center; }
+        .pl-tabs { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 4px; padding: 4px; border-radius: 12px; background: ${C.bg}; margin-bottom: 16px; }
+        .pl-tabs button { padding: 10px 4px; border-radius: 9px; border: none; background: none; color: ${C.dim}; font-weight: 700; font-size: 13.5px; cursor: pointer; font-family: inherit; min-height: 42px; }
+        .pl-tabs button.on { background: ${C.gold}; color: #1B1A14; }
+        .pl-form { display: grid; gap: 10px; }
+        .pl-box { box-sizing: border-box; min-width: 0; padding: 14px; border-radius: 14px; background: ${C.card}; display: grid; gap: 8px; }
+        .pl-box-top { display: flex; justify-content: space-between; gap: 8px; font-size: 12.5px; color: ${C.ink}; flex-wrap: wrap; }
+        .pl-mini { border: none; background: none; padding: 0; color: ${C.goldLight}; font-size: 12.5px; font-weight: 600; cursor: pointer; font-family: inherit; }
+        .pl-box-row { display: flex; align-items: center; gap: 10px; }
+        .pl-amount { flex: 1; min-width: 0; width: 100%; font-size: 26px; font-weight: 700; background: none; border: none; outline: none; color: ${C.paper}; font-family: inherit; overflow: hidden; text-overflow: ellipsis; }
+        .pl-select { flex-shrink: 0; max-width: 46%; padding: 9px 12px; border-radius: 999px; border: 1px solid rgba(246,242,231,0.14); background: ${C.bg}; color: ${C.paper}; font-size: 14px; font-weight: 700; font-family: inherit; cursor: pointer; }
+        .pl-select--wide { width: 100%; border-radius: 12px; padding: 12px; }
+        .pl-token { display: inline-flex; align-items: center; gap: 8px; font-weight: 700; flex-shrink: 0; }
+        .pl-flip { justify-self: center; display: grid; place-items: center; width: 40px; height: 40px; margin: -4px 0; border-radius: 50%; border: 3px solid ${C.band}; background: ${C.cardHi}; color: ${C.goldLight}; cursor: pointer; z-index: 1; }
+        .pl-plus { justify-self: center; color: ${C.ink}; font-weight: 700; font-size: 18px; margin: -4px 0; }
+        .pl-label { margin: 0; font-size: 13.5px; font-weight: 700; }
+        .pl-hint { margin: 0; font-size: 13px; color: ${C.dim}; line-height: 1.5; }
+        .pl-hint b { color: ${C.paper}; }
+        .pl-warn { margin: 0; padding: 10px 12px; border-radius: 10px; background: rgba(232,140,125,0.12); color: ${C.red}; font-size: 13px; }
+        .pl-picks { display: flex; gap: 6px; }
+        .pl-pick { padding: 7px 14px; border-radius: 999px; border: 1px solid rgba(246,242,231,0.14); background: none; color: ${C.dim}; font-size: 13px; font-weight: 600; cursor: pointer; font-family: inherit; }
+        .pl-pick.on { border-color: ${C.gold}; background: rgba(200,155,60,0.14); color: ${C.goldLight}; }
+        .pl-empty { display: grid; gap: 10px; justify-items: start; padding: 4px; }
+        .pl-empty p { margin: 0; color: ${C.dim}; font-size: 14px; }
+
+        .pl-btn { display: inline-flex; align-items: center; justify-content: center; gap: 7px; padding: 12px 18px; border-radius: 999px; border: none; background: ${C.gold}; color: #1B1A14; font-weight: 700; font-size: 14.5px; cursor: pointer; font-family: inherit; min-height: 46px; }
+        .pl-btn:disabled { opacity: .55; cursor: default; }
+        .pl-btn--wide { width: 100%; margin-top: 4px; }
+        .pl-btn--quiet { background: rgba(246,242,231,0.08); color: ${C.paper}; min-height: 42px; padding: 10px 14px; font-size: 13.5px; }
+        .pl-link { display: inline-flex; align-items: center; gap: 6px; color: ${C.goldLight}; font-size: 13px; font-weight: 600; text-decoration: none; }
+
+        .pl-progress { padding: 12px 14px; border-radius: 12px; background: ${C.bg}; display: grid; gap: 4px; }
+        .pl-prow { display: flex; align-items: center; gap: 10px; padding: 3px 0; font-size: 13.5px; }
+        .pl-dot { display: grid; place-items: center; width: 22px; height: 22px; border-radius: 50%; background: rgba(246,242,231,0.08); color: ${C.ink}; font-size: 11px; font-weight: 700; flex-shrink: 0; }
+        .pl-dot.now { background: rgba(200,155,60,0.22); color: ${C.goldLight}; }
+        .pl-dot.done { background: ${C.green}; color: #10231A; }
+        .pl-dot.fail { background: ${C.red}; color: #2A1410; }
+        .pl-ok { margin: 6px 0 0; font-size: 14px; color: ${C.green}; }
+        .pl-err { margin: 6px 0 0; font-size: 13.5px; color: ${C.red}; line-height: 1.5; }
+        .pl-spin { animation: pl-spin 1s linear infinite; }
+        @keyframes pl-spin { to { transform: rotate(360deg); } }
+        @media (prefers-reduced-motion: reduce) { .pl-spin { animation: none; } }
+      `}</style>
     </main>
   );
 }
