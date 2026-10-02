@@ -1,163 +1,23 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="description" content="Explore the full KAI Ecosystem — Africa’s digital financial operating system connecting individuals, SMEs, CBOs, and communities through KAI Trust, Insurance, Pension, and Products.">
-<title>KAI Ecosystem — Africa's Digital Financial Operating System</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300;9..144,500;9..144,600;9..144,700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
-<style>
-  :root{
-    --pine:#0F3D2E;
-    --pine-deep:#0A2A20;
-    --gold:#C89B3C;
-    --gold-soft:#E4C878;
-    --clay:#9C4B2D;
-    --paper:#F6F2E7;
-    --paper-dim:#EFE9D9;
-    --ink:#1B1A14;
-    --ink-soft:#4B4A3F;
-    --line:rgba(27,26,20,0.12);
-  }
-  *{box-sizing:border-box;}
-  html{scroll-behavior:smooth;}
-  body{
-    margin:0; background:var(--paper); color:var(--ink);
-    font-family:'IBM Plex Sans', sans-serif; line-height:1.6;
-    -webkit-font-smoothing:antialiased;
-  }
-  h1,h2,h3{font-family:'Fraunces', serif; font-weight:600; margin:0; letter-spacing:-0.01em;}
-  .mono{font-family:'IBM Plex Mono', monospace; letter-spacing:0.02em;}
-  .wrap{max-width:960px; margin:0 auto; padding:0 32px;}
-
-  /* ---------- HERO ---------- */
-  .hero{
-    background:radial-gradient(circle at 15% 20%, var(--pine) 0%, var(--pine-deep) 65%);
-    color:var(--paper); padding:100px 0 128px; position:relative; overflow:hidden;
-  }
-  .hero .wrap{position:relative; z-index:2;}
-  .rings-bg{position:absolute; right:-160px; top:-160px; width:600px; height:600px; z-index:1; opacity:0.5;}
-  .eyebrow{
-    font-family:'IBM Plex Mono', monospace; font-size:12.5px; text-transform:uppercase;
-    letter-spacing:0.16em; color:var(--gold-soft); display:flex; align-items:center; gap:10px; margin-bottom:28px;
-  }
-  .eyebrow::before{content:""; width:26px; height:1px; background:var(--gold-soft);}
-  .hero h1{font-size:clamp(40px, 6vw, 68px); line-height:1.03; max-width:14ch;}
-  .hero .accent{color:var(--gold-soft); font-style:italic; font-weight:500;}
-  .hero-sub{margin-top:26px; max-width:52ch; font-size:18px; color:rgba(246,242,231,0.82);}
-  .hero-journey{
-    margin-top:46px; display:flex; flex-wrap:wrap; align-items:center; gap:10px;
-    font-family:'IBM Plex Mono', monospace; font-size:13.5px; color:var(--gold-soft);
-  }
-  .hero-journey span.step{border:1px solid rgba(228,200,120,0.4); border-radius:999px; padding:6px 14px;}
-  .hero-journey span.arrow{opacity:0.5;}
-
-  /* ---------- SECTION SCAFFOLDING ---------- */
-  section{padding:80px 0;}
-  section.tight{padding:56px 0;}
-  .section-head{display:flex; align-items:baseline; gap:18px; margin-bottom:36px;}
-  .section-num{
-    font-family:'IBM Plex Mono', monospace; font-size:13px; color:var(--clay);
-    border:1px solid var(--clay); border-radius:999px; padding:3px 11px;
-  }
-  .section-head h2{font-size:30px; color:var(--pine-deep);}
-  .lede{font-size:17px; color:var(--ink-soft); max-width:68ch;}
-  hr.rule{border:none; border-top:1px solid var(--line); margin:0;}
-
-  /* ---------- WHY KAI EXISTS ---------- */
-  .fragment-list{display:flex; flex-direction:column; margin-top:8px;}
-  .fragment-row{
-    display:grid; grid-template-columns:180px 1fr; gap:20px;
-    padding:14px 0; border-top:1px solid var(--line); font-size:15px;
-  }
-  .fragment-row:last-child{border-bottom:1px solid var(--line);}
-  .fragment-who{font-family:'IBM Plex Mono', monospace; font-size:13px; color:var(--clay);}
-  .fragment-what{color:var(--ink-soft);}
-
-  /* ---------- ECOSYSTEM ORBIT (signature) ---------- */
-  .orbit-section{background:var(--pine-deep); color:var(--paper); padding:96px 0;}
-  .orbit-section .section-head h2{color:var(--paper);}
-  .orbit-section .section-num{color:var(--gold-soft); border-color:var(--gold-soft);}
-  .orbit-section .lede{color:rgba(246,242,231,0.78);}
-  .orbit-wrap{margin-top:48px;}
-  .orbit-diagram{width:100%; max-width:560px; display:block; margin:0 auto;}
-  .module-grid{
-    display:grid; grid-template-columns:repeat(3, 1fr); gap:1px;
-    background:rgba(246,242,231,0.14); margin-top:48px;
-  }
-  .module{background:var(--pine-deep); padding:26px 22px;}
-  .module.core{background:rgba(228,200,120,0.08);}
-  .module h4{font-family:'Fraunces', serif; font-size:17px; color:var(--gold-soft); margin:0 0 8px; font-weight:600;}
-  .module p{margin:0; font-size:13.5px; color:rgba(246,242,231,0.75);}
-
-  /* ---------- HOW IT WORKS TOGETHER ---------- */
-  .chain{margin-top:8px;}
-  .chain-row{
-    display:grid; grid-template-columns:28px 1fr; gap:16px;
-    padding:16px 0; border-top:1px solid var(--line); font-size:15px; color:var(--ink-soft);
-  }
-  .chain-row:last-child{border-bottom:1px solid var(--line);}
-  .chain-dot{
-    width:8px; height:8px; border-radius:50%; background:var(--gold); margin-top:8px;
-  }
-  .chain-row strong{color:var(--pine-deep);}
-
-  /* ---------- BUILT FOR EVERYONE ---------- */
-  .tag-cloud{display:flex; flex-wrap:wrap; gap:10px; margin-top:8px;}
-  .tag{border:1px solid var(--line); background:#fff; padding:9px 16px; font-size:14px; color:var(--ink-soft); border-radius:999px;}
-
-  /* ---------- COMPLIANCE ---------- */
-  .compliance{
-    display:flex; gap:20px; align-items:flex-start;
-    background:var(--paper-dim); border-left:3px solid var(--pine); padding:26px 28px; margin-top:8px;
-  }
-  .compliance p{margin:0; font-size:15px; color:var(--ink-soft);}
-  .partner-list{display:flex; flex-wrap:wrap; gap:8px; margin-top:16px;}
-  .partner-list span{
-    font-family:'IBM Plex Mono', monospace; font-size:12px; color:var(--pine-deep);
-    border:1px solid var(--line); border-radius:4px; padding:4px 10px; background:#fff;
-  }
-
-  /* ---------- PRINCIPLES ---------- */
-  .principle-grid{display:grid; grid-template-columns:repeat(5, 1fr); gap:1px; background:var(--line); border:1px solid var(--line); margin-top:8px;}
-  .principle{background:var(--paper); padding:24px 18px;}
-  .principle-num{font-family:'IBM Plex Mono', monospace; font-size:11px; color:var(--gold);}
-  .principle h4{font-family:'Fraunces', serif; font-size:15px; color:var(--pine-deep); margin:10px 0 6px; font-weight:600;}
-  .principle p{margin:0; font-size:12.5px; color:var(--ink-soft);}
-
-  /* ---------- VISION / CTA ---------- */
-  .vision{text-align:center; padding:104px 0 120px;}
-  .vision h2{font-size:clamp(28px,4.4vw,44px); color:var(--pine-deep); max-width:20ch; margin:0 auto; line-height:1.15;}
-  .vision p{max-width:60ch; margin:22px auto 0; color:var(--ink-soft); font-size:16px;}
-  .vision .tagline{margin-top:36px; font-family:'Fraunces', serif; font-style:italic; font-size:22px; color:var(--clay);}
-  .vision .final{
-    margin-top:28px; font-family:'IBM Plex Mono', monospace; font-size:13px;
-    letter-spacing:0.1em; text-transform:uppercase; color:var(--pine-deep);
-  }
-
-  footer{
-    border-top:1px solid var(--line); padding:28px 0; text-align:center;
-    font-family:'IBM Plex Mono', monospace; font-size:12px; color:var(--ink-soft); letter-spacing:0.04em;
-  }
-
-  @media (max-width:760px){
-    .wrap{padding:0 20px;}
-    .fragment-row{grid-template-columns:1fr;}
-    .module-grid{grid-template-columns:1fr 1fr;}
-    .principle-grid{grid-template-columns:1fr 1fr;}
-  }
-  @media (prefers-reduced-motion: reduce){ html{scroll-behavior:auto;} }
-</style>
-  <link rel="stylesheet" href="css/site.css">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ecosystem — KAI</title>
+  <meta name="description" content="One platform for a lifetime of wealth.">
+  <link rel="icon" href="/icon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Inter:wght@400;500;600;700&display=swap">
+  <link rel="stylesheet" href="css/kai.css">
 </head>
-<body class="kw-site">
+<body>
 <div class="kw-nav" role="banner">
   <div class="kw-nav-inner">
     <a class="kw-brand" href="index.html" aria-label="KAI home"><span class="kw-logo">K</span><span>KAI</span></a>
     <div class="kw-links" role="navigation" aria-label="Main">
       <a href="index.html">Home</a><a href="problems.html">Problem</a><a href="solution.html">Solution</a>
-      <div class="kw-drop"><button type="button" class="kw-drop-btn kw-on" aria-expanded="false" aria-haspopup="true">Products <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg></button><div class="kw-drop-menu"><a href="products.html"><b>All products</b><small>Everything KAI offers</small></a><a href="insurance.html"><b>Insurance</b><small>Protection that also builds wealth</small></a><a href="pension.html"><b>Pension</b><small>Save for when you are older</small></a><a href="trust.html"><b>Trust</b><small>Protect your family's wealth</small></a><a href="tokens.html"><b>Tokens</b><small>The six KAI tokens</small></a><a href="ecosystem.html" aria-current="page"><b>Ecosystem</b><small>How it all fits together</small></a></div></div>
+      <div class="kw-drop"><button type="button" class="kw-drop-btn kw-on" aria-expanded="false" aria-haspopup="true">Products <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg></button><div class="kw-drop-menu"><a href="products.html"><b>All products</b><small>Everything KAI offers</small></a><a href="insurance.html"><b>Insurance</b><small>Savings that pay your cover</small></a><a href="pension.html"><b>Pension</b><small>Save for later, your way</small></a><a href="trust.html"><b>Trust</b><small>Pass wealth on by clear rules</small></a><a href="tokens.html"><b>Tokens</b><small>Six tokens, one job each</small></a><a href="ecosystem.html" aria-current="page"><b>Ecosystem</b><small>How it all fits together</small></a></div></div>
       <a href="DAO.html">DAO</a><a href="bizcanvas.html">Business model</a>
     </div>
     <a class="kw-cta" href="/">Open the app</a>
@@ -165,244 +25,44 @@
   </div>
   <div class="kw-panel" id="kw-panel" hidden>
     <div class="kw-panel-inner">
-      <div><h3>Learn about KAI</h3><div class="kw-panel-grid"><a class="kw-item" href="index.html"><b>Home</b><small>Start here</small></a><a class="kw-item" href="problems.html"><b>The problem</b><small>Why African finance needs a change</small></a><a class="kw-item" href="solution.html"><b>Our solution</b><small>How KAI fixes it</small></a><a class="kw-item" href="DAO.html"><b>DAO</b><small>How the community decides</small></a><a class="kw-item" href="bizcanvas.html"><b>Business model</b><small>How KAI works as a business</small></a></div></div>
-      <div><h3>Products</h3><div class="kw-panel-grid"><a class="kw-item" href="products.html"><b>All products</b><small>Everything KAI offers</small></a><a class="kw-item" href="insurance.html"><b>Insurance</b><small>Protection that also builds wealth</small></a><a class="kw-item" href="pension.html"><b>Pension</b><small>Save for when you are older</small></a><a class="kw-item" href="trust.html"><b>Trust</b><small>Protect your family's wealth</small></a><a class="kw-item" href="tokens.html"><b>Tokens</b><small>The six KAI tokens</small></a><a class="kw-item" href="ecosystem.html" aria-current="page"><b>Ecosystem</b><small>How it all fits together</small></a></div></div>
+      <div><h3>Learn about KAI</h3><div class="kw-panel-grid"><a class="kw-item" href="index.html"><b>Home</b><small>Start here</small></a><a class="kw-item" href="problems.html"><b>The problem</b><small>Why finance must change</small></a><a class="kw-item" href="solution.html"><b>Our solution</b><small>How KAI fixes it</small></a><a class="kw-item" href="DAO.html"><b>DAO</b><small>How the community decides</small></a><a class="kw-item" href="bizcanvas.html"><b>Business model</b><small>How KAI works as a business</small></a></div></div>
+      <div><h3>Products</h3><div class="kw-panel-grid"><a class="kw-item" href="products.html"><b>All products</b><small>Everything KAI offers</small></a><a class="kw-item" href="insurance.html"><b>Insurance</b><small>Savings that pay your cover</small></a><a class="kw-item" href="pension.html"><b>Pension</b><small>Save for later, your way</small></a><a class="kw-item" href="trust.html"><b>Trust</b><small>Pass wealth on by clear rules</small></a><a class="kw-item" href="tokens.html"><b>Tokens</b><small>Six tokens, one job each</small></a><a class="kw-item" href="ecosystem.html" aria-current="page"><b>Ecosystem</b><small>How it all fits together</small></a></div></div>
       <a class="kw-cta" href="/">Open the KAI app</a>
     </div>
   </div>
 </div>
-
-
-<!-- ============ HERO ============ -->
-<header class="hero">
-  <svg class="rings-bg" viewBox="0 0 400 400" aria-hidden="true">
-    <circle cx="200" cy="200" r="60" fill="none" stroke="#E4C878" stroke-opacity="0.5" stroke-width="1.5"/>
-    <circle cx="200" cy="200" r="100" fill="none" stroke="#E4C878" stroke-opacity="0.4" stroke-width="1.5"/>
-    <circle cx="200" cy="200" r="140" fill="none" stroke="#E4C878" stroke-opacity="0.3" stroke-width="1.5"/>
-    <circle cx="200" cy="200" r="180" fill="none" stroke="#E4C878" stroke-opacity="0.2" stroke-width="1.5"/>
-  </svg>
-  <div class="wrap">
-    <div class="eyebrow">Version 1.0 · Africa's Digital Financial Operating System</div>
-    <h1>One platform for a <span class="accent">lifetime</span> of wealth.</h1>
-    <p class="hero-sub">The KAI Ecosystem connects investing, insurance, pensions, trusts, payments, and digital assets into one intelligent financial platform — built on blockchain, enhanced by AI, and grounded in regulated partnerships.</p>
-    <div class="hero-journey">
-      <span class="step">Earn</span><span class="arrow">→</span>
-      <span class="step">Invest</span><span class="arrow">→</span>
-      <span class="step">Protect</span><span class="arrow">→</span>
-      <span class="step">save</span><span class="arrow">→</span>
-      <span class="step">Transfer</span>
-    </div>
-  </div>
-</header>
-
 <main>
-
-  <!-- ============ OVERVIEW ============ -->
-  <section class="tight">
-    <div class="wrap">
-      <div class="section-head">
-        <span class="section-num">01</span>
-        <h2>Overview</h2>
-      </div>
-      <p class="lede">The KAI Ecosystem is a unified digital financial platform designed to help individuals, families, businesses, and communities build, protect, manage, and transfer wealth throughout every stage of life. Rather than offering isolated financial products, KAI connects investing, insurance, pensions, trusts, payments, and digital assets into one intelligent ecosystem — providing transparent, accessible, and efficient financial services while working alongside licensed financial institutions where required.</p>
-    </div>
-  </section>
-
-  <hr class="rule">
-
-  <!-- ============ WHY KAI EXISTS ============ -->
-  <section>
-    <div class="wrap">
-      <div class="section-head">
-        <span class="section-num">02</span>
-        <h2>Why KAI exists</h2>
-      </div>
-      <p class="lede">Millions of people face financial challenges because the systems they rely on are fragmented. Managing each separately increases costs, complexity, and barriers to access. KAI brings these services together into one connected financial ecosystem.</p>
-      <div class="fragment-list">
-        <div class="fragment-row"><span class="fragment-who">Investment platforms</span><span class="fragment-what">Focus only on returns.</span></div>
-        <div class="fragment-row"><span class="fragment-who">Insurance companies</span><span class="fragment-what">Focus only on protection.</span></div>
-        <div class="fragment-row"><span class="fragment-who">Pension providers</span><span class="fragment-what">Focus only on retirement.</span></div>
-        <div class="fragment-row"><span class="fragment-who">Trust services</span><span class="fragment-what">Focus only on inheritance.</span></div>
-        <div class="fragment-row"><span class="fragment-who">Banks</span><span class="fragment-what">Focus only on banking.</span></div>
-      </div>
-    </div>
-  </section>
-
-  <hr class="rule">
-
-  <!-- ============ PHILOSOPHY ============ -->
-  <section class="tight">
-    <div class="wrap">
-      <div class="section-head">
-        <span class="section-num">03</span>
-        <h2>The KAI philosophy</h2>
-      </div>
-      <p class="lede">Every financial decision should contribute to a larger goal. Instead of simply spending money, people should continuously build productive capital that supports them throughout their lives. Every KAI product is designed around one financial journey — Earn → Invest → Protect → Retire → Transfer.</p>
-    </div>
-  </section>
-
-  <!-- ============ THE ECOSYSTEM (signature) ============ -->
-  <section class="orbit-section">
-    <div class="wrap">
-      <div class="section-head">
-        <span class="section-num">04</span>
-        <h2>The KAI Ecosystem</h2>
-      </div>
-      <p class="lede">KAI Wealth is the foundation — the engine that powers everything orbiting it. Users build productive capital there, and that capital fuels insurance, retirement, trust, payments, and AI across the rest of the ecosystem.</p>
-
-      <div class="orbit-wrap">
-        <svg class="orbit-diagram" viewBox="0 0 560 560" aria-hidden="true">
-          <circle cx="280" cy="280" r="210" fill="none" stroke="rgba(228,200,120,0.18)" stroke-width="1" stroke-dasharray="3 7"/>
-          <circle cx="280" cy="280" r="150" fill="none" stroke="rgba(228,200,120,0.14)" stroke-width="1" stroke-dasharray="3 7"/>
-          <!-- core -->
-          <circle cx="280" cy="280" r="66" fill="#0F3D2E" stroke="#E4C878" stroke-width="2"/>
-          <text x="280" y="276" text-anchor="middle" fill="#E4C878" font-family="Fraunces, serif" font-size="16" font-weight="600">KAI</text>
-          <text x="280" y="296" text-anchor="middle" fill="#F6F2E7" font-family="IBM Plex Mono, monospace" font-size="11">Wealth</text>
-          <!-- orbit nodes -->
-          <g font-family="IBM Plex Mono, monospace" font-size="11" fill="#F6F2E7">
-            <circle cx="280" cy="70" r="34" fill="#0A2A20" stroke="#C89B3C" stroke-width="1.5"/>
-            <text x="280" y="74" text-anchor="middle">Insurance</text>
-
-            <circle cx="465" cy="175" r="34" fill="#0A2A20" stroke="#C89B3C" stroke-width="1.5"/>
-            <text x="465" y="179" text-anchor="middle">Pension</text>
-
-            <circle cx="465" cy="385" r="34" fill="#0A2A20" stroke="#C89B3C" stroke-width="1.5"/>
-            <text x="465" y="389" text-anchor="middle">Trust</text>
-
-            <circle cx="280" cy="490" r="34" fill="#0A2A20" stroke="#C89B3C" stroke-width="1.5"/>
-            <text x="280" y="494" text-anchor="middle">Payments</text>
-
-            <circle cx="95" cy="385" r="34" fill="#0A2A20" stroke="#C89B3C" stroke-width="1.5"/>
-            <text x="95" y="389" text-anchor="middle">AI</text>
-
-            <circle cx="95" cy="175" r="24" fill="none" stroke="rgba(228,200,120,0.3)" stroke-width="1"/>
-          </g>
-        </svg>
-      </div>
-
-      <div class="module-grid">
-        <div class="module core">
-          <h4>KAI Wealth</h4>
-          <p>The foundation of the ecosystem. Users build productive capital by investing in KAI investment products and digital assets designed for long-term growth — the engine that powers the rest of the ecosystem.</p>
-        </div>
-        <div class="module">
-          <h4>KAI Insurance</h4>
-          <p>Helps users fund insurance premiums through investment returns from productive capital, leveraging growth alongside regulated insurance providers to make coverage more affordable.</p>
-        </div>
-        <div class="module">
-          <h4>KAI Pension</h4>
-          <p>A retirement wealth platform with flexible contributions, AI-powered retirement planning, and regulated pension partnerships — building long-term financial security.</p>
-        </div>
-        <div class="module">
-          <h4>KAI Trust</h4>
-          <p>A digital family office that preserves, manages, and transfers wealth across generations — for family, education, retirement, charities, businesses, and community projects.</p>
-        </div>
-        <div class="module">
-          <h4>KAI Payments</h4>
-          <p>Secure digital transactions across the ecosystem. Programmable payment technology automates premiums, retirement contributions, trust distributions, subscriptions, and settlements.</p>
-        </div>
-        <div class="module">
-          <h4>KAI AI</h4>
-          <p>The ecosystem's financial assistant — planning investments, monitoring risk, recommending coverage, tracking retirement progress, managing trusts, and detecting fraud, while users stay in control.</p>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <!-- ============ HOW IT WORKS TOGETHER ============ -->
-  <section>
-    <div class="wrap">
-      <div class="section-head">
-        <span class="section-num">05</span>
-        <h2>How everything works together</h2>
-      </div>
-      <p class="lede">Every product strengthens the others. Instead of managing separate financial products, users experience one connected financial platform.</p>
-      <div class="chain">
-        <div class="chain-row"><span class="chain-dot"></span><span><strong>Build wealth</strong> through KAI Wealth.</span></div>
-        <div class="chain-row"><span class="chain-dot"></span><span><strong>Support premiums</strong> using investment returns through KAI Insurance.</span></div>
-        <div class="chain-row"><span class="chain-dot"></span><span><strong>Keep investing</strong> for retirement with KAI Pension.</span></div>
-        <div class="chain-row"><span class="chain-dot"></span><span><strong>Preserve and transfer</strong> wealth through KAI Trust.</span></div>
-        <div class="chain-row"><span class="chain-dot"></span><span><strong>Manage it all</strong> using KAI Payments and KAI AI.</span></div>
-      </div>
-    </div>
-  </section>
-
-  <hr class="rule">
-
-  <!-- ============ BUILT FOR EVERYONE ============ -->
-  <section class="tight">
-    <div class="wrap">
-      <div class="section-head">
-        <span class="section-num">06</span>
-        <h2>Built for everyone</h2>
-      </div>
-      <p class="lede">Whether saving for education, protecting a business, preparing for retirement, or creating generational wealth, KAI adapts to every stage of life.</p>
-      <div class="tag-cloud">
-        <span class="tag">Individuals</span><span class="tag">Families</span><span class="tag">Entrepreneurs</span>
-        <span class="tag">Businesses</span><span class="tag">Farmers</span><span class="tag">Freelancers</span>
-        <span class="tag">Informal workers</span><span class="tag">SACCOs</span><span class="tag">Chamas</span>
-        <span class="tag">NGOs</span><span class="tag">Cooperatives</span><span class="tag">Institutions</span>
-        <span class="tag">Diaspora communities</span>
-      </div>
-    </div>
-  </section>
-
-  <hr class="rule">
-
-  <!-- ============ TRUST & COMPLIANCE ============ -->
-  <section class="tight">
-    <div class="wrap">
-      <div class="section-head">
-        <span class="section-num">07</span>
-        <h2>Trust &amp; compliance</h2>
-      </div>
-      <div class="compliance">
-        <p>KAI believes innovation should complement regulation, not replace it. KAI provides the technology infrastructure that connects licensed services into a unified digital experience, while respecting applicable laws and regulatory requirements.
-        <span class="partner-list">
-          <span>Licensed insurance providers</span>
-          <span>Pension administrators</span>
-          <span>Trust companies</span>
-          <span>Banks</span>
-          <span>Custodians</span>
-          <span>Financial institutions</span>
-          <span>Government agencies</span>
-        </span>
-        </p>
-      </div>
-    </div>
-  </section>
-
-  <!-- ============ PRINCIPLES ============ -->
-  <section>
-    <div class="wrap">
-      <div class="section-head">
-        <span class="section-num">08</span>
-        <h2>Our principles</h2>
-      </div>
-      <div class="principle-grid">
-        <div class="principle"><span class="principle-num">01</span><h4>Accessibility</h4><p>Financial services should be available to everyone.</p></div>
-        <div class="principle"><span class="principle-num">02</span><h4>Transparency</h4><p>Clear information and visibility into financial activity.</p></div>
-        <div class="principle"><span class="principle-num">03</span><h4>Security</h4><p>Modern cryptography and secure infrastructure.</p></div>
-        <div class="principle"><span class="principle-num">04</span><h4>Responsibility</h4><p>Empowering users while respecting regulation.</p></div>
-        <div class="principle"><span class="principle-num">05</span><h4>Long-term thinking</h4><p>Every decision strengthens future well-being.</p></div>
-      </div>
-    </div>
-  </section>
-
-  <!-- ============ MISSION / VISION ============ -->
-  <section class="vision">
-    <div class="wrap">
-      <h2>A future where everyone can build wealth that lasts.</h2>
-      <p>Our mission is to build Africa's most trusted digital financial ecosystem by connecting investing, insurance, retirement, trusts, and intelligent financial management into one seamless platform — so that every person, regardless of income, location, or background, can build wealth, protect what matters, retire with dignity, and leave a lasting legacy.</p>
-      <div class="tagline">One platform. One financial journey. Infinite possibilities.</div>
-      <div class="final">Build Wealth · Protect What Matters · Retire with Confidence · Leave a Legacy</div>
-    </div>
-  </section>
-
+<section class="k-hero"><div class="k-wrap">
+  <p class="k-eyebrow">Ecosystem</p>
+  <h1>One platform for a lifetime of wealth.</h1>
+  <p class="k-lead">Earn, invest, protect, retire and pass it on, all connected.</p>
+  <div class="k-btns"><a class="k-btn" href="/">Open the app</a><a class="k-btn k-btn--ghost" href="products.html">See the products</a></div>
+</div></section>
+<section class="k-sec"><div class="k-wrap"><h2>One journey</h2><ol class="k-steps"><li><span class="k-step-n">Step 1</span><div><h3>Earn</h3><p>Money comes in from work or business.</p></div></li><li><span class="k-step-n">Step 2</span><div><h3>Invest</h3><p>KAI Wealth puts it to work.</p></div></li><li><span class="k-step-n">Step 3</span><div><h3>Protect</h3><p>Earnings pay your insurance.</p></div></li><li><span class="k-step-n">Step 4</span><div><h3>Retire</h3><p>Your pension keeps growing.</p></div></li><li><span class="k-step-n">Step 5</span><div><h3>Pass on</h3><p>A trust hands it to the next generation.</p></div></li></ol></div></section>
+<section class="k-sec"><div class="k-wrap"><h2>The six parts</h2><div class="k-cards"><div class="k-card"><h3>KAI Wealth</h3><p>The engine: savings that grow and power everything else.</p></div><a class="k-card k-card--link" href="insurance.html"><h3>KAI Insurance</h3><p>Cover paid by your earnings.</p><span class="k-more">Learn more <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></span></a><a class="k-card k-card--link" href="pension.html"><h3>KAI Pension</h3><p>Flexible retirement savings.</p><span class="k-more">Learn more <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></span></a><a class="k-card k-card--link" href="trust.html"><h3>KAI Trust</h3><p>A digital family office.</p><span class="k-more">Learn more <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></span></a><div class="k-card"><h3>KAI Payments</h3><p>Automatic premiums, contributions and payouts.</p></div><div class="k-card"><h3>KAI AI</h3><p>Your money assistant. You stay in control.</p></div></div></div></section>
+<section class="k-sec"><div class="k-wrap"><h2>Separate apps vs KAI</h2><ul class="k-compare"><li><span class="k-old">Investment apps: only returns</span><span class="k-arrow"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></span><span class="k-new">KAI: returns that also protect you</span></li><li><span class="k-old">Insurers: only cover</span><span class="k-arrow"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></span><span class="k-new">KAI: cover paid by your savings</span></li><li><span class="k-old">Pension funds: only retirement</span><span class="k-arrow"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></span><span class="k-new">KAI: retirement that passes to family</span></li><li><span class="k-old">Banks: only banking</span><span class="k-arrow"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></span><span class="k-new">KAI: all of it, working together</span></li></ul></div></section>
+<section class="k-sec k-cta"><div class="k-wrap">
+  <h2>Ready to start?</h2>
+  <p>Open the KAI app and try it on the Avalanche test network. It is free.</p>
+  <div class="k-btns"><a class="k-btn" href="/">Open the app</a><a class="k-btn k-btn--ghost" href="products.html">See all products</a></div>
+</div></section>
 </main>
-
-<footer>KAI Ecosystem · Africa's Digital Financial Operating System</footer>
-
+<footer class="k-foot">
+  <div class="k-wrap k-foot-grid">
+    <div class="k-foot-brand">
+      <a class="kw-brand" href="index.html"><span class="kw-logo">K</span><span>KAI</span></a>
+      <p>Banking for everyone, built on Avalanche.</p>
+      <a class="kw-cta" href="/">Open the app</a>
+    </div>
+    <div><h4>Learn</h4><ul><li><a href="index.html">Home</a></li><li><a href="problems.html">The problem</a></li><li><a href="solution.html">Our solution</a></li><li><a href="DAO.html">DAO</a></li><li><a href="bizcanvas.html">Business model</a></li></ul></div>
+    <div><h4>Products</h4><ul><li><a href="products.html">All products</a></li><li><a href="insurance.html">Insurance</a></li><li><a href="pension.html">Pension</a></li><li><a href="trust.html">Trust</a></li><li><a href="tokens.html">Tokens</a></li><li><a href="ecosystem.html">Ecosystem</a></li></ul></div>
+    <div><h4>Contact</h4><ul><li><a href="https://www.kai.bar" rel="noopener">www.kai.bar</a></li><li><a href="/">KAI app</a></li><li><a href="/privacy">Privacy</a></li></ul></div>
+  </div>
+  <div class="k-wrap k-foot-bottom">
+    <span>&copy; 2026 KAI Protocol · Built on Avalanche</span>
+    <span>For information only, not financial advice. Digital assets can lose value.</span>
+  </div>
+</footer>
 <script src="js/site.js" defer></script>
 </body>
 </html>
