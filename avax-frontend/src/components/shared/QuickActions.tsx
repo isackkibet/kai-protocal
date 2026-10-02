@@ -39,7 +39,7 @@ export const QUICK_GROUPS: Group[] = [
       { name: 'Securities', hint: 'Tokenised assets', href: '/securities', icon: ShieldCheck, image: '/images/apps/securities.jpg' },
       { name: 'Pools', hint: 'Swap and add liquidity', href: '/pools', icon: Droplets, image: '/images/apps/pools.jpg' },
       { name: 'Vaults', hint: 'Earn yield', href: '/vaults', icon: Lock, image: '/images/apps/vaults.jpg' },
-      { name: 'TaaS', hint: 'Tokens as a service', href: '/taas', icon: LayoutGrid, image: '/images/apps/taas.jpg' },
+      { name: 'TaaS', hint: 'Create your own token', href: '/taas', icon: LayoutGrid, image: '/images/apps/taas.jpg' },
     ],
   },
   {
