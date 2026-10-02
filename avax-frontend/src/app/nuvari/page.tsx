@@ -1,998 +1,736 @@
 "use client";
 
-import { Operation, OPERATIONS, KAI_ACCOUNT, OWNER_ACCOUNT } from "@/lib/operations/operationSchemas";
-import { TREASURY as TREASURY_FROM_LIB } from "@/lib/blockchain/addresses";
-import { useState, useEffect, useRef, useCallback, useMemo } from "react";
+import Link from "next/link";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useAccount, useSendTransaction, useSwitchChain } from "wagmi";
 import { avalancheFuji } from "wagmi/chains";
 import { parseEther } from "viem";
 import {
-  Shield, Lock, Users, Search, Play, ChevronRight, TerminalSquare,
-  Loader, ExternalLink, Code, FileText, Sparkles, X,
-  Zap, BookOpen, History, Settings, Database,
-  CheckCircle, XCircle, Plus, Briefcase,
-  PiggyBank, Landmark, Wheat, Trees, HeartPulse, Building2, Droplet, Milk, Sprout, ScrollText,
+  ArrowLeft, Briefcase, Building2, Check, ChevronRight, Droplet, ExternalLink, HeartPulse, Landmark, Loader2,
+  Milk, PiggyBank, ScrollText, Search, Shield, Sparkles, Sprout, Trees, Users, Wallet, Wheat, X, type LucideIcon,
 } from "lucide-react";
+import { OPERATIONS, OWNER_ACCOUNT, type Operation } from "@/lib/operations/operationSchemas";
+import { TREASURY as TREASURY_FROM_LIB } from "@/lib/blockchain/addresses";
+import WalletConnectModal from "@/components/wallet/WalletConnectModal";
 
-// ═══════════════════════════════════════════════════════════
-// TYPES
-// ═══════════════════════════════════════════════════════════
-type ServiceSection =
-  | "quick-start" | "insurance" | "trust" | "pension" | "my-policies"
-  | "build-policy" | "templates" | "automation" | "execution" | "queries" | "admin";
-
-
-interface ExecResult {
-  id: string; opName: string; policyId: string;
-  status: "queued" | "running" | "completed" | "failed";
-  txId?: string; txHash?: string; explorerUrl?: string; avaxFee?: string; platformFee?: string; confirmedAt?: string;
-  logs: string[]; startedAt: string; finishedAt?: string;
-  payerAccount?: string;
-}
-
-type TermLine = { id: number; type: "cmd"|"info"|"success"|"warn"|"error"|"receipt"; text: string; link?: {label: string; url: string}; ts: string; };
+/**
+ * KAI Playground (/nuvari): try KAI policies (insurance, trusts, pensions,
+ * community reserves) on the Avalanche Fuji test network.
+ *
+ * One guided page instead of a developer console:
+ *   1. What do you want to set up?   (a service)
+ *   2. What do you want to do?       (start / manage / look up)
+ *   3. Fill in and confirm           (the wallet signs a 0.0001 test-AVAX fee)
+ * Look-ups are free: they read saved policies and never ask the wallet.
+ * The raw log and JSON payload are still there under "Technical details".
+ */
 
 const FUJI_CHAIN_ID = avalancheFuji.id;
-const TREASURY_ADDRESS = (TREASURY_FROM_LIB ?? "0xB13727161583e38185530755a1A96D00fcCae870") as `0x${string}`;
-const POLICY_FEE_AVAX = "0.0001";
+const TREASURY = (TREASURY_FROM_LIB ?? "0xB13727161583e38185530755a1A96D00fcCae870") as `0x${string}`;
+const FEE_AVAX = "0.0001";
+const FAUCET_URL = "https://core.app/tools/testnet-faucet/?subnet=c&token=c";
+const LOCAL_KEY = "kai-playground-policies";
 
-// ═══════════════════════════════════════════════════════════
-// OPERATIONS REGISTRY: full 70+ ops across 3 services
-// ═══════════════════════════════════════════════════════════
-// ═══════════════════════════════════════════════════════════
-// NAV SECTIONS
-// ═══════════════════════════════════════════════════════════
-const NAV: { id: ServiceSection; label: string; icon: React.ReactNode; color?: string }[] = [
-  { id: "quick-start",  label: "Quick Start",         icon: <Zap size={15} />,        color: "#c9a24b" },
-  { id: "build-policy", label: "Build Policy",         icon: <Shield size={15} />,     color: "#10b981" },
-  { id: "insurance",    label: "Insurance Service",    icon: <Shield size={15} />,     color: "#3b82f6" },
-  { id: "trust",        label: "Trust Service",        icon: <Users size={15} />,      color: "#f59e0b" },
-  { id: "pension",      label: "Pension Service",      icon: <Lock size={15} />,       color: "#8b5cf6" },
-  { id: "templates",    label: "Policy Templates",     icon: <BookOpen size={15} />,   color: "#22c55e" },
-  { id: "automation",   label: "Automation Service",   icon: <Sparkles size={15} />,   color: "#a855f7" },
-  { id: "execution",    label: "Execution History",    icon: <History size={15} />,    color: "#06b6d4" },
-  { id: "queries",      label: "Queries",              icon: <Database size={15} /> },
-  { id: "my-policies",  label: "My Policies",          icon: <Briefcase size={15} />,  color: "#f43f5e" },
-  { id: "admin",        label: "Administration",       icon: <Settings size={15} /> },
+const C = {
+  bg: "#0E2418", band: "#12301F", card: "#15352A", cardHi: "#1B4032", line: "rgba(246,242,231,0.08)",
+  paper: "#F6F2E7", dim: "#C9CFC2", ink: "#9BA396", gold: "#C89B3C", goldLight: "#E4C878",
+  green: "#7DC383", red: "#E88C7D", blue: "#6FA8DC",
+};
+
+// ── Types ────────────────────────────────────────────────────
+type ServiceId = "insurance" | "trust" | "pension" | "community" | "mine";
+type Value = string | boolean;
+type Group = "start" | "manage" | "lookup";
+
+interface Field {
+  key: string; label: string; type: "text" | "number" | "select" | "boolean";
+  options?: string[]; hint?: string; placeholder?: string; required?: boolean; default: Value;
+}
+interface Action {
+  id: string; name: string; description: string; group: Group; badge?: string;
+  serviceType: string; fields: Field[]; free: boolean;
+  /** Values that come with a ready-made template but have no field of their own. */
+  extra?: Record<string, Value>;
+}
+interface Policy {
+  policyId: string; serviceType: string; owner: string; config: Record<string, unknown>;
+  paymentTxHash?: string; status: string; createdAt: string;
+}
+interface Run {
+  state: "idle" | "running" | "done" | "failed";
+  step: number; // 0 switch network, 1 pay, 2 save, 3 finished
+  message?: string; txUrl?: string; policyId?: string; faucet?: boolean;
+}
+
+// ── Services (step 1) ────────────────────────────────────────
+const SERVICES: { id: ServiceId; name: string; hint: string; icon: LucideIcon; tint: string }[] = [
+  { id: "insurance", name: "Insurance", hint: "Protect people, crops, cars or property", icon: Shield, tint: C.blue },
+  { id: "trust", name: "Trust", hint: "Keep money safe for family or a group", icon: Users, tint: C.goldLight },
+  { id: "pension", name: "Pension", hint: "Save every month, receive it later", icon: PiggyBank, tint: "#B39DDB" },
+  { id: "community", name: "Community", hint: "Crops, forest, honey, milk, seeds", icon: Sprout, tint: C.green },
+  { id: "mine", name: "My policies", hint: "See and use what you created", icon: Briefcase, tint: "#E8A0A0" },
 ];
 
-// ═══════════════════════════════════════════════════════════
-// MAIN COMPONENT
-// ═══════════════════════════════════════════════════════════
+const GROUP_TITLE: Record<Group, string> = { start: "Start something new", manage: "Change a policy you have", lookup: "Look up (free)" };
+
+// ── Community reserves (were "Build Policy") ────────────────
+const COMMUNITY: Record<string, { icon: LucideIcon; label: string; hint: string; fields: { key: string; label: string; placeholder: string; type?: "number" }[] }> = {
+  pension: { icon: PiggyBank, label: "KAIVAX Pension", hint: "A simple savings pension in NVR",
+    fields: [{ key: "vestingYears", label: "Years before you can withdraw", placeholder: "5", type: "number" }, { key: "monthlyDeposit", label: "Monthly deposit (NVR)", placeholder: "100", type: "number" }, { key: "beneficiary", label: "Who receives it (wallet address)", placeholder: "0x…" }] },
+  trust: { icon: Landmark, label: "KAI Trust", hint: "Lock NVR for someone for a few years",
+    fields: [{ key: "lockYears", label: "Locked for (years)", placeholder: "5", type: "number" }, { key: "amount", label: "Amount (NVR)", placeholder: "1000", type: "number" }, { key: "beneficiary", label: "Who receives it (wallet address)", placeholder: "0x…" }] },
+  crop: { icon: Wheat, label: "Crop Insurance", hint: "Cover a farm season against bad weather",
+    fields: [{ key: "cropType", label: "Crop", placeholder: "Maize" }, { key: "hectares", label: "Farm size (hectares)", placeholder: "10", type: "number" }, { key: "season", label: "Season (year)", placeholder: "2026", type: "number" }] },
+  forest: { icon: Trees, label: "Forest Protection", hint: "Cover a forest area for some months",
+    fields: [{ key: "forestId", label: "Forest ID or parcel", placeholder: "KE-001" }, { key: "hectares", label: "Hectares covered", placeholder: "50", type: "number" }, { key: "duration", label: "Cover length (months)", placeholder: "12", type: "number" }] },
+  medical: { icon: HeartPulse, label: "Medical Pool", hint: "A group shares medical costs",
+    fields: [{ key: "members", label: "Number of members", placeholder: "100", type: "number" }, { key: "coverageUsd", label: "Most paid per person (USD)", placeholder: "500", type: "number" }, { key: "duration", label: "Length (months)", placeholder: "12", type: "number" }] },
+  rwa: { icon: Building2, label: "Land & Assets", hint: "Put a real asset like land on-chain",
+    fields: [{ key: "assetType", label: "What is it", placeholder: "Land" }, { key: "valuationUsd", label: "Value (USD)", placeholder: "10000", type: "number" }, { key: "location", label: "Location or parcel ID", placeholder: "Nairobi, KE-042" }] },
+  honey: { icon: Droplet, label: "Honey Reserve", hint: "A beekeeping group's harvest target",
+    fields: [{ key: "community", label: "Group name", placeholder: "Turkana Beekeepers" }, { key: "kgTarget", label: "Target (kg)", placeholder: "500", type: "number" }, { key: "season", label: "Harvest season", placeholder: "2026" }] },
+  milk: { icon: Milk, label: "Milk Pool", hint: "A dairy co-op pools daily milk",
+    fields: [{ key: "cooperative", label: "Co-op name", placeholder: "Maasai Dairy Coop" }, { key: "litresDaily", label: "Litres per day", placeholder: "200", type: "number" }, { key: "duration", label: "Length (months)", placeholder: "6", type: "number" }] },
+  seeds: { icon: Sprout, label: "Seed Bank", hint: "Store traditional seeds safely",
+    fields: [{ key: "variety", label: "Seed variety", placeholder: "Njahi Beans" }, { key: "kgStored", label: "Kg to store", placeholder: "50", type: "number" }, { key: "location", label: "Where it is stored", placeholder: "Meru, Kenya" }] },
+  recipe: { icon: ScrollText, label: "Recipe Vault", hint: "Protect a community's recipe or method",
+    fields: [{ key: "recipeName", label: "Recipe or method", placeholder: "Fermented Uji" }, { key: "community", label: "Community that owns it", placeholder: "Luo Heritage Group" }, { key: "licenseType", label: "Who may use it", placeholder: "Community Commons" }] },
+};
+
+// ── Build the action list from the operation registry ───────
+function fieldsOf(op: Operation, template?: Record<string, unknown>): Field[] {
+  return op.fields.map((f) => {
+    const raw = template && f.key in template ? template[f.key] : f.default;
+    return {
+      key: f.key, label: f.label, type: f.type === "textarea" ? "text" : f.type, options: f.options, hint: f.hint, required: f.required,
+      default: typeof raw === "boolean" ? raw : raw == null || raw === "pol_" ? "" : String(raw),
+      placeholder: /Id$/.test(f.key) ? "pol_…" : /address|account/i.test(f.label) ? "0x…" : undefined,
+    };
+  });
+}
+
+function actionFromOp(op: Operation): Action {
+  // Ready-made templates have no fields of their own: show the matching
+  // "create" form, pre-filled, so they can still be checked and changed.
+  if (op.category === "template") {
+    const create = OPERATIONS.find((o) => o.service === op.service && o.id.endsWith("_create"));
+    const fields = create ? fieldsOf(create, op.template) : [];
+    const extra = Object.fromEntries(Object.entries(op.template ?? {}).filter(([k]) => !fields.some((f) => f.key === k)).map(([k, v]) => [k, typeof v === "boolean" ? v : String(v)]));
+    return { id: op.id, name: op.name, description: op.description, group: "start", badge: "Ready-made", serviceType: op.service, fields, free: false, extra };
+  }
+  return {
+    id: op.id, name: op.name, description: op.description, badge: op.badge,
+    group: op.category === "query" ? "lookup" : op.category === "transaction" ? "manage" : "start",
+    serviceType: op.service === "all" ? "policy" : op.service, fields: fieldsOf(op), free: op.category === "query",
+  };
+}
+
+function actionsFor(service: ServiceId): Action[] {
+  if (service === "community") {
+    return Object.entries(COMMUNITY).map(([id, t]) => ({
+      id: `community_${id}`, name: t.label, description: t.hint, group: "start" as const, serviceType: id, free: false,
+      fields: t.fields.map((f) => ({ key: f.key, label: f.label, type: f.type ?? "text", placeholder: f.placeholder, required: true, default: "" })),
+    }));
+  }
+  if (service === "mine") {
+    return OPERATIONS.filter((o) => o.service === "all" || o.category === "query").map(actionFromOp);
+  }
+  // Quick actions first, then templates, then the rest in registry order.
+  const rank = (o: Operation) => (o.category === "quick" ? 0 : o.category === "template" ? 1 : 2);
+  return OPERATIONS.filter((o) => o.service === service).sort((a, b) => rank(a) - rank(b)).map(actionFromOp);
+}
+
+const ALL_ACTIONS: { action: Action; service: ServiceId }[] = (["insurance", "trust", "pension", "community"] as const)
+  .flatMap((s) => actionsFor(s).map((action) => ({ action, service: s as ServiceId })));
+
+// ── Helpers ─────────────────────────────────────────────────
+function policyName(p: Policy): string {
+  const c = p.config ?? {};
+  const name = c.policyTitle ?? c.title ?? c.planTitle ?? c.trustName ?? c.cropType ?? c.community ?? c.cooperative ?? c.assetType;
+  const service = COMMUNITY[p.serviceType]?.label ?? p.serviceType.charAt(0).toUpperCase() + p.serviceType.slice(1);
+  return typeof name === "string" && name ? `${name} · ${service}` : service;
+}
+
+function readLocal(): Policy[] {
+  try { return JSON.parse(localStorage.getItem(LOCAL_KEY) ?? "[]") as Policy[]; } catch { return []; }
+}
+function saveLocal(p: Policy) {
+  try { localStorage.setItem(LOCAL_KEY, JSON.stringify([p, ...readLocal().filter((x) => x.policyId !== p.policyId)].slice(0, 50))); } catch { /* private mode */ }
+}
+
+function friendlyError(e: unknown): { message: string; faucet?: boolean } {
+  const m = e instanceof Error ? e.message : String(e);
+  if (/reject|denied|cancel/i.test(m)) return { message: "You cancelled in your wallet. Nothing was paid." };
+  if (/insufficient funds|exceeds balance/i.test(m)) return { message: "Your wallet has no test AVAX. Get free test AVAX, then try again.", faucet: true };
+  if (/chain|network/i.test(m)) return { message: "Could not switch your wallet to Avalanche Fuji. Switch it in your wallet and try again." };
+  return { message: m.slice(0, 160) || "Something went wrong. Nothing was saved." };
+}
+
+const short = (a: string) => `${a.slice(0, 6)}…${a.slice(-4)}`;
+
+// ═════════════════════════════════════════════════════════════
 export default function KaiPlayground() {
   const { address } = useAccount();
   const { sendTransactionAsync } = useSendTransaction();
   const { switchChainAsync } = useSwitchChain();
-  const [activeSection, setActiveSection]   = useState<ServiceSection>("quick-start");
-  const [activeTab, setActiveTab]           = useState<"transaction"|"query">("transaction");
-  const [searchQuery, setSearchQuery]       = useState("");
-  const [selectedOp, setSelectedOp]         = useState<Operation | null>(OPERATIONS[0]);
-  const [formValues, setFormValues]         = useState<Record<string,any>>({});
-  const [customParams, setCustomParams]     = useState<{key:string;value:string}[]>([]);
-  const [isRunning, setIsRunning]           = useState(false);
-  const [terminal, setTerminal]             = useState<TermLine[]>([]);
-  const [execHistory, setExecHistory]       = useState<ExecResult[]>([]);
-    const [policies, setPolicies]             = useState<any[]>([]);
-  const [currentExec, setCurrentExec]       = useState<ExecResult|null>(null);
-  const [rightTab, setRightTab]             = useState<"terminal"|"result"|"payload">("terminal");
-  const [aiPrompt, setAiPrompt]             = useState("");
-  const [aiDraft, setAiDraft]               = useState("");
-  const [aiLoading, setAiLoading]           = useState(false);
-  const [aiAvailable, setAiAvailable]       = useState<boolean | null>(null); // null = unchecked
 
-  // Build-Policy state (unified from /policy page)
-  const [bpTemplate, setBpTemplate]         = useState("pension");
-  const [bpFields, setBpFields]             = useState<Record<string,string>>({});
-  const [bpSubmitting, setBpSubmitting]     = useState(false);
-  const [bpStatus, setBpStatus]             = useState("");
-  const [bpTxUrl, setBpTxUrl]               = useState<string|null>(null);
-  const termRef = useRef<HTMLDivElement>(null);
-  const lineId  = useRef(0);
+  const [service, setService] = useState<ServiceId | null>(null);
+  const [action, setAction] = useState<Action | null>(null);
+  const [values, setValues] = useState<Record<string, Value>>({});
+  const [search, setSearch] = useState("");
+  const [run, setRun] = useState<Run>({ state: "idle", step: 0 });
+  const [log, setLog] = useState<string[]>([]);
+  const [policies, setPolicies] = useState<Policy[]>([]);
+  const [lookup, setLookup] = useState<Policy | null | "none">(null);
+  const [fieldError, setFieldError] = useState<string | null>(null);
+  const [showWallet, setShowWallet] = useState(false);
+  const [expanded, setExpanded] = useState<Group[]>([]);
+  const [aiOpen, setAiOpen] = useState(false);
+  const [aiPrompt, setAiPrompt] = useState("");
+  const [aiAnswer, setAiAnswer] = useState("");
+  const [aiLoading, setAiLoading] = useState(false);
+  const formRef = useRef<HTMLDivElement>(null);
 
-  const log = useCallback((type: TermLine["type"], text: string, link?: TermLine["link"]) => {
-    lineId.current++;
-    const ts = new Date().toLocaleTimeString("en-GB", { hour12: false });
-    setTerminal(prev => [...prev, { id: lineId.current, type, text, link, ts }]);
+  const loadPolicies = async (): Promise<Policy[]> => {
+    let server: Policy[] = [];
+    try {
+      const res = await fetch("/api/policies");
+      if (res.ok) server = ((await res.json()).policies ?? []) as Policy[];
+    } catch { /* offline: show this phone's copy */ }
+    const seen = new Set(server.map((p) => p.policyId));
+    const all = [...server, ...readLocal().filter((p) => !seen.has(p.policyId))];
+    setPolicies(all);
+    return all;
+  };
+  useEffect(() => {
+    let on = true;
+    fetch("/api/policies").then((r) => (r.ok ? r.json() : { policies: [] })).catch(() => ({ policies: [] })).then((d: { policies?: Policy[] }) => {
+      if (!on) return;
+      const server = d.policies ?? [];
+      const seen = new Set(server.map((p) => p.policyId));
+      setPolicies([...server, ...readLocal().filter((p) => !seen.has(p.policyId))]);
+    });
+    return () => { on = false; };
   }, []);
 
-  // Scroll terminal to bottom
-  const fetchPolicies = async () => {
-      try {
-        const res = await fetch("/api/policies");
-        if (res.ok) {
-          const data = await res.json();
-          setPolicies(data.policies || []);
-        }
-      } catch (err) {}
-    };
+  const mine = useMemo(
+    () => (address ? policies.filter((p) => p.owner?.toLowerCase() === address.toLowerCase()) : []),
+    [policies, address],
+  );
 
-    useEffect(() => {
-      fetchPolicies(); termRef.current?.scrollTo({ top: termRef.current.scrollHeight, behavior: "smooth" }); }, [terminal]);
+  const actions = useMemo(() => (service ? actionsFor(service) : []), [service]);
+  const results = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    if (!q) return [];
+    return ALL_ACTIONS.filter(({ action: a }) => a.name.toLowerCase().includes(q) || a.description.toLowerCase().includes(q)).slice(0, 8);
+  }, [search]);
 
-  // Load op form defaults
-  useEffect(() => {
-    if (!selectedOp) return;
-    const vals: Record<string,any> = {};
-    // Apply template if available
-    if (selectedOp.template) Object.assign(vals, selectedOp.template);
-    // Apply field defaults (overriding only if not in template)
-    selectedOp.fields.forEach(f => { if (!(f.key in vals)) vals[f.key] = f.default; });
-    setFormValues(vals);
-    setCustomParams([]);
-  }, [selectedOp]);
+  const pickService = (s: ServiceId) => {
+    setService(s);
+    setAction(null);
+    setExpanded([]);
+    setRun({ state: "idle", step: 0 });
+  };
 
-  // Filtered ops for current section
-  const filteredOps = useMemo(() => {
-    let ops: Operation[] = [];
-    if (activeSection === "quick-start")  ops = OPERATIONS.filter(o => o.category === "quick");
-    else if (activeSection === "build-policy") return [];
-    else if (activeSection === "templates") ops = OPERATIONS.filter(o => o.category === "template");
-    else if (activeSection === "automation") ops = [];
-    else if (activeSection === "queries") ops = OPERATIONS.filter(o => o.category === "query");
-    else if (activeSection === "execution") return [];
-    else if (activeSection === "admin") return [];
-    else {
-      ops = OPERATIONS.filter(o => o.service === activeSection && (o.category === activeTab || (activeTab === "transaction" && o.category === "quick")));
+  const pickAction = (a: Action, s?: ServiceId) => {
+    if (s) setService(s);
+    setAction(a);
+    const v: Record<string, Value> = {};
+    for (const f of a.fields) {
+      // The registry's sample wallet is the project's; use the person's own wallet instead.
+      v[f.key] = f.default === OWNER_ACCOUNT && address ? address : f.default;
     }
-    if (searchQuery.trim()) {
-      const q = searchQuery.toLowerCase();
-      return ops.filter(o => o.name.toLowerCase().includes(q) || o.description.toLowerCase().includes(q));
+    setValues(v);
+    setRun({ state: "idle", step: 0 });
+    setLookup(null);
+    setFieldError(null);
+    setLog([]);
+    setSearch("");
+    setTimeout(() => formRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 50);
+  };
+
+  const missingField = (a: Action): string | null => {
+    for (const f of a.fields) {
+      const v = values[f.key];
+      if (f.required && (v === "" || v == null)) return `Please fill in "${f.label}".`;
+      if (f.type === "number" && v !== "" && !(Number(v) >= 0)) return `"${f.label}" must be a number.`;
+      if (typeof v === "string" && v && f.placeholder === "0x…" && !/^0x[0-9a-fA-F]{40}$/.test(v)) return `"${f.label}" must be a wallet address (0x followed by 40 letters and numbers).`;
     }
-    return ops;
-  }, [activeSection, activeTab, searchQuery]);
+    return null;
+  };
 
-  const globalSearchResults = useMemo(() => {
-    if (!searchQuery.trim()) return [];
-    const q = searchQuery.toLowerCase();
-    return OPERATIONS.filter(o => o.name.toLowerCase().includes(q) || o.description.toLowerCase().includes(q)).slice(0, 12);
-  }, [searchQuery]);
+  const config = (a: Action) => {
+    const out: Record<string, unknown> = { operation: a.id, ...(a.extra ?? {}) };
+    for (const f of a.fields) out[f.key] = f.type === "number" && values[f.key] !== "" ? Number(values[f.key]) : values[f.key];
+    return out;
+  };
 
-  const accentColor = NAV.find(n => n.id === activeSection)?.color ?? "#c9a24b";
+  const note = (line: string) => setLog((l) => [...l, `${new Date().toLocaleTimeString("en-GB", { hour12: false })}  ${line}`]);
 
-  const askPolicyAssistant = async () => {
-    if (!aiPrompt.trim() || aiLoading) return;
-    setAiLoading(true);
-    setAiDraft("");
+  const submit = async () => {
+    if (!action) return;
+    const problem = missingField(action);
+    setFieldError(problem);
+    if (problem) return;
+
+    // Look-ups: free, read the saved policies, no wallet.
+    if (action.free) {
+      const idField = action.fields.find((f) => /Id$/.test(f.key));
+      const id = idField ? String(values[idField.key] ?? "").trim() : "";
+      if (!id) { setFieldError("Type or pick a policy ID to look up."); return; }
+      const all = await loadPolicies();
+      setLookup(all.find((p) => p.policyId === id) ?? "none");
+      return;
+    }
+
+    if (!address) { setShowWallet(true); return; }
+    setLog([]);
+    setRun({ state: "running", step: 0 });
     try {
-      // Quick health check first
-      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_API_URL || "http://127.0.0.1:8000";
-      const health = await fetch(`${backendUrl}/health`, { signal: AbortSignal.timeout(2000) }).catch(() => null);
-      if (!health?.ok) {
-        setAiAvailable(false);
-        setAiDraft("AI assistant offline - start the agent server to enable suggestions.\nYour policy will still work without it.");
-        return;
-      }
-      setAiAvailable(true);
-      const response = await fetch("/api/chat", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
+      note(`Switching to Avalanche Fuji (chain ${FUJI_CHAIN_ID})`);
+      await switchChainAsync({ chainId: FUJI_CHAIN_ID });
+      setRun({ state: "running", step: 1 });
+      note(`Asking the wallet to send ${FEE_AVAX} AVAX to the treasury ${TREASURY}`);
+      const txHash = await sendTransactionAsync({ to: TREASURY, value: parseEther(FEE_AVAX) });
+      const txUrl = `https://testnet.snowtrace.io/tx/${txHash}`;
+      note(`Paid. Transaction ${txHash}`);
+      setRun({ state: "running", step: 2, txUrl });
+      const res = await fetch("/api/policies", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ owner: address, serviceType: action.serviceType, config: config(action), paymentAmount: Number(FEE_AVAX), paymentTxHash: txHash }),
+      });
+      if (!res.ok) throw new Error("The payment went through, but the policy could not be saved. Keep the transaction link and try again.");
+      const { policy } = (await res.json()) as { policy: Policy };
+      saveLocal(policy);
+      note(`Saved as ${policy.policyId}`);
+      setRun({ state: "done", step: 3, txUrl, policyId: policy.policyId });
+      void loadPolicies();
+    } catch (e) {
+      const f = friendlyError(e);
+      note(`Error: ${e instanceof Error ? e.message : String(e)}`);
+      setRun((r) => ({ ...r, state: "failed", message: f.message, faucet: f.faucet }));
+    }
+  };
+
+  const askAi = async () => {
+    if (!aiPrompt.trim() || aiLoading || !action) return;
+    setAiLoading(true);
+    setAiAnswer("");
+    try {
+      const res = await fetch("/api/chat", {
+        method: "POST", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          message: `Help configure this ${selectedOp?.name || "policy"}. Give concise, practical field recommendations for: ${aiPrompt}`,
-          rag: true,
+          message: `I am filling in "${action.name}" in the KAI Playground. Fields: ${action.fields.map((f) => f.label).join(", ")}. My situation: ${aiPrompt}. Suggest a value for each field in short, simple words.`,
           stream: false,
         }),
       });
-      const data = await response.json();
-      setAiDraft(data.text || data.response || "No recommendation returned.");
+      const d = await res.json().catch(() => ({}));
+      setAiAnswer(res.ok ? (d.text ?? d.response ?? "No suggestion came back.") : (d.error ?? "The AI is busy. Try again in a minute."));
     } catch {
-      setAiDraft("AI assistant unavailable. Your policy works without it.");
+      setAiAnswer("The AI could not be reached. You can still fill the form yourself.");
     } finally {
       setAiLoading(false);
     }
   };
 
-  // ── Create Policy Flow ─────────────────────────────────
-  const handleExecute = async () => {
-    if (!selectedOp) return;
-    setIsRunning(true);
-    setRightTab("terminal");
-    setMobilePanel("terminal");
+  const svc = SERVICES.find((s) => s.id === service);
+  const busy = run.state === "running";
 
-    const owner = address || formValues.owner || formValues.settlor || formValues.memberAccount || OWNER_ACCOUNT;
-    const exec: ExecResult = {
-      id: `exec_${Math.random().toString(36).slice(2, 10)}`,
-      opName: selectedOp.name,
-      policyId: `pol_${Math.random().toString(36).slice(2, 10)}`,
-      status: "running",
-      logs: [],
-      startedAt: new Date().toISOString(),
-      payerAccount: owner,
-      txHash: "",
-    };
-    setCurrentExec(exec);
-
-    try {
-      if (!address) throw new Error("Connect a wallet before creating a policy.");
-      await switchChainAsync({ chainId: FUJI_CHAIN_ID });
-      log("info", `[Policy] ${selectedOp.name} prepared for Avalanche Fuji Testnet`);
-      log("info", `Treasury: ${TREASURY_ADDRESS}`);
-      const txHash = await sendTransactionAsync({ to: TREASURY_ADDRESS, value: parseEther(POLICY_FEE_AVAX) });
-      exec.txId = txHash;
-      exec.txHash = txHash;
-      exec.explorerUrl = `https://testnet.snowtrace.io/tx/${txHash}`;
-      exec.avaxFee = `${POLICY_FEE_AVAX} AVAX`;
-      exec.platformFee = `${POLICY_FEE_AVAX} AVAX`;
-      const saved = await fetch("/api/policies", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          owner,
-          serviceType: selectedOp.service,
-          config: { operation: selectedOp.id, ...formValues, customParams },
-          paymentAmount: Number(POLICY_FEE_AVAX),
-          paymentTxHash: txHash,
-        }),
-      });
-      if (!saved.ok) throw new Error("Policy backend could not save the transaction.");
-      exec.status = "completed";
-      exec.confirmedAt = new Date().toISOString();
-      exec.finishedAt = new Date().toISOString();
-      log("success", `[Policy] ${exec.policyId} registered after treasury payment`);
-      log("info", `Transaction: ${txHash}`);
-      setCurrentExec({ ...exec });
-      setExecHistory(prev => [{ ...exec }, ...prev]);
-      setRightTab("result");
-    } catch (err: any) {
-      log("error", `[Error] ${err.message}`);
-      exec.status = "failed";
-      exec.finishedAt = new Date().toISOString();
-      setCurrentExec({ ...exec });
-      setExecHistory(prev => [{ ...exec }, ...prev]);
-    } finally {
-      setIsRunning(false);
-    }
-  };
-
-  // ── Helpers ───────────────────────────────────────────
-  useEffect(() => {
-      if (activeSection === "my-policies") fetchPolicies();
-    }, [activeSection]);
-
-    const selectOp = (op: Operation) => {
-    setSelectedOp(op);
-    // auto-navigate to correct section
-    if (op.category === "template") setActiveSection("templates");
-    else if (op.category === "quick") setActiveSection("quick-start");
-    else if (op.category === "query") setActiveSection("queries");
-    else setActiveSection(op.service as ServiceSection);
-    setMobilePanel("form");
-  };
-
-  const payload = {
-    network: "testnet",
-    serviceType: selectedOp?.service,
-    operationId: selectedOp?.id,
-    timestamp: new Date().toISOString(),
-    parameters: {
-      ...formValues,
-      ...customParams.reduce((a,c) => { if (c.key.trim()) a[c.key] = c.value; return a; }, {} as Record<string,any>),
-    },
-  };
-
-  // ── STATUS COLOR ──────────────────────────────────────
-  const statusColor = (s?: ExecResult["status"]) =>
-    s === "completed" ? "#22c55e" : s === "failed" ? "#ef4444" : s === "running" ? "#f59e0b" : "#60a5fa";
-
-  // ── Mobile panel state (which of the 4 panels is visible) ──────────────────
-  const [mobilePanel, setMobilePanel] = useState<"nav"|"ops"|"form"|"terminal">("nav");
-
-  // ═══════════════════════════════════════════════════════
-  // RENDER
-  // ═══════════════════════════════════════════════════════
   return (
-    <div style={{ display:"flex", flexDirection:"column", height:"100dvh", background:"#080c09", color:"#fff", fontFamily:"'Inter',system-ui,sans-serif", overflow:"hidden" }}>
-
-      {/* ── MOBILE TOP BAR (hidden on desktop) ─────────── */}
-      <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", padding:"10px 14px", borderBottom:"1px solid rgba(255,255,255,0.07)", background:"#0b0f0c", flexShrink:0 }} className="mobile-topbar">
-        <div style={{ display:"flex", alignItems:"center", gap:8 }}>
-          <span style={{ fontSize:15, fontWeight:900, letterSpacing:"-0.5px" }}>
-            <span style={{ color:"#10b981" }}>KAI</span>VAX
-          </span>
-          <span style={{ fontSize:8, background:"rgba(16,185,129,0.15)", border:"1px solid rgba(16,185,129,0.3)", color:"#10b981", borderRadius:4, padding:"1px 5px", textTransform:"uppercase", letterSpacing:"0.5px" }}>Policy</span>
-        </div>
-        <div style={{ display:"flex", gap:4 }}>
-          {([
-            { id:"nav",      label:"Menu",    icon:<Shield size={14}/> },
-            { id:"ops",      label:"Ops",     icon:<Database size={14}/> },
-            { id:"form",     label:"Config",  icon:<FileText size={14}/> },
-            { id:"terminal", label:"Log",     icon:<TerminalSquare size={14}/> },
-          ] as const).map(p => (
-            <button key={p.id} onClick={() => setMobilePanel(p.id)} style={{
-              display:"flex", flexDirection:"column", alignItems:"center", gap:2,
-              padding:"5px 8px", borderRadius:8, border:"none", cursor:"pointer",
-              background: mobilePanel===p.id ? "rgba(16,185,129,0.15)" : "rgba(255,255,255,0.04)",
-              color: mobilePanel===p.id ? "#10b981" : "rgba(255,255,255,0.38)",
-            }}>
-              {p.icon}
-              <span style={{ fontSize:8, fontWeight:700, letterSpacing:0.3 }}>{p.label}</span>
-            </button>
-          ))}
-        </div>
-      </div>
-
-      <div style={{ display:"flex", flex: 1, minHeight: 0, width:"100%" }}>
-
-      {/* ── LEFT SIDEBAR ──────────────────────────────── */}
-      <div style={{ width:"min(220px, 40vw)", flexShrink:0, borderRight:"1px solid rgba(255,255,255,0.07)", display:"flex", flexDirection:"column", background:"#0b0f0c" }} className={`panel-sidebar ${mobilePanel === "nav" ? "mobile-show" : "mobile-hide"}`}>
-        
-        {/* Logo (desktop only) */}
-        <div style={{ padding:"16px 16px 12px", borderBottom:"1px solid rgba(255,255,255,0.06)" }} className="desktop-only">
-          <div style={{ display:"flex", alignItems:"center", gap:"8px" }}>
-            <span style={{ fontSize:"16px", fontWeight:"900", letterSpacing:"-0.5px" }}>
-              <span style={{ color:"#10b981" }}>KAI</span>VAX
-            </span>
-            <span style={{ fontSize:"9px", background:"rgba(16,185,129,0.15)", border:"1px solid rgba(16,185,129,0.3)", color:"#10b981", borderRadius:"4px", padding:"1px 5px", textTransform:"uppercase", letterSpacing:"0.5px" }}>Playground</span>
+    <div className="pg">
+      {/* ── Top bar ─────────────────────────────────────── */}
+      <header className="pg-top">
+        <div className="pg-wrap pg-top-inner">
+          <Link href="/" className="pg-back" aria-label="Back to home"><ArrowLeft size={18} /></Link>
+          <div style={{ minWidth: 0 }}>
+            <h1 className="pg-title">Playground</h1>
+            <p className="pg-sub">Try KAI policies with free test money</p>
           </div>
-          <div style={{ fontSize:"10px", color:"rgba(255,255,255,0.25)", marginTop:"4px" }}>Policy Execution Engine</div>
+          <button className={address ? "pg-wallet pg-wallet--on" : "pg-wallet"} onClick={() => setShowWallet(true)}>
+            <Wallet size={15} />
+            <span>{address ? short(address) : "Connect"}</span>
+          </button>
         </div>
+      </header>
 
-        {/* Global Search */}
-        <div style={{ padding:"10px 12px", borderBottom:"1px solid rgba(255,255,255,0.05)", position:"relative" }}>
-          <div style={{ display:"flex", alignItems:"center", gap:"7px", background:"rgba(255,255,255,0.05)", border:"1px solid rgba(255,255,255,0.09)", borderRadius:"6px", padding:"6px 10px" }}>
-            <Search size={12} color="rgba(255,255,255,0.35)" />
-            <input
-              type="text"
-              placeholder="Search operations…"
-              value={searchQuery}
-              onChange={e => setSearchQuery(e.target.value)}
-              style={{ background:"none", border:"none", outline:"none", fontSize:"12px", color:"#fff", width:"100%", "::placeholder":{ color:"rgba(255,255,255,0.3)" } } as any}
-            />
-            {searchQuery && <button onClick={() => setSearchQuery("")} style={{ background:"none", border:"none", cursor:"pointer", color:"rgba(255,255,255,0.3)", padding:0 }}><X size={11} /></button>}
+      <main className="pg-wrap pg-main">
+        {/* ── Left: steps 1 and 2 ─────────────────────── */}
+        <section className="pg-left">
+          <div className="pg-how">
+            <span className="pg-net"><i /> Avalanche Fuji · test network</span>
+            <p>Nothing here uses real money. Each new policy costs <b>{FEE_AVAX} test AVAX</b>, and looking things up is free.</p>
           </div>
 
-          {/* Search Results Dropdown */}
-          {searchQuery && globalSearchResults.length > 0 && (
-            <div style={{ position:"absolute", top:"100%", left:"12px", right:"12px", background:"#131a14", border:"1px solid rgba(255,255,255,0.1)", borderRadius:"8px", zIndex:50, maxHeight:"260px", overflowY:"auto", boxShadow:"0 8px 24px rgba(0,0,0,0.5)" }}>
-              {globalSearchResults.map(op => (
-                <button key={op.id} onClick={() => { selectOp(op); setSearchQuery(""); }}
-                  style={{ width:"100%", background:"none", border:"none", borderBottom:"1px solid rgba(255,255,255,0.05)", padding:"10px 12px", textAlign:"left", cursor:"pointer", display:"block" }}>
-                  <div style={{ fontSize:"12px", color:"#fff", fontWeight:"500" }}>{op.name}</div>
-                  <div style={{ fontSize:"10px", color:"rgba(255,255,255,0.35)", marginTop:"2px" }}>{op.service} · {op.category}</div>
-                </button>
+          <div className="pg-search">
+            <Search size={15} color={C.ink} />
+            <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search, e.g. claim, beneficiary, crop…" aria-label="Search actions" />
+            {search && <button onClick={() => setSearch("")} aria-label="Clear search"><X size={14} /></button>}
+          </div>
+          {search.trim() && (
+            <div className="pg-list">
+              {results.length === 0 && <p className="pg-empty">Nothing matches “{search}”.</p>}
+              {results.map(({ action: a, service: s }) => (
+                <ActionRow key={a.id} a={a} sub={SERVICES.find((x) => x.id === s)?.name} active={action?.id === a.id} onClick={() => pickAction(a, s)} />
               ))}
             </div>
           )}
-        </div>
 
-        {/* Nav Items */}
-        <div style={{ flex:1, overflowY:"auto", padding:"8px" }}>
-          {NAV.map(nav => {
-            const isActive = activeSection === nav.id;
-            const color    = nav.color ?? "rgba(255,255,255,0.5)";
-            return (
-              <button key={nav.id} onClick={() => { setActiveSection(nav.id); setSearchQuery(""); setMobilePanel("ops"); }}
-                style={{ width:"100%", background: isActive ? `${color}12` : "transparent", border:`1px solid ${isActive ? color + "30" : "transparent"}`, borderRadius:"6px", padding:"8px 10px", textAlign:"left", cursor:"pointer", display:"flex", alignItems:"center", gap:"8px", color: isActive ? color : "rgba(255,255,255,0.45)", marginBottom:"2px", transition:"all 0.15s" }}>
-                <span style={{ color: isActive ? color : "rgba(255,255,255,0.3)" }}>{nav.icon}</span>
-                <span style={{ fontSize:"12px", fontWeight: isActive ? "600" : "400" }}>{nav.label}</span>
-                {nav.id === "execution" && execHistory.length > 0 && (
-                  <span style={{ marginLeft:"auto", background: isActive ? color+"30" : "rgba(255,255,255,0.1)", borderRadius:"20px", padding:"1px 6px", fontSize:"10px", color: isActive ? color : "rgba(255,255,255,0.4)" }}>{execHistory.length}</span>
-                )}
-              </button>
-            );
-          })}
-        </div>
-
-        {/* Testnet Status */}
-        <div style={{ padding:"10px 12px", borderTop:"1px solid rgba(255,255,255,0.06)", fontSize:"10px" }}>
-          <div style={{ display:"flex", alignItems:"center", gap:"5px", marginBottom:"4px", color:"rgba(255,255,255,0.4)" }}>
-            <div style={{ width:"6px", height:"6px", borderRadius:"50%", background:"#22c55e" }} />
-            Avalanche Fuji Testnet
-          </div>
-          <div style={{ color:"rgba(255,255,255,0.2)" }}>Wallet connected · Treasury enabled</div>
-        </div>
-      </div>
-
-      {/* ── CENTER: Op List ───────────────────────────── */}
-      <div style={{ width:"260px", flexShrink:0, borderRight:"1px solid rgba(255,255,255,0.07)", display:"flex", flexDirection:"column", background:"#0c100d" }} className={`panel-ops ${mobilePanel === "ops" ? "mobile-show" : "mobile-hide"}`}>
-
-        {/* Section Header */}
-        <div style={{ padding:"12px 14px", borderBottom:"1px solid rgba(255,255,255,0.06)" }}>
-          <div style={{ display:"flex", alignItems:"center", gap:"6px", marginBottom:"2px" }}>
-            <span style={{ color: accentColor }}>{NAV.find(n => n.id === activeSection)?.icon}</span>
-            <span style={{ fontSize:"13px", fontWeight:"700", color:"#fff" }}>{NAV.find(n => n.id === activeSection)?.label}</span>
-          </div>
-          <div style={{ fontSize:"11px", color:"rgba(255,255,255,0.3)" }}>
-            {activeSection === "insurance" ? "24 operations" : activeSection === "trust" ? "18 operations" : activeSection === "pension" ? "15 operations" : activeSection === "templates" ? "11 templates" : ""}
-          </div>
-        </div>
-
-        {/* Transactions / Queries Tabs */}
-        {["insurance","trust","pension","queries"].includes(activeSection) && (
-          <div style={{ display:"flex", borderBottom:"1px solid rgba(255,255,255,0.06)", padding:"0 14px" }}>
-            {(["transaction","query"] as const).map(tab => (
-              <button key={tab} onClick={() => setActiveTab(tab)}
-                style={{ flex:1, background:"none", border:"none", borderBottom:`2px solid ${activeTab===tab ? accentColor : "transparent"}`, padding:"8px 0", fontSize:"11px", fontWeight: activeTab===tab ? "600" : "400", color: activeTab===tab ? accentColor : "rgba(255,255,255,0.35)", cursor:"pointer", textTransform:"capitalize", transition:"all 0.15s" }}>
-                {tab === "transaction" ? "Transactions" : "Queries"}
-              </button>
-            ))}
-          </div>
-        )}
-
-        {/* Operation List */}
-        <div style={{ flex:1, overflowY:"auto", padding:"8px" }}>
-          {activeSection === "build-policy" ? (
-            <div style={{ padding:"10px" }}>
-              <div style={{ fontSize:"10px", color:"rgba(255,255,255,0.3)", textTransform:"uppercase", letterSpacing:"0.5px", marginBottom:"10px" }}>Policy Types</div>
-              {Object.entries(BP_TEMPLATES).map(([id, t]) => {
-                const isActive = bpTemplate === id;
-                const Icon = t.icon;
-                return (
-                  <button key={id} onClick={() => { setBpTemplate(id); setBpFields({}); setBpStatus(""); }}
-                    style={{ width:"100%", background: isActive ? `${t.color}18` : "rgba(255,255,255,0.02)", border:`1px solid ${isActive ? t.color+"40" : "rgba(255,255,255,0.05)"}`, borderRadius:"6px", padding:"9px 11px", textAlign:"left", cursor:"pointer", marginBottom:"4px", display:"flex", alignItems:"center", gap:"8px", transition:"all 0.15s" }}>
-                    <Icon size={14} color={isActive ? t.color : "rgba(255,255,255,0.4)"} />
-                    <span style={{ fontSize:"12px", fontWeight:"600", color: isActive ? t.color : "#d4d4d4" }}>{t.label}</span>
-                  </button>
-                );
-              })}
-            </div>
-          ) : activeSection === "execution" ? (
-            <div>
-              <div style={{ fontSize:"10px", color:"rgba(255,255,255,0.3)", textTransform:"uppercase", letterSpacing:"0.5px", padding:"4px 6px 8px" }}>Execution History</div>
-              {execHistory.length === 0 ? (
-                <div style={{ padding:"20px 10px", textAlign:"center", color:"rgba(255,255,255,0.2)", fontSize:"12px" }}>No executions yet</div>
-              ) : execHistory.map((ex, i) => (
-                <button key={ex.id} onClick={() => { setCurrentExec(ex); setRightTab("result"); }}
-                  style={{ width:"100%", background:"rgba(255,255,255,0.03)", border:"1px solid rgba(255,255,255,0.07)", borderRadius:"6px", padding:"10px", textAlign:"left", cursor:"pointer", marginBottom:"6px", display:"block" }}>
-                  <div style={{ display:"flex", justifyContent:"space-between", marginBottom:"3px" }}>
-                    <span style={{ fontSize:"11px", fontWeight:"600", color:"#fff" }}>#{execHistory.length - i} {ex.opName}</span>
-                    <span style={{ fontSize:"10px", color: statusColor(ex.status), textTransform:"uppercase" }}>{ex.status}</span>
-                  </div>
-                  <div style={{ fontSize:"10px", color:"rgba(255,255,255,0.3)", fontFamily:"monospace" }}>{ex.policyId || "Pending"}</div>
-                </button>
-              ))}
-            </div>
-          ) : activeSection === "automation" ? (
-            <div style={{ padding:"20px 10px", textAlign:"center" }}>
-              <Sparkles size={24} color="#a855f7" style={{ margin:"0 auto 8px" }} />
-              <div style={{ fontSize:"12px", color:"rgba(255,255,255,0.4)", marginBottom:"4px" }}>Automation Engine</div>
-              <div style={{ fontSize:"11px", color:"rgba(255,255,255,0.2)" }}>Event-driven policy triggers coming in v2</div>
-            </div>
-          ) : activeSection === "admin" ? (
-            <div style={{ padding:"16px 10px" }}>
-              {[["Network", "Avalanche Fuji Testnet"],["Treasury", TREASURY_ADDRESS],["Engine Wallet", KAI_ACCOUNT]].map(([k,v]) => (
-                <div key={k} style={{ display:"flex", justifyContent:"space-between", fontSize:"11px", padding:"6px 0", borderBottom:"1px solid rgba(255,255,255,0.05)" }}>
-                  <span style={{ color:"rgba(255,255,255,0.4)" }}>{k}</span>
-                  <span style={{ color:"rgba(255,255,255,0.7)", fontFamily:"monospace" }}>{v}</span>
-                </div>
-              ))}
-            </div>
-          ) : activeSection === "my-policies" ? (
-            <div style={{ padding:"10px" }}>
-              <div style={{ fontSize:"10px", color:"rgba(255,255,255,0.3)", textTransform:"uppercase", letterSpacing:"0.5px", marginBottom:"8px" }}>Active Policies</div>
-              {policies.length === 0 ? (
-                <div style={{ padding:"20px 10px", textAlign:"center", color:"rgba(255,255,255,0.2)", fontSize:"12px" }}>No policies found</div>
-              ) : policies.map(p => (
-                <button key={p.policyId} onClick={() => {
-                  setSelectedOp(null);
-                  setRightTab("payload");
-                  setCurrentExec(null);
-                }}
-                  style={{ width:"100%", background:"rgba(255,255,255,0.03)", border:"1px solid rgba(255,255,255,0.07)", borderRadius:"6px", padding:"10px", textAlign:"left", cursor:"pointer", marginBottom:"6px", display:"block" }}>
-                  <div style={{ display:"flex", justifyContent:"space-between", marginBottom:"3px" }}>
-                    <span style={{ fontSize:"11px", fontWeight:"600", color:"#fff" }}>{p.config?.policyTitle || p.config?.planTitle || p.config?.trustName || p.policyId}</span>
-                    <span style={{ fontSize:"10px", color:"#22c55e", textTransform:"uppercase" }}>{p.status}</span>
-                  </div>
-                  <div style={{ fontSize:"10px", color:"rgba(255,255,255,0.3)", fontFamily:"monospace" }}>{p.serviceType}</div>
-                </button>
-              ))}
-            </div>
-          ) : filteredOps.length === 0 ? (
-            <div style={{ padding:"20px 10px", textAlign:"center", color:"rgba(255,255,255,0.2)", fontSize:"12px" }}>No operations found</div>
-          ) : (
-            filteredOps.map(op => {
-              const isSelected = selectedOp?.id === op.id;
+          <h2 className="pg-step"><span>1</span> What do you want to set up?</h2>
+          <div className="pg-services">
+            {SERVICES.map((s) => {
+              const Icon = s.icon;
               return (
-                <button key={op.id} onClick={() => selectOp(op)}
-                  style={{ width:"100%", background: isSelected ? `${accentColor}18` : "rgba(255,255,255,0.02)", border:`1px solid ${isSelected ? accentColor+"40" : "rgba(255,255,255,0.05)"}`, borderRadius:"6px", padding:"10px 12px", textAlign:"left", cursor:"pointer", marginBottom:"4px", display:"flex", alignItems:"center", justifyContent:"space-between", transition:"all 0.15s" }}>
-                  <div>
-                    <div style={{ display:"flex", alignItems:"center", gap:"6px", marginBottom:"2px" }}>
-                      <span style={{ fontSize:"12px", fontWeight:"600", color: isSelected ? accentColor : "#d4d4d4" }}>{op.name}</span>
-                      {op.badge && <span style={{ fontSize:"9px", background:`${accentColor}20`, color:accentColor, borderRadius:"3px", padding:"1px 5px" }}>{op.badge}</span>}
-                    </div>
-                    <div style={{ fontSize:"10px", color:"rgba(255,255,255,0.3)" }}>
-                      {op.category === "template" ? "Template" : op.fields.length + " params"}
-                    </div>
-                  </div>
-                  <ChevronRight size={13} color={isSelected ? accentColor : "rgba(255,255,255,0.2)"} />
+                <button key={s.id} onClick={() => pickService(s.id)} className={service === s.id ? "pg-svc pg-svc--on" : "pg-svc"} style={{ ["--tint" as string]: s.tint }}>
+                  <span className="pg-svc-icon"><Icon size={20} strokeWidth={1.8} /></span>
+                  <span className="pg-svc-name">
+                    {s.name}
+                    {s.id === "mine" && mine.length > 0 && <em>{mine.length}</em>}
+                  </span>
+                  <span className="pg-svc-hint">{s.hint}</span>
                 </button>
               );
-            })
-          )}
-        </div>
-      </div>
-
-      {/* ── CENTER: Config Form ───────────────────────── */}
-      <div style={{ flex:1, display:"flex", flexDirection:"column", minWidth:0, borderRight:"1px solid rgba(255,255,255,0.07)" }} className={`panel-form ${mobilePanel === "form" ? "mobile-show" : "mobile-hide"}`}>
-        
-        {/* Op Title + Execute button — stacks on narrow screens, see .op-header in <style> below */}
-        <div className="op-header" style={{ padding:"14px 20px", borderBottom:"1px solid rgba(255,255,255,0.07)", display:"flex", justifyContent:"space-between", alignItems:"center", gap:12, background:"rgba(255,255,255,0.01)", flexShrink:0 }}>
-          <div style={{ minWidth:0 }}>
-            <div style={{ display:"flex", alignItems:"center", gap:"8px", marginBottom:"3px", flexWrap:"wrap" }}>
-              <span style={{ color: accentColor }}>{NAV.find(n => n.id === activeSection)?.icon}</span>
-              <h2 style={{ margin:0, fontSize:"15px", fontWeight:"700" }}>{selectedOp?.name ?? "Select an Operation"}</h2>
-              {selectedOp?.badge && <span style={{ fontSize:"10px", background:`${accentColor}20`, color:accentColor, borderRadius:"4px", padding:"2px 7px" }}>{selectedOp.badge}</span>}
-            </div>
-            <p style={{ margin:0, fontSize:"12px", color:"rgba(255,255,255,0.4)" }}>{selectedOp?.description ?? "Choose an operation from the left panel"}</p>
+            })}
           </div>
 
-          <div className="op-header-actions" style={{ display:"flex", gap:"10px", alignItems:"center", flexShrink:0 }}>
-            {/* Tabs for form vs JSON */}
-            <div style={{ display:"flex", background:"rgba(255,255,255,0.06)", borderRadius:"6px", padding:"2px" }}>
-              {(["form","payload"] as const).map(t => (
-                <button key={t} onClick={() => setRightTab(t as any)}
-                  style={{ background: rightTab===t ? "rgba(255,255,255,0.12)" : "transparent", border:"none", cursor:"pointer", color: rightTab===t ? "#fff" : "rgba(255,255,255,0.4)", padding:"4px 10px", borderRadius:"4px", fontSize:"11px", display:"flex", alignItems:"center", gap:"4px" }}>
-                  {t === "form" ? <><FileText size={11} /> Configure</> : <><Code size={11} /> Payload</>}
-                </button>
-              ))}
-            </div>
+          {service && (
+            <>
+              <h2 className="pg-step"><span>2</span> What do you want to do?</h2>
 
-            <button onClick={handleExecute} disabled={isRunning || !selectedOp}
-              style={{ background: accentColor, color:"#fff", border:"none", borderRadius:"7px", padding:"9px 22px", fontSize:"13px", fontWeight:"700", cursor: isRunning ? "not-allowed" : "pointer", display:"flex", alignItems:"center", justifyContent:"center", gap:"6px", opacity: isRunning ? 0.7 : 1, transition:"opacity 0.2s", whiteSpace:"nowrap" }}>
-              {isRunning ? <><Loader size={14} style={{ animation:"spin 1s linear infinite" }} /> Running…</> : <><Play size={14} /> Execute</>}
-            </button>
-          </div>
-        </div>
-
-        {/* Form Content */}
-        <div style={{ flex:1, overflowY:"auto", padding:"20px" }}>
-          <div style={{ maxWidth:"520px", marginBottom:"18px", padding:"12px", background:"rgba(59,130,246,0.08)", border:"1px solid rgba(96,165,250,0.25)", borderRadius:"8px" }}>
-            <div style={{ display:"flex", alignItems:"center", gap:"6px", marginBottom:"8px" }}>
-              <Sparkles size={13} color="#60a5fa" />
-              <span style={{ fontSize:"12px", fontWeight:"700", color:"#60a5fa" }}>Policy Assistant</span>
-              <span style={{ fontSize:"9px", color:"rgba(255,255,255,0.25)", marginLeft:"auto" }}>
-                {aiAvailable === false ? "● offline" : aiAvailable === true ? "● online" : "optional"}
-              </span>
-            </div>
-            <div style={{ display:"flex", gap:"7px" }}>
-              <input value={aiPrompt} onChange={e => setAiPrompt(e.target.value)} onKeyDown={e => { if (e.key === "Enter") askPolicyAssistant(); }} placeholder="Describe what you need. AI will suggest field values..."
-                style={{ flex:1, background:"rgba(0,0,0,0.25)", border:"1px solid rgba(255,255,255,0.12)", borderRadius:"6px", padding:"8px 10px", fontSize:"12px", color:"#fff", outline:"none" }} />
-              <button onClick={askPolicyAssistant} disabled={aiLoading || !aiPrompt.trim()} style={{ background: aiAvailable === false ? "rgba(255,255,255,0.08)" : "#2563eb", color:"#fff", border:"none", borderRadius:"6px", padding:"8px 12px", fontSize:"11px", cursor: aiLoading || !aiPrompt.trim() ? "not-allowed" : "pointer", opacity: aiLoading ? 0.6 : 1 }}>
-                {aiLoading ? "Thinking…" : "Ask AI"}
-              </button>
-            </div>
-            {aiDraft && <div style={{ whiteSpace:"pre-wrap", marginTop:"9px", fontSize:"11px", lineHeight:1.5, color: aiAvailable === false ? "rgba(255,255,255,0.4)" : "rgba(255,255,255,0.7)" }}>{aiDraft}</div>}
-          </div>
-          {/* ── BUILD POLICY section takes over the form area ── */}
-          {activeSection === "build-policy" ? (
-            <BuildPolicyPanel
-              templateId={bpTemplate}
-              fields={bpFields}
-              setFields={setBpFields}
-              status={bpStatus}
-              setStatus={setBpStatus}
-              txUrl={bpTxUrl}
-              setTxUrl={setBpTxUrl}
-              submitting={bpSubmitting}
-              setSubmitting={setBpSubmitting}
-              address={address}
-              sendTransactionAsync={sendTransactionAsync}
-              switchChainAsync={switchChainAsync}
-              policies={policies}
-              refreshPolicies={fetchPolicies}
-            />
-          ) : rightTab === "payload" ? (
-            <pre style={{ background:"rgba(0,0,0,0.4)", border:"1px solid rgba(255,255,255,0.08)", borderRadius:"8px", padding:"16px", fontFamily:"'JetBrains Mono',monospace", fontSize:"12px", color:"#60a5fa", lineHeight:"1.6", overflow:"auto", margin:0 }}>
-              {JSON.stringify(payload, null, 2)}
-            </pre>
-          ) : (
-            <div style={{ maxWidth:"520px", display:"grid", gap:"14px" }}>
-              {selectedOp?.category === "template" ? (
-                <div style={{ background:`${accentColor}12`, border:`1px solid ${accentColor}30`, borderRadius:"8px", padding:"14px 16px" }}>
-                  <div style={{ display:"flex", alignItems:"center", gap:"6px", marginBottom:"6px" }}>
-                    <CheckCircle size={14} color={accentColor} />
-                    <span style={{ fontSize:"12px", fontWeight:"600", color:accentColor }}>Template Auto-Configured</span>
-                  </div>
-                  <p style={{ margin:0, fontSize:"12px", color:"rgba(255,255,255,0.5)" }}>All fields have been pre-filled with {selectedOp.name} defaults. Review below and click Execute to deploy.</p>
-                </div>
-              ) : null}
-
-              {selectedOp?.fields.map(field => (
-                <div key={field.key}>
-                  <label style={{ display:"block", fontSize:"12px", fontWeight:"500", color:"rgba(255,255,255,0.65)", marginBottom:"5px" }}>
-                    {field.label}
-                    {field.required && <span style={{ color:accentColor, marginLeft:"3px" }}>*</span>}
-                  </label>
-
-                  {field.type === "text" && (
-                    <input type="text" value={formValues[field.key] ?? ""} onChange={e => setFormValues(p => ({...p,[field.key]:e.target.value}))}
-                      style={{ width:"100%", background:"rgba(255,255,255,0.05)", border:"1px solid rgba(255,255,255,0.12)", borderRadius:"6px", padding:"8px 12px", fontSize:"13px", color:"#fff", outline:"none", boxSizing:"border-box" }} />
+              {service === "mine" && (
+                <div className="pg-mine">
+                  {!address ? (
+                    <p className="pg-empty">Connect your wallet to see the policies you created.</p>
+                  ) : mine.length === 0 ? (
+                    <p className="pg-empty">You have no policies yet. Pick Insurance, Trust, Pension or Community above to create one.</p>
+                  ) : (
+                    mine.slice(0, 8).map((p) => (
+                      <div key={p.policyId} className="pg-policy">
+                        <div style={{ minWidth: 0 }}>
+                          <p className="pg-policy-name">{policyName(p)}</p>
+                          <p className="pg-policy-id">{p.policyId} · {new Date(p.createdAt).toLocaleDateString()}</p>
+                        </div>
+                        <span className="pg-tag">{p.status === "active" ? "Active" : "Saved"}</span>
+                        {p.paymentTxHash && (
+                          <a href={`https://testnet.snowtrace.io/tx/${p.paymentTxHash}`} target="_blank" rel="noopener noreferrer" aria-label="See payment on Snowtrace" className="pg-icon-link"><ExternalLink size={14} /></a>
+                        )}
+                      </div>
+                    ))
                   )}
-                  {field.type === "number" && (
-                    <input type="number" value={formValues[field.key] ?? 0} onChange={e => setFormValues(p => ({...p,[field.key]:parseFloat(e.target.value)}))}
-                      style={{ width:"100%", background:"rgba(255,255,255,0.05)", border:"1px solid rgba(255,255,255,0.12)", borderRadius:"6px", padding:"8px 12px", fontSize:"13px", color:"#fff", outline:"none", boxSizing:"border-box" }} />
-                  )}
-                  {field.type === "select" && field.options && (
-                    <select value={formValues[field.key] ?? field.default} onChange={e => setFormValues(p => ({...p,[field.key]:e.target.value}))}
-                      style={{ width:"100%", background:"#111815", border:"1px solid rgba(255,255,255,0.12)", borderRadius:"6px", padding:"8px 12px", fontSize:"13px", color:"#fff", outline:"none", boxSizing:"border-box" }}>
-                      {field.options.map(opt => <option key={opt} value={opt}>{opt}</option>)}
-                    </select>
-                  )}
-                  {field.type === "boolean" && (
-                    <button type="button" onClick={() => setFormValues(p => ({...p,[field.key]:!p[field.key]}))}
-                      style={{ background: formValues[field.key] ? `${accentColor}25` : "rgba(255,255,255,0.07)", border:`1px solid ${formValues[field.key] ? accentColor : "rgba(255,255,255,0.15)"}`, borderRadius:"20px", padding:"5px 16px", fontSize:"12px", color: formValues[field.key] ? accentColor : "rgba(255,255,255,0.4)", cursor:"pointer" }}>
-                      {formValues[field.key] ? "✓ ENABLED" : "DISABLED"}
-                    </button>
-                  )}
-                  {field.hint && <div style={{ fontSize:"10px", color:"rgba(255,255,255,0.3)", marginTop:"3px" }}>{field.hint}</div>}
-                </div>
-              ))}
-
-              {/* Custom Params */}
-              {selectedOp && selectedOp.category !== "template" && (
-                <div style={{ marginTop:"8px", paddingTop:"14px", borderTop:"1px solid rgba(255,255,255,0.07)" }}>
-                  <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:"10px" }}>
-                    <div style={{ fontSize:"12px", color:"rgba(255,255,255,0.5)" }}>Custom Policy Attributes</div>
-                    <button onClick={() => setCustomParams(p => [...p, {key:`attr_${p.length+1}`, value:""}])}
-                      style={{ background:"rgba(255,255,255,0.06)", border:"1px solid rgba(255,255,255,0.1)", borderRadius:"5px", padding:"4px 9px", fontSize:"11px", color:"rgba(255,255,255,0.5)", cursor:"pointer", display:"flex", alignItems:"center", gap:"4px" }}>
-                      <Plus size={11} /> Add Attribute
-                    </button>
-                  </div>
-                  {customParams.map((cp, i) => (
-                    <div key={i} style={{ display:"flex", gap:"8px", marginBottom:"7px", alignItems:"center" }}>
-                      <input type="text" placeholder="key" value={cp.key} onChange={e => setCustomParams(p => p.map((x,j) => j===i ? {...x,key:e.target.value} : x))}
-                        style={{ flex:1, background:"rgba(255,255,255,0.05)", border:"1px solid rgba(255,255,255,0.1)", borderRadius:"5px", padding:"6px 10px", fontSize:"11px", color:"#fff", outline:"none" }} />
-                      <input type="text" placeholder="value" value={cp.value} onChange={e => setCustomParams(p => p.map((x,j) => j===i ? {...x,value:e.target.value} : x))}
-                        style={{ flex:1, background:"rgba(255,255,255,0.05)", border:"1px solid rgba(255,255,255,0.1)", borderRadius:"5px", padding:"6px 10px", fontSize:"11px", color:"#fff", outline:"none" }} />
-                      <button onClick={() => setCustomParams(p => p.filter((_,j) => j!==i))} style={{ background:"none", border:"none", color:"rgba(255,255,255,0.3)", cursor:"pointer" }}><X size={13} /></button>
-                    </div>
-                  ))}
                 </div>
               )}
+
+              {(["start", "manage", "lookup"] as const).map((g) => {
+                const items = actions.filter((a) => a.group === g);
+                if (!items.length) return null;
+                // Long lists show 3 at first (plus the chosen one) so the page stays short on phones.
+                const open = expanded.includes(g) || items.length <= 4;
+                const shown = open ? items : items.filter((a, i) => i < 3 || a.id === action?.id);
+                return (
+                  <div key={g} className="pg-group">
+                    <p className="pg-group-title">{GROUP_TITLE[g]}</p>
+                    <div className="pg-list">
+                      {shown.map((a) => <ActionRow key={a.id} a={a} active={action?.id === a.id} onClick={() => pickAction(a)} />)}
+                    </div>
+                    {!open && (
+                      <button className="pg-link" style={{ marginTop: 10 }} onClick={() => setExpanded((e) => [...e, g])}>
+                        Show {items.length - shown.length} more <ChevronRight size={14} />
+                      </button>
+                    )}
+                  </div>
+                );
+              })}
+            </>
+          )}
+        </section>
+
+        {/* ── Right: step 3 ───────────────────────────── */}
+        <section className="pg-right" ref={formRef}>
+          {!action ? (
+            <div className="pg-card pg-intro">
+              <h2 className="pg-card-title">How it works</h2>
+              <ol>
+                <li><b>Pick what you want to set up</b>: insurance, a trust, a pension or a community reserve.</li>
+                <li><b>Choose an action.</b> Most people start with the first one in the list.</li>
+                <li><b>Fill in the form and confirm in your wallet.</b> You get a policy ID and a link to see the payment on the blockchain.</li>
+              </ol>
+              <p className="pg-muted">Need test AVAX? <a href={FAUCET_URL} target="_blank" rel="noopener noreferrer">Get it free here</a>.</p>
+            </div>
+          ) : (
+            <div className="pg-card">
+              <h2 className="pg-step" style={{ marginTop: 0 }}><span>3</span> {action.free ? "Look it up" : "Fill in and confirm"}</h2>
+              <div className="pg-form-head">
+                {svc && <span className="pg-svc-icon" style={{ ["--tint" as string]: svc.tint }}><svc.icon size={18} strokeWidth={1.8} /></span>}
+                <div style={{ minWidth: 0 }}>
+                  <p className="pg-form-name">{action.name}</p>
+                  <p className="pg-muted" style={{ margin: 0 }}>{action.description}</p>
+                </div>
+              </div>
+
+              {action.extra && Object.keys(action.extra).length > 0 && (
+                <p className="pg-note"><Check size={14} /> Filled in for you from the {action.name} template. Change anything you like.</p>
+              )}
+
+              <datalist id="pg-policy-ids">
+                {mine.map((p) => <option key={p.policyId} value={p.policyId}>{policyName(p)}</option>)}
+              </datalist>
+
+              <div className="pg-fields">
+                {action.fields.map((f) => (
+                  <label key={f.key} className="pg-field">
+                    <span className="pg-label">{f.label}{f.required && <b> *</b>}</span>
+                    {f.type === "boolean" ? (
+                      <button type="button" role="switch" aria-checked={values[f.key] === true} onClick={() => setValues((v) => ({ ...v, [f.key]: !v[f.key] }))} className={values[f.key] === true ? "pg-switch pg-switch--on" : "pg-switch"}>
+                        <i /> {values[f.key] === true ? "Yes" : "No"}
+                      </button>
+                    ) : f.type === "select" ? (
+                      <select value={String(values[f.key] ?? "")} onChange={(e) => setValues((v) => ({ ...v, [f.key]: e.target.value }))} className="pg-input">
+                        {f.options?.map((o) => <option key={o} value={o}>{o}</option>)}
+                      </select>
+                    ) : (
+                      <input
+                        className="pg-input" value={String(values[f.key] ?? "")} placeholder={f.placeholder}
+                        type={f.type === "number" ? "number" : "text"} inputMode={f.type === "number" ? "decimal" : undefined}
+                        list={/Id$/.test(f.key) ? "pg-policy-ids" : undefined}
+                        onChange={(e) => setValues((v) => ({ ...v, [f.key]: e.target.value }))}
+                      />
+                    )}
+                    {f.hint && <span className="pg-hint">{f.hint}</span>}
+                    {/Id$/.test(f.key) && mine.length > 0 && <span className="pg-hint">Tap the box to pick one of your policies.</span>}
+                  </label>
+                ))}
+              </div>
+
+              {/* Optional AI help */}
+              <div className="pg-ai">
+                {!aiOpen ? (
+                  <button className="pg-link" onClick={() => setAiOpen(true)}><Sparkles size={14} /> Not sure what to write? Ask Kanuvari AI</button>
+                ) : (
+                  <>
+                    <div className="pg-ai-row">
+                      <input className="pg-input" value={aiPrompt} onChange={(e) => setAiPrompt(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter") void askAi(); }} placeholder="e.g. I farm 3 hectares of maize in Machakos" />
+                      <button className="pg-btn pg-btn--quiet" onClick={() => void askAi()} disabled={aiLoading || !aiPrompt.trim()}>
+                        {aiLoading ? <Loader2 size={14} className="pg-spin" /> : "Ask"}
+                      </button>
+                    </div>
+                    {aiAnswer && <p className="pg-ai-answer">{aiAnswer}</p>}
+                  </>
+                )}
+              </div>
+
+              {fieldError && <p className="pg-error">{fieldError}</p>}
+
+              {/* Confirm */}
+              <div className="pg-confirm">
+                <p className="pg-muted" style={{ margin: 0 }}>
+                  {action.free ? "Free. Nothing to sign." : !address ? "Connect a wallet first. It will ask you to approve the fee." : <>Cost: <b>{FEE_AVAX} test AVAX</b> plus a tiny network fee. Your wallet will ask you to approve.</>}
+                </p>
+                <button className="pg-btn" onClick={() => void submit()} disabled={busy}>
+                  {busy ? <><Loader2 size={15} className="pg-spin" /> Working…</> : action.free ? <><Search size={15} /> Look it up</> : !address ? <><Wallet size={15} /> Connect wallet</> : <>Confirm <ChevronRight size={15} /></>}
+                </button>
+              </div>
+
+              {/* Progress */}
+              {run.state !== "idle" && (
+                <div className={`pg-progress pg-progress--${run.state}`}>
+                  {["Switch wallet to Avalanche Fuji", `Approve ${FEE_AVAX} test AVAX`, "Save your policy"].map((label, i) => {
+                    const doneStep = run.step > i;
+                    const current = run.step === i;
+                    const failedHere = run.state === "failed" && current;
+                    return (
+                      <div key={label} className="pg-progress-row">
+                        <span className={doneStep ? "pg-dot pg-dot--done" : failedHere ? "pg-dot pg-dot--fail" : current ? "pg-dot pg-dot--now" : "pg-dot"}>
+                          {doneStep ? <Check size={12} /> : failedHere ? <X size={12} /> : current && busy ? <Loader2 size={12} className="pg-spin" /> : i + 1}
+                        </span>
+                        <span style={{ color: doneStep || current ? C.paper : C.ink }}>{label}</span>
+                      </div>
+                    );
+                  })}
+                  {run.state === "done" && (
+                    <p className="pg-ok"><Check size={15} /> Done. Your policy ID is <b>{run.policyId}</b>. Find it any time under <button className="pg-link" onClick={() => pickService("mine")}>My policies</button>.</p>
+                  )}
+                  {run.state === "failed" && (
+                    <p className="pg-error" style={{ margin: "10px 0 0" }}>
+                      {run.message}{" "}
+                      {run.faucet && <a href={FAUCET_URL} target="_blank" rel="noopener noreferrer">Get free test AVAX</a>}
+                    </p>
+                  )}
+                  {run.txUrl && (
+                    <a href={run.txUrl} target="_blank" rel="noopener noreferrer" className="pg-link" style={{ marginTop: 8 }}>
+                      See the payment on Snowtrace <ExternalLink size={13} />
+                    </a>
+                  )}
+                </div>
+              )}
+
+              {/* Look-up result */}
+              {lookup === "none" && <p className="pg-error">No policy with that ID was found. Check the ID under My policies.</p>}
+              {lookup && lookup !== "none" && (
+                <div className="pg-progress">
+                  <p className="pg-form-name" style={{ marginBottom: 6 }}>{policyName(lookup)}</p>
+                  <dl className="pg-dl">
+                    <dt>Policy ID</dt><dd>{lookup.policyId}</dd>
+                    <dt>Status</dt><dd>{lookup.status === "active" ? "Active" : "Saved"}</dd>
+                    <dt>Owner</dt><dd>{short(lookup.owner)}</dd>
+                    <dt>Created</dt><dd>{new Date(lookup.createdAt).toLocaleString()}</dd>
+                    {Object.entries(lookup.config ?? {}).filter(([k, v]) => k !== "operation" && k !== "customParams" && (typeof v === "string" || typeof v === "number" || typeof v === "boolean")).slice(0, 8).map(([k, v]) => (
+                      <div key={k} style={{ display: "contents" }}><dt>{k.replace(/([A-Z])/g, " $1").toLowerCase()}</dt><dd>{typeof v === "boolean" ? (v ? "Yes" : "No") : String(v)}</dd></div>
+                    ))}
+                  </dl>
+                  {lookup.paymentTxHash && (
+                    <a href={`https://testnet.snowtrace.io/tx/${lookup.paymentTxHash}`} target="_blank" rel="noopener noreferrer" className="pg-link" style={{ marginTop: 8 }}>See the payment on Snowtrace <ExternalLink size={13} /></a>
+                  )}
+                </div>
+              )}
+
+              {/* For developers */}
+              <details className="pg-tech">
+                <summary>Technical details</summary>
+                <p className="pg-muted">Network: Avalanche Fuji ({FUJI_CHAIN_ID}) · Treasury: <code>{TREASURY}</code></p>
+                {log.length > 0 && <pre>{log.join("\n")}</pre>}
+                <pre>{JSON.stringify({ network: "testnet", serviceType: action.serviceType, operationId: action.id, parameters: config(action) }, null, 2)}</pre>
+              </details>
             </div>
           )}
-        </div>
+        </section>
+      </main>
 
-        {/* Fuji Policy Status — horizontally scrollable so the treasury address never gets clipped on narrow screens */}
-        <div style={{ padding:"10px 20px", borderTop:"1px solid rgba(255,255,255,0.06)", background:"rgba(255,255,255,0.01)", display:"flex", gap:"16px", flexShrink:0, overflowX:"auto", WebkitOverflowScrolling:"touch" }}>
-          {[["Fuji","Avalanche testnet"],["Wallet","User-signed"],["Treasury",TREASURY_ADDRESS],["AI", aiAvailable === false ? "offline (optional)" : aiAvailable === true ? "online" : "optional"]].map(([k,v]) => (
-            <div key={k} style={{ fontSize:"10px", display:"flex", flexDirection:"column", gap:"1px", flexShrink:0 }}>
-              <span style={{ color:"rgba(255,255,255,0.5)", fontWeight:"600" }}>{k}</span>
-              <span style={{ color:"rgba(255,255,255,0.25)", fontFamily: k === "Treasury" ? "monospace" : undefined }}>{v}</span>
-            </div>
-          ))}
-        </div>
-      </div>
+      {showWallet && <WalletConnectModal onClose={() => setShowWallet(false)} />}
 
-      </div>
-      {/* ── BOTTOM: Activity + Result ──────────────────── */}
-      <div style={{ height:"min(280px, 35dvh)", flexShrink:0, display:"flex", flexDirection:"column", background:"#0a0e0b", borderTop:"1px solid rgba(255,255,255,0.1)" }} className={`panel-terminal ${mobilePanel === "terminal" ? "mobile-show" : "mobile-hide"}`}>
-
-        {/* Tabs */}
-        <div style={{ display:"flex", borderBottom:"1px solid rgba(255,255,255,0.07)", flexShrink:0 }}>
-          {(["terminal","result"] as const).map(t => (
-            <button key={t} onClick={() => setRightTab(t)}
-              style={{ flex:1, background:"none", border:"none", borderBottom:`2px solid ${rightTab===t ? accentColor : "transparent"}`, padding:"10px 8px", fontSize:"11px", fontWeight: rightTab===t ? "600" : "400", color: rightTab===t ? accentColor : "rgba(255,255,255,0.35)", cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center", gap:"5px", transition:"all 0.15s" }}>
-              {t === "terminal" ? <><TerminalSquare size={12} /> Activity</> : <><CheckCircle size={12} /> Result</>}
-            </button>
-          ))}
-        </div>
-
-        {rightTab === "terminal" ? (
-          <div ref={termRef} style={{ flex:1, overflowY:"auto", padding:"12px 14px", fontFamily:"'JetBrains Mono',monospace", fontSize:"11px", lineHeight:"1.6" }}>
-            <div style={{ color:"rgba(255,255,255,0.2)", marginBottom:"10px" }}>{"// KAI Policy Workspace · Avalanche Fuji"}</div>
-            {terminal.length === 0 && <div style={{ color:"rgba(255,255,255,0.2)" }}>Select an operation and click Execute to begin.</div>}
-            {terminal.map(l => (
-              <div key={l.id} style={{ marginBottom:"3px", wordBreak:"break-all" }}>
-                <span style={{ color:"rgba(255,255,255,0.2)", marginRight:"6px", fontSize:"10px" }}>{l.ts}</span>
-                <span style={{ color: l.type==="cmd"?"#c9a24b":l.type==="success"?"#22c55e":l.type==="warn"?"#f59e0b":l.type==="error"?"#ef4444":l.type==="receipt"?"#60a5fa":"rgba(255,255,255,0.55)" }}>
-                  {l.type==="cmd" && "$ "}
-                  {l.text}
-                </span>
-                {l.link && (
-                  <a href={l.link.url} target="_blank" rel="noopener noreferrer" style={{ color:"#60a5fa", textDecoration:"underline", marginLeft:"6px", fontSize:"11px" }}>
-                    {l.link.label} <ExternalLink size={9} style={{ verticalAlign:"middle" }} />
-                  </a>
-                )}
-              </div>
-            ))}
-            {isRunning && (
-              <div style={{ color:"#a78bfa", display:"flex", alignItems:"center", gap:"6px", marginTop:"6px" }}>
-                <Loader size={12} style={{ animation:"spin 1s linear infinite" }} /> Waiting for wallet confirmation…
-              </div>
-            )}
-          </div>
-        ) : (
-          <div style={{ flex:1, overflowY:"auto", padding:"14px" }}>
-            {!currentExec ? (
-              <div style={{ textAlign:"center", padding:"40px 20px", color:"rgba(255,255,255,0.2)", fontSize:"12px" }}>
-                <CheckCircle size={28} color="rgba(255,255,255,0.1)" style={{ display:"block", margin:"0 auto 10px" }} />
-                Execute an operation to see results here
-              </div>
-            ) : (
-              <div style={{ display:"grid", gap:"10px" }}>
-                {/* Status Banner */}
-                <div style={{ background: `${statusColor(currentExec.status)}15`, border:`1px solid ${statusColor(currentExec.status)}40`, borderRadius:"8px", padding:"12px 14px", display:"flex", alignItems:"center", gap:"10px" }}>
-                  {currentExec.status === "completed" ? <CheckCircle size={18} color="#22c55e" /> : currentExec.status === "failed" ? <XCircle size={18} color="#ef4444" /> : <Loader size={18} color="#f59e0b" style={{ animation:"spin 1s linear infinite" }} />}
-                  <div>
-                    <div style={{ fontSize:"13px", fontWeight:"700", color: statusColor(currentExec.status), textTransform:"uppercase" }}>{currentExec.status}</div>
-                    <div style={{ fontSize:"11px", color:"rgba(255,255,255,0.4)" }}>{currentExec.opName}</div>
-                  </div>
-                </div>
-
-                {/* Fields Table */}
-                {currentExec.explorerUrl && (
-                  <a href={currentExec.explorerUrl} target="_blank" rel="noopener noreferrer"
-                    style={{ display:"flex", alignItems:"center", justifyContent:"space-between", background:"rgba(59,130,246,0.1)", border:"1px solid rgba(59,130,246,0.25)", borderRadius:"7px", padding:"10px 14px", textDecoration:"none" }}>
-                    <div>
-                      <div style={{ fontSize:"12px", fontWeight:"600", color:"#60a5fa" }}>Open Fuji Transaction</div>
-                      <div style={{ fontSize:"10px", color:"rgba(255,255,255,0.35)" }}>View on Snowtrace</div>
-                    </div>
-                    <ExternalLink size={14} color="#60a5fa" />
-                  </a>
-                )}
-
-                {[
-                  ["ID",             currentExec.txId || currentExec.id],
-                  ["Type",           "Crypto Transfer"],
-                  ["Confirmed at",    currentExec.confirmedAt ? currentExec.confirmedAt.slice(0,19).replace("T"," ") : "Not confirmed yet"],
-                  ["Transaction Hash", currentExec.txHash || "Pending"],
-                  ["Network",         "Avalanche Fuji"],
-                  ["Treasury",        TREASURY_ADDRESS],
-                  ["Memo",           currentExec.opName],
-                  ["Payer Account",  currentExec.payerAccount || "Not set"],
-                  ["AVAX Fee",        currentExec.avaxFee || "Pending"],
-                  ["Policy ID",      currentExec.policyId || "Pending"],
-                  ["Treasury Payment", currentExec.platformFee || "Pending"],
-                ].map(([k,v]) => (
-                  <div key={k} style={{ display:"flex", justifyContent:"space-between", fontSize:"11px", padding:"7px 0", borderBottom:"1px solid rgba(255,255,255,0.05)" }}>
-                    <span style={{ color:"rgba(255,255,255,0.4)" }}>{k}</span>
-                    <span style={{ color:"rgba(255,255,255,0.8)", fontFamily:"monospace" }}>{v}</span>
-                  </div>
-                ))}
-
-              </div>
-            )}
-          </div>
-        )}
-      </div>
-
-      {/* Spin animation + responsive layout */}
       <style>{`
-        @keyframes spin { to { transform: rotate(360deg); } }
+        .pg { min-height: 100dvh; background: ${C.bg}; color: ${C.paper}; font-family: 'Inter', system-ui, sans-serif; }
+        .pg-wrap { width: min(1120px, calc(100% - 32px)); margin: 0 auto; }
+        .pg-top { position: sticky; top: 0; z-index: 30; background: ${C.band}; border-bottom: 1px solid ${C.line}; }
+        .pg-top-inner { display: flex; align-items: center; gap: 12px; padding: 12px 0; }
+        .pg-back { display: grid; place-items: center; width: 36px; height: 36px; border-radius: 50%; color: ${C.paper}; background: rgba(246,242,231,0.06); flex-shrink: 0; }
+        .pg-title { margin: 0; font-size: 18px; font-weight: 700; letter-spacing: -0.2px; }
+        .pg-sub { margin: 1px 0 0; font-size: 12.5px; color: ${C.ink}; }
+        .pg-wallet { margin-left: auto; display: inline-flex; align-items: center; gap: 7px; padding: 9px 14px; border-radius: 999px; border: none; background: ${C.gold}; color: #1B1A14; font-weight: 700; font-size: 13px; cursor: pointer; font-family: inherit; flex-shrink: 0; }
+        .pg-wallet--on { background: rgba(125,195,131,0.14); color: ${C.green}; font-family: ui-monospace, monospace; font-weight: 600; }
 
-        /* ── Mobile: show only the active panel ── */
-        @media (max-width: 767px) {
-          .mobile-topbar { display: flex !important; }
-          .desktop-only  { display: none !important; }
-
-          /* Op header: title on its own row, tabs + Execute below it —
-             fixes Execute being clipped off the right edge on narrow screens */
-          .op-header { flex-direction: column !important; align-items: stretch !important; }
-          .op-header-actions { justify-content: space-between !important; }
-
-          /* Sidebar / ops panel become full-width when active */
-          .panel-sidebar, .panel-ops {
-            position: fixed !important;
-            inset: 0 !important;
-            width: 100% !important;
-            z-index: 20 !important;
-            overflow-y: auto !important;
-          }
-          .panel-form {
-            position: fixed !important;
-            inset: 0 !important;
-            width: 100% !important;
-            z-index: 20 !important;
-            overflow-y: auto !important;
-          }
-          .panel-terminal {
-            position: fixed !important;
-            inset: 0 !important;
-            height: 100dvh !important;
-            width: 100% !important;
-            z-index: 20 !important;
-          }
-
-          /* All panels hidden by default on mobile */
-          .panel-sidebar.mobile-hide,
-          .panel-ops.mobile-hide,
-          .panel-form.mobile-hide,
-          .panel-terminal.mobile-hide { display: none !important; }
-
-          .panel-sidebar.mobile-show,
-          .panel-ops.mobile-show,
-          .panel-form.mobile-show,
-          .panel-terminal.mobile-show { display: flex !important; flex-direction: column !important; }
-
-          /* Account for the mobile topbar height */
-          .panel-sidebar.mobile-show,
-          .panel-ops.mobile-show,
-          .panel-form.mobile-show,
-          .panel-terminal.mobile-show {
-            top: 52px !important;
-          }
+        .pg-main { display: grid; gap: 28px; padding: 20px 0 64px; }
+        @media (min-width: 900px) {
+          .pg-main { grid-template-columns: minmax(0, 420px) minmax(0, 1fr); align-items: start; padding-top: 28px; }
+          .pg-right { position: sticky; top: 84px; max-height: calc(100dvh - 100px); overflow-y: auto; }
         }
+        .pg-right { scroll-margin-top: 76px; }
 
-        /* ── Desktop: hide mobile topbar, show all panels ── */
-        @media (min-width: 768px) {
-          .mobile-topbar  { display: none !important; }
-          .desktop-only   { display: block !important; }
-          .panel-sidebar  { display: flex !important; }
-          .panel-ops      { display: flex !important; }
-          .panel-form     { display: flex !important; }
-          .panel-terminal { display: flex !important; }
-          .mobile-hide, .mobile-show { /* reset: all visible */ }
-        }
+        .pg-how { padding: 14px 16px; border-radius: 14px; background: ${C.band}; }
+        .pg-how p { margin: 8px 0 0; font-size: 13.5px; line-height: 1.5; color: ${C.dim}; }
+        .pg-how b { color: ${C.paper}; }
+        .pg-net { display: inline-flex; align-items: center; gap: 7px; font-size: 12px; font-weight: 600; color: ${C.green}; }
+        .pg-net i { width: 7px; height: 7px; border-radius: 50%; background: ${C.green}; }
+
+        .pg-search { display: flex; align-items: center; gap: 8px; margin-top: 14px; padding: 0 12px; border-radius: 12px; background: ${C.card}; }
+        .pg-search input { flex: 1; min-width: 0; padding: 12px 0; background: none; border: none; outline: none; color: ${C.paper}; font-size: 14px; font-family: inherit; }
+        .pg-search button { background: none; border: none; color: ${C.ink}; cursor: pointer; padding: 4px; }
+
+        .pg-step { display: flex; align-items: center; gap: 10px; margin: 26px 0 12px; font-size: 15px; font-weight: 700; }
+        .pg-step span { display: grid; place-items: center; width: 24px; height: 24px; border-radius: 50%; background: ${C.gold}; color: #1B1A14; font-size: 12.5px; flex-shrink: 0; }
+
+        .pg-services { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+        .pg-svc { display: grid; grid-template-columns: auto 1fr; grid-template-rows: auto auto; column-gap: 10px; align-items: center; text-align: left; padding: 12px; border-radius: 14px; border: 1.5px solid transparent; background: ${C.card}; color: ${C.paper}; cursor: pointer; font-family: inherit; transition: background .15s, border-color .15s; }
+        .pg-svc:hover { background: ${C.cardHi}; }
+        .pg-svc--on { border-color: var(--tint); background: ${C.cardHi}; }
+        .pg-svc-icon { grid-row: span 2; display: grid; place-items: center; width: 40px; height: 40px; border-radius: 50%; color: var(--tint); background: color-mix(in srgb, var(--tint) 16%, ${C.bg}); flex-shrink: 0; }
+        .pg-svc-name { font-size: 14px; font-weight: 700; display: flex; align-items: center; gap: 6px; }
+        .pg-svc-name em { font-style: normal; font-size: 11px; padding: 0 7px; border-radius: 999px; background: var(--tint); color: #1B1A14; }
+        .pg-svc-hint { font-size: 12px; line-height: 1.35; color: ${C.ink}; }
+        .pg-svc:last-child { grid-column: 1 / -1; }
+
+        .pg-group { margin-top: 14px; }
+        .pg-group-title { margin: 0 0 6px; font-size: 11.5px; font-weight: 700; letter-spacing: 0.8px; text-transform: uppercase; color: ${C.ink}; }
+        .pg-list { display: grid; gap: 6px; margin-top: 8px; }
+        .pg-row { display: flex; align-items: center; gap: 10px; width: 100%; text-align: left; padding: 12px 14px; border-radius: 12px; border: 1.5px solid transparent; background: ${C.card}; color: ${C.paper}; cursor: pointer; font-family: inherit; min-height: 52px; }
+        .pg-row:hover { background: ${C.cardHi}; }
+        .pg-row--on { border-color: ${C.gold}; background: ${C.cardHi}; }
+        .pg-row-name { font-size: 14px; font-weight: 600; display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+        .pg-row-desc { margin-top: 2px; font-size: 12.5px; line-height: 1.4; color: ${C.ink}; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+        .pg-tag { font-size: 10.5px; font-weight: 700; padding: 2px 8px; border-radius: 999px; background: rgba(200,155,60,0.16); color: ${C.goldLight}; white-space: nowrap; }
+        .pg-tag--free { background: rgba(125,195,131,0.16); color: ${C.green}; }
+        .pg-empty { margin: 0; padding: 14px; border-radius: 12px; background: ${C.card}; font-size: 13.5px; color: ${C.dim}; line-height: 1.5; }
+
+        .pg-mine { display: grid; gap: 6px; margin-bottom: 6px; }
+        .pg-policy { display: flex; align-items: center; gap: 10px; padding: 12px 14px; border-radius: 12px; background: ${C.card}; }
+        .pg-policy > div { flex: 1; }
+        .pg-policy-name { margin: 0; font-size: 14px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .pg-policy-id { margin: 2px 0 0; font-size: 12px; color: ${C.ink}; font-family: ui-monospace, monospace; }
+        .pg-icon-link { color: ${C.goldLight}; display: grid; place-items: center; padding: 4px; }
+
+        .pg-card { padding: 20px; border-radius: 18px; background: ${C.band}; }
+        .pg-card-title { margin: 0 0 10px; font-size: 16px; }
+        .pg-intro ol { margin: 0; padding-left: 20px; display: grid; gap: 10px; font-size: 14px; line-height: 1.5; color: ${C.dim}; }
+        .pg-intro b { color: ${C.paper}; }
+        .pg-muted { font-size: 13px; color: ${C.ink}; line-height: 1.5; }
+        .pg-muted a, .pg-error a { color: ${C.goldLight}; }
+        .pg-form-head { display: flex; align-items: center; gap: 12px; }
+        .pg-form-head .pg-svc-icon { grid-row: auto; }
+        .pg-form-name { margin: 0 0 2px; font-size: 16px; font-weight: 700; }
+        .pg-note { display: flex; gap: 6px; align-items: center; margin: 14px 0 0; font-size: 13px; color: ${C.green}; }
+
+        .pg-fields { display: grid; gap: 14px; margin-top: 18px; }
+        @media (min-width: 640px) { .pg-fields { grid-template-columns: 1fr 1fr; } }
+        .pg-field { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+        .pg-label { font-size: 13px; font-weight: 600; color: ${C.dim}; }
+        .pg-label b { color: ${C.goldLight}; }
+        .pg-input { width: 100%; box-sizing: border-box; padding: 11px 12px; border-radius: 10px; border: 1px solid rgba(246,242,231,0.12); background: ${C.bg}; color: ${C.paper}; font-size: 15px; font-family: inherit; outline: none; min-height: 44px; }
+        .pg-input:focus { border-color: ${C.gold}; }
+        select.pg-input option { background: ${C.bg}; }
+        .pg-hint { font-size: 12px; color: ${C.ink}; }
+        .pg-switch { display: inline-flex; align-items: center; gap: 10px; width: fit-content; padding: 8px 14px 8px 8px; border-radius: 999px; border: 1px solid rgba(246,242,231,0.12); background: ${C.bg}; color: ${C.dim}; font-size: 14px; font-family: inherit; cursor: pointer; min-height: 44px; }
+        .pg-switch i { width: 36px; height: 22px; border-radius: 999px; background: rgba(246,242,231,0.15); position: relative; transition: background .15s; }
+        .pg-switch i::after { content: ""; position: absolute; top: 3px; left: 3px; width: 16px; height: 16px; border-radius: 50%; background: ${C.paper}; transition: transform .15s; }
+        .pg-switch--on { color: ${C.paper}; }
+        .pg-switch--on i { background: ${C.green}; }
+        .pg-switch--on i::after { transform: translateX(14px); }
+
+        .pg-ai { margin-top: 18px; }
+        .pg-ai-row { display: flex; gap: 8px; }
+        .pg-ai-answer { margin: 10px 0 0; padding: 12px; border-radius: 10px; background: ${C.card}; font-size: 13.5px; line-height: 1.55; color: ${C.dim}; white-space: pre-wrap; }
+        .pg-link { display: inline-flex; align-items: center; gap: 6px; padding: 0; border: none; background: none; color: ${C.goldLight}; font-size: 13.5px; font-weight: 600; cursor: pointer; font-family: inherit; text-decoration: none; }
+
+        .pg-confirm { display: flex; flex-direction: column; gap: 12px; margin-top: 20px; padding-top: 18px; border-top: 1px solid ${C.line}; }
+        @media (min-width: 640px) { .pg-confirm { flex-direction: row; align-items: center; justify-content: space-between; } }
+        .pg-btn { display: inline-flex; align-items: center; justify-content: center; gap: 7px; padding: 13px 24px; border-radius: 999px; border: none; background: ${C.gold}; color: #1B1A14; font-weight: 700; font-size: 15px; cursor: pointer; font-family: inherit; min-height: 48px; white-space: nowrap; }
+        .pg-btn:disabled { opacity: .6; cursor: not-allowed; }
+        .pg-btn--quiet { background: ${C.card}; color: ${C.paper}; padding: 10px 18px; min-height: 44px; font-size: 14px; }
+        .pg-error { margin: 14px 0 0; font-size: 13.5px; color: ${C.red}; line-height: 1.5; }
+        .pg-ok { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin: 12px 0 0; font-size: 14px; color: ${C.green}; line-height: 1.5; }
+        .pg-ok b { color: ${C.paper}; font-family: ui-monospace, monospace; }
+
+        .pg-progress { margin-top: 16px; padding: 14px; border-radius: 12px; background: ${C.card}; display: flex; flex-direction: column; }
+        .pg-progress-row { display: flex; align-items: center; gap: 10px; padding: 5px 0; font-size: 13.5px; }
+        .pg-dot { display: grid; place-items: center; width: 22px; height: 22px; border-radius: 50%; background: rgba(246,242,231,0.08); color: ${C.ink}; font-size: 11px; font-weight: 700; flex-shrink: 0; }
+        .pg-dot--now { background: rgba(200,155,60,0.22); color: ${C.goldLight}; }
+        .pg-dot--done { background: ${C.green}; color: #10231A; }
+        .pg-dot--fail { background: ${C.red}; color: #2A1410; }
+        .pg-dl { display: grid; grid-template-columns: auto 1fr; gap: 6px 14px; margin: 0; font-size: 13.5px; }
+        .pg-dl dt { color: ${C.ink}; text-transform: capitalize; }
+        .pg-dl dd { margin: 0; overflow-wrap: anywhere; }
+
+        .pg-tech { margin-top: 20px; font-size: 13px; color: ${C.ink}; }
+        .pg-tech summary { cursor: pointer; font-weight: 600; }
+        .pg-tech code { font-size: 12px; overflow-wrap: anywhere; }
+        .pg-tech pre { margin: 8px 0 0; padding: 12px; border-radius: 10px; background: ${C.bg}; color: ${C.dim}; font-size: 12px; line-height: 1.55; overflow-x: auto; white-space: pre-wrap; overflow-wrap: anywhere; }
+
+        .pg-spin { animation: pg-spin 1s linear infinite; }
+        @keyframes pg-spin { to { transform: rotate(360deg); } }
       `}</style>
     </div>
   );
 }
 
-// ─── SERVICE TEMPLATES for Build Policy (single source of truth: also
-// drives the template picker list in the sidebar, so there is one place
-// to add or edit a policy type) ────────────────────────────────────────
-const BP_TEMPLATES: Record<string, {
-  icon: React.ComponentType<{ size?: number; color?: string }>; label: string; color: string;
-  fields: { key: string; label: string; placeholder: string; type?: string }[];
-}> = {
-  pension:  { icon: PiggyBank,  label:"KAIVAX Pension",    color:"#A78BFA",
-    fields:[{key:"vestingYears",label:"Vesting period (years)",placeholder:"5",type:"number"},{key:"monthlyDeposit",label:"Monthly deposit (NVR)",placeholder:"100",type:"number"},{key:"beneficiary",label:"Beneficiary address",placeholder:"0x…"}]},
-  trust:    { icon: Landmark,   label:"KAI Trust",          color:"#FFD700",
-    fields:[{key:"lockYears",label:"Lock duration (years)",placeholder:"5",type:"number"},{key:"amount",label:"Trust amount (NVR)",placeholder:"1000",type:"number"},{key:"beneficiary",label:"Beneficiary address",placeholder:"0x…"}]},
-  crop:     { icon: Wheat,      label:"Crop Insurance",     color:"#EAB308",
-    fields:[{key:"cropType",label:"Crop type",placeholder:"Maize"},{key:"hectares",label:"Area (hectares)",placeholder:"10",type:"number"},{key:"season",label:"Season (YYYY)",placeholder:"2026",type:"number"}]},
-  forest:   { icon: Trees,      label:"Forest Protection",  color:"#22C55E",
-    fields:[{key:"forestId",label:"Forest ID / parcel",placeholder:"KE-001"},{key:"hectares",label:"Hectares covered",placeholder:"50",type:"number"},{key:"duration",label:"Coverage (months)",placeholder:"12",type:"number"}]},
-  medical:  { icon: HeartPulse, label:"Medical Pool",       color:"#EF4444",
-    fields:[{key:"members",label:"Pool members",placeholder:"100",type:"number"},{key:"coverageUsd",label:"Max coverage (USD)",placeholder:"500",type:"number"},{key:"duration",label:"Policy duration (mo)",placeholder:"12",type:"number"}]},
-  rwa:      { icon: Building2,  label:"RWA Tokenization",  color:"#F97316",
-    fields:[{key:"assetType",label:"Asset type",placeholder:"Land"},{key:"valuationUsd",label:"Valuation (USD)",placeholder:"10000",type:"number"},{key:"location",label:"Location / parcel ID",placeholder:"Nairobi, KE-042"}]},
-  honey:    { icon: Droplet,    label:"Honey Reserve",      color:"#F59E0B",
-    fields:[{key:"community",label:"Community name",placeholder:"Turkana Beekeepers"},{key:"kgTarget",label:"Target (kg)",placeholder:"500",type:"number"},{key:"season",label:"Harvest season",placeholder:"2026"}]},
-  milk:     { icon: Milk,       label:"Pastoral Milk Pool", color:"#60A5FA",
-    fields:[{key:"cooperative",label:"Co-op name",placeholder:"Maasai Dairy Coop"},{key:"litresDaily",label:"Daily litres",placeholder:"200",type:"number"},{key:"duration",label:"Duration (months)",placeholder:"6",type:"number"}]},
-  seeds:    { icon: Sprout,     label:"Heritage Seed Bank",  color:"#86EFAC",
-    fields:[{key:"variety",label:"Crop variety",placeholder:"Njahi Beans"},{key:"kgStored",label:"Kg to store",placeholder:"50",type:"number"},{key:"location",label:"Storage location",placeholder:"Meru, Kenya"}]},
-  recipe:   { icon: ScrollText, label:"Recipe IP Vault",    color:"#F97316",
-    fields:[{key:"recipeName",label:"Recipe / method name",placeholder:"Fermented Uji"},{key:"community",label:"Community owner",placeholder:"Luo Heritage Group"},{key:"licenseType",label:"License type",placeholder:"Community Commons"}]},
-};
-
-const POLICY_FEE_BP = "0.0001";
-const TREASURY_BP: `0x${string}` = (TREASURY_FROM_LIB ?? "0xB13727161583e38185530755a1A96D00fcCae870");
-
-// ─── BuildPolicyPanel component ───────────────────────────────────────────────
-interface BPProps {
-  templateId: string;
-  fields: Record<string,string>;
-  setFields: (v: Record<string,string>) => void;
-  status: string;
-  setStatus: (s: string) => void;
-  txUrl: string | null;
-  setTxUrl: (u: string|null) => void;
-  submitting: boolean;
-  setSubmitting: (b: boolean) => void;
-  address?: `0x${string}`;
-  sendTransactionAsync: (args: any) => Promise<`0x${string}`>;
-  switchChainAsync: (args: any) => Promise<any>;
-  policies: any[];
-  refreshPolicies: () => void;
-}
-
-function BuildPolicyPanel({
-  templateId, fields, setFields, status, setStatus,
-  txUrl, setTxUrl, submitting, setSubmitting,
-  address, sendTransactionAsync, switchChainAsync,
-  policies, refreshPolicies,
-}: BPProps) {
-  const tmpl = BP_TEMPLATES[templateId];
-  if (!tmpl) return null;
-
-  const myPolicies = policies.filter(p => p.owner?.toLowerCase() === address?.toLowerCase());
-
-  const handleCreate = async () => {
-    if (!address) { setStatus("Connect your wallet first."); return; }
-    const missing = tmpl.fields.find(f => !fields[f.key]?.trim());
-    if (missing) { setStatus(`Fill in "${missing.label}"`); return; }
-
-    setSubmitting(true); setStatus("Switching to Avalanche Fuji..."); setTxUrl(null);
-    try {
-      await switchChainAsync({ chainId: 43113 });
-      setStatus(`Paying ${POLICY_FEE_BP} AVAX registration fee...`);
-      const txHash = await sendTransactionAsync({ to: TREASURY_BP, value: parseEther(POLICY_FEE_BP) });
-      setTxUrl(`https://testnet.snowtrace.io/tx/${txHash}`);
-      setStatus("Saving policy...");
-      const res = await fetch("/api/policies", {
-        method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ owner: address, serviceType: templateId, config: fields,
-          paymentAmount: Number(POLICY_FEE_BP), paymentTxHash: txHash }),
-      });
-      if (!res.ok) throw new Error("API error");
-      const { policy } = await res.json();
-      setStatus(`Policy ${policy.policyId} created on Fuji!`);
-      setFields({});
-      refreshPolicies();
-    } catch (e: any) {
-      setStatus(`${e.message?.slice(0, 100)}`);
-    } finally { setSubmitting(false); }
-  };
-
+function ActionRow({ a, sub, active, onClick }: { a: Action; sub?: string; active: boolean; onClick: () => void }) {
   return (
-    <div style={{ padding:"20px", maxWidth:"620px", display:"flex", flexDirection:"column", gap:16 }}>
-
-      {/* Header */}
-      <div>
-            <h2 style={{ margin:0, fontSize:16, fontWeight:800, color:"#fff" }}>Build a Policy</h2>
-        <p style={{ margin:"4px 0 0", fontSize:11, color:"rgba(255,255,255,0.4)" }}>
-          Create on-chain KAIVAX policies · {POLICY_FEE_BP} AVAX per registration · Fuji Snowtrace
-        </p>
+    <button onClick={onClick} className={active ? "pg-row pg-row--on" : "pg-row"}>
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div className="pg-row-name">
+          {a.name}
+          {a.free ? <span className="pg-tag pg-tag--free">Free</span> : a.badge ? <span className="pg-tag">{a.badge}</span> : null}
+          {sub && <span className="pg-tag pg-tag--free" style={{ background: "rgba(246,242,231,0.08)", color: C.dim }}>{sub}</span>}
+        </div>
+        <div className="pg-row-desc">{a.description}</div>
       </div>
-
-      {/* Stats */}
-      <div style={{ display:"flex", gap:8 }}>
-        {[{label:"My Policies", val:myPolicies.length, c:"#10b981"},{label:"Total Policies", val:policies.length, c:"#A78BFA"},{label:"Fee", val:`${POLICY_FEE_BP} AVAX`, c:"#22C55E"}].map(s=>(
-          <div key={s.label} style={{ flex:1, background:"rgba(255,255,255,0.04)", border:`1px solid ${s.c}25`, borderRadius:10, padding:"10px 12px", textAlign:"center" }}>
-            <p style={{ fontSize:16, fontWeight:900, color:s.c, margin:0 }}>{s.val}</p>
-            <p style={{ fontSize:9, color:"rgba(255,255,255,0.35)", margin:"2px 0 0", fontWeight:700 }}>{s.label}</p>
-          </div>
-        ))}
-      </div>
-
-      {/* Dynamic fields */}
-      <div style={{ background:"rgba(0,0,0,0.25)", border:`1px solid ${tmpl.color}30`, borderRadius:12, padding:16 }}>
-        <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:14 }}>
-          <tmpl.icon size={16} color={tmpl.color} />
-          <span style={{ fontSize:14, fontWeight:800, color:tmpl.color }}>{tmpl.label}</span>
-        </div>
-        <div style={{ display:"flex", flexDirection:"column", gap:10 }}>
-          {tmpl.fields.map(f => (
-            <div key={f.key}>
-              <label style={{ fontSize:10, fontWeight:700, color:"rgba(255,255,255,0.4)", display:"block", marginBottom:4, letterSpacing:0.5 }}>{f.label.toUpperCase()}</label>
-              <input type={f.type ?? "text"} placeholder={f.placeholder} value={fields[f.key] ?? ""}
-                onChange={e => setFields({...fields, [f.key]: e.target.value})}
-                style={{ width:"100%", background:"rgba(0,0,0,0.3)", border:"1px solid rgba(255,255,255,0.1)", borderRadius:8, padding:"9px 12px", fontSize:13, color:"#fff", outline:"none", fontFamily:"inherit", boxSizing:"border-box" }} />
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* Status */}
-      {status && (
-        <div style={{ padding:"10px 14px", borderRadius:10, fontSize:11,
-          background: "rgba(34,197,94,0.08)",
-          border: "1px solid rgba(34,197,94,0.2)", color:"#fff" }}>
-          {status}
-          {txUrl && <a href={txUrl} target="_blank" rel="noopener noreferrer" style={{ marginLeft:8, color:"#60a5fa", display:"inline-flex", alignItems:"center", gap:4 }}>
-            Snowtrace <ExternalLink size={11} />
-          </a>}
-        </div>
-      )}
-
-      {/* Submit */}
-      <button onClick={handleCreate} disabled={submitting} style={{
-        padding:"12px", borderRadius:10, border:"none", fontWeight:800, fontSize:14,
-        background: submitting ? "rgba(255,255,255,0.08)" : `linear-gradient(135deg,${tmpl.color},${tmpl.color}bb)`,
-        color: ["#FFD700","#EAB308","#22C55E","#86EFAC"].includes(tmpl.color) ? "#1B4332" : "#fff",
-        cursor: submitting ? "not-allowed" : "pointer", opacity: submitting ? 0.7 : 1,
-      }}>
-        {submitting ? "Signing..." : `Create ${tmpl.label} - ${POLICY_FEE_BP} AVAX`}
-      </button>
-
-      {/* My recent policies */}
-      {myPolicies.length > 0 && (
-        <div>
-          <p style={{ fontSize:11, fontWeight:700, color:"rgba(255,255,255,0.4)", margin:"4px 0 8px", letterSpacing:1 }}>MY POLICIES ({myPolicies.length})</p>
-          <div style={{ display:"flex", flexDirection:"column", gap:6 }}>
-            {myPolicies.slice(0,5).map(p => {
-              const t = BP_TEMPLATES[p.serviceType];
-              return (
-                <div key={p.policyId} style={{ background:"rgba(255,255,255,0.03)", border:"1px solid rgba(255,255,255,0.07)", borderRadius:10, padding:"10px 14px", display:"flex", alignItems:"center", gap:10 }}>
-                  {t ? <t.icon size={16} color={t.color} /> : <Briefcase size={16} color="rgba(255,255,255,0.4)" />}
-                  <div style={{ flex:1 }}>
-                    <p style={{ fontSize:12, fontWeight:700, color:"#fff", margin:0 }}>{t?.label ?? p.serviceType}</p>
-                    <p style={{ fontSize:10, fontFamily:"monospace", color:"rgba(255,255,255,0.3)", margin:"2px 0 0" }}>{p.policyId}</p>
-                  </div>
-                  <span style={{ fontSize:10, fontWeight:700, padding:"2px 8px", borderRadius:6,
-                    background: p.status==="active" ? "rgba(34,197,94,0.12)" : "rgba(255,215,0,0.1)",
-                    color: p.status==="active" ? "#22C55E" : "#FFD700",
-                    border: `1px solid ${p.status==="active" ? "rgba(34,197,94,0.3)" : "rgba(255,215,0,0.25)"}` }}>
-                    {p.status === "active" ? "● ACTIVE" : "○ DRAFT"}
-                  </span>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      )}
-    </div>
+      <ChevronRight size={16} color={active ? C.goldLight : C.ink} />
+    </button>
   );
 }
