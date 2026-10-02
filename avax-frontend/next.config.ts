@@ -74,6 +74,13 @@ const nextConfig: NextConfig = {
         destination: OLOOLUA_URL,
         permanent: false,
       },
+      {
+        // KAI Web opens full screen with its own menu (it can't be framed:
+        // X-Frame-Options is DENY). See src/app/kai/page.tsx.
+        source: "/kai",
+        destination: "/kaiweb/index.html",
+        permanent: false,
+      },
     ];
   },
   async rewrites() {

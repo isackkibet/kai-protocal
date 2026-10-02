@@ -8,36 +8,30 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300;9..144,500;9..144,600;9..144,700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="css/styles.css">
+  <link rel="stylesheet" href="css/site.css">
 </head>
-<body>
-
-<header>
-    <div class="container nav-container">
-        <div class="brand">
-            <div class="brand-logo">K</div>
-            <div class="brand-title">KAI</div>
-        </div>
-        <button class="mobile-nav-toggle" type="button" aria-label="Open navigation menu" aria-expanded="false" onclick="toggleMobileNav(this)">☰</button>
-                <ul class="nav-links">
-            <li><a href="problems.html" class="active">Problem</a></li>
-            <li><a href="solution.html">Solution</a></li>
-            <li class="dropdown">
-                <a href="products.html">Kai Products ▾</a>
-                <div class="dropdown-content">
-                    <a href="insurance.html">Insurance</a>
-                    <a href="pension.html">Pension</a>
-                    <a href="trust.html">Trust</a>
-                    <a href="tokens.html">Tokens</a>
-                    <a href="ecosystem.html">Ecosystem</a>
-                </div>
-            </li>
-            <li><a href="DAO.html">DAO</a></li>
-            <li><a href="bizcanvas.html">Business Canvas</a></li>
-        </ul>
-        <a href="https://kainuv-app-9v3m.vercel.app/" class="cta-btn">Launch App</a>
+<body class="kw-site">
+<div class="kw-nav" role="banner">
+  <div class="kw-nav-inner">
+    <a class="kw-brand" href="index.html" aria-label="KAI home"><span class="kw-logo">K</span><span>KAI</span></a>
+    <div class="kw-links" role="navigation" aria-label="Main">
+      <a href="index.html">Home</a><a href="problems.html" aria-current="page">Problem</a><a href="solution.html">Solution</a>
+      <div class="kw-drop"><button type="button" class="kw-drop-btn" aria-expanded="false" aria-haspopup="true">Products <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg></button><div class="kw-drop-menu"><a href="products.html"><b>All products</b><small>Everything KAI offers</small></a><a href="insurance.html"><b>Insurance</b><small>Protection that also builds wealth</small></a><a href="pension.html"><b>Pension</b><small>Save for when you are older</small></a><a href="trust.html"><b>Trust</b><small>Protect your family's wealth</small></a><a href="tokens.html"><b>Tokens</b><small>The six KAI tokens</small></a><a href="ecosystem.html"><b>Ecosystem</b><small>How it all fits together</small></a></div></div>
+      <a href="DAO.html">DAO</a><a href="bizcanvas.html">Business model</a>
     </div>
-</header>
-<div class="container" style="margin-top: 100px;">
+    <a class="kw-cta" href="/">Open the app</a>
+    <button type="button" class="kw-burger" aria-label="Open menu" aria-expanded="false" aria-controls="kw-panel"><span></span><span></span><span></span></button>
+  </div>
+  <div class="kw-panel" id="kw-panel" hidden>
+    <div class="kw-panel-inner">
+      <div><h3>Learn about KAI</h3><div class="kw-panel-grid"><a class="kw-item" href="index.html"><b>Home</b><small>Start here</small></a><a class="kw-item" href="problems.html" aria-current="page"><b>The problem</b><small>Why African finance needs a change</small></a><a class="kw-item" href="solution.html"><b>Our solution</b><small>How KAI fixes it</small></a><a class="kw-item" href="DAO.html"><b>DAO</b><small>How the community decides</small></a><a class="kw-item" href="bizcanvas.html"><b>Business model</b><small>How KAI works as a business</small></a></div></div>
+      <div><h3>Products</h3><div class="kw-panel-grid"><a class="kw-item" href="products.html"><b>All products</b><small>Everything KAI offers</small></a><a class="kw-item" href="insurance.html"><b>Insurance</b><small>Protection that also builds wealth</small></a><a class="kw-item" href="pension.html"><b>Pension</b><small>Save for when you are older</small></a><a class="kw-item" href="trust.html"><b>Trust</b><small>Protect your family's wealth</small></a><a class="kw-item" href="tokens.html"><b>Tokens</b><small>The six KAI tokens</small></a><a class="kw-item" href="ecosystem.html"><b>Ecosystem</b><small>How it all fits together</small></a></div></div>
+      <a class="kw-cta" href="/">Open the KAI app</a>
+    </div>
+  </div>
+</div>
+
+<div class="container" style="margin-top: 32px;">
     <!-- HERO SECTION -->
     <header class="hero">
         <span class="hero-label">The Problem Statement</span>
@@ -249,7 +243,7 @@
                     <li><a href="problems.html">Problems We Solve</a></li>
                     <li><a href="pension.html">Pension</a></li>
                     <li><a href="trust.html">Trust</a></li>
-                    <li><a href="https://kainuv-app-9v3m.vercel.app/">Launch App</a></li>
+                    <li><a href="/">Launch App</a></li>
                 </ul>
             </div>
         </div>
@@ -259,34 +253,6 @@
     </div>
 </footer>
 
+<script src="js/site.js" defer></script>
 </body>
-<script>
-function toggleMobileNav(button) {
-    const nav = document.querySelector('.nav-links');
-    if (!nav) return;
-    const isOpen = nav.classList.toggle('active');
-    button.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
-}
-
-document.addEventListener('DOMContentLoaded', function () {
-    const nav = document.querySelector('.nav-links');
-    const toggle = document.querySelector('.mobile-nav-toggle');
-    if (!nav || !toggle) return;
-
-    nav.querySelectorAll('a').forEach(function (link) {
-        link.addEventListener('click', function () {
-            nav.classList.remove('active');
-            toggle.setAttribute('aria-expanded', 'false');
-        });
-    });
-
-    document.addEventListener('click', function (event) {
-        if (window.innerWidth > 768) return;
-        if (!nav.contains(event.target) && !toggle.contains(event.target)) {
-            nav.classList.remove('active');
-            toggle.setAttribute('aria-expanded', 'false');
-        }
-    });
-});
-</script>
 </html>

@@ -149,8 +149,29 @@
   }
   @media (prefers-reduced-motion: reduce){ html{scroll-behavior:auto;} }
 </style>
+  <link rel="stylesheet" href="css/site.css">
 </head>
-<body>
+<body class="kw-site">
+<div class="kw-nav" role="banner">
+  <div class="kw-nav-inner">
+    <a class="kw-brand" href="index.html" aria-label="KAI home"><span class="kw-logo">K</span><span>KAI</span></a>
+    <div class="kw-links" role="navigation" aria-label="Main">
+      <a href="index.html">Home</a><a href="problems.html">Problem</a><a href="solution.html">Solution</a>
+      <div class="kw-drop"><button type="button" class="kw-drop-btn kw-on" aria-expanded="false" aria-haspopup="true">Products <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg></button><div class="kw-drop-menu"><a href="products.html"><b>All products</b><small>Everything KAI offers</small></a><a href="insurance.html"><b>Insurance</b><small>Protection that also builds wealth</small></a><a href="pension.html"><b>Pension</b><small>Save for when you are older</small></a><a href="trust.html"><b>Trust</b><small>Protect your family's wealth</small></a><a href="tokens.html"><b>Tokens</b><small>The six KAI tokens</small></a><a href="ecosystem.html" aria-current="page"><b>Ecosystem</b><small>How it all fits together</small></a></div></div>
+      <a href="DAO.html">DAO</a><a href="bizcanvas.html">Business model</a>
+    </div>
+    <a class="kw-cta" href="/">Open the app</a>
+    <button type="button" class="kw-burger" aria-label="Open menu" aria-expanded="false" aria-controls="kw-panel"><span></span><span></span><span></span></button>
+  </div>
+  <div class="kw-panel" id="kw-panel" hidden>
+    <div class="kw-panel-inner">
+      <div><h3>Learn about KAI</h3><div class="kw-panel-grid"><a class="kw-item" href="index.html"><b>Home</b><small>Start here</small></a><a class="kw-item" href="problems.html"><b>The problem</b><small>Why African finance needs a change</small></a><a class="kw-item" href="solution.html"><b>Our solution</b><small>How KAI fixes it</small></a><a class="kw-item" href="DAO.html"><b>DAO</b><small>How the community decides</small></a><a class="kw-item" href="bizcanvas.html"><b>Business model</b><small>How KAI works as a business</small></a></div></div>
+      <div><h3>Products</h3><div class="kw-panel-grid"><a class="kw-item" href="products.html"><b>All products</b><small>Everything KAI offers</small></a><a class="kw-item" href="insurance.html"><b>Insurance</b><small>Protection that also builds wealth</small></a><a class="kw-item" href="pension.html"><b>Pension</b><small>Save for when you are older</small></a><a class="kw-item" href="trust.html"><b>Trust</b><small>Protect your family's wealth</small></a><a class="kw-item" href="tokens.html"><b>Tokens</b><small>The six KAI tokens</small></a><a class="kw-item" href="ecosystem.html" aria-current="page"><b>Ecosystem</b><small>How it all fits together</small></a></div></div>
+      <a class="kw-cta" href="/">Open the KAI app</a>
+    </div>
+  </div>
+</div>
+
 
 <!-- ============ HERO ============ -->
 <header class="hero">
@@ -382,5 +403,6 @@
 
 <footer>KAI Ecosystem · Africa's Digital Financial Operating System</footer>
 
+<script src="js/site.js" defer></script>
 </body>
 </html>
