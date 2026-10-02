@@ -20,7 +20,7 @@ import Link from "next/link";
 import { useAccount, usePublicClient, useReadContract, useReadContracts, useSwitchChain, useWriteContract } from "wagmi";
 import { avalancheFuji } from "wagmi/chains";
 import { formatUnits, parseUnits } from "viem";
-import { ArrowDownUp, ArrowLeft, Check, ChevronDown, ChevronRight, ExternalLink, Loader2, RefreshCw, Wallet, X } from "lucide-react";
+import { ArrowLeft, Check, ChevronDown, ChevronRight, ExternalLink, Loader2, RefreshCw, Wallet, X } from "lucide-react";
 import WalletConnectModal from "@/components/wallet/WalletConnectModal";
 import { ECOSYSTEM_TOKENS } from "@/lib/blockchain/tokens";
 import { ERC20_ABI } from "@/lib/blockchain/erc20abi";
@@ -168,10 +168,10 @@ export default function PoolsPage() {
   const impactWord = impact > 3 ? { t: "High", c: C.red } : impact > 1 ? { t: "Medium", c: C.amber } : { t: "Low", c: C.green };
   const fromBal = state.wallet[from]?.bal ?? ZERO;
 
-  const changeFrom = (s: string) => {
-    setFrom(s); setAmount(""); setRun(IDLE);
-    const ps = partners(s);
-    if (!ps.includes(to)) setTo(ps[0]);
+  const buy = (sym: string) => {
+    setTo(sym); setAmount(""); setRun(IDLE);
+    const ps = partners(sym);
+    if (!ps.includes(from)) setFrom(ps[0]);
   };
   const flip = () => { setFrom(to); setTo(from); setAmount(""); setRun(IDLE); };
 
@@ -287,7 +287,7 @@ export default function PoolsPage() {
           <Link href="/" className="pl-round" aria-label="Back to home"><ArrowLeft size={18} /></Link>
           <div style={{ minWidth: 0 }}>
             <h1 className="pl-title">Pools &amp; Swap</h1>
-            <p className="pl-sub">Swap tokens, or earn fees by adding to a pool</p>
+            <p className="pl-sub">Buy tokens, or earn fees by adding to a pool</p>
           </div>
           <button className="pl-round pl-refresh" onClick={() => void refresh()} aria-label="Refresh"><RefreshCw size={16} /></button>
           <button className={isConnected ? "pl-wallet on" : "pl-wallet"} onClick={() => setShowWallet(true)}>
@@ -315,53 +315,72 @@ export default function PoolsPage() {
         {/* Tabs */}
         <section className="pl-panel" id="pl-panel">
           <div className="pl-tabs" role="tablist">
-            {([["swap", "Swap"], ["add", "Add to a pool"], ["mine", `My pools${myPools.length ? ` (${myPools.length})` : ""}`]] as const).map(([id, label]) => (
+            {([["swap", "Buy"], ["add", "Add to a pool"], ["mine", `My pools${myPools.length ? ` (${myPools.length})` : ""}`]] as const).map(([id, label]) => (
               <button key={id} role="tab" aria-selected={tab === id} className={tab === id ? "on" : ""} onClick={() => pickTab(id)}>{label}</button>
             ))}
           </div>
 
           {tab === "swap" && (
             <div className="pl-form">
-              <div className="pl-box">
-                <div className="pl-box-top"><span>You give</span>{isConnected && <button className="pl-mini" onClick={() => setAmount(formatUnits(fromBal, fromTok.decimals))}>You have {show(n(fromBal, fromTok.decimals))} · Use all</button>}</div>
-                <div className="pl-box-row">
-                  <input className="pl-amount" inputMode="decimal" placeholder="0" value={amount} aria-label={`Amount of ${from}`} onChange={(e) => { setAmount(e.target.value.replace(/[^\d.]/g, "")); setRun(IDLE); }} />
-                  <select className="pl-select" value={from} onChange={(e) => changeFrom(e.target.value)} aria-label="Token you give">
-                    {TOKENS.filter((t) => partners(t.symbol).length).map((t) => <option key={t.symbol} value={t.symbol}>{t.symbol}</option>)}
-                  </select>
-                </div>
+              <p className="pl-q"><span>1</span> What do you want to buy?</p>
+              <div className="pl-chips">
+                {TOKENS.filter((t) => partners(t.symbol).length).map((t) => (
+                  <button key={t.symbol} className={to === t.symbol ? "pl-chip on" : "pl-chip"} onClick={() => buy(t.symbol)}>
+                    <Coin s={t.symbol} size={26} />
+                    <span><b>{t.symbol}</b><small>{TOKEN_WORDS[t.symbol]}</small></span>
+                  </button>
+                ))}
               </div>
 
-              <button className="pl-flip" onClick={flip} aria-label="Swap the two tokens"><ArrowDownUp size={16} /></button>
+              <p className="pl-q"><span>2</span> Pay with</p>
+              <div className="pl-chips">
+                {partners(to).map((sym) => (
+                  <button key={sym} className={from === sym ? "pl-chip on" : "pl-chip"} onClick={() => { setFrom(sym); setAmount(""); setRun(IDLE); }}>
+                    <Coin s={sym} size={26} />
+                    <span><b>{sym}</b><small>{isConnected ? `You have ${show(n(state.wallet[sym]?.bal, bySymbol(sym).decimals))}` : TOKEN_WORDS[sym]}</small></span>
+                  </button>
+                ))}
+              </div>
 
-              <div className="pl-box">
-                <div className="pl-box-top"><span>You get (about)</span></div>
-                <div className="pl-box-row">
-                  <span className="pl-amount" style={{ color: outNum ? C.paper : C.ink }}>{quote.isFetching ? "…" : outNum ? show(outNum) : "0"}</span>
-                  <select className="pl-select" value={to} onChange={(e) => { setTo(e.target.value); setRun(IDLE); }} aria-label="Token you get">
-                    {partners(from).map((s) => <option key={s} value={s}>{s}</option>)}
-                  </select>
-                </div>
+              <label className="pl-q" htmlFor="pl-pay"><span>3</span> How much {from} do you pay?</label>
+              <div className="pl-input-wrap">
+                <input id="pl-pay" className="pl-input" inputMode="decimal" placeholder="Type an amount" value={amount}
+                  onChange={(e) => { setAmount(e.target.value.replace(/[^\d.]/g, "")); setRun(IDLE); }} />
+                <span className="pl-input-unit">{from}</span>
+              </div>
+              <div className="pl-picks">
+                {isConnected && fromBal > ZERO
+                  ? [25, 50, 100].map((pc) => {
+                      const v = formatUnits((fromBal * BigInt(pc)) / BigInt(100), fromTok.decimals);
+                      return <button key={pc} className={amount === v ? "pl-pick on" : "pl-pick"} onClick={() => { setAmount(v); setRun(IDLE); }}>{pc === 100 ? "All" : `${pc}%`}</button>;
+                    })
+                  : ["10", "100", "1000"].map((v) => <button key={v} className={amount === v ? "pl-pick on" : "pl-pick"} onClick={() => { setAmount(v); setRun(IDLE); }}>{Number(v).toLocaleString()} {from}</button>)}
+              </div>
+
+              <div className="pl-result">
+                <span>You get about</span>
+                <b>{quote.isFetching ? "…" : outNum ? show(outNum) : "0"} {to}</b>
+                {outNum > 0 && <small>1 {from} = {show(outNum / inNum)} {to}</small>}
               </div>
 
               {outNum > 0 && (
                 <dl className="pl-dl pl-details">
-                  <dt>Price</dt><dd>1 {from} = {show(outNum / inNum)} {to}</dd>
                   <dt>Pool fee (0.3%)</dt><dd>{show(inNum * 0.003)} {from}</dd>
                   <dt>Price change from your trade</dt><dd style={{ color: impactWord.c }}>{impactWord.t} ({impact.toFixed(2)}%)</dd>
                   <dt>You get at least</dt><dd>{show(n(minOutWei, toTok.decimals))} {to}</dd>
                 </dl>
               )}
-              {impact > 3 && <p className="pl-warn">This trade is big for this pool, so the price moves a lot. Try a smaller amount.</p>}
+              {impact > 3 && <p className="pl-warn">This is a big buy for this pool, so the price moves a lot. Try a smaller amount.</p>}
 
               {!isConnected ? (
-                <button className="pl-btn pl-btn--wide" onClick={() => setShowWallet(true)}><Wallet size={16} /> Connect wallet to swap</button>
+                <button className="pl-btn pl-btn--wide" onClick={() => setShowWallet(true)}><Wallet size={16} /> Connect wallet to buy</button>
               ) : (
                 <button className="pl-btn pl-btn--wide" onClick={doSwap} disabled={busy || !outNum}>
-                  {busy ? <><Loader2 size={16} className="pl-spin" /> Working…</> : !amount ? "Type an amount" : <>Swap {amount} {from} for {to} <ChevronRight size={16} /></>}
+                  {busy ? <><Loader2 size={16} className="pl-spin" /> Working…</> : !amount ? "Type how much you pay" : <>Buy {show(outNum)} {to} <ChevronRight size={16} /></>}
                 </button>
               )}
               {progress}
+              <p className="pl-hint">To sell a token, buy the other token in its pool with it. <button className="pl-mini" onClick={flip}>Switch the two</button></p>
             </div>
           )}
 
@@ -372,16 +391,24 @@ export default function PoolsPage() {
                 {POOLS.map((p) => <option key={p.id} value={p.id}>{p.a.symbol} / {p.b.symbol}</option>)}
               </select>
 
-              <div className="pl-box">
-                <div className="pl-box-top"><span>You put in</span>{isConnected && <button className="pl-mini" onClick={() => setAmtA(formatUnits(balA, pool.a.decimals))}>You have {show(n(balA, pool.a.decimals))} · Use all</button>}</div>
-                <div className="pl-box-row">
-                  <input className="pl-amount" inputMode="decimal" placeholder="0" value={amtA} aria-label={`Amount of ${pool.a.symbol}`} onChange={(e) => { setAmtA(e.target.value.replace(/[^\d.]/g, "")); setRun(IDLE); }} />
-                  <span className="pl-token"><Coin s={pool.a.symbol} size={26} /> {pool.a.symbol}</span>
-                </div>
+              <label className="pl-q" htmlFor="pl-add"><span>1</span> How much {pool.a.symbol} do you put in?</label>
+              <div className="pl-input-wrap">
+                <input id="pl-add" className="pl-input" inputMode="decimal" placeholder="Type an amount" value={amtA}
+                  onChange={(e) => { setAmtA(e.target.value.replace(/[^\d.]/g, "")); setRun(IDLE); }} />
+                <span className="pl-input-unit">{pool.a.symbol}</span>
               </div>
+              {isConnected && balA > ZERO && (
+                <div className="pl-picks">
+                  {[25, 50, 100].map((pc) => {
+                    const v = formatUnits((balA * BigInt(pc)) / BigInt(100), pool.a.decimals);
+                    return <button key={pc} className={amtA === v ? "pl-pick on" : "pl-pick"} onClick={() => { setAmtA(v); setRun(IDLE); }}>{pc === 100 ? "All" : `${pc}%`}</button>;
+                  })}
+                  <span className="pl-hint" style={{ alignSelf: "center" }}>You have {show(n(balA, pool.a.decimals))}</span>
+                </div>
+              )}
               <div className="pl-plus">+</div>
               <div className="pl-box">
-                <div className="pl-box-top"><span>And (worked out for you)</span>{isConnected && <span>You have {show(n(balB, pool.b.decimals))}</span>}</div>
+                <div className="pl-box-top"><span>2 · You also put in (worked out for you)</span>{isConnected && <span>You have {show(n(balB, pool.b.decimals))}</span>}</div>
                 <div className="pl-box-row">
                   <span className="pl-amount" style={{ color: bWei ? C.paper : C.ink }}>{bWei ? show(n(bWei, pool.b.decimals)) : "0"}</span>
                   <span className="pl-token"><Coin s={pool.b.symbol} size={26} /> {pool.b.symbol}</span>
@@ -455,8 +482,9 @@ export default function PoolsPage() {
                     {isConnected && <><dt>Your share</dt><dd>{mine > 0 ? `${mine.toFixed(2)}%` : "None yet"}</dd></>}
                   </dl>
                   <div className="pl-pool-btns">
-                    <button className="pl-btn pl-btn--quiet" onClick={() => { setFrom(p.a.symbol); setTo(p.b.symbol); setAmount(""); pickTab("swap", true); }}>Swap</button>
-                    <button className="pl-btn pl-btn--quiet" onClick={() => { setPoolId(p.id); setAmtA(""); pickTab("add", true); }}>Add to pool</button>
+                    <button className="pl-btn pl-btn--quiet" onClick={() => { setTo(p.a.symbol); setFrom(p.b.symbol); setAmount(""); pickTab("swap", true); }}>Buy {p.a.symbol}</button>
+                    <button className="pl-btn pl-btn--quiet" onClick={() => { setTo(p.b.symbol); setFrom(p.a.symbol); setAmount(""); pickTab("swap", true); }}>Buy {p.b.symbol}</button>
+                    <button className="pl-btn pl-btn--quiet pl-btn--full" onClick={() => { setPoolId(p.id); setAmtA(""); pickTab("add", true); }}>Add to pool</button>
                   </div>
                 </article>
               );
@@ -520,6 +548,26 @@ export default function PoolsPage() {
         .pl-token { display: inline-flex; align-items: center; gap: 8px; font-weight: 700; flex-shrink: 0; }
         .pl-flip { justify-self: center; display: grid; place-items: center; width: 40px; height: 40px; margin: -4px 0; border-radius: 50%; border: 3px solid ${C.band}; background: ${C.cardHi}; color: ${C.goldLight}; cursor: pointer; z-index: 1; }
         .pl-plus { justify-self: center; color: ${C.ink}; font-weight: 700; font-size: 18px; margin: -4px 0; }
+        .pl-q { display: flex; align-items: center; gap: 8px; margin: 6px 0 0; font-size: 14.5px; font-weight: 700; }
+        .pl-q span { display: grid; place-items: center; width: 22px; height: 22px; border-radius: 50%; background: ${C.gold}; color: #1B1A14; font-size: 12px; flex-shrink: 0; }
+        .pl-chips { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+        @media (min-width: 520px) { .pl-chips { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+        .pl-chip { display: flex; align-items: center; gap: 10px; padding: 10px; border-radius: 12px; border: 1.5px solid transparent; background: ${C.card}; color: ${C.paper}; cursor: pointer; font-family: inherit; text-align: left; min-width: 0; }
+        .pl-chip:hover { background: ${C.cardHi}; }
+        .pl-chip.on { border-color: ${C.gold}; background: ${C.cardHi}; }
+        .pl-chip span { display: grid; min-width: 0; }
+        .pl-chip b { font-size: 14px; }
+        .pl-chip small { font-size: 11.5px; color: ${C.ink}; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .pl-input-wrap { position: relative; }
+        .pl-input { width: 100%; box-sizing: border-box; padding: 16px 90px 16px 16px; border-radius: 14px; border: 2px solid rgba(246,242,231,0.18); background: ${C.bg}; color: ${C.paper}; font-size: 22px; font-weight: 700; font-family: inherit; outline: none; min-height: 60px; }
+        .pl-input::placeholder { color: ${C.ink}; font-weight: 500; font-size: 17px; }
+        .pl-input:focus { border-color: ${C.gold}; }
+        .pl-input-unit { position: absolute; right: 16px; top: 50%; transform: translateY(-50%); font-weight: 700; color: ${C.dim}; pointer-events: none; }
+        .pl-result { display: grid; gap: 2px; padding: 16px; border-radius: 14px; background: ${C.card}; }
+        .pl-result span { font-size: 13px; color: ${C.ink}; }
+        .pl-result b { font-size: 26px; color: ${C.goldLight}; overflow-wrap: anywhere; }
+        .pl-result small { font-size: 13px; color: ${C.dim}; }
+        .pl-btn--full { grid-column: 1 / -1; }
         .pl-label { margin: 0; font-size: 13.5px; font-weight: 700; }
         .pl-hint { margin: 0; font-size: 13px; color: ${C.dim}; line-height: 1.5; }
         .pl-hint b { color: ${C.paper}; }
