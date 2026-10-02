@@ -158,23 +158,39 @@ h1, h2, h3 { margin: 0; }
 
 .k-note { margin: 0; padding: 20px 22px; border-radius: 16px; background: var(--kw-band); color: var(--kw-paper); font-size: 17px; line-height: 1.55; border-left: 3px solid var(--kw-gold); max-width: 820px; }
 
-.k-cta { background: var(--kw-band); padding: 72px 0 !important; margin-top: 24px; text-align: center; }
-.k-cta h2 { margin-bottom: 10px; }
-.k-cta p { margin: 0 auto; color: var(--kw-dim); max-width: 46ch; font-size: 17px; }
-.k-cta .k-btns { justify-content: center; }
+/* ---------- Previous / next ---------- */
+.k-pager { padding: 24px 0 72px !important; }
+.k-pager-grid { display: grid; gap: 12px; grid-template-columns: 1fr; }
+@media (min-width: 720px) { .k-pager-grid { grid-template-columns: 1fr 1fr; } }
+.k-page { display: grid; gap: 4px; padding: 22px 24px; border-radius: 16px; background: var(--kw-band); text-decoration: none; color: var(--kw-paper); border: 1px solid var(--kw-line); transition: border-color .15s, background .15s; }
+.k-page:hover { border-color: var(--kw-gold); background: var(--kw-card); }
+.k-page small { font-size: 12.5px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--kw-gold-light); }
+.k-page b { font-family: 'Fraunces', Georgia, serif; font-size: 22px; font-weight: 600; }
+.k-page span { color: var(--kw-dim); font-size: 15px; }
+.k-page--next { text-align: right; }
+.k-page--prev small::before { content: "\2190  "; }
+.k-page--next small::after { content: "  \2192"; }
+@media (max-width: 719px) { .k-page--next { text-align: left; } .k-pager-grid > span { display: none; } }
+.k-eyebrow span { color: var(--kw-ink); font-weight: 600; letter-spacing: .08em; }
 
 /* ---------- Footer ---------- */
-.k-foot { background: #0A1C13; border-top: 1px solid var(--kw-line); padding: 56px 0 28px; }
-.k-foot-grid { display: grid; gap: 32px; grid-template-columns: 1fr 1fr; }
-@media (min-width: 900px) { .k-foot-grid { grid-template-columns: 1.6fr 1fr 1fr 1fr; } }
-.k-foot-brand { grid-column: 1 / -1; display: flex; flex-direction: column; align-items: flex-start; gap: 14px; }
-@media (min-width: 900px) { .k-foot-brand { grid-column: auto; } }
-.k-foot-brand p { margin: 0; color: var(--kw-dim); max-width: 30ch; }
-.k-foot h4 { margin: 0 0 12px; font-size: 12.5px; letter-spacing: .1em; text-transform: uppercase; color: var(--kw-ink); }
-.k-foot ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.k-foot { background: #0A1C13; border-top: 1px solid var(--kw-line); padding: 64px 0 28px; }
+.k-foot-top { display: grid; gap: 40px; grid-template-columns: 1fr; }
+@media (min-width: 900px) { .k-foot-top { grid-template-columns: 1.2fr 2fr; gap: 64px; } }
+.k-foot-brand { display: flex; flex-direction: column; align-items: flex-start; gap: 14px; }
+.k-foot-brand p { margin: 0; color: var(--kw-dim); max-width: 34ch; font-size: 15.5px; }
+.k-foot-status { width: fit-content; white-space: nowrap; display: inline-flex !important; align-items: center; gap: 8px; padding: 7px 12px; border-radius: 999px; background: rgba(125, 195, 131, 0.1); color: #A9D8AE !important; font-size: 13px !important; }
+.k-foot-status i { width: 7px; height: 7px; border-radius: 50%; background: #7DC383; }
+.k-foot-cols { display: grid; gap: 32px 24px; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+@media (min-width: 640px) { .k-foot-cols { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+.k-foot h4 { margin: 0 0 14px; font-size: 13px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--kw-paper); }
+.k-foot ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
 .k-foot ul a { color: var(--kw-dim); text-decoration: none; font-size: 15px; }
 .k-foot ul a:hover { color: var(--kw-gold-light); }
-.k-foot-bottom { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px 24px; margin-top: 40px; padding-top: 20px; border-top: 1px solid var(--kw-line); color: var(--kw-ink); font-size: 13px; }
+.k-foot-bottom { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 28px; margin-top: 48px; padding-top: 22px; border-top: 1px solid var(--kw-line); color: var(--kw-ink); font-size: 13.5px; }
+.k-top { margin-left: auto; color: var(--kw-dim); text-decoration: none; font-weight: 600; }
+.k-top:hover { color: var(--kw-gold-light); }
+@media (max-width: 640px) { .k-top { margin-left: 0; } }
 
 @media (max-width: 640px) {
   .k-hero { padding: 56px 0 48px; }

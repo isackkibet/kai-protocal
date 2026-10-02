@@ -14,7 +14,7 @@ import html
 import os
 
 OUT = os.path.join(os.path.dirname(__file__), "..", "public", "kaiweb")
-APP = "/"  # "Open the app" goes back to the KAI app
+APP = "/"  # the KAI app; linked once, from the menu
 
 LEARN = [
     ("index.html", "Home", "Start here"),
@@ -42,7 +42,6 @@ PAGES = {
         "eyebrow": "KAI · Built on Avalanche",
         "h1": "Banking for everyone, built on Avalanche.",
         "lead": "Save, invest, insure and pass on wealth from your phone, with tiny fees.",
-        "cta2": ("solution.html", "See how it works"),
         "blocks": [
             {"type": "stats", "title": "Why KAI is needed", "items": [
                 ("57%", "of adults in Sub-Saharan Africa have no bank account"),
@@ -84,7 +83,6 @@ PAGES = {
         "eyebrow": "The problem",
         "h1": "People work hard. The system doesn't help them build wealth.",
         "lead": "Payments move money, then stop. Nothing grows and nothing is protected.",
-        "cta2": ("solution.html", "See our solution"),
         "blocks": [
             {"type": "cards", "title": "Four big gaps", "items": [
                 ("Payments don't build wealth", "Money arrives and sits. Savings, insurance and pensions live in separate apps."),
@@ -112,7 +110,6 @@ PAGES = {
         "eyebrow": "Our solution",
         "h1": "Roads move people. KAI moves value.",
         "lead": "One system that saves, protects and grows what you own, automatically.",
-        "cta2": ("products.html", "See the products"),
         "blocks": [
             {"type": "cards", "title": "What counts as value", "intro": "More than cash.", "items": [
                 ("Savings", "Stable coins and savings that earn, open 24/7."),
@@ -136,7 +133,6 @@ PAGES = {
         "eyebrow": "Products",
         "h1": "Everything KAI offers, in one place.",
         "lead": "Pick what you need. Each product works with the others.",
-        "cta2": ("ecosystem.html", "How it fits together"),
         "blocks": [
             {"type": "cards", "title": "Products", "items": [
                 ("Insurance", "Your savings' earnings pay your premium.", "insurance.html"),
@@ -267,7 +263,6 @@ PAGES = {
         "eyebrow": "Ecosystem",
         "h1": "One platform for a lifetime of wealth.",
         "lead": "Earn, invest, protect, retire and pass it on, all connected.",
-        "cta2": ("products.html", "See the products"),
         "blocks": [
             {"type": "steps", "title": "One journey", "items": [
                 ("Earn", "Money comes in from work or business."),
@@ -444,30 +439,68 @@ def block(b):
     raise ValueError(t)
 
 
+# Reading order: each page ends with "Previous" and "Next".
+ORDER = ["index.html", "problems.html", "solution.html", "products.html", "insurance.html", "pension.html",
+         "trust.html", "tokens.html", "ecosystem.html", "DAO.html", "bizcanvas.html"]
+NAMES = {f: (l, h) for f, l, h in LEARN + PRODUCTS}
+# What the main top button says on each page (it scrolls to the content).
+GO = {"index.html": "See what KAI does", "problems.html": "See the gaps", "solution.html": "See how it works",
+      "products.html": "See the products", "insurance.html": "See how it works", "pension.html": "See the features",
+      "trust.html": "See how it works", "tokens.html": "See the tokens", "ecosystem.html": "See the journey",
+      "DAO.html": "See the councils", "bizcanvas.html": "See the model"}
+
+
+def words_of(p):
+    return sum(len(str(v).split()) for v in [p["h1"], p["lead"]]) + sum(
+        len(" ".join(map(str, x if isinstance(x, (list, tuple)) else [x])).split())
+        for b in p["blocks"] for x in b.get("items", b.get("rows", [b.get("text", "")]))
+    )
+
+
+def pager(name):
+    i = ORDER.index(name)
+    out = []
+    if i > 0:
+        f = ORDER[i - 1]
+        out.append(f'<a class="k-page k-page--prev" href="{f}"><small>Previous</small><b>{E(NAMES[f][0])}</b><span>{E(NAMES[f][1])}</span></a>')
+    else:
+        out.append('<span></span>')
+    if i < len(ORDER) - 1:
+        f = ORDER[i + 1]
+        out.append(f'<a class="k-page k-page--next" href="{f}"><small>Next</small><b>{E(NAMES[f][0])}</b><span>{E(NAMES[f][1])}</span></a>')
+    else:
+        out.append(f'<a class="k-page k-page--next" href="index.html"><small>Back to start</small><b>Home</b><span>Read it again from the top</span></a>')
+    return f'<nav class="k-sec k-pager" aria-label="Pages"><div class="k-wrap k-pager-grid">{"".join(out)}</div></nav>'
+
+
 def footer():
-    learn = "".join(f'<li><a href="{f}">{l}</a></li>' for f, l, _ in LEARN)
-    prods = "".join(f'<li><a href="{f}">{l}</a></li>' for f, l, _ in PRODUCTS)
+    def col(title, links):
+        return f'<div class="k-foot-col"><h4>{title}</h4><ul>' + "".join(f'<li><a href="{h}">{E(l)}</a></li>' for h, l in links) + "</ul></div>"
+    learn = col("Learn", [("index.html", "Home"), ("problems.html", "The problem"), ("solution.html", "Our solution"), ("ecosystem.html", "Ecosystem")])
+    prods = col("Products", [("insurance.html", "Insurance"), ("pension.html", "Pension"), ("trust.html", "Trust"), ("tokens.html", "Tokens"), ("products.html", "All products")])
+    company = col("Company", [("DAO.html", "DAO"), ("bizcanvas.html", "Business model"), ("https://www.kai.bar", "www.kai.bar"), ("/privacy", "Privacy")])
     return f'''<footer class="k-foot">
-  <div class="k-wrap k-foot-grid">
+  <div class="k-wrap k-foot-top">
     <div class="k-foot-brand">
       <a class="kw-brand" href="index.html"><span class="kw-logo">K</span><span>KAI</span></a>
-      <p>Banking for everyone, built on Avalanche.</p>
-      <a class="kw-cta" href="{APP}">Open the app</a>
+      <p>Save, invest, insure and pass on wealth. Built for Africa, on Avalanche.</p>
+      <p class="k-foot-status"><i></i> Live on Avalanche Fuji (test)</p>
     </div>
-    <div><h4>Learn</h4><ul>{learn}</ul></div>
-    <div><h4>Products</h4><ul>{prods}</ul></div>
-    <div><h4>Contact</h4><ul><li><a href="https://www.kai.bar" rel="noopener">www.kai.bar</a></li><li><a href="{APP}">KAI app</a></li><li><a href="/privacy">Privacy</a></li></ul></div>
+    <div class="k-foot-cols">{learn}{prods}{company}</div>
   </div>
   <div class="k-wrap k-foot-bottom">
-    <span>&copy; 2026 KAI Protocol · Built on Avalanche</span>
-    <span>For information only, not financial advice. Digital assets can lose value.</span>
+    <span>&copy; 2026 KAI Protocol. All rights reserved.</span>
+    <span>For information only. Not financial advice.</span>
+    <a href="#top" class="k-top">Back to top &uarr;</a>
   </div>
 </footer>'''
 
 
 def page(name, p):
-    cta2 = p.get("cta2")
-    second = f'<a class="k-btn k-btn--ghost" href="{cta2[0]}">{E(cta2[1])}</a>' if cta2 else ""
+    i = ORDER.index(name)
+    nxt = ORDER[i + 1] if i < len(ORDER) - 1 else None
+    second = f'<a class="k-btn k-btn--ghost" href="{nxt}">Next: {E(NAMES[nxt][0])} {ARROW}</a>' if nxt else ""
+    minutes = max(1, round(words_of(p) / 180))
     blocks = "\n".join(block(b) for b in p["blocks"])
     return f'''<!DOCTYPE html>
 <html lang="en">
@@ -482,21 +515,19 @@ def page(name, p):
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Inter:wght@400;500;600;700&display=swap">
   <link rel="stylesheet" href="css/kai.css">
 </head>
-<body>
+<body id="top">
 {menu(name)}
 <main>
 <section class="k-hero"><div class="k-wrap">
-  <p class="k-eyebrow">{E(p["eyebrow"])}</p>
+  <p class="k-eyebrow">{E(p["eyebrow"])} <span>· {minutes} min read</span></p>
   <h1>{E(p["h1"])}</h1>
   <p class="k-lead">{E(p["lead"])}</p>
-  <div class="k-btns"><a class="k-btn" href="{APP}">Open the app</a>{second}</div>
+  <div class="k-btns"><a class="k-btn" href="#start">{E(GO[name])}</a>{second}</div>
 </div></section>
+<div id="start">
 {blocks}
-<section class="k-sec k-cta"><div class="k-wrap">
-  <h2>Ready to start?</h2>
-  <p>Open the KAI app and try it on the Avalanche test network. It is free.</p>
-  <div class="k-btns"><a class="k-btn" href="{APP}">Open the app</a><a class="k-btn k-btn--ghost" href="products.html">See all products</a></div>
-</div></section>
+</div>
+{pager(name)}
 </main>
 {footer()}
 <script src="js/site.js" defer></script>
@@ -509,8 +540,4 @@ if __name__ == "__main__":
     for name, p in PAGES.items():
         with open(os.path.join(OUT, name), "w", encoding="utf-8") as fh:
             fh.write(page(name, p))
-        words = sum(len(str(v).split()) for v in [p["h1"], p["lead"]]) + sum(
-            len(" ".join(map(str, x if isinstance(x, (list, tuple)) else [x])).split())
-            for b in p["blocks"] for x in b.get("items", b.get("rows", [b.get("text", "")]))
-        )
-        print(f"{name}: ~{words} words")
+        print(f"{name}: ~{words_of(p)} words")
