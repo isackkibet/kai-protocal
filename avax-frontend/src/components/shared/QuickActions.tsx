@@ -21,9 +21,9 @@ export const QUICK_GROUPS: Group[] = [
   {
     title: 'Conservation', tint: '#7DC383',
     items: [
-      { name: 'Nursery', hint: 'Seedlings & planting', href: '/nursery', icon: Sprout, live: 'nursery' },
-      { name: 'Kanuvari AI', hint: 'Just say it', href: '/workspace', icon: MessagesSquare },
-      { name: 'Verification', hint: 'Check records', href: '/mrv', icon: ShieldCheck, live: 'verify' },
+      { name: 'Nursery', hint: 'Seedlings & planting', href: '/nursery', icon: Sprout, image: '/images/apps/nursery.jpg', live: 'nursery' },
+      { name: 'Kanuvari AI', hint: 'Just say it', href: '/workspace', icon: MessagesSquare, image: '/images/apps/kanuvari-ai.jpg' },
+      { name: 'Verification', hint: 'Check records', href: '/mrv', icon: ShieldCheck, image: '/images/apps/verification.jpg', live: 'verify' },
     ],
   },
   {
