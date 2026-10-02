@@ -12,6 +12,7 @@ import {
 import { OPERATIONS, OWNER_ACCOUNT, type Operation } from "@/lib/operations/operationSchemas";
 import { TREASURY as TREASURY_FROM_LIB } from "@/lib/blockchain/addresses";
 import WalletConnectModal from "@/components/wallet/WalletConnectModal";
+import { ACTION_WORDS, FIELD_WORDS, sayValue } from "@/lib/operations/plain-words";
 
 /**
  * KAI Playground (/nuvari): try KAI policies (insurance, trusts, pensions,
@@ -45,6 +46,10 @@ type Group = "start" | "manage" | "lookup";
 interface Field {
   key: string; label: string; type: "text" | "number" | "select" | "boolean";
   options?: string[]; hint?: string; placeholder?: string; required?: boolean; default: Value;
+  /** Shown inside the box after the number, e.g. "days". */
+  unit?: string;
+  /** Common values to tap instead of typing. */
+  picks?: (string | number)[];
 }
 interface Action {
   id: string; name: string; description: string; group: Group; badge?: string;
@@ -103,8 +108,10 @@ const COMMUNITY: Record<string, { icon: LucideIcon; label: string; hint: string;
 function fieldsOf(op: Operation, template?: Record<string, unknown>): Field[] {
   return op.fields.map((f) => {
     const raw = template && f.key in template ? template[f.key] : f.default;
+    const words = FIELD_WORDS[f.key];
     return {
-      key: f.key, label: f.label, type: f.type === "textarea" ? "text" : f.type, options: f.options, hint: f.hint, required: f.required,
+      key: f.key, label: words?.label ?? f.label.replace(/\s*\((AVAX|Days|Months|%)\)/i, ""), type: f.type === "textarea" ? "text" : f.type,
+      options: f.options, hint: words?.help ?? f.hint, required: f.required, unit: words?.unit, picks: words?.picks,
       default: typeof raw === "boolean" ? raw : raw == null || raw === "pol_" ? "" : String(raw),
       placeholder: /Id$/.test(f.key) ? "pol_…" : /address|account/i.test(f.label) ? "0x…" : undefined,
     };
@@ -118,10 +125,10 @@ function actionFromOp(op: Operation): Action {
     const create = OPERATIONS.find((o) => o.service === op.service && o.id.endsWith("_create"));
     const fields = create ? fieldsOf(create, op.template) : [];
     const extra = Object.fromEntries(Object.entries(op.template ?? {}).filter(([k]) => !fields.some((f) => f.key === k)).map(([k, v]) => [k, typeof v === "boolean" ? v : String(v)]));
-    return { id: op.id, name: op.name, description: op.description, group: "start", badge: "Ready-made", serviceType: op.service, fields, free: false, extra };
+    return { id: op.id, name: op.name, description: ACTION_WORDS[op.id]?.description ?? op.description, group: "start", badge: "Ready-made", serviceType: op.service, fields, free: false, extra };
   }
   return {
-    id: op.id, name: op.name, description: op.description, badge: op.badge,
+    id: op.id, name: ACTION_WORDS[op.id]?.name ?? op.name, description: ACTION_WORDS[op.id]?.description ?? op.description, badge: op.badge,
     group: op.category === "query" ? "lookup" : op.category === "transaction" ? "manage" : "start",
     serviceType: op.service === "all" ? "policy" : op.service, fields: fieldsOf(op), free: op.category === "query",
   };
@@ -241,7 +248,8 @@ export default function KaiPlayground() {
     const v: Record<string, Value> = {};
     for (const f of a.fields) {
       // The registry's sample wallet is the project's; use the person's own wallet instead.
-      v[f.key] = f.default === OWNER_ACCOUNT && address ? address : f.default;
+      // Not connected yet: leave it empty; "Use my wallet" fills it after connecting.
+      v[f.key] = f.default === OWNER_ACCOUNT ? (address ?? "") : f.default;
     }
     setValues(v);
     setRun({ state: "idle", step: 0 });
@@ -489,31 +497,80 @@ export default function KaiPlayground() {
                 {mine.map((p) => <option key={p.policyId} value={p.policyId}>{policyName(p)}</option>)}
               </datalist>
 
+              {!action.free && (
+                <p className="pg-explain">
+                  The amounts below are only <b>written into the policy</b> as its rules. Right now you only pay the {FEE_AVAX} test AVAX fee.
+                </p>
+              )}
+
               <div className="pg-fields">
-                {action.fields.map((f) => (
-                  <label key={f.key} className="pg-field">
-                    <span className="pg-label">{f.label}{f.required && <b> *</b>}</span>
-                    {f.type === "boolean" ? (
-                      <button type="button" role="switch" aria-checked={values[f.key] === true} onClick={() => setValues((v) => ({ ...v, [f.key]: !v[f.key] }))} className={values[f.key] === true ? "pg-switch pg-switch--on" : "pg-switch"}>
-                        <i /> {values[f.key] === true ? "Yes" : "No"}
-                      </button>
-                    ) : f.type === "select" ? (
-                      <select value={String(values[f.key] ?? "")} onChange={(e) => setValues((v) => ({ ...v, [f.key]: e.target.value }))} className="pg-input">
-                        {f.options?.map((o) => <option key={o} value={o}>{o}</option>)}
-                      </select>
-                    ) : (
-                      <input
-                        className="pg-input" value={String(values[f.key] ?? "")} placeholder={f.placeholder}
-                        type={f.type === "number" ? "number" : "text"} inputMode={f.type === "number" ? "decimal" : undefined}
-                        list={/Id$/.test(f.key) ? "pg-policy-ids" : undefined}
-                        onChange={(e) => setValues((v) => ({ ...v, [f.key]: e.target.value }))}
-                      />
-                    )}
-                    {f.hint && <span className="pg-hint">{f.hint}</span>}
-                    {/Id$/.test(f.key) && mine.length > 0 && <span className="pg-hint">Tap the box to pick one of your policies.</span>}
-                  </label>
-                ))}
+                {action.fields.map((f) => {
+                  const v = values[f.key];
+                  const isWallet = f.placeholder === "0x…";
+                  const set = (nv: Value) => setValues((x) => ({ ...x, [f.key]: nv }));
+                  return (
+                    <div key={f.key} className="pg-field">
+                      <label className="pg-label" htmlFor={`pg-f-${f.key}`}>{f.label}{f.required ? <b> *</b> : <em> (optional)</em>}</label>
+                      {f.hint && <span className="pg-hint">{f.hint}</span>}
+                      {f.type === "boolean" ? (
+                        <button id={`pg-f-${f.key}`} type="button" role="switch" aria-checked={v === true} onClick={() => set(v !== true)} className={v === true ? "pg-switch pg-switch--on" : "pg-switch"}>
+                          <i /> {v === true ? "Yes" : "No"}
+                        </button>
+                      ) : f.type === "select" ? (
+                        <select id={`pg-f-${f.key}`} value={String(v ?? "")} onChange={(e) => set(e.target.value)} className="pg-input">
+                          {f.options?.map((o) => <option key={o} value={o}>{o}</option>)}
+                        </select>
+                      ) : (
+                        <div className="pg-box">
+                          <input
+                            id={`pg-f-${f.key}`} className="pg-input" value={String(v ?? "")} placeholder={f.placeholder}
+                            type={f.type === "number" ? "number" : "text"} inputMode={f.type === "number" ? "decimal" : undefined}
+                            list={/Id$/.test(f.key) ? "pg-policy-ids" : undefined} spellCheck={isWallet ? false : undefined}
+                            style={f.unit ? { paddingRight: 14 + f.unit.length * 9 } : undefined}
+                            onChange={(e) => set(e.target.value)}
+                          />
+                          {f.unit && <span className="pg-unit">{f.unit}</span>}
+                        </div>
+                      )}
+                      {(f.picks || (isWallet && address)) && (
+                        <div className="pg-picks">
+                          {isWallet && address && (
+                            <button type="button" className={String(v).toLowerCase() === address.toLowerCase() ? "pg-pick pg-pick--on" : "pg-pick"} onClick={() => set(address)}>
+                              <Wallet size={12} /> Use my wallet
+                            </button>
+                          )}
+                          {f.picks?.map((pk) => (
+                            <button key={pk} type="button" className={String(v) === String(pk) ? "pg-pick pg-pick--on" : "pg-pick"} onClick={() => set(String(pk))}>
+                              {sayValue(pk, f.unit)}
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                      {isWallet && typeof v === "string" && /^0x[0-9a-fA-F]{40}$/.test(v) && (
+                        <span className="pg-hint" style={{ color: C.green }}><Check size={12} /> {address && v.toLowerCase() === address.toLowerCase() ? "This is your wallet" : `Wallet ${sayValue(v)}`}</span>
+                      )}
+                    </div>
+                  );
+                })}
               </div>
+
+              {/* Review in plain words */}
+              {!action.free && action.fields.length > 0 && (
+                <div className="pg-review">
+                  <p className="pg-group-title" style={{ margin: "0 0 8px" }}>Check before you confirm</p>
+                  <dl className="pg-dl">
+                    {action.fields.map((f) => (
+                      <div key={f.key} style={{ display: "contents" }}>
+                        <dt>{f.label}</dt>
+                        <dd style={{ color: values[f.key] === "" ? C.ink : C.paper }}>
+                          {address && typeof values[f.key] === "string" && String(values[f.key]).toLowerCase() === address.toLowerCase() ? "You" : sayValue(values[f.key], f.unit)}
+                        </dd>
+                      </div>
+                    ))}
+                    <dt>You pay now</dt><dd><b>{FEE_AVAX} test AVAX</b></dd>
+                  </dl>
+                </div>
+              )}
 
               {/* Optional AI help */}
               <div className="pg-ai">
@@ -682,7 +739,7 @@ export default function KaiPlayground() {
         .pg-form-name { margin: 0 0 2px; font-size: 16px; font-weight: 700; }
         .pg-note { display: flex; gap: 6px; align-items: center; margin: 14px 0 0; font-size: 13px; color: ${C.green}; }
 
-        .pg-fields { display: grid; gap: 14px; margin-top: 18px; }
+        .pg-fields { display: grid; gap: 20px; margin-top: 18px; }
         @media (min-width: 640px) { .pg-fields { grid-template-columns: 1fr 1fr; } }
         .pg-field { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
         .pg-label { font-size: 13px; font-weight: 600; color: ${C.dim}; }
@@ -690,7 +747,17 @@ export default function KaiPlayground() {
         .pg-input { width: 100%; box-sizing: border-box; padding: 11px 12px; border-radius: 10px; border: 1px solid rgba(246,242,231,0.12); background: ${C.bg}; color: ${C.paper}; font-size: 15px; font-family: inherit; outline: none; min-height: 44px; }
         .pg-input:focus { border-color: ${C.gold}; }
         select.pg-input option { background: ${C.bg}; }
-        .pg-hint { font-size: 12px; color: ${C.ink}; }
+        .pg-hint { font-size: 12.5px; color: ${C.ink}; line-height: 1.45; display: inline-flex; align-items: center; gap: 5px; }
+        .pg-label em { font-style: normal; font-weight: 400; color: ${C.ink}; }
+        .pg-box { position: relative; }
+        .pg-unit { position: absolute; right: 12px; top: 50%; transform: translateY(-50%); font-size: 13px; font-weight: 600; color: ${C.ink}; pointer-events: none; }
+        .pg-picks { display: flex; flex-wrap: wrap; gap: 6px; }
+        .pg-pick { display: inline-flex; align-items: center; gap: 5px; padding: 6px 12px; border-radius: 999px; border: 1px solid rgba(246,242,231,0.14); background: none; color: ${C.dim}; font-size: 12.5px; font-weight: 600; cursor: pointer; font-family: inherit; min-height: 32px; }
+        .pg-pick--on { border-color: ${C.gold}; background: rgba(200,155,60,0.14); color: ${C.goldLight}; }
+        .pg-explain { margin: 14px 0 0; padding: 10px 12px; border-radius: 10px; background: rgba(111,168,220,0.1); font-size: 13px; line-height: 1.5; color: ${C.dim}; }
+        .pg-explain b { color: ${C.paper}; }
+        .pg-review { margin-top: 20px; padding: 14px; border-radius: 12px; background: ${C.card}; }
+        .pg-review .pg-dl dt { text-transform: none; }
         .pg-switch { display: inline-flex; align-items: center; gap: 10px; width: fit-content; padding: 8px 14px 8px 8px; border-radius: 999px; border: 1px solid rgba(246,242,231,0.12); background: ${C.bg}; color: ${C.dim}; font-size: 14px; font-family: inherit; cursor: pointer; min-height: 44px; }
         .pg-switch i { width: 36px; height: 22px; border-radius: 999px; background: rgba(246,242,231,0.15); position: relative; transition: background .15s; }
         .pg-switch i::after { content: ""; position: absolute; top: 3px; left: 3px; width: 16px; height: 16px; border-radius: 50%; background: ${C.paper}; transition: transform .15s; }
