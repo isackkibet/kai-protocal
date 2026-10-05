@@ -64,7 +64,7 @@ function policyFor(pathname: string, method = 'GET'): readonly typeof POLICIES[k
   // Reads of nursery / MRV data (dashboards, the nursery page, quick-action
   // counts) get the read budget; only saving data uses the tight write one.
   // They used to share the write budget, so a few page loads hit 429.
-  if (pathname.startsWith('/api/mrv') || pathname.startsWith('/api/cfa') || pathname.startsWith('/api/murals')) {
+  if (pathname.startsWith('/api/mrv') || pathname.startsWith('/api/cfa') || pathname.startsWith('/api/murals') || pathname.startsWith('/api/hubs')) {
     return [method === 'GET' || method === 'HEAD' ? POLICIES.read : POLICIES.write];
   }
 
@@ -80,7 +80,7 @@ function policyFor(pathname: string, method = 'GET'): readonly typeof POLICIES[k
 const MAX_BODY_BYTES = 512 * 1024; // AI prompts and JSON records; generous
 /** Evidence photos/PDFs: 3 MB file + form fields (route re-checks the file). */
 const MAX_UPLOAD_BYTES = 3 * 1024 * 1024 + 64 * 1024;
-const UPLOAD_PATHS = new Set(['/api/cfa/evidence', '/api/murals']);
+const UPLOAD_PATHS = new Set(['/api/cfa/evidence', '/api/murals', '/api/hubs/oloolua/items', '/api/hubs/sihu/items']);
 const ALLOWED_CONTENT_TYPES = new Set([
   'application/json',
   'application/x-www-form-urlencoded',

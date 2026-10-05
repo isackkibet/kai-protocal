@@ -89,16 +89,16 @@ export default function HubsPage() {
             tint={C.green} icon={TreePine} name="Oloolua Conservation Hub" by="Oloolua Community Forest Association · Youth Guardians"
             what="Nursery groups record seedlings, planting, nursery work and survival checks. A CFA verifier approves each record."
             stats={[{ v: n(summary.totalSeedlings), l: 'seedlings' }, { v: n(summary.planted), l: 'planted' }, { v: records ? String(verified.length) : '…', l: 'verified records' }]}
-            open={{ href: '/nursery', label: 'Nursery groups', icon: Sprout }}
-            manage={[{ href: '/workspace', label: 'Record with Kanuvari AI', icon: PenTool }, { href: '/mrv', label: 'Verifier desk', icon: ShieldCheck }, { href: '/conservation', label: 'Guides', icon: BookOpen }]}
+            open={{ href: '/hubs/oloolua', label: 'Visit the hub', icon: Sprout }}
+            manage={[{ href: '/nursery', label: 'Nursery groups', icon: Sprout }, { href: '/workspace', label: 'Record with Kanuvari AI', icon: PenTool }, { href: '/mrv', label: 'Verifier desk', icon: ShieldCheck }, { href: '/conservation', label: 'Guides', icon: BookOpen }]}
             repo={REPOS.oloolua} portal={PORTALS.oloolua}
           />
           <HubCard
             tint={C.blue} icon={Newspaper} name="SIHU Information Hub" by="Sango · Lake Victoria Basin"
             what="Members write stories and local information. Editors review each one before it is published."
             stats={[{ v: posts ? String(posts.length) : '…', l: 'published stories' }]}
-            open={{ href: '/hub', label: 'Read stories', icon: Newspaper }}
-            manage={[{ href: '/hub/create', label: 'Write a story', icon: PenTool }, { href: '/hub/review', label: 'Editor review', icon: ShieldCheck }]}
+            open={{ href: '/hubs/sihu', label: 'Visit the hub', icon: Newspaper }}
+            manage={[{ href: '/hub', label: 'All stories', icon: Newspaper }, { href: '/hub/create', label: 'Write a story', icon: PenTool }, { href: '/hub/review', label: 'Editor review', icon: ShieldCheck }]}
             repo={REPOS.sihu} portal={PORTALS.sihu}
           />
         </div>

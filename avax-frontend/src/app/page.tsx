@@ -84,6 +84,7 @@ export default function Home() {
               <p className="hm-hub-by">Oloolua Community Forest Association · Youth Guardians</p>
               <p>Nursery groups, seedlings, planting and survival checks, with verified records.</p>
               <div className="hm-hub-links">
+                <Link href="/hubs/oloolua" prefetch={false}><TreePine size={15} /> Visit the hub</Link>
                 <Link href="/nursery" prefetch={false}><Sprout size={15} /> Nursery groups</Link>
                 <Link href="/conservation" prefetch={false}><BookOpen size={15} /> Guides and knowledge</Link>
               </div>
@@ -94,7 +95,8 @@ export default function Home() {
               <p className="hm-hub-by">Sango · Lake Victoria Basin</p>
               <p>Local news, stories and community information, reviewed before it is published.</p>
               <div className="hm-hub-links">
-                <Link href="/hub" prefetch={false}><Newspaper size={15} /> Read stories</Link>
+                <Link href="/hubs/sihu" prefetch={false}><Newspaper size={15} /> Visit the hub</Link>
+                <Link href="/hub" prefetch={false}><BookOpen size={15} /> Read stories</Link>
                 <Link href="/hub/create" prefetch={false}><PenTool size={15} /> Write a story</Link>
               </div>
             </article>

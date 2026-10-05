@@ -1673,3 +1673,35 @@ model MemberProfile {
 
   @@map("member_profiles")
 }
+
+/// Information Hub About / Mission text. SQL: prisma/sql/2026-10-05_hub_content.sql
+model HubProfile {
+  hub       String   @id
+  about     String?
+  mission   String?
+  updatedBy String?  @map("updated_by")
+  updatedAt DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@map("hub_profiles")
+}
+
+/// News, activities, photos, videos and podcasts on an Information Hub.
+model HubItem {
+  id          String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  hub         String
+  /// news | activity | photo | video | podcast
+  kind        String
+  title       String
+  summary     String?
+  url         String?
+  image       Bytes?
+  imageMime   String?   @map("image_mime")
+  imageSha256 String?   @map("image_sha256")
+  happenedOn  DateTime? @map("happened_on") @db.Date
+  published   Boolean   @default(true)
+  authorEmail String?   @map("author_email")
+  authorName  String?   @map("author_name")
+  createdAt   DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  @@map("hub_items")
+}
