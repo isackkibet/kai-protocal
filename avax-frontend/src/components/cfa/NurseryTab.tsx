@@ -1,5 +1,6 @@
 'use client';
 
+import { useGoToSignIn } from '@/components/shared/SignInOnProfile';
 import { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -156,7 +157,8 @@ const formStyle: React.CSSProperties = { display: 'flex', flexDirection: 'column
 
 // ── Main component ──────────────────────────────────────────────
 export default function NurseryTab() {
-  const { authenticated, getAccessToken, signInWithGoogle, signInWithEmail } = usePrivyAuth();
+  const { authenticated, getAccessToken } = usePrivyAuth();
+  const goToSignIn = useGoToSignIn();
   const [summary, setSummary] = useState<NurserySummary | null>(null);
   const [loading, setLoading] = useState(true);
   const [modal, setModal] = useState<ModalType>(null);
@@ -298,8 +300,7 @@ export default function NurseryTab() {
             hint="Use the same Google account or email every time, so your records stay yours.">
             {!authenticated && (
               <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                <StepButton onClick={() => { void signInWithGoogle(); }}>Continue with Google</StepButton>
-                <StepButton onClick={() => { void signInWithEmail(); }} secondary>Continue with email</StepButton>
+                <StepButton onClick={goToSignIn}>Sign in on your Profile</StepButton>
               </div>
             )}
           </Step>

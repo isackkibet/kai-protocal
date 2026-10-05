@@ -1,5 +1,6 @@
 'use client';
 
+import { useGoToSignIn } from '@/components/shared/SignInOnProfile';
 import { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { Anchor, CheckCircle2, ClipboardCheck, Loader2, PencilLine, ShieldCheck, Undo2, XCircle } from 'lucide-react';
@@ -62,7 +63,8 @@ function Button({ onClick, children, kind = 'primary', disabled }: { onClick: ()
 }
 
 export default function VerificationDesk() {
-  const { authenticated, getAccessToken, signInWithGoogle } = usePrivyAuth();
+  const { authenticated, getAccessToken } = usePrivyAuth();
+  const goToSignIn = useGoToSignIn();
   // /mrv#anchor, /mrv#fix or /mrv#review open that tab (links from the admin checklist).
   const [tab, setTab] = useState<'review' | 'fix' | 'anchor'>(() => {
     const h = typeof window === 'undefined' ? '' : window.location.hash.slice(1);
@@ -100,7 +102,7 @@ export default function VerificationDesk() {
     return (
       <div style={{ padding: '20px 0' }}>
         <p style={{ fontSize: 13.5, color: C.paperDim, marginBottom: 12 }}>Sign in with your CFA account to use the verification desk.</p>
-        <Button onClick={() => { void signInWithGoogle(); }}>Continue with Google</Button>
+        <Button onClick={goToSignIn}>Sign in on your Profile</Button>
       </div>
     );
   }

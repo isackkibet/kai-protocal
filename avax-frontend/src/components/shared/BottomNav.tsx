@@ -7,6 +7,7 @@ import {
   Home, Bot, UserCircle2, Newspaper, TreePine,
   ChevronRight, X, BookOpen, PenTool, Sprout, ExternalLink, LayoutGrid,
 } from 'lucide-react';
+import { OLOOLUA_SITE_URL } from '@/lib/hubs/hub-links';
 
 const itemStyle = (active: boolean): React.CSSProperties => ({
   display: 'flex', flexDirection: 'column', alignItems: 'center',
@@ -44,18 +45,18 @@ const HUB_OPTIONS = [
     id: 'oloolua',
     name: 'Forest conservation',
     source: 'Oloolua Youth Guardians',
-    desc: 'Your CFA nursery groups: record seedlings, planting and survival, with verified records.',
-    href: '/hubs/oloolua',
+    desc: 'The Oloolua Youth Guardians website: who they are, their mission, activities and photos.',
+    href: OLOOLUA_SITE_URL,
     match: (p: string) => p.startsWith('/conservation') || p.startsWith('/cfa') || p.startsWith('/nursery') || p.startsWith('/hubs/oloolua'),
     icon: TreePine,
     accent: '#7DC383',
     bg: '#15352A',
     border: 'rgba(125,195,131,0.35)',
     quick: [
+      { label: 'Open the website', href: OLOOLUA_SITE_URL, icon: ExternalLink },
       { label: 'Nursery groups', href: '/nursery', icon: Sprout },
-      { label: 'Guides', href: '/conservation/methodologies', icon: BookOpen },
     ],
-    portal: ext(process.env.NEXT_PUBLIC_OLOOLUA_PORTAL_URL),
+    portal: null,
   },
 ];
 

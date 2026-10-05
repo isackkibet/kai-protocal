@@ -6,6 +6,7 @@ import {
   ArrowLeft, ArrowRight, BookOpen, CheckCircle2, ExternalLink, Fingerprint, GitBranch, Newspaper, PenTool,
   ShieldCheck, Sprout, TreePine, type LucideIcon,
 } from 'lucide-react';
+import { OLOOLUA_SITE_URL } from '@/lib/hubs/hub-links';
 
 /**
  * /hubs — the public portal for both Information Hubs on the KAI conservation
@@ -29,7 +30,7 @@ const REPOS = {
   oloolua: link(process.env.NEXT_PUBLIC_OLOOLUA_REPO_URL),
   sihu: link(process.env.NEXT_PUBLIC_SIHU_REPO_URL),
 };
-const PORTALS = { oloolua: link(process.env.NEXT_PUBLIC_OLOOLUA_PORTAL_URL), sihu: link(process.env.NEXT_PUBLIC_SIHU_PORTAL_URL) };
+const PORTALS = { oloolua: null, sihu: link(process.env.NEXT_PUBLIC_SIHU_PORTAL_URL) };
 
 interface RecordRow { id: string; recordType: string; verificationStatus: string; anchorStatus: string; createdAt: string }
 interface Post { id: string; slug: string; title: string; summary: string; creator: string; publishedAt: string; category: string }
@@ -89,7 +90,7 @@ export default function HubsPage() {
             tint={C.green} icon={TreePine} name="Oloolua Conservation Hub" by="Oloolua Community Forest Association · Youth Guardians"
             what="Nursery groups record seedlings, planting, nursery work and survival checks. A CFA verifier approves each record."
             stats={[{ v: n(summary.totalSeedlings), l: 'seedlings' }, { v: n(summary.planted), l: 'planted' }, { v: records ? String(verified.length) : '…', l: 'verified records' }]}
-            open={{ href: '/hubs/oloolua', label: 'Visit the hub', icon: Sprout }}
+            open={{ href: OLOOLUA_SITE_URL, label: 'Visit the hub', icon: Sprout }}
             manage={[{ href: '/nursery', label: 'Nursery groups', icon: Sprout }, { href: '/workspace', label: 'Record with Kanuvari AI', icon: PenTool }, { href: '/mrv', label: 'Verifier desk', icon: ShieldCheck }, { href: '/conservation', label: 'Guides', icon: BookOpen }]}
             repo={REPOS.oloolua} portal={PORTALS.oloolua}
           />
@@ -235,7 +236,9 @@ function HubCard({ tint, icon: Icon, name, by, what, stats, open, manage, repo, 
       </div>
       <p className="hb-hub-what">{what}</p>
       <div className="hb-hub-stats">{stats.map((s) => <div key={s.l}><b>{s.v}</b><span>{s.l}</span></div>)}</div>
-      <Link href={open.href} className="hb-open" prefetch={false}><open.icon size={16} /> {open.label}</Link>
+      {/^https?:/.test(open.href)
+        ? <a href={open.href} className="hb-open" target="_blank" rel="noopener noreferrer"><open.icon size={16} /> {open.label}</a>
+        : <Link href={open.href} className="hb-open" prefetch={false}><open.icon size={16} /> {open.label}</Link>}
       <p className="hb-manage-title">For members</p>
       <div className="hb-links">
         {manage.map((m) => <Link key={m.href + m.label} href={m.href} prefetch={false}><m.icon size={14} /> {m.label}</Link>)}

@@ -5,6 +5,8 @@ import { useAccount, useDisconnect, useSignMessage } from 'wagmi';
 import { buildOwnershipChallenge } from '@/lib/auth/wallet-signature';
 import { usePrivyAuth } from '@/lib/auth/privy-auth';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { safeNext } from '@/components/shared/SignInOnProfile';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Trees, Store, Users, Wallet, ChevronRight,
@@ -139,6 +141,20 @@ export default function ProfilePage() {
   // otherwise the Privy embedded wallet from the Google/email session.
   const effectiveAddress: string | undefined = address ?? privy.address ?? undefined;
   const canAuth = isConnected || privy.authenticated;
+  // Other pages send people here to sign in (?next=/murals ...). Remember
+  // where they came from (the Google sign-in leaves the page and comes back)
+  // and return them there once they are signed in.
+  const router = useRouter();
+  useEffect(() => {
+    const fromUrl = safeNext(new URLSearchParams(window.location.search).get('next'));
+    let target = fromUrl;
+    try {
+      if (fromUrl) sessionStorage.setItem('kai-signin-next', fromUrl);
+      target = fromUrl ?? safeNext(sessionStorage.getItem('kai-signin-next'));
+      if (privy.authenticated) sessionStorage.removeItem('kai-signin-next');
+    } catch { /* storage blocked: the URL is enough */ }
+    if (privy.authenticated && target) router.replace(target);
+  }, [privy.authenticated, router]);
   const [profile, setProfile] = useState<Profile>({ ...EMPTY });
   const [saved,   setSaved]   = useState(false);
   const [saving,  setSaving]  = useState(false);
@@ -353,12 +369,14 @@ export default function ProfilePage() {
         {!canAuth && (
           <div style={{ marginTop:18, padding:'16px 18px', borderRadius:16, background:'#12301F', borderLeft:`3px solid ${C.gold}`, display:'flex', flexWrap:'wrap', alignItems:'center', justifyContent:'space-between', gap:12 }}>
             <div>
-              <p style={{ margin:0, fontWeight:700, fontSize:15.5 }}>Create your profile with your email</p>
-              <p style={{ margin:'2px 0 0', color: C.inkLight, fontSize:13.5 }}>Your email links everything you submit. No wallet needed.</p>
+              <p style={{ margin:0, fontWeight:700, fontSize:15.5 }}>Sign in or create your profile with your email</p>
+              <p style={{ margin:'2px 0 0', color: C.inkLight, fontSize:13.5 }}>
+                Your email links everything you submit. No wallet needed. After you sign in, we take you back to the page you came from.
+              </p>
             </div>
             <div style={{ display:'flex', gap:8, flexWrap:'wrap' }}>
               <button onClick={() => { void privy.signInWithEmail(); }} style={{ padding:'10px 16px', borderRadius:999, border:'none', background:C.gold, color:C.ink, fontWeight:700, fontSize:13.5, cursor:'pointer', fontFamily:'inherit' }}>Sign in with email</button>
-              <button onClick={() => { void privy.signInWithGoogle(); }} style={{ padding:'10px 16px', borderRadius:999, border:'none', background:'rgba(246,242,231,0.08)', color:C.paper, fontWeight:700, fontSize:13.5, cursor:'pointer', fontFamily:'inherit' }}>Google</button>
+              <button onClick={() => { void privy.signInWithGoogle(); }} style={{ padding:'10px 16px', borderRadius:999, border:'none', background:'rgba(246,242,231,0.08)', color:C.paper, fontWeight:700, fontSize:13.5, cursor:'pointer', fontFamily:'inherit' }}>Sign in with Google</button>
             </div>
           </div>
         )}

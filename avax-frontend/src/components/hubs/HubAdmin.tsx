@@ -1,5 +1,6 @@
 'use client';
 
+import SignInOnProfile from '@/components/shared/SignInOnProfile';
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Loader2, Plus, Trash2 } from 'lucide-react';
@@ -28,7 +29,7 @@ export default function HubAdmin({ hub, managers, about, mission, items }: {
   hub: 'oloolua' | 'sihu'; managers: string; about: string; mission: string; items: { id: string; kind: string; title: string }[];
 }) {
   const router = useRouter();
-  const { authenticated, getAccessToken, signInWithEmail, signInWithGoogle } = usePrivyAuth();
+  const { authenticated, getAccessToken } = usePrivyAuth();
   const [admin, setAdmin] = useState(false);
   const [aboutText, setAbout] = useState(about);
   const [missionText, setMission] = useState(mission);
@@ -88,10 +89,7 @@ export default function HubAdmin({ hub, managers, about, mission, items }: {
       <p style={{ margin: 0, fontSize: 13.5, color: '#9BA396' }}>
         Do you manage this hub ({managers})?{' '}
         {!authenticated
-          ? <>Sign in to add news and photos:{' '}
-              <button onClick={() => { void signInWithGoogle(); }} style={{ border: 'none', background: 'none', padding: 0, color: '#E4C878', fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', fontSize: 13.5 }}>Google</button>
-              {' · '}
-              <button onClick={() => { void signInWithEmail(); }} style={{ border: 'none', background: 'none', padding: 0, color: '#E4C878', fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', fontSize: 13.5 }}>Email</button></>
+          ? <>To add news and photos, <SignInOnProfile label="sign in on your Profile" style={{ color: '#E4C878', fontWeight: 600 }} />.</>
           : 'Your account cannot manage it. Ask an admin.'}
       </p>
     );

@@ -1,5 +1,6 @@
 'use client';
 
+import { useGoToSignIn } from '@/components/shared/SignInOnProfile';
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import {
@@ -46,7 +47,8 @@ const STATUS_INFO: Record<ContentPost['status'], { label: string; color: string;
 const EDITABLE: ContentPost['status'][] = ['DRAFT', 'CHANGES_REQUESTED'];
 
 export default function CreatePage() {
-  const { authenticated, ready, signInWithEmail, getAccessToken } = usePrivyAuth();
+  const { authenticated, ready, getAccessToken } = usePrivyAuth();
+  const goToSignIn = useGoToSignIn();
   // Sign-in can be slow to report ready (the wallet layer loads last). Stop
   // waiting after a moment so people never stare at a blank page.
   const [waitedEnough, setWaitedEnough] = useState(false);
@@ -279,8 +281,8 @@ export default function CreatePage() {
             <p style={{ color: T.inkLight, margin: '10px auto 24px', maxWidth: 420, lineHeight: 1.6 }}>
               We only need your email. Reading stories never needs an account or a wallet.
             </p>
-            <button onClick={() => { signInWithEmail(); }} className="ws-btn" style={{ ...btnPrimary, margin: '0 auto' }}>
-              Continue with email
+            <button onClick={goToSignIn} className="ws-btn" style={{ ...btnPrimary, margin: '0 auto' }}>
+              Sign in on your Profile
             </button>
           </section>
         ) : (

@@ -1,5 +1,6 @@
 'use client';
 
+import SignInOnProfile from '@/components/shared/SignInOnProfile';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { Leaf } from 'lucide-react';
@@ -16,7 +17,7 @@ const NAV = [
 
 export default function ConservationHeader() {
   const pathname = usePathname();
-  const { authenticated, ready, signInWithEmail, name } = usePrivyAuth();
+  const { authenticated, ready, name } = usePrivyAuth();
 
   return (
     <header style={{ display: 'flex', alignItems: 'center', gap: 22, padding: '28px 0 20px', borderBottom: `1px solid ${HUB_THEME.hairline}`, flexWrap: 'wrap' }}>
@@ -49,14 +50,12 @@ export default function ConservationHeader() {
           All hubs
         </Link>
         {ready && !authenticated ? (
-          <button onClick={() => { signInWithEmail(); }}
-            style={{ ...SANS, fontSize: 13.5, background: HUB_THEME.gold, color: HUB_THEME.ink, border: 'none', borderRadius: 999, padding: '9px 18px', cursor: 'pointer', fontWeight: 700 }}>
-            Sign in
-          </button>
+          <SignInOnProfile label="Sign in"
+            style={{ ...SANS, fontSize: 13.5, background: HUB_THEME.gold, color: HUB_THEME.ink, borderRadius: 999, padding: '9px 18px', fontWeight: 700 }} />
         ) : (
-          <span style={{ ...SANS, fontSize: 13.5, fontWeight: 600, color: HUB_THEME.goldLight }}>
-            {name?.split(' ')[0] ?? '●'}
-          </span>
+          <Link href="/profile" prefetch={false} style={{ ...SANS, fontSize: 13.5, fontWeight: 600, color: HUB_THEME.goldLight, textDecoration: 'none' }}>
+            {name?.split(' ')[0] ?? 'Profile'}
+          </Link>
         )}
       </div>
     </header>

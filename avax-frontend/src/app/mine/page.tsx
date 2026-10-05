@@ -1,5 +1,6 @@
 'use client';
 
+import SignInOnProfile from '@/components/shared/SignInOnProfile';
 import { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
 import {
@@ -157,8 +158,7 @@ export default function PointsPage() {
             <h2>Earn points for taking part</h2>
             <p>Sign in with your email to collect daily points, finish missions and invite friends. No wallet needed.</p>
             <div className="pt-btns">
-              <button className="pt-btn" onClick={() => { void privy.signInWithEmail(); }}>Sign in with email</button>
-              <button className="pt-btn pt-btn--ghost" onClick={() => { void privy.signInWithGoogle(); }}>Sign in with Google</button>
+              <SignInOnProfile className="pt-btn" />
             </div>
           </section>
         ) : loading && !summary ? (

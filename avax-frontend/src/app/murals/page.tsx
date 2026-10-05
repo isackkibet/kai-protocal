@@ -1,5 +1,6 @@
 'use client';
 
+import SignInOnProfile from '@/components/shared/SignInOnProfile';
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -28,7 +29,7 @@ const kes = (n: number) => `KES ${n.toLocaleString()}`;
 
 export default function MuralsPage() {
   const router = useRouter();
-  const { authenticated, getAccessToken, signInWithGoogle, signInWithEmail, email, logout } = usePrivyAuth();
+  const { authenticated, getAccessToken, email, logout } = usePrivyAuth();
   const [murals, setMurals] = useState<MuralCard[] | null>(null);
   const [manage, setManage] = useState<Manage>({ admin: false });
   const [checked, setChecked] = useState(false);
@@ -75,8 +76,7 @@ export default function MuralsPage() {
           <div className="mu-signin">
             <div><b>Are you a CFA admin?</b><small>Sign in to add a mural and see who wants to buy.</small></div>
             <div className="mu-signin-btns">
-              <button className="mu-btn mu-btn--small" onClick={() => { void signInWithGoogle(); }}>Sign in with Google</button>
-              <button className="mu-btn mu-btn--small mu-btn--ghost" onClick={() => { void signInWithEmail(); }}>Sign in with email</button>
+              <SignInOnProfile className="mu-btn mu-btn--small" />
             </div>
           </div>
         ) : checked && !manage.admin ? (

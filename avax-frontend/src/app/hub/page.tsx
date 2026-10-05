@@ -8,10 +8,11 @@ import {
   Users, Search, Sparkles, Send,
 } from 'lucide-react';
 import { SIHU_THEME, OLOOLUA_THEME, MONO, SERIF, SANS } from '@/lib/hubs/hub-theme';
+import { OLOOLUA_SITE_URL } from '@/lib/hubs/hub-links';
 
 /* Full external portals, only shown when they are actually deployed. */
 const SIHU_PORTAL_URL = process.env.NEXT_PUBLIC_SIHU_PORTAL_URL || '';
-const OLOOLUA_PORTAL_URL = process.env.NEXT_PUBLIC_OLOOLUA_PORTAL_URL || '';
+const OLOOLUA_PORTAL_URL = OLOOLUA_SITE_URL;
 
 const BLUE = SIHU_THEME.blue;
 const GREEN = OLOOLUA_THEME.emerald;

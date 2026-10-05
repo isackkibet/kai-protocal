@@ -1,5 +1,6 @@
 'use client';
 
+import SignInOnProfile from '@/components/shared/SignInOnProfile';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import {
@@ -99,7 +100,7 @@ function PromptButton({ q, icon, label, onPick }: { q: string; icon: React.React
  * KAI assistant stays everywhere else).
  */
 export default function Workspace({ embedded = false, fullScreen = false }: { embedded?: boolean; fullScreen?: boolean } = {}) {
-  const { authenticated, getAccessToken, privyUserId, name, signInWithGoogle } = usePrivyAuth();
+  const { authenticated, getAccessToken, privyUserId, name } = usePrivyAuth();
   const { address } = useAccount();
   const userKey = `${privyUserId ?? 'guest'}${embedded ? ':nursery' : ''}`;
 
@@ -194,7 +195,7 @@ export default function Workspace({ embedded = false, fullScreen = false }: { em
 
   /** Opens a quick form, or explains in one line why it can't be used yet. */
   const openQuick = (q: (typeof QUICK)[number]) => {
-    if (!authenticated) { say('Sign in with Google first (link at the top), then join the CFA on /nursery.'); return; }
+    if (!authenticated) { say('Sign in on your Profile first, then join the CFA on /nursery.'); return; }
     if (isMember === false) { say('Join the CFA first: open /nursery and press “Join Oloolua CFA”.'); return; }
     const setupDone = summary.species.length > 0 && summary.locations.length > 0;
     if (!setupDone) { say('A CFA admin must first add the species you grow and a nursery group (on /nursery).'); return; }
@@ -493,7 +494,7 @@ export default function Workspace({ embedded = false, fullScreen = false }: { em
 
             {!authenticated && (
               <div style={{ textAlign: 'center', fontSize: 13, color: C.inkLight }}>
-                You can ask questions now. To save records, <button onClick={() => { void signInWithGoogle(); }} style={{ background: 'none', border: 'none', color: C.goldLight, textDecoration: 'underline', cursor: 'pointer', fontSize: 13, padding: 0 }}>sign in with Google</button> and join the CFA on /nursery.
+                You can ask questions now. To save records, <SignInOnProfile label="sign in on your Profile" style={{ color: C.goldLight, textDecoration: 'underline', fontSize: 13 }} /> and join the CFA on /nursery.
               </div>
             )}
 

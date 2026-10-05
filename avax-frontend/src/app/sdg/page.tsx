@@ -1,5 +1,6 @@
 'use client';
 
+import SignInOnProfile, { useGoToSignIn } from '@/components/shared/SignInOnProfile';
 import { useState } from 'react';
 import Link from 'next/link';
 import { ArrowLeft, Check, ChevronDown, ChevronRight, Loader2, Plus } from 'lucide-react';
@@ -49,7 +50,8 @@ const GOAL_WORDS: Record<number, string> = {
 const CATEGORIES = ['All', 'Environment', 'Economy', 'Community', 'Agriculture'] as const;
 
 export default function SDGPage() {
-  const { authenticated: isConnected, email, signInWithEmail, signInWithGoogle } = usePrivyAuth();
+  const { authenticated: isConnected, email } = usePrivyAuth();
+  const goToSignIn = useGoToSignIn();
   const [category, setCategory] = useState<typeof CATEGORIES[number]>('All');
   const [submittingId, setSubmittingId] = useState<string | null>(null);
   const [doneIds, setDoneIds] = useState<string[]>([]);
@@ -62,7 +64,7 @@ export default function SDGPage() {
   const goalPointsTotal = goals.reduce((n, g) => n + g.points, 0);
 
   const addPoints = async (actionId: string) => {
-    if (!isConnected) { void signInWithEmail(); return; }
+    if (!isConnected) { goToSignIn(); return; }
     if (submittingId) return;
     setSubmittingId(actionId);
     if (await logAction(actionId)) setDoneIds((d) => [...d, actionId]);
@@ -86,7 +88,7 @@ export default function SDGPage() {
           </div>
           {isConnected
             ? <span className="sdg-wallet sdg-wallet--on"><span>{email ?? 'Signed in'}</span></span>
-            : <button className="sdg-wallet" onClick={() => { void signInWithEmail(); }}><span>Sign in</span></button>}
+            : <SignInOnProfile className="sdg-wallet" label="Sign in" />}
         </div>
       </header>
 
@@ -113,8 +115,7 @@ export default function SDGPage() {
               <p className="sdg-h2" style={{ margin: 0 }}>See your impact</p>
               <p className="sdg-muted">Sign in with your email to see your points and level, and to start earning. No wallet needed.</p>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-                <button className="sdg-btn" onClick={() => { void signInWithEmail(); }}>Sign in with email</button>
-                <button className="sdg-btn sdg-btn--quiet" onClick={() => { void signInWithGoogle(); }}>Sign in with Google</button>
+                <SignInOnProfile className="sdg-btn" />
               </div>
             </div>
           ) : (

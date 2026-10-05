@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { ArrowRight, BookOpen, CheckCircle2, Fingerprint, Newspaper, PenTool, Sprout, TreePine, Users, type LucideIcon } from 'lucide-react';
 import QuickActions from '@/components/shared/QuickActions';
+import { OLOOLUA_SITE_URL } from '@/lib/hubs/hub-links';
 
 /**
  * Home: KAI Nuvari is a conservation information and provenance platform.
@@ -84,7 +85,7 @@ export default function Home() {
               <p className="hm-hub-by">Oloolua Community Forest Association · Youth Guardians</p>
               <p>Nursery groups, seedlings, planting and survival checks, with verified records.</p>
               <div className="hm-hub-links">
-                <Link href="/hubs/oloolua" prefetch={false}><TreePine size={15} /> Visit the hub</Link>
+                <a href={OLOOLUA_SITE_URL} target="_blank" rel="noopener noreferrer"><TreePine size={15} /> Visit the hub</a>
                 <Link href="/nursery" prefetch={false}><Sprout size={15} /> Nursery groups</Link>
                 <Link href="/conservation" prefetch={false}><BookOpen size={15} /> Guides and knowledge</Link>
               </div>

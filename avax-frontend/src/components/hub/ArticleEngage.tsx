@@ -1,5 +1,6 @@
 'use client';
 
+import { useGoToSignIn } from '@/components/shared/SignInOnProfile';
 import { useEffect, useMemo, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
@@ -36,7 +37,8 @@ function useAuthHeader() {
 }
 
 export default function ArticleEngage({ post }: { post: ContentPost }) {
-  const { authenticated, signInWithEmail } = usePrivyAuth();
+  const { authenticated } = usePrivyAuth();
+  const goToSignIn = useGoToSignIn();
   const auth = useAuthHeader();
   const [liked, setLiked] = useState(false);
   const [likes, setLikes] = useState(post.likesCount);
@@ -215,7 +217,7 @@ export default function ArticleEngage({ post }: { post: ContentPost }) {
           <span style={{ fontSize: 14, fontWeight: 700, color: HUB_THEME.paper }}>Share</span>
         </motion.button>
 
-        <motion.button whileTap={{ scale: 0.9 }} onClick={() => { if (!authenticated) { signInWithEmail(); return; } setTip(t => ({ ...t, open: true })); }}
+        <motion.button whileTap={{ scale: 0.9 }} onClick={() => { if (!authenticated) { goToSignIn(); return; } setTip(t => ({ ...t, open: true })); }}
           style={{ ...actionBtn, marginLeft: 'auto', background: HUB_THEME.gold, color: HUB_THEME.ink, borderRadius: 8, padding: '9px 16px' }}>
           <DollarSign size={14} color={HUB_THEME.ink} />
           <span style={{ fontSize: 13, fontWeight: 700 }}>Tip {post.creatorName.split(' ')[0]}</span>
@@ -245,9 +247,9 @@ export default function ArticleEngage({ post }: { post: ContentPost }) {
             onChange={e => setComment(e.target.value)}
             placeholder="Share a thought…"
             style={inputStyle}
-            onKeyDown={e => { if (e.key === 'Enter') { if (!authenticated) { signInWithEmail(); return; } act('comment', { text: comment }); } }} />
+            onKeyDown={e => { if (e.key === 'Enter') { if (!authenticated) { goToSignIn(); return; } act('comment', { text: comment }); } }} />
           <motion.button whileTap={{ scale: 0.95 }}
-            onClick={() => { if (!authenticated) { signInWithEmail(); return; } act('comment', { text: comment }); }}
+            onClick={() => { if (!authenticated) { goToSignIn(); return; } act('comment', { text: comment }); }}
             disabled={busy === 'comment'}
             style={{ padding: '0 18px', borderRadius: 8, border: 'none', cursor: 'pointer', background: HUB_THEME.gold, color: HUB_THEME.ink, fontWeight: 700, fontFamily: 'inherit', fontSize: 14 }}>
             {busy === 'comment' ? '…' : 'Post'}

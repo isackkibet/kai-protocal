@@ -1,5 +1,6 @@
 'use client';
 
+import { useGoToSignIn } from '@/components/shared/SignInOnProfile';
 import { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
 import {
@@ -27,7 +28,8 @@ const humanize = (t: string) => (t ? t.charAt(0) + t.slice(1).toLowerCase().repl
 type Decision = 'PUBLISH' | 'REJECT' | 'REQUIRE_CHANGES';
 
 export default function ReviewPage() {
-  const { authenticated, ready, signInWithEmail, getAccessToken } = usePrivyAuth();
+  const { authenticated, ready, getAccessToken } = usePrivyAuth();
+  const goToSignIn = useGoToSignIn();
   // Sign-in can be slow to report ready (the wallet layer loads last). Stop
   // waiting after a moment so people never stare at a blank page.
   const [waitedEnough, setWaitedEnough] = useState(false);
@@ -180,7 +182,7 @@ export default function ReviewPage() {
             <Lock size={22} color={T.goldLight} style={{ margin: '0 auto' }} />
             <p style={{ ...SERIF, fontSize: 22, fontWeight: 600, margin: '10px 0 6px' }}>Editors, please sign in</p>
             <p style={{ color: T.inkLight, margin: '0 auto 22px', maxWidth: 420, lineHeight: 1.6 }}>Only SIHU editors can review stories. Writers can follow their own stories on the Write a story page.</p>
-            <button onClick={() => { signInWithEmail(); }} className="ed-btn" style={{ ...btnPrimary, margin: '0 auto' }}>Continue with email</button>
+            <button onClick={goToSignIn} className="ed-btn" style={{ ...btnPrimary, margin: '0 auto' }}>Sign in on your Profile</button>
           </section>
         ) : notEditor ? (
           <section style={{ ...card, textAlign: 'center', padding: '44px 24px' }}>

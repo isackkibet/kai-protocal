@@ -1,7 +1,10 @@
 import type { NextConfig } from "next";
 
 const SIHU_URL = process.env.NEXT_PUBLIC_SIHU_URL || "http://localhost:3000";
-const OLOOLUA_URL = process.env.NEXT_PUBLIC_OLOOLUA_URL || "http://localhost:3002";
+// The original Oloolua Youth Guardians website, kept exactly as its makers
+// designed it and hosted on its own. Information Hub links open it directly.
+const OLOOLUA_URL = [process.env.NEXT_PUBLIC_OLOOLUA_PORTAL_URL, process.env.NEXT_PUBLIC_OLOOLUA_URL]
+  .find((u) => u && /^https:\/\//.test(u)) || "https://oloolua-youth-guardians.vercel.app";
 
 const CRYPTO_ROUTES = [
   "pools", "swap", "vaults", "taas", "securities", "connft", "nuvari", "products", "pay",
@@ -79,6 +82,7 @@ const nextConfig: NextConfig = {
         destination: OLOOLUA_URL,
         permanent: false,
       },
+      { source: "/hubs/oloolua", destination: OLOOLUA_URL, permanent: false },
       // Crypto features (exchange, tokens, pools, NFT trading...) are
       // switched off while KAI focuses on conservation records and murals.
       // The code stays; set NEXT_PUBLIC_CRYPTO_FEATURES=on to bring them back.
