@@ -5,19 +5,21 @@ import { FieldError } from '@/lib/nursery/validate';
 import { requireRateLimit } from '@/lib/security/route-guard';
 import { createMural, listMurals, MAX_MURAL_IMAGE_BYTES } from '@/lib/murals/store';
 import { MURAL_STATUSES, type MuralStatus } from '@/lib/murals/provenance';
+import { muralCheckoutEnabled } from '@/lib/murals/checkout';
 
 /**
  * /api/murals
- * GET  — murals for sale (public; drafts are left out)
+ * GET  — murals for sale (public; drafts are left out) and whether paying
+ *        online is switched on (MURAL_CHECKOUT_ENABLED)
  * POST — a CFA admin adds a mural (multipart/form-data): title, artist,
  *        description?, sizeLabel?, priceKes, status?, recordIds (comma
  *        separated verified record ids), image? (JPEG/PNG/WebP, 3 MB)
  */
 export async function GET() {
   const prisma = await getPrisma();
-  if (!prisma) return NextResponse.json({ murals: [] });
+  if (!prisma) return NextResponse.json({ murals: [], checkout: muralCheckoutEnabled() });
   try {
-    return NextResponse.json({ murals: await listMurals(prisma) });
+    return NextResponse.json({ murals: await listMurals(prisma), checkout: muralCheckoutEnabled() });
   } catch (e) {
     console.error('[murals] list failed', e);
     return NextResponse.json({ murals: [], error: 'Could not load the murals.' }, { status: 500 });
