@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { useAccount } from 'wagmi';
 import { usePrivyAuth } from '@/lib/auth/privy-auth';
 import { SDGGoalStat, SDGActionDefinition } from '@/app/api/sdg/route';
 
@@ -21,8 +20,7 @@ export interface SDGImpactState {
 }
 
 export function useSDGImpact(): SDGImpactState {
-  const { address } = useAccount();
-  const { getAccessToken } = usePrivyAuth();
+  const { getAccessToken, authenticated } = usePrivyAuth();
   const [totalPoints, setTotalPoints] = useState(0);
   const [tier, setTier] = useState('Seedling Explorer');
   const [badge, setBadge] = useState('🌱');
@@ -47,17 +45,19 @@ export function useSDGImpact(): SDGImpactState {
   }, []);
 
   const fetchStats = useCallback(async () => {
-    const data = await loadStats(address);
+    const data = await loadStats(await getAccessToken());
     if (data) apply(data);
-  }, [address, apply]);
+  }, [getAccessToken, apply]);
 
+  // Points belong to the email account (Privy session), not a wallet.
   useEffect(() => {
     let on = true;
-    loadStats(address)
+    getAccessToken()
+      .then((token) => loadStats(token))
       .then((data) => { if (on && data) apply(data); })
       .finally(() => { if (on) setLoading(false); });
     return () => { on = false; };
-  }, [address, apply]);
+  }, [getAccessToken, authenticated, apply]);
 
   const logAction = async (actionId: string): Promise<boolean> => {
     try {
@@ -67,7 +67,7 @@ export function useSDGImpact(): SDGImpactState {
       const res = await fetch('/api/sdg', {
         method: 'POST',
         headers,
-        body: JSON.stringify({ wallet: address, actionId }),
+        body: JSON.stringify({ actionId }),
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
@@ -104,11 +104,10 @@ export function useSDGImpact(): SDGImpactState {
   };
 }
 
-/** GET /api/sdg for a wallet; null when offline (the page keeps what it has). */
-async function loadStats(address: string | undefined) {
+/** GET /api/sdg for the signed-in account; null when offline (the page keeps what it has). */
+async function loadStats(token: string | null) {
   try {
-    const q = address ? `?wallet=${encodeURIComponent(address)}` : '';
-    const res = await fetch(`/api/sdg${q}`);
+    const res = await fetch('/api/sdg', { headers: token ? { Authorization: `Bearer ${token}` } : {} });
     return res.ok ? await res.json() : null;
   } catch {
     return null;

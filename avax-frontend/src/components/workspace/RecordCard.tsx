@@ -82,7 +82,7 @@ export default function RecordCard({ plan, project, species, attachmentNames, au
       const saved = savedIdentity(plan.endpoint, d);
       if (d.mrvRecord?.id) setMrv(d.mrvRecord.id);
       setState('saved');
-      setMsg(`Saved as conservation record ${saved.label}.${d.pointsEarned ? ` +${d.pointsEarned} Kai Bar points.` : ''}`);
+      setMsg(`Saved as conservation record ${saved.label}.${d.pointsEarned ? ` +${d.pointsEarned} points.` : ''}`);
       await onSaved(saved);
       onDone();
     } catch {

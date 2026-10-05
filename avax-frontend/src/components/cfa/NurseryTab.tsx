@@ -343,7 +343,7 @@ export default function NurseryTab() {
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 20 }}>
           <CheckCircle2 size={15} color={C.goldLight} />
           <p style={{ fontSize: 11.5, color: C.goldLight, margin: 0, fontWeight: 600 }}>
-            You&apos;re a CFA {isAdmin ? 'admin' : 'member'}. Your entries are saved under your name and earn Kai Bar points.
+            You&apos;re a CFA {isAdmin ? 'admin' : 'member'}. Your entries are saved under your name and email, and earn points.
           </p>
         </div>
       )}

@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import {
-  BookOpen, Frame, Globe2, Link2, MessagesSquare, Newspaper, PenTool, ShieldCheck, Sprout, UserRound, type LucideIcon,
+  BookOpen, Frame, Gift, Globe, Globe2, Link2, MessagesSquare, Newspaper, PenTool, ShieldCheck, Sprout, UserRound, type LucideIcon,
 } from 'lucide-react';
 
 /**
@@ -32,6 +32,13 @@ export const QUICK_GROUPS: Group[] = [
       { name: 'SIHU stories', hint: 'Read local news', href: '/hub', icon: Newspaper },
       { name: 'Write a story', hint: 'For the SIHU hub', href: '/hub/create', icon: PenTool },
       { name: 'Guides', hint: 'Jaza Miti and more', href: '/conservation', icon: BookOpen },
+    ],
+  },
+  {
+    title: 'Rewards', tint: '#E4C878',
+    items: [
+      { name: 'Points', hint: 'Daily points and missions', href: '/mine', icon: Gift, image: '/images/apps/airdrop.jpg' },
+      { name: 'SDG Impact', hint: 'Points for each UN goal', href: '/sdg', icon: Globe, image: '/images/apps/sdg.jpg' },
     ],
   },
   {

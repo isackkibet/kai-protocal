@@ -121,6 +121,8 @@ docs/                   PRDs and design notes (SECURITY.md, db-integration.md, .
 | Murals: list, provenance page, "Add a mural", enquiries | `src/app/murals/`, `src/app/api/murals/`, `src/lib/murals/` (provenance hash in `provenance.ts`); tables in `prisma/sql/2026-10-05_murals.sql` |
 | Mural "Pay now" (Paystack) | Off unless `MURAL_CHECKOUT_ENABLED=true` (live key = real money). `src/app/api/murals/[slug]/checkout/route.ts`, settling in `src/lib/murals/checkout.ts` (also called by the Paystack webhook) |
 | Information Hubs portal (/hubs) | `src/app/hubs/page.tsx`; SIHU editors are `SIHU_EDITOR_EMAILS` |
+| Points / Airdrop (/mine), SDG Impact (/sdg) | Points are tied to the email account (Kai Bar ledger); `src/app/mine/page.tsx`, `src/app/api/airdrop/`, `src/app/api/sdg/route.ts`. /kai-bar redirects to /mine |
+| Profile (email, no wallet) | `src/app/api/profile/me/route.ts`; extra fields in `member_profiles` (`prisma/sql/2026-10-05_member_profiles.sql`) |
 | A crypto page redirects home | Hidden on purpose: `CRYPTO_ROUTES` in `next.config.ts`; set `NEXT_PUBLIC_CRYPTO_FEATURES=on` to bring them back |
 | Login (Privy) fails | `src/components/providers/PrivyAuthProvider.tsx`; allowed origins in the Privy dashboard |
 

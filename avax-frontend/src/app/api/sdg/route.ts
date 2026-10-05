@@ -100,8 +100,6 @@ export const SDG_ACTIONS: SDGActionDefinition[] = [
   },
 ];
 
-// Fallback in-memory ledger for wallets when DB connection is offline
-const inMemorySDGLedger: Record<string, { actions: Array<{ actionId: string; points: number; timestamp: string }>; totalPoints: number }> = {};
 
 const TIER_BADGE = ['🌱', '🌿', '🌟', '👑']; // kept in the response for old clients; the page shows icons
 
@@ -110,14 +108,29 @@ function calculateTier(points: number): { tier: string; badge: string; multiplie
   return { tier: tier.name, badge: TIER_BADGE[index], multiplier: tier.boost, nextTierPts: nextAt };
 }
 
-const WALLET = /^0x[0-9a-f]{40}$/;
+/**
+ * The signed-in member's SDG actions, from the saved points ledger
+ * (KaiBarLedger, type COMMUNITY_ACTIVITY, referenceId = action id). Linked to
+ * the email account; no wallet. Signed out (or no database) -> nothing yet.
+ */
+async function savedActions(req: NextRequest): Promise<{ userId: string | null; actions: Array<{ actionId: string; points: number; timestamp: string }> }> {
+  const privyUserId = await verifyPrivyUserId(req.headers.get('authorization'));
+  const prisma = await getPrisma();
+  if (!privyUserId || !prisma) return { userId: null, actions: [] };
+  const user = await prisma.kaiUser.findUnique({ where: { privyUserId }, select: { id: true } });
+  if (!user) return { userId: null, actions: [] };
+  const ids = SDG_ACTIONS.map((a) => a.id);
+  const rows = await prisma.kaiBarLedger.findMany({
+    where: { userId: user.id, type: 'COMMUNITY_ACTIVITY', referenceId: { in: ids } },
+    orderBy: { createdAt: 'asc' },
+    select: { referenceId: true, amount: true, createdAt: true },
+  });
+  return { userId: user.id, actions: rows.map((r) => ({ actionId: r.referenceId!, points: r.amount, timestamp: r.createdAt.toISOString() })) };
+}
 
 export async function GET(req: NextRequest) {
-  const { searchParams } = new URL(req.url);
-  const wallet = (searchParams.get('wallet') || '').toLowerCase();
-
-  // Everyone starts at 0: no demo points that were never earned.
-  const userLedger = (WALLET.test(wallet) && inMemorySDGLedger[wallet]) || { actions: [], totalPoints: 0 };
+  const saved = await savedActions(req).catch(() => ({ userId: null, actions: [] as Array<{ actionId: string; points: number; timestamp: string }> }));
+  const userLedger = { actions: saved.actions, totalPoints: saved.actions.reduce((n, a) => n + a.points, 0) };
 
   // Count points by SDG Goal
   const pointsBySDG: Record<number, { points: number; count: number }> = {
@@ -216,7 +229,7 @@ export async function GET(req: NextRequest) {
   const tierInfo = calculateTier(totalPoints);
 
   return NextResponse.json({
-    wallet,
+    signedIn: !!saved.userId,
     totalPoints,
     tier: tierInfo.tier,
     badge: tierInfo.badge,
@@ -231,84 +244,35 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   try {
-    let body: { wallet?: unknown; actionId?: unknown } = {};
-    try {
-      body = await req.json();
-    } catch {
-      body = {};
-    }
-    const { wallet, actionId } = body;
+    let body: { actionId?: unknown } = {};
+    try { body = await req.json(); } catch { body = {}; }
+    const actionDef = SDG_ACTIONS.find((a) => a.id === body.actionId);
+    if (!actionDef) return NextResponse.json({ error: 'Unknown action.' }, { status: 400 });
 
-    if (!actionId) {
-      return NextResponse.json({ error: 'actionId is required' }, { status: 400 });
-    }
+    const privyUserId = await verifyPrivyUserId(req.headers.get('authorization'));
+    if (!privyUserId) return NextResponse.json({ error: 'Sign in with your email first, so the points are saved to you.' }, { status: 401 });
+    const prisma = await getPrisma();
+    if (!prisma) return NextResponse.json({ error: 'Points are not available right now.' }, { status: 503 });
+    const user = await prisma.kaiUser.findUnique({ where: { privyUserId }, select: { id: true } });
+    if (!user) return NextResponse.json({ error: 'We are still setting up your account. Try again in a moment.' }, { status: 404 });
 
-    const actionDef = SDG_ACTIONS.find(a => a.id === actionId);
-    if (!actionDef) {
-      return NextResponse.json({ error: 'Invalid actionId' }, { status: 400 });
-    }
-
-    const userWalletKey = typeof wallet === 'string' ? wallet.toLowerCase() : '';
-    if (!WALLET.test(userWalletKey)) {
-      return NextResponse.json({ error: 'Connect a wallet first, so the points are saved to you.' }, { status: 400 });
-    }
-    if (!inMemorySDGLedger[userWalletKey]) {
-      inMemorySDGLedger[userWalletKey] = { actions: [], totalPoints: 0 };
-    }
-
-    // Record action
-    inMemorySDGLedger[userWalletKey].actions.push({
-      actionId: actionDef.id,
-      points: actionDef.points,
-      timestamp: new Date().toISOString(),
+    // Once per action per person, so points can't be farmed by repeat taps.
+    const already = await prisma.kaiBarLedger.findFirst({
+      where: { userId: user.id, type: 'COMMUNITY_ACTIVITY', referenceId: actionDef.id }, select: { id: true },
     });
-    inMemorySDGLedger[userWalletKey].totalPoints += actionDef.points;
-
-    // Crediting the real, persistent Kai Bar ledger requires a verified
-    // identity — this feeds airdrop eligibility, so it must not be mintable
-    // by an anonymous caller supplying an arbitrary wallet. Also capped to
-    // once per action per user (referenceId = actionDef.id) so it can't be
-    // farmed by repeat POSTs.
-    try {
-      const privyUserId = await verifyPrivyUserId(req.headers.get('authorization'));
-      const prisma = await getPrisma();
-      if (privyUserId && prisma) {
-        const kaiUser = await prisma.kaiUser.findUnique({ where: { privyUserId } });
-        if (kaiUser) {
-          const already = await prisma.kaiBarLedger.findFirst({
-            where: { userId: kaiUser.id, type: 'COMMUNITY_ACTIVITY', referenceId: actionDef.id },
-          });
-          if (!already) {
-            await prisma.kaiBarLedger.create({
-              data: {
-                userId: kaiUser.id,
-                type: 'COMMUNITY_ACTIVITY',
-                amount: actionDef.points,
-                description: `SDG ${actionDef.sdgNumber}: ${actionDef.title}`,
-                referenceId: actionDef.id,
-              },
-            });
-          }
-        }
-      }
-    } catch {
-      // Non-blocking fallback — the in-memory demo ledger below still updates.
-    }
-
-    const updatedPoints = inMemorySDGLedger[userWalletKey].totalPoints;
-    const tierInfo = calculateTier(updatedPoints);
+    if (already) return NextResponse.json({ error: `You already have points for ${actionDef.title}.` }, { status: 409 });
+    await prisma.kaiBarLedger.create({
+      data: { userId: user.id, type: 'COMMUNITY_ACTIVITY', amount: actionDef.points, description: `SDG ${actionDef.sdgNumber}: ${actionDef.title}`, referenceId: actionDef.id },
+    });
 
     return NextResponse.json({
       success: true,
       awardedPoints: actionDef.points,
-      totalPoints: updatedPoints,
       action: actionDef,
-      tier: tierInfo.tier,
-      badge: tierInfo.badge,
-      message: `+${actionDef.points} SDG points earned for ${actionDef.title}.`,
+      message: `+${actionDef.points} SDG points for ${actionDef.title}.`,
     });
   } catch (err: unknown) {
-    const msg = err instanceof Error ? err.message : 'Unknown error';
-    return NextResponse.json({ error: msg }, { status: 500 });
+    console.error('[sdg] log action failed', err instanceof Error ? err.message : err);
+    return NextResponse.json({ error: 'Could not save the points. Try again.' }, { status: 500 });
   }
 }

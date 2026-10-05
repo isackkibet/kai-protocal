@@ -2,10 +2,9 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { ArrowLeft, Check, ChevronDown, ChevronRight, Loader2, Plus, Wallet } from 'lucide-react';
-import { useAccount } from 'wagmi';
+import { ArrowLeft, Check, ChevronDown, ChevronRight, Loader2, Plus } from 'lucide-react';
+import { usePrivyAuth } from '@/lib/auth/privy-auth';
 import { useSDGImpact } from '@/hooks/useSDGImpact';
-import WalletConnectModal from '@/components/wallet/WalletConnectModal';
 import { SdgGlyph, TierGlyph } from '@/lib/ui/sdgIcons';
 import { SDG_TIERS, tierFor } from '@/lib/sdg/tiers';
 
@@ -50,8 +49,7 @@ const GOAL_WORDS: Record<number, string> = {
 const CATEGORIES = ['All', 'Environment', 'Economy', 'Community', 'Agriculture'] as const;
 
 export default function SDGPage() {
-  const { address, isConnected } = useAccount();
-  const [showModal, setShowModal] = useState(false);
+  const { authenticated: isConnected, email, signInWithEmail, signInWithGoogle } = usePrivyAuth();
   const [category, setCategory] = useState<typeof CATEGORIES[number]>('All');
   const [submittingId, setSubmittingId] = useState<string | null>(null);
   const [doneIds, setDoneIds] = useState<string[]>([]);
@@ -64,7 +62,7 @@ export default function SDGPage() {
   const goalPointsTotal = goals.reduce((n, g) => n + g.points, 0);
 
   const addPoints = async (actionId: string) => {
-    if (!isConnected) { setShowModal(true); return; }
+    if (!isConnected) { void signInWithEmail(); return; }
     if (submittingId) return;
     setSubmittingId(actionId);
     if (await logAction(actionId)) setDoneIds((d) => [...d, actionId]);
@@ -86,10 +84,9 @@ export default function SDGPage() {
             <h1 className="sdg-title">SDG Impact</h1>
             <p className="sdg-sub">How your actions help the world</p>
           </div>
-          <button className={isConnected ? 'sdg-wallet sdg-wallet--on' : 'sdg-wallet'} onClick={() => setShowModal(true)}>
-            <Wallet size={15} />
-            <span>{isConnected && address ? `${address.slice(0, 6)}…${address.slice(-4)}` : 'Connect'}</span>
-          </button>
+          {isConnected
+            ? <span className="sdg-wallet sdg-wallet--on"><span>{email ?? 'Signed in'}</span></span>
+            : <button className="sdg-wallet" onClick={() => { void signInWithEmail(); }}><span>Sign in</span></button>}
         </div>
       </header>
 
@@ -114,8 +111,11 @@ export default function SDGPage() {
           {!isConnected ? (
             <div className="sdg-me-empty">
               <p className="sdg-h2" style={{ margin: 0 }}>See your impact</p>
-              <p className="sdg-muted">Connect your wallet to see your points and level, and to start earning.</p>
-              <button className="sdg-btn" onClick={() => setShowModal(true)}><Wallet size={15} /> Connect wallet</button>
+              <p className="sdg-muted">Sign in with your email to see your points and level, and to start earning. No wallet needed.</p>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+                <button className="sdg-btn" onClick={() => { void signInWithEmail(); }}>Sign in with email</button>
+                <button className="sdg-btn sdg-btn--quiet" onClick={() => { void signInWithGoogle(); }}>Sign in with Google</button>
+              </div>
             </div>
           ) : (
             <>
@@ -246,7 +246,6 @@ export default function SDGPage() {
         </section>
       </div>
 
-      {showModal && <WalletConnectModal onClose={() => setShowModal(false)} />}
 
       <style>{`
         .sdg { min-height: 100dvh; background: ${C.bg}; color: ${C.paper}; font-family: 'Inter', system-ui, sans-serif; padding-bottom: 110px; }
@@ -257,7 +256,7 @@ export default function SDGPage() {
         .sdg-title { margin: 0; font-size: 18px; font-weight: 700; }
         .sdg-sub { margin: 1px 0 0; font-size: 12.5px; color: ${C.ink}; }
         .sdg-wallet { margin-left: auto; display: inline-flex; align-items: center; gap: 7px; padding: 9px 14px; border-radius: 999px; border: none; background: ${C.gold}; color: #1B1A14; font-weight: 700; font-size: 13px; cursor: pointer; font-family: inherit; flex-shrink: 0; }
-        .sdg-wallet--on { background: rgba(125,195,131,0.14); color: ${C.green}; font-family: ui-monospace, monospace; font-weight: 600; }
+        .sdg-wallet--on { background: rgba(125,195,131,0.14); color: ${C.green}; font-weight: 600; max-width: 46vw; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
         .sdg-body { display: grid; grid-template-columns: minmax(0, 1fr); gap: 32px; padding-top: 20px; }
         .sdg-body > * { min-width: 0; }

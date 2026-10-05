@@ -220,7 +220,7 @@ export default function Workspace({ embedded = false, fullScreen = false }: { em
       if (!res.ok) { say(d.error ?? `Could not save (error ${res.status}).`, true); return false; }
       const id = (d.batch ?? d.activity ?? d.observation)?.id as string | undefined;
       const label = QUICK.find((x) => x.type === quick)?.label ?? 'Record';
-      say(`✓ ${label} saved${id ? ` as record **${id.replace(/-/g, '').slice(0, 6).toUpperCase()}**` : ''}.${d.pointsEarned ? ` +${d.pointsEarned} Kai Bar points.` : ''}${d.mrvRecord ? ' It is now waiting for a verifier.' : ''}`);
+      say(`✓ ${label} saved${id ? ` as record **${id.replace(/-/g, '').slice(0, 6).toUpperCase()}**` : ''}.${d.pointsEarned ? ` +${d.pointsEarned} points.` : ''}${d.mrvRecord ? ' It is now waiting for a verifier.' : ''}`);
       setQuick(null);
       await refreshSummary();
       return true;

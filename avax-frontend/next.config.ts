@@ -4,8 +4,8 @@ const SIHU_URL = process.env.NEXT_PUBLIC_SIHU_URL || "http://localhost:3000";
 const OLOOLUA_URL = process.env.NEXT_PUBLIC_OLOOLUA_URL || "http://localhost:3002";
 
 const CRYPTO_ROUTES = [
-  "pools", "swap", "vaults", "taas", "securities", "connft", "mine", "nuvari", "products", "pay",
-  "kai-bar", "saving", "sme", "policy", "sdg", "apps", "wallet", "ai", "chat", "voice", "waitlist",
+  "pools", "swap", "vaults", "taas", "securities", "connft", "nuvari", "products", "pay",
+  "saving", "sme", "policy", "apps", "wallet", "ai", "chat", "voice", "waitlist",
 ];
 
 const nextConfig: NextConfig = {
@@ -79,7 +79,7 @@ const nextConfig: NextConfig = {
         destination: OLOOLUA_URL,
         permanent: false,
       },
-      // Crypto features (exchange, tokens, pools, NFT trading, airdrop...) are
+      // Crypto features (exchange, tokens, pools, NFT trading...) are
       // switched off while KAI focuses on conservation records and murals.
       // The code stays; set NEXT_PUBLIC_CRYPTO_FEATURES=on to bring them back.
       ...(process.env.NEXT_PUBLIC_CRYPTO_FEATURES === "on" ? [] : CRYPTO_ROUTES.map((r) => ({
@@ -87,6 +87,8 @@ const nextConfig: NextConfig = {
       }))),
       // The CFA page held a token treasury tab; the CFA's work lives in the nursery.
       { source: "/cfa", destination: "/nursery", permanent: false },
+      // Kai Bar and Airdrop share one points ledger: one Points page.
+      { source: "/kai-bar", destination: "/mine", permanent: false },
       {
         // KAI Web opens full screen with its own menu (it can't be framed:
         // X-Frame-Options is DENY). See src/app/kai/page.tsx.

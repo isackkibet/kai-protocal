@@ -1663,3 +1663,13 @@ model MuralEnquiry {
   @@index([muralId, createdAt(sort: Desc)], map: "mural_enquiries_mural")
   @@map("mural_enquiries")
 }
+
+/// Profile details for an email account (no wallet needed). Name and phone
+/// stay on kai_users. SQL: prisma/sql/2026-10-05_member_profiles.sql
+model MemberProfile {
+  kaiUserId String   @id @map("kai_user_id")
+  data      Json     @default("{}")
+  updatedAt DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@map("member_profiles")
+}

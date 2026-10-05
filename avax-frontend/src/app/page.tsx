@@ -132,6 +132,23 @@ export default function Home() {
         </div>
       </section>
 
+      {/* Points for taking part */}
+      <section className="hm-sec">
+        <div className="hm-wrap hm-mural" style={{ borderLeftColor: C.green }}>
+          <div>
+            <h2>Earn points for taking part</h2>
+            <p className="hm-intro">
+              Testing the app, recording conservation work and inviting friends all earn points, saved with your email. Points will become badges,
+              levels and rewards. No wallet needed.
+            </p>
+          </div>
+          <div className="hm-btns" style={{ marginTop: 0 }}>
+            <Link href="/mine" className="hm-btn" prefetch={false}>See my points <ArrowRight size={16} /></Link>
+            <Link href="/sdg" className="hm-btn hm-btn--ghost" prefetch={false}>SDG Impact</Link>
+          </div>
+        </div>
+      </section>
+
       {/* Everything else */}
       <section className="hm-sec" id="actions">
         <div className="hm-wrap">
@@ -143,7 +160,14 @@ export default function Home() {
       <style>{`
         .hm { min-height: 100dvh; background: ${C.bg}; color: ${C.paper}; font-family: 'Inter', system-ui, sans-serif; padding-bottom: 110px; }
         .hm-wrap { width: min(1080px, calc(100% - 32px)); margin: 0 auto; }
-        .hm-hero { padding: 72px 0 56px; }
+        /* The forest photo from the first home page, fading into the page
+           colour at the bottom so the text stays readable. */
+        .hm-hero { padding: 88px 0 72px; min-height: clamp(420px, 60vh, 600px); box-sizing: border-box; display: flex; align-items: center;
+          background-image: linear-gradient(180deg, rgba(14,36,24,0.25) 0%, rgba(14,36,24,0.7) 55%, ${C.bg} 100%),
+            linear-gradient(90deg, rgba(14,36,24,0.95) 0%, rgba(14,36,24,0.75) 40%, rgba(14,36,24,0.2) 100%),
+            url('/images/home-hero.jpg');
+          background-size: cover; background-position: center 30%; }
+        .hm-hero .hm-wrap { width: min(1080px, calc(100% - 32px)); }
         .hm-eyebrow { margin: 0 0 14px; font-size: 12.5px; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; color: ${C.goldLight}; }
         .hm-hero h1 { margin: 0; font-size: clamp(34px, 6vw, 58px); line-height: 1.08; font-weight: 700; letter-spacing: -0.01em; max-width: 15ch; }
         .hm-lead { margin: 18px 0 0; font-size: clamp(16px, 2vw, 19px); line-height: 1.6; color: ${C.dim}; max-width: 54ch; }

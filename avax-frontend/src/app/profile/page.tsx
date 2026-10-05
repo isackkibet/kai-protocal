@@ -14,7 +14,7 @@ import {
 } from 'lucide-react';
 
 interface Profile {
-  walletAddress:string; displayName:string; phone:string;
+  walletAddress:string; email?:string|null; displayName:string; phone:string;
   county:string; idNumber:string;
   cfaGroup:string; cfaRole:string; cfaRegion:string; cfaJoinYear:string;
   businessName:string; businessType:string; businessLocation:string;
@@ -173,13 +173,38 @@ export default function ProfilePage() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isConnected, signMessageAsync, privy.authenticated]);
 
-  useEffect(() => { if (effectiveAddress) load(effectiveAddress); }, [effectiveAddress, load]);
+  // Signed in with email/Google: the profile belongs to that account (no
+  // wallet needed). Wallet-only visitors keep the older wallet-signed flow.
+  const loadMe = useCallback(async () => {
+    try {
+      const r = await fetch('/api/profile/me', { headers: await getAuthHeader() });
+      if (!r.ok) return;
+      const { profile: p } = await r.json();
+      if (p) setProfile({ ...EMPTY, ...p, walletAddress: p.wallet ?? '' });
+    } catch { /* keep the empty form */ }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [privy.authenticated]);
+
+  useEffect(() => {
+    if (privy.authenticated) { void loadMe(); return; }
+    if (effectiveAddress) load(effectiveAddress);
+  }, [privy.authenticated, effectiveAddress, load, loadMe]);
 
   const set = (k:keyof Profile) => (v:string|boolean) =>
     setProfile(p=>({ ...p, [k]:v }));
 
   const save = async () => {
-    if (!effectiveAddress) { setToast('Connect wallet or sign in first'); return; }
+    if (privy.authenticated) {
+      setSaving(true);
+      try {
+        const r = await fetch('/api/profile/me', { method: 'POST', headers: { 'Content-Type': 'application/json', ...(await getAuthHeader()) }, body: JSON.stringify(profile) });
+        const d = await r.json().catch(() => ({}));
+        if (r.ok) { setSaved(true); setToast('Profile saved'); setEditing(false); setTimeout(() => { setSaved(false); setToast(''); }, 3000); }
+        else setToast(d.error ?? 'Save failed. Try again');
+      } catch { setToast('Network error'); } finally { setSaving(false); }
+      return;
+    }
+    if (!effectiveAddress) { setToast('Sign in with your email first'); return; }
     setSaving(true);
     try {
       const headers = await getAuthHeader();
@@ -208,7 +233,7 @@ export default function ProfilePage() {
     setCopied(true); setTimeout(()=>setCopied(false), 1600);
   };
 
-  const fields   = [profile.displayName,profile.phone,profile.county,profile.cfaGroup,profile.cfaRole,profile.businessName,profile.businessType,profile.chamaName,profile.chamaRole];
+  const fields   = [profile.displayName,profile.phone,profile.county,profile.cfaGroup,profile.cfaRole];
   const complete = Math.round(fields.filter(Boolean).length / fields.length * 100);
   const initials = profile.displayName
     ? profile.displayName.split(' ').map(w=>w[0]).join('').toUpperCase().slice(0,2)
@@ -290,7 +315,10 @@ export default function ProfilePage() {
                   <Phone size={14} color={C.goldLight}/> {profile.phone}
                 </span>
               )}
-              {canAuth && (
+              {profile.email && (
+                <span style={{ display:'flex', alignItems:'center', gap:6, fontSize:13.5, color: C.paperDim }}>{profile.email}</span>
+              )}
+              {canAuth && effectiveAddress && (
                 <button onClick={copyAddr} style={{ display:'flex', alignItems:'center', gap:6, background:'none', border:'none', cursor:'pointer', fontSize:12.5, color: C.inkLight, fontFamily: "'Inter', system-ui, sans-serif", padding:0 }}>
                   {effectiveAddress?.slice(0,10)}...{effectiveAddress?.slice(-6)}
                   {copied ? <CheckCircle size={12} color={C.goldLight}/> : <Copy size={12}/>}
@@ -321,6 +349,19 @@ export default function ProfilePage() {
               style={{ height:'100%', borderRadius:2, background: C.gold }}/>
           </div>
         </div>
+
+        {!canAuth && (
+          <div style={{ marginTop:18, padding:'16px 18px', borderRadius:16, background:'#12301F', borderLeft:`3px solid ${C.gold}`, display:'flex', flexWrap:'wrap', alignItems:'center', justifyContent:'space-between', gap:12 }}>
+            <div>
+              <p style={{ margin:0, fontWeight:700, fontSize:15.5 }}>Create your profile with your email</p>
+              <p style={{ margin:'2px 0 0', color: C.inkLight, fontSize:13.5 }}>Your email links everything you submit. No wallet needed.</p>
+            </div>
+            <div style={{ display:'flex', gap:8, flexWrap:'wrap' }}>
+              <button onClick={() => { void privy.signInWithEmail(); }} style={{ padding:'10px 16px', borderRadius:999, border:'none', background:C.gold, color:C.ink, fontWeight:700, fontSize:13.5, cursor:'pointer', fontFamily:'inherit' }}>Sign in with email</button>
+              <button onClick={() => { void privy.signInWithGoogle(); }} style={{ padding:'10px 16px', borderRadius:999, border:'none', background:'rgba(246,242,231,0.08)', color:C.paper, fontWeight:700, fontSize:13.5, cursor:'pointer', fontFamily:'inherit' }}>Google</button>
+            </div>
+          </div>
+        )}
 
         {/* membership tags */}
         <div style={{ display:'flex', gap:10, flexWrap:'wrap', marginTop:18 }}>
@@ -392,7 +433,7 @@ export default function ProfilePage() {
             ) : (
               <div style={{ paddingBottom:20, borderBottom: `1px solid ${C.hairline}`, marginBottom:20 }}>
                 <Link href="/" style={{ textDecoration:'none', display:'flex', alignItems:'center', gap:9, color: C.paperDim, fontSize:13.5 }}>
-                  <Wallet size={14} color={C.goldLight}/> Connect wallet
+                  <Wallet size={14} color={C.goldLight}/> Add a wallet (optional, later)
                   <ChevronRight size={13} color={C.goldLight} style={{ marginLeft:'auto' }}/>
                 </Link>
               </div>

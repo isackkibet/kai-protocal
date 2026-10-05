@@ -36,7 +36,7 @@ export default function NurseryConfirmCard({ plan }: { plan: NurseryPlan }) {
         return;
       }
       setState('saved');
-      setMessage(data.pointsEarned ? `Saved. +${data.pointsEarned} Kai Bar points.` : 'Saved.');
+      setMessage(data.pointsEarned ? `Saved. +${data.pointsEarned} points.` : 'Saved.');
     } catch {
       setState('error');
       setMessage('Network problem. Nothing was saved; please try again.');
