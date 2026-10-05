@@ -9,10 +9,8 @@ import { useRouter } from 'next/navigation';
 import { safeNext } from '@/components/shared/SignInOnProfile';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  Trees, Store, Users, Wallet, ChevronRight,
-  CheckCircle, RefreshCw, Copy, LogOut,
-  ExternalLink, Save, MapPin, Phone, Edit3,
-  Award, BarChart3, Settings,
+  Trees, Users, Wallet, ChevronRight, CheckCircle2, Copy, LogOut, MapPin, Mail,
+  Save, RefreshCw, Sprout, Gift, Globe2, ShieldCheck, BookOpen, Circle, type LucideIcon,
 } from 'lucide-react';
 
 interface Profile {
@@ -34,101 +32,59 @@ const EMPTY:Profile = {
   riskTolerance:'medium', preferredVault:'', notifications:true,
 };
 
-const CFA_ROLES   = ['Guardian','Treasurer','Secretary','Admin','Auditor','Member'];
-const CHAMA_ROLES = ['Chairperson','Treasurer','Secretary','Member'];
-const BIZ_TYPES   = ['Agri Supplies','Retail Shop','Hardware','Pharmacy','Textile / Crafts','Produce Distributor','Tech / Services','Food & Beverage','Other'];
-const COUNTIES    = ['Nairobi','Mombasa','Kisumu','Nakuru','Eldoret','Thika','Meru','Nyeri','Kericho','Kakamega','Machakos','Garissa','Other'];
-const RISK_LEVELS = [
-  { v:'conservative', label:'Conservative', apy:'7–12%',  color:'#7DC383' },
-  { v:'medium',       label:'Balanced',     apy:'12–18%', color:'#6FA8DC' },
-  { v:'high',         label:'High Yield',   apy:'18–24%', color:'#E4C878' },
-];
-const VAULTS = ['kvyBOB (7.5% APY)','kvNVR (15.2% APY)','kvYTOKEN (14.8% APY)','kvGAMI (22.0% APY)','kvYGOLD (12.4% APY)'];
+const CFA_ROLES = ['Guardian','Treasurer','Secretary','Admin','Auditor','Member'];
+const COUNTIES  = ['Nairobi','Mombasa','Kisumu','Nakuru','Eldoret','Thika','Meru','Nyeri','Kericho','Kakamega','Machakos','Garissa','Other'];
 
-/* Same editorial system as the rest of the app — pine + gold + paper,
-   flat sections separated by a hairline, no card shells. This page used
-   to be its own neon-glow "glass" design (glowing gradient boxes around
-   every input, glowing stat cards); a real profile — Facebook, LinkedIn —
-   doesn't box every field, it just lays content out clearly. */
-const C = {
-  bg:        '#0E2418',
-  gold:      '#C89B3C',
-  goldLight: '#E4C878',
-  paper:     '#F6F2E7',
-  paperDim:  '#EFE9D9',
-  ink:       '#1B1A14',
-  inkLight:  '#9BA396',
-  hairline:  'rgba(200,155,60,0.14)',
-  red:       '#E88C7D',
+/* The server sends null for empty fields; inputs need strings, or React
+   stops controlling them and the form shows stale values. */
+const clean = (p: Record<string, unknown>): Profile => {
+  const out = { ...EMPTY } as Record<string, unknown>;
+  for (const [k, v] of Object.entries(p)) if (v !== null && v !== undefined) out[k] = typeof v === 'number' ? String(v) : v;
+  return out as unknown as Profile;
 };
-const MONO: React.CSSProperties = { fontFamily: "'Inter', system-ui, sans-serif" };
-const SERIF: React.CSSProperties = { fontFamily: "'Inter', system-ui, sans-serif" };
-const label: React.CSSProperties = { ...MONO, fontSize: 12, letterSpacing: 1.4, textTransform: 'uppercase', color: C.goldLight, fontWeight: 600, margin: 0 };
 
-/* Flat inputs — bottom border only, same language as every other form in
-   the app (wallet Send, the AI textarea). No glow, no filled box. */
-function KInput({ value, onChange, placeholder, type='text', big=false }:{
-  value:string; onChange:(v:string)=>void; placeholder?:string; type?:string; big?:boolean;
-}) {
-  return (
-    <input type={type} value={value} onChange={e=>onChange(e.target.value)}
-      placeholder={placeholder}
-      style={{
-        background: 'none', border: 'none', borderBottom: `1px solid ${C.hairline}`, borderRadius: 0,
-        padding: big ? '10px 2px' : '8px 2px',
-        fontSize: big ? 17 : 14,
-        color: C.paper, outline: 'none', fontFamily: 'inherit', width: '100%',
-        boxSizing: 'border-box', transition: 'border-color 0.15s ease',
-      }}
-      onFocus={e => (e.target.style.borderColor = C.gold)}
-      onBlur={e => (e.target.style.borderColor = C.hairline)}
-    />
-  );
-}
+/* Points levels, the same as the Points page (/mine). */
+const LEVELS = [
+  { name: 'Seedling', from: 0 }, { name: 'Sapling', from: 250 },
+  { name: 'Guardian', from: 1000 }, { name: 'Forest Keeper', from: 5000 },
+];
 
-function KSelect({ value, onChange, options, placeholder }:{
-  value:string; onChange:(v:string)=>void; options:string[]; placeholder?:string;
-}) {
-  return (
-    <select value={value} onChange={e=>onChange(e.target.value)}
-      style={{
-        background: 'none', border: 'none', borderBottom: `1px solid ${C.hairline}`, borderRadius: 0,
-        padding: '8px 2px', fontSize: 14, color: value ? C.paper : C.inkLight,
-        outline: 'none', fontFamily: 'inherit', width: '100%', boxSizing: 'border-box',
-        appearance: 'none', cursor: 'pointer',
-        backgroundImage: 'url("data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'12\' height=\'12\' viewBox=\'0 0 24 24\' fill=\'none\' stroke=\'%239BA396\' stroke-width=\'2\'%3E%3Cpath d=\'M6 9l6 6 6-6\'/%3E%3C/svg%3E")',
-        backgroundRepeat: 'no-repeat', backgroundPosition: 'right 2px center',
-      }}>
-      {placeholder && <option value="" disabled style={{ background: C.bg }}>{placeholder}</option>}
-      {options.map(o => <option key={o} value={o} style={{ background: C.bg }}>{o}</option>)}
-    </select>
-  );
-}
+/* What makes a profile complete, and where to fill each part in. */
+const STEPS: { key: keyof Profile; todo: string; done: string }[] = [
+  { key: 'displayName', todo: 'Add your name', done: 'Name' },
+  { key: 'phone',       todo: 'Add your phone number', done: 'Phone' },
+  { key: 'county',      todo: 'Choose your county', done: 'County' },
+  { key: 'cfaGroup',    todo: 'Add your CFA group', done: 'CFA group' },
+  { key: 'cfaRole',     todo: 'Choose your role in the group', done: 'Role' },
+];
 
-function FormRow({ label: rowLabel, children }:{ label:string; children:React.ReactNode }) {
-  const required = rowLabel.trim().endsWith('*');
-  const text = required ? rowLabel.trim().slice(0, -1).trim() : rowLabel;
+const GO_TO: { label: string; hint: string; href: string; Icon: LucideIcon }[] = [
+  { label: 'Points and badges', hint: 'Daily points, missions, invites', href: '/mine', Icon: Gift },
+  { label: 'SDG impact',        hint: 'Log actions for the global goals', href: '/sdg', Icon: Globe2 },
+  { label: 'Nursery groups',    hint: 'Record seedlings and planting', href: '/nursery', Icon: Sprout },
+  { label: 'Information Hubs',  hint: 'News from Oloolua and SIHU', href: '/hubs', Icon: Users },
+  { label: 'Verification desk', hint: 'For CFA verifiers', href: '/mrv', Icon: ShieldCheck },
+  { label: 'Guides',            hint: 'Jaza Miti and more', href: '/conservation', Icon: BookOpen },
+];
+
+const C = {
+  bg: '#0E2418', band: '#12301F', card: '#15352A', gold: '#C89B3C', goldLight: '#E4C878',
+  paper: '#F6F2E7', paperDim: '#C9CFC2', ink: '#1B1A14', inkLight: '#9BA396', green: '#7DC383',
+  line: 'rgba(246,242,231,0.09)', red: '#E88C7D',
+};
+
+/* Time helpers live outside the component (the React compiler treats a
+   clock read inside it as impure, even in event handlers). */
+const nowMs = () => Date.now();
+const nowIso = () => new Date().toISOString();
+
+function Field({ id, label, hint, children }: { id: string; label: string; hint?: string; children: React.ReactNode }) {
   return (
-    <div style={{ display:'flex', flexDirection:'column', gap:8 }}>
-      <span style={{ ...MONO, fontSize: 12, fontWeight:600, letterSpacing:1.0, textTransform:'uppercase', color: C.inkLight }}>
-        {text}
-        {required && <span style={{ color: C.goldLight, marginLeft:4 }}>*</span>}
-      </span>
+    <label className="pf-field" htmlFor={id}>
+      <span className="pf-label">{label}</span>
       {children}
-    </div>
-  );
-}
-
-/* Flat stat row for the highlight grids (forest products, financial
-   products, vault strategies) — a label + a number, colour-coded per item
-   like the wallet asset list, divided by hairlines instead of boxed. */
-function StatCell({ name, value, sub, color }:{ name:string; value:string; sub?:string; color:string }) {
-  return (
-    <div style={{ textAlign: 'center', padding: '0 8px' }}>
-      <p style={{ fontSize: 12.5, fontWeight: 600, color: C.paperDim, margin: '0 0 4px' }}>{name}</p>
-      {sub && <p style={{ fontSize: 11, color: C.inkLight, margin: '0 0 8px' }}>{sub}</p>}
-      <p style={{ ...SERIF, fontSize: 22, fontWeight: 600, color, margin: 0 }}>{value}</p>
-    </div>
+      {hint && <span className="pf-hint">{hint}</span>}
+    </label>
   );
 }
 
@@ -155,13 +111,16 @@ export default function ProfilePage() {
     } catch { /* storage blocked: the URL is enough */ }
     if (privy.authenticated && target) router.replace(target);
   }, [privy.authenticated, router]);
+
   const [profile, setProfile] = useState<Profile>({ ...EMPTY });
-  const [saved,   setSaved]   = useState(false);
-  const [saving,  setSaving]  = useState(false);
-  const [copied,  setCopied]  = useState(false);
-  const [tab,     setTab]     = useState<'personal'|'cfa'|'sme'|'chama'|'prefs'>('personal');
-  const [toast,   setToast]   = useState('');
-  const [editing, setEditing] = useState(false);
+  // The last saved version, to know when there are unsaved changes.
+  const [baseline, setBaseline] = useState(JSON.stringify(EMPTY));
+  const [saving, setSaving] = useState(false);
+  const [copied, setCopied] = useState(false);
+  const [toast, setToast] = useState<{ text: string; ok: boolean } | null>(null);
+  const [points, setPoints] = useState<{ total: number; lifetime: number } | null>(null);
+
+  const say = (text: string, ok: boolean) => { setToast({ text, ok }); setTimeout(() => setToast(null), 3200); };
 
   const getAuthHeader = async (): Promise<Record<string, string>> => {
     try {
@@ -172,32 +131,41 @@ export default function ProfilePage() {
     }
   };
 
+  const loaded = (p: Profile) => { setProfile(p); setBaseline(JSON.stringify(p)); };
+
   const load = useCallback(async (addr: string) => {
     try {
       let extra = '';
       const headers = await getAuthHeader();
       // No Privy session → prove ownership with a wagmi wallet signature.
       if (!headers.authorization && isConnected) {
-        const timestamp = Date.now();
+        const timestamp = nowMs();
         const signature = await signMessageAsync({ message: buildOwnershipChallenge(addr, timestamp) });
         extra = `&signature=${encodeURIComponent(signature)}&timestamp=${timestamp}`;
       }
       const r = await fetch(`/api/profile?wallet=${addr}${extra}`, { headers });
       const { profile: p } = await r.json();
-      setProfile(p ? { ...EMPTY, ...p } : { ...EMPTY, walletAddress: addr });
-    } catch { setProfile({ ...EMPTY, walletAddress: addr }); }
+      loaded(p ? clean(p) : { ...EMPTY, walletAddress: addr });
+    } catch { loaded({ ...EMPTY, walletAddress: addr }); }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isConnected, signMessageAsync, privy.authenticated]);
 
   // Signed in with email/Google: the profile belongs to that account (no
   // wallet needed). Wallet-only visitors keep the older wallet-signed flow.
   const loadMe = useCallback(async () => {
+    const headers = await getAuthHeader();
     try {
-      const r = await fetch('/api/profile/me', { headers: await getAuthHeader() });
-      if (!r.ok) return;
-      const { profile: p } = await r.json();
-      if (p) setProfile({ ...EMPTY, ...p, walletAddress: p.wallet ?? '' });
+      const r = await fetch('/api/profile/me', { headers });
+      if (r.ok) {
+        const { profile: p } = await r.json();
+        if (p) loaded(clean({ ...p, walletAddress: p.wallet ?? '' }));
+      }
     } catch { /* keep the empty form */ }
+    try {
+      const r = await fetch('/api/airdrop/me', { headers });
+      const d = await r.json().catch(() => null);
+      if (r.ok && d?.data) setPoints({ total: d.data.totalPoints ?? 0, lifetime: d.data.lifetimePoints ?? d.data.totalPoints ?? 0 });
+    } catch { /* points are optional here */ }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [privy.authenticated]);
 
@@ -206,28 +174,35 @@ export default function ProfilePage() {
     if (effectiveAddress) load(effectiveAddress);
   }, [privy.authenticated, effectiveAddress, load, loadMe]);
 
-  const set = (k:keyof Profile) => (v:string|boolean) =>
-    setProfile(p=>({ ...p, [k]:v }));
+  const set = (k: keyof Profile) => (v: string) => setProfile((p) => ({ ...p, [k]: v }));
+  const dirty = JSON.stringify(profile) !== baseline;
 
   const save = async () => {
+    if (!profile.displayName.trim()) { say('Please add your name first', false); focusField('displayName'); return; }
     if (privy.authenticated) {
       setSaving(true);
       try {
         const r = await fetch('/api/profile/me', { method: 'POST', headers: { 'Content-Type': 'application/json', ...(await getAuthHeader()) }, body: JSON.stringify(profile) });
         const d = await r.json().catch(() => ({}));
-        if (r.ok) { setSaved(true); setToast('Profile saved'); setEditing(false); setTimeout(() => { setSaved(false); setToast(''); }, 3000); }
-        else setToast(d.error ?? 'Save failed. Try again');
-      } catch { setToast('Network error'); } finally { setSaving(false); }
+        if (r.ok) {
+          const next = { ...profile, updatedAt: nowIso() };
+          loaded(next);
+          say('Profile saved', true);
+        } else {
+          say(d.error ?? 'Save failed. Try again', false);
+          if (d.field) focusField(d.field);
+        }
+      } catch { say('No connection. Try again', false); } finally { setSaving(false); }
       return;
     }
-    if (!effectiveAddress) { setToast('Sign in with your email first'); return; }
+    if (!effectiveAddress) { say('Sign in with your email first', false); return; }
     setSaving(true);
     try {
       const headers = await getAuthHeader();
       let body: Record<string, unknown> = { ...profile, walletAddress: effectiveAddress };
       // No Privy session → attach a signed wallet-ownership challenge.
       if (!headers.authorization) {
-        const timestamp = Date.now();
+        const timestamp = nowMs();
         const signature = await signMessageAsync({ message: buildOwnershipChallenge(effectiveAddress, timestamp) });
         body = { ...body, signature, timestamp };
       }
@@ -235,490 +210,369 @@ export default function ProfilePage() {
         method:'POST', headers:{'Content-Type':'application/json', ...headers},
         body:JSON.stringify(body),
       });
-      if (r.ok) {
-        setSaved(true); setToast('Profile saved'); setEditing(false);
-        setTimeout(()=>{ setSaved(false); setToast(''); }, 3000);
-      } else setToast('Save failed. Try again');
-    } catch { setToast('Network error'); }
+      if (r.ok) { loaded({ ...profile, updatedAt: nowIso() }); say('Profile saved', true); }
+      else say('Save failed. Try again', false);
+    } catch { say('No connection. Try again', false); }
     finally { setSaving(false); }
+  };
+
+  const signOut = async () => {
+    if (isConnected) disconnect();
+    try { await privy.logout(); } catch { /* already signed out */ }
+    loaded({ ...EMPTY });
+    setPoints(null);
   };
 
   const copyAddr = () => {
     if (!effectiveAddress) return;
-    navigator.clipboard.writeText(effectiveAddress);
-    setCopied(true); setTimeout(()=>setCopied(false), 1600);
+    void navigator.clipboard.writeText(effectiveAddress);
+    setCopied(true); setTimeout(() => setCopied(false), 1600);
   };
 
-  const fields   = [profile.displayName,profile.phone,profile.county,profile.cfaGroup,profile.cfaRole];
-  const complete = Math.round(fields.filter(Boolean).length / fields.length * 100);
-  const initials = profile.displayName
-    ? profile.displayName.split(' ').map(w=>w[0]).join('').toUpperCase().slice(0,2)
-    : 'KN';
+  const focusField = (key: string) => {
+    const el = document.getElementById(`pf-${key}`);
+    if (!el) return;
+    el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    setTimeout(() => (el as HTMLInputElement).focus({ preventScroll: true }), 350);
+  };
 
-  const TABS = [
-    { id:'personal', label:'Personal',  color: C.goldLight, Icon:Award    },
-    { id:'cfa',      label:'CFA Group', color: '#7DC383',   Icon:Trees    },
-    // Business, Chama and DeFi preference tabs are hidden with the crypto features.
-  ] as const;
+  const done = STEPS.filter((s) => String(profile[s.key] ?? '').trim()).length;
+  const complete = Math.round((done / STEPS.length) * 100);
+  const missing = STEPS.filter((s) => !String(profile[s.key] ?? '').trim());
+  const initials = profile.displayName
+    ? profile.displayName.trim().split(/\s+/).map((w) => w[0]).join('').toUpperCase().slice(0, 2)
+    : (profile.email ?? privy.email ?? 'K')[0].toUpperCase();
+  const email = profile.email ?? privy.email;
+  const levelIdx = points ? LEVELS.reduce((i, l, j) => (points.lifetime >= l.from ? j : i), 0) : 0;
+  const nextLevel = LEVELS[levelIdx + 1];
 
   return (
-    <main style={{ minHeight:'100dvh', background: C.bg, color: C.paper, fontFamily: "'Inter', system-ui, sans-serif", paddingBottom:100, position:'relative' }}>
-      <style>{`
-        /* min-width: 0 on the grid items — without it, the mobile tab row's
-           non-shrinking horizontal-scroll buttons drag the whole grid track
-           (and the page) wider than the viewport instead of scrolling
-           within it, the same CSS Grid + horizontal-scroll-child overflow
-           the home page's Quick Actions strip hit. */
-        .profile-main-grid > div { min-width: 0; }
-        .profile-tabbar { scrollbar-width: none; }
-        .profile-tabbar::-webkit-scrollbar { display: none; }
-        @media (max-width: 760px) {
-          .profile-container { padding: 0 20px !important; }
-          .profile-hero-row { flex-direction: column !important; align-items: center !important; text-align: center !important; gap: 16px !important; }
-          .profile-main-grid { grid-template-columns: 1fr !important; gap: 28px !important; }
-          .profile-2col, .profile-3col, .profile-4col { grid-template-columns: 1fr 1fr !important; gap: 24px !important; }
-        }
-        @media (max-width: 480px) {
-          .profile-2col, .profile-3col, .profile-4col { grid-template-columns: 1fr !important; }
-        }
-        .profile-quicklink:hover .profile-quicklink-title { color: ${C.goldLight}; }
-      `}</style>
+    <main className="pf">
+      <style>{CSS}</style>
 
-      {/* Cover banner — flat pine gradient, no glowing orbs or stripe
-          textures. A real profile cover is a simple backdrop, not a light show. */}
-      <div style={{ position:'relative', height:180, overflow:'hidden', borderBottom: `1px solid ${C.hairline}` }}>
-        <div style={{ position:'absolute', inset:0, background:'#12301F' }}/>
-      </div>
-
-      {/* IDENTITY HERO — avatar + name */}
-      <div className="profile-container" style={{ maxWidth:1120, margin:'0 auto', padding:'0 24px', position:'relative' }}>
-        <div className="profile-hero-row" style={{ marginTop:-64, display:'flex', alignItems:'flex-end', gap:28 }}>
-
-          {/* Avatar */}
-          <div style={{ flexShrink:0, position:'relative' }}>
-            <div style={{
-              width:116, height:116, borderRadius:'50%', background: C.gold, border: `4px solid ${C.bg}`,
-              display:'flex', alignItems:'center', justifyContent:'center',
-              ...SERIF, fontSize:40, fontWeight:600, color: C.ink,
-            }}>
-              {initials}
-            </div>
-            {canAuth && (
-              <span style={{ position:'absolute', bottom:6, right:4, width:18, height:18, borderRadius:'50%', background: C.goldLight, border:`3px solid ${C.bg}` }}/>
-            )}
-          </div>
-
-          {/* Name + meta */}
-          <div style={{ flex:1, paddingBottom:12 }}>
-            <div style={{ display:'flex', alignItems:'center', gap:12, marginBottom:8, flexWrap: 'wrap' }}>
-              <h1 style={{ ...SERIF, fontSize:'clamp(24px,3vw,34px)', fontWeight:700, margin:0, letterSpacing:'-0.5px', color: C.paper }}>
-                {profile.displayName || <span style={{ color: C.inkLight }}>Add your name</span>}
-              </h1>
-              {canAuth && (
-                <span style={{ ...MONO, padding:'4px 12px', borderRadius:999, border: `1px solid ${C.hairline}`, fontSize: 12, fontWeight:600, letterSpacing: 0.6, color: C.goldLight, flexShrink:0 }}>
-                  KAI MEMBER
-                </span>
-              )}
-            </div>
-            <div style={{ display:'flex', alignItems:'center', gap:20, flexWrap:'wrap' }}>
-              {profile.county && (
-                <span style={{ display:'flex', alignItems:'center', gap:6, fontSize:13.5, color: C.paperDim }}>
-                  <MapPin size={14} color={C.goldLight}/> {profile.county}, Kenya
-                </span>
-              )}
-              {profile.phone && (
-                <span style={{ display:'flex', alignItems:'center', gap:6, fontSize:13.5, color: C.paperDim }}>
-                  <Phone size={14} color={C.goldLight}/> {profile.phone}
-                </span>
-              )}
-              {profile.email && (
-                <span style={{ display:'flex', alignItems:'center', gap:6, fontSize:13.5, color: C.paperDim }}>{profile.email}</span>
-              )}
-              {canAuth && effectiveAddress && (
-                <button onClick={copyAddr} style={{ display:'flex', alignItems:'center', gap:6, background:'none', border:'none', cursor:'pointer', fontSize:12.5, color: C.inkLight, fontFamily: "'Inter', system-ui, sans-serif", padding:0 }}>
-                  {effectiveAddress?.slice(0,10)}...{effectiveAddress?.slice(-6)}
-                  {copied ? <CheckCircle size={12} color={C.goldLight}/> : <Copy size={12}/>}
-                </button>
-              )}
-            </div>
-          </div>
-
-          {/* Action buttons */}
-          <div style={{ display:'flex', gap:10, paddingBottom:12, flexShrink:0 }}>
-            <button onClick={()=>setEditing(v=>!v)}
-              style={{ display:'flex', alignItems:'center', gap:8, padding:'11px 20px', borderRadius:999, border: `1px solid ${C.hairline}`, cursor:'pointer', background:'none', color: C.paperDim, fontSize:13, fontWeight:700, fontFamily: 'inherit' }}>
-              <Edit3 size={15}/> {editing ? 'Cancel' : 'Edit Profile'}
+      {!canAuth ? (
+        /* ---------- Signed out: the one place to sign in ---------- */
+        <section className="pf-signin">
+          <div className="pf-signin-photo" aria-hidden="true" />
+          <div className="pf-signin-card">
+            <span className="pf-badge"><Trees size={14} /> KAI conservation</span>
+            <h1>Sign in to KAI</h1>
+            <p className="pf-muted">Use your email or Google account. No wallet needed.</p>
+            <ul className="pf-benefits">
+              <li><CheckCircle2 size={17} /> Save your nursery and planting records</li>
+              <li><CheckCircle2 size={17} /> Earn points and badges for taking part</li>
+              <li><CheckCircle2 size={17} /> Join your CFA group and its Information Hub</li>
+            </ul>
+            <button className="pf-btn pf-btn--wide" onClick={() => { void privy.signInWithGoogle(); }}>
+              <span className="pf-g" aria-hidden="true">G</span> Continue with Google
             </button>
-            <button onClick={save} disabled={saving||!canAuth}
-              style={{ display:'flex', alignItems:'center', gap:8, padding:'11px 22px', borderRadius:999, border:'none', cursor:canAuth?'pointer':'not-allowed', background: saved ? 'rgba(200,155,60,0.18)' : C.gold, color: saved ? C.goldLight : C.ink, fontSize:13, fontWeight:700, fontFamily: 'inherit', opacity: canAuth ? 1 : 0.5 }}>
-              {saving?<RefreshCw size={15} style={{animation:'spin 1s linear infinite'}}/>:saved?<CheckCircle size={15}/>:<Save size={15}/>}
-              {saving?'Saving':saved?'Saved':'Save Profile'}
+            <button className="pf-btn pf-btn--ghost pf-btn--wide" onClick={() => { void privy.signInWithEmail(); }}>
+              <Mail size={16} /> Continue with email
             </button>
+            <p className="pf-small">After you sign in, we take you back to the page you came from.</p>
           </div>
-        </div>
-
-        {/* completion bar */}
-        <div style={{ marginTop:24, display:'flex', alignItems:'center', gap:16 }}>
-          <span style={label}>Profile {complete}%</span>
-          <div style={{ flex:1, height:3, borderRadius:2, background: C.hairline }}>
-            <motion.div initial={{ width:0 }} animate={{ width:`${complete}%` }} transition={{ duration:1, ease:'easeOut' }}
-              style={{ height:'100%', borderRadius:2, background: C.gold }}/>
-          </div>
-        </div>
-
-        {!canAuth && (
-          <div style={{ marginTop:18, padding:'16px 18px', borderRadius:16, background:'#12301F', borderLeft:`3px solid ${C.gold}`, display:'flex', flexWrap:'wrap', alignItems:'center', justifyContent:'space-between', gap:12 }}>
-            <div>
-              <p style={{ margin:0, fontWeight:700, fontSize:15.5 }}>Sign in or create your profile with your email</p>
-              <p style={{ margin:'2px 0 0', color: C.inkLight, fontSize:13.5 }}>
-                Your email links everything you submit. No wallet needed. After you sign in, we take you back to the page you came from.
-              </p>
-            </div>
-            <div style={{ display:'flex', gap:8, flexWrap:'wrap' }}>
-              <button onClick={() => { void privy.signInWithEmail(); }} style={{ padding:'10px 16px', borderRadius:999, border:'none', background:C.gold, color:C.ink, fontWeight:700, fontSize:13.5, cursor:'pointer', fontFamily:'inherit' }}>Sign in with email</button>
-              <button onClick={() => { void privy.signInWithGoogle(); }} style={{ padding:'10px 16px', borderRadius:999, border:'none', background:'rgba(246,242,231,0.08)', color:C.paper, fontWeight:700, fontSize:13.5, cursor:'pointer', fontFamily:'inherit' }}>Sign in with Google</button>
-            </div>
-          </div>
-        )}
-
-        {/* membership tags */}
-        <div style={{ display:'flex', gap:10, flexWrap:'wrap', marginTop:18 }}>
-          {profile.cfaGroup && (
-            <Link href="/nursery" prefetch={false} style={{ textDecoration:'none', display:'flex', alignItems:'center', gap:7, padding:'6px 14px', borderRadius:999, border: '1px solid rgba(125,195,131,0.35)' }}>
-              <Trees size={13} color="#7DC383"/>
-              <span style={{ fontSize:12.5, fontWeight:700, color:'#7DC383' }}>{profile.cfaGroup}</span>
-            </Link>
-          )}
-          {!profile.cfaGroup && (
-            <span style={{ fontSize:13, color: C.inkLight, fontStyle:'italic' }}>
-              No memberships yet. Fill in the tabs below to add them
-            </span>
-          )}
-        </div>
-
-        {/* Horizontal tab bar — the way a real profile (Facebook, LinkedIn)
-            switches between About/Posts/Photos: a row of tabs under the
-            identity block, not a settings-style sidebar list. */}
-        <div className="profile-tabbar" style={{ marginTop:32, display:'flex', gap:28, borderBottom: `1px solid ${C.hairline}`, overflowX:'auto' }}>
-          {TABS.map((t) => (
-            <button key={t.id}
-              onClick={()=>setTab(t.id)}
-              style={{
-                display:'flex', alignItems:'center', gap:8, padding:'14px 2px',
-                border:'none', cursor:'pointer', background: 'none', flexShrink:0,
-                color: tab===t.id ? t.color : C.inkLight,
-                borderBottom: tab===t.id ? `2px solid ${t.color}` : '2px solid transparent',
-                marginBottom:-1,
-                fontSize:14, fontWeight: tab===t.id ? 700 : 500, fontFamily: 'inherit',
-              }}>
-              <t.Icon size={16}/>
-              {t.label}
-            </button>
-          ))}
-        </div>
-
-        {/* MAIN BODY: About sidebar + active tab content — the same split
-            Facebook uses (Intro/details on the left, the selected view's
-            content on the right), instead of a form buried under settings
-            nav. */}
-        <div className="profile-main-grid" style={{ marginTop:32, display:'grid', gridTemplateColumns:'240px 1fr', gap:48 }}>
-
-          {/* LEFT: About panel */}
-          <div className="profile-about">
-            <p style={{ ...label, margin: '0 0 14px' }}>About</p>
-
-            {canAuth ? (
-              <div style={{ paddingBottom:20, borderBottom: `1px solid ${C.hairline}`, marginBottom:20 }}>
-                <p style={{ fontSize:11.5, color: C.inkLight, margin: '0 0 10px' }}>Linked Wallet</p>
-                <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:12 }}>
-                  <Wallet size={14} color={C.goldLight}/>
-                  <span style={{ ...MONO, fontSize:11, color: C.inkLight, flex:1, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>
-                    {effectiveAddress}
-                  </span>
-                  <button onClick={copyAddr} style={{ background:'none', border:'none', cursor:'pointer', color: C.inkLight, padding:0, display:'flex' }}>
-                    {copied?<CheckCircle size={12} color={C.goldLight}/>:<Copy size={12}/>}
-                  </button>
-                  <a href={`https://testnet.snowtrace.io/address/${effectiveAddress}`} target="_blank" rel="noreferrer" style={{ color: C.goldLight, display:'flex' }}>
-                    <ExternalLink size={12}/>
-                  </a>
+        </section>
+      ) : (
+        <>
+          {/* ---------- Header ---------- */}
+          <header className="pf-hero">
+            <div className="pf-cover" aria-hidden="true" />
+            <div className="pf-wrap pf-hero-row">
+              <div className="pf-avatar" aria-hidden="true">{initials}</div>
+              <div className="pf-who">
+                <h1>{profile.displayName || 'Welcome to KAI'}</h1>
+                <div className="pf-meta">
+                  {email && <span><Mail size={14} /> {email}</span>}
+                  {profile.county && <span><MapPin size={14} /> {profile.county}, Kenya</span>}
                 </div>
-                {isConnected && (
-                  <button onClick={()=>disconnect()} style={{ display:'flex', alignItems:'center', gap:7, padding:0, border:'none', background:'none', cursor:'pointer', color: C.red, fontSize:12.5, fontWeight:600, fontFamily:'inherit' }}>
-                    <LogOut size={13}/> Disconnect Wallet
-                  </button>
-                )}
-              </div>
-            ) : (
-              <div style={{ paddingBottom:20, borderBottom: `1px solid ${C.hairline}`, marginBottom:20 }}>
-                <Link href="/" style={{ textDecoration:'none', display:'flex', alignItems:'center', gap:9, color: C.paperDim, fontSize:13.5 }}>
-                  <Wallet size={14} color={C.goldLight}/> Add a wallet (optional, later)
-                  <ChevronRight size={13} color={C.goldLight} style={{ marginLeft:'auto' }}/>
-                </Link>
-              </div>
-            )}
-
-            {/* quick links */}
-            <div>
-              <p style={{ fontSize:11.5, color: C.inkLight, margin: '0 0 12px' }}>Quick Access</p>
-              {[
-                { label:'Nursery groups',   href:'/nursery', Icon:Trees     },
-                { label:'Information Hubs', href:'/hubs',    Icon:Users     },
-                { label:'Verification',     href:'/mrv',     Icon:BarChart3 },
-              ].map(l => (
-                <Link key={l.label} href={l.href} prefetch={false} className="profile-quicklink" style={{ textDecoration:'none', display:'flex', alignItems:'center', gap:10, padding:'7px 0' }}>
-                  <l.Icon size={15} color={C.goldLight}/>
-                  <span className="profile-quicklink-title" style={{ fontSize:13, fontWeight:600, color: C.paperDim, transition: 'color 0.15s ease' }}>{l.label}</span>
-                  <ChevronRight size={12} color={C.inkLight} style={{ marginLeft:'auto' }}/>
-                </Link>
-              ))}
-            </div>
-          </div>
-
-          {/* RIGHT: active tab's content */}
-          <div>
-            <AnimatePresence mode="wait">
-              <motion.div key={tab}
-                initial={{ opacity:0, y:10 }} animate={{ opacity:1, y:0 }} exit={{ opacity:0, y:-8 }}
-                transition={{ duration:0.18 }}>
-
-                {/* Section heading */}
-                <div style={{ marginBottom:32 }}>
-                  <div style={{ display:'flex', alignItems:'center', gap:11, marginBottom:8 }}>
-                    {(() => { const t=TABS.find(x=>x.id===tab)!; return <t.Icon size={19} color={t.color} style={{ flexShrink:0 }}/>; })()}
-                    <h2 style={{ ...SERIF, fontSize:22, fontWeight:600, margin:0, letterSpacing:'-0.3px', color: C.paper }}>
-                      {tab==='personal' && <>Personal <span style={{color:C.goldLight}}>Information</span></>}
-                      {tab==='cfa'      && <>CFA <span style={{color:'#7DC383'}}>Group Membership</span></>}
-                      {tab==='sme'      && <>Business <span style={{color:'#6FA8DC'}}>Profile</span></>}
-                      {tab==='chama'    && <>Chama <span style={{color:'#C48FE0'}}>Membership</span></>}
-                      {tab==='prefs'    && <>KAI <span style={{color:C.gold}}>Ecosystem Preferences</span></>}
-                    </h2>
-                    {editing && (
-                      <span style={{ marginLeft:'auto', ...MONO, fontSize: 12, fontWeight:700, color: C.goldLight, flexShrink:0 }}>
-                        EDITING
-                      </span>
-                    )}
-                  </div>
-                  <p style={{ fontSize:14, color: C.inkLight, margin:0, lineHeight:1.6 }}>
-                    {tab==='personal' && 'Your name and contact details on KAI Nuvari'}
-                    {tab==='cfa'      && 'Your Community Forest Association and nursery group'}
-                    {tab==='sme'      && 'Unlock working capital loans, yBOB merchant accounts and revenue tokenisation on Avalanche'}
-                    {tab==='chama'    && 'Pool contributions auto-routed to the highest-yield vault strategy. Current best: 22% APY'}
-                    {tab==='prefs'    && 'Personalise your DeFi risk strategy and vault preferences'}
-                  </p>
+                <div className="pf-chips">
+                  <span className="pf-chip pf-chip--gold">KAI member</span>
+                  {profile.cfaGroup && <Link href="/nursery" prefetch={false} className="pf-chip pf-chip--green"><Trees size={13} /> {profile.cfaGroup}{profile.cfaRole ? ` · ${profile.cfaRole}` : ''}</Link>}
+                  {points && <Link href="/mine" prefetch={false} className="pf-chip"><Gift size={13} /> {LEVELS[levelIdx].name}</Link>}
                 </div>
+              </div>
+              <button className="pf-btn pf-btn--ghost pf-signout" onClick={() => { void signOut(); }}><LogOut size={15} /> Sign out</button>
+            </div>
+          </header>
 
-                {/* ── PERSONAL ── */}
-                {tab==='personal' && (
-                  <div className="profile-2col" style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:'28px 48px' }}>
-                    <div style={{ gridColumn:'1/-1' }}>
-                      <FormRow label="Display Name *">
-                        <KInput value={profile.displayName} onChange={set('displayName')} placeholder="e.g. Grace Wangari" big/>
-                      </FormRow>
-                    </div>
-                    <FormRow label="Phone Number">
-                      <KInput value={profile.phone} onChange={set('phone')} placeholder="+254 7..." type="tel"/>
-                    </FormRow>
-                    <FormRow label="National ID">
-                      <KInput value={profile.idNumber} onChange={set('idNumber')} placeholder="ID number"/>
-                    </FormRow>
-                    <div style={{ gridColumn:'1/-1' }}>
-                      <FormRow label="County / Region">
-                        <KSelect value={profile.county} onChange={set('county')} options={COUNTIES} placeholder="Select your county..."/>
-                      </FormRow>
-                    </div>
-                    {canAuth && (
-                      <div style={{ gridColumn:'1/-1', paddingTop:8 }}>
-                        <p style={{ ...label, margin: '0 0 10px' }}>Linked Wallet</p>
-                        <div style={{ display:'flex', alignItems:'center', gap:10 }}>
-                          <Wallet size={15} color={C.goldLight}/>
-                          <span style={{ ...MONO, fontSize:12.5, color: C.paperDim, flex:1, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{effectiveAddress}</span>
-                          <a href={`https://testnet.snowtrace.io/address/${effectiveAddress}`} target="_blank" rel="noreferrer" style={{ color: C.goldLight, display:'flex' }}>
-                            <ExternalLink size={13}/>
-                          </a>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                )}
-
-                {/* ── CFA ── */}
-                {tab==='cfa' && (
-                  <div className="profile-2col" style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:'28px 48px' }}>
-                    <div style={{ gridColumn:'1/-1' }}>
-                      <FormRow label="CFA Group Name *">
-                        <KInput value={profile.cfaGroup} onChange={set('cfaGroup')} placeholder="e.g. Mau Forest Guardians Group A" big/>
-                      </FormRow>
-                    </div>
-                    <FormRow label="Your Role">
-                      <KSelect value={profile.cfaRole} onChange={set('cfaRole')} options={CFA_ROLES} placeholder="Select role..."/>
-                    </FormRow>
-                    <FormRow label="Join Year">
-                      <KInput value={profile.cfaJoinYear} onChange={set('cfaJoinYear')} placeholder="2022" type="number"/>
-                    </FormRow>
-                    <div style={{ gridColumn:'1/-1' }}>
-                      <FormRow label="Forest Region">
-                        <KInput value={profile.cfaRegion} onChange={set('cfaRegion')} placeholder="e.g. Rift Valley – Mau Complex"/>
-                      </FormRow>
-                    </div>
-                    <div style={{ gridColumn:'1/-1', marginTop:8, paddingTop:24, borderTop: `1px solid ${C.hairline}` }}>
-                      <p style={{ ...label, margin: '0 0 18px' }}>Linked Forest Products</p>
-                      <div className="profile-4col" style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:16 }}>
-                        {[
-                          { name:'Honey Reserve', apy:'14.0%', color:'#E4C878' },
-                          { name:'Med. Herbs',    apy:'16.0%', color:'#7DC383' },
-                          { name:'Seed Bank',     apy:'6.5%',  color:'#C89B3C' },
-                          { name:'Water Rights',  apy:'5.8%',  color:'#6FA8DC' },
-                        ].map(p => (
-                          <StatCell key={p.name} name={p.name} value={p.apy} color={p.color}/>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                {/* ── SME ── */}
-                {tab==='sme' && (
-                  <div className="profile-2col" style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:'28px 48px' }}>
-                    <div style={{ gridColumn:'1/-1' }}>
-                      <FormRow label="Business Name *">
-                        <KInput value={profile.businessName} onChange={set('businessName')} placeholder="e.g. Kipkelion Farm Supplies" big/>
-                      </FormRow>
-                    </div>
-                    <FormRow label="Business Type">
-                      <KSelect value={profile.businessType} onChange={set('businessType')} options={BIZ_TYPES} placeholder="Select type..."/>
-                    </FormRow>
-                    <FormRow label="Annual Turnover (KES)">
-                      <KInput value={profile.annualTurnover} onChange={set('annualTurnover')} placeholder="500000" type="number"/>
-                    </FormRow>
-                    <div style={{ gridColumn:'1/-1' }}>
-                      <FormRow label="Business Location">
-                        <KInput value={profile.businessLocation} onChange={set('businessLocation')} placeholder="e.g. Kipkelion, Kericho County"/>
-                      </FormRow>
-                    </div>
-                    <div style={{ gridColumn:'1/-1' }}>
-                      <FormRow label="M-Pesa Till / Paybill">
-                        <KInput value={profile.mpesaNumber} onChange={set('mpesaNumber')} placeholder="e.g. 4056789"/>
-                      </FormRow>
-                    </div>
-                    <div style={{ gridColumn:'1/-1', marginTop:8, paddingTop:24, borderTop: `1px solid ${C.hairline}` }}>
-                      <p style={{ ...label, margin: '0 0 18px' }}>Available Financial Products</p>
-                      <div className="profile-3col" style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:16 }}>
-                        {[
-                          { name:'Working Capital Loan', rate:'8% p.a.',  color:'#7DC383' },
-                          { name:'Inventory Finance',    rate:'6% p.a.',  color:'#6FA8DC' },
-                          { name:'Merchant yBOB',        rate:'7.5% APY', color:'#C48FE0' },
-                        ].map(p => (
-                          <StatCell key={p.name} name={p.name} value={p.rate} color={p.color}/>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                {/* ── CHAMA ── */}
-                {tab==='chama' && (
-                  <div className="profile-2col" style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:'28px 48px' }}>
-                    <div style={{ gridColumn:'1/-1' }}>
-                      <FormRow label="Chama / SACCO Name *">
-                        <KInput value={profile.chamaName} onChange={set('chamaName')} placeholder="e.g. Mwanzo Mpya Women Savings Chama" big/>
-                      </FormRow>
-                    </div>
-                    <FormRow label="Your Role">
-                      <KSelect value={profile.chamaRole} onChange={set('chamaRole')} options={CHAMA_ROLES} placeholder="Select role..."/>
-                    </FormRow>
-                    <FormRow label="Monthly Contribution (KES)">
-                      <KInput value={profile.monthlyContrib} onChange={set('monthlyContrib')} placeholder="2000" type="number"/>
-                    </FormRow>
-                    <div style={{ gridColumn:'1/-1' }}>
-                      <FormRow label="Registration Number (optional)">
-                        <KInput value={profile.chamaRegNo} onChange={set('chamaRegNo')} placeholder="e.g. SS/NGO/2021/4821"/>
-                      </FormRow>
-                    </div>
-                    <div style={{ gridColumn:'1/-1', marginTop:8, paddingTop:24, borderTop: `1px solid ${C.hairline}` }}>
-                      <p style={{ ...label, margin: '0 0 18px' }}>Vault Strategies</p>
-                      <div className="profile-3col" style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:16 }}>
-                        {[
-                          { name:'Conservative KES', apy:'12%', risk:'Very Low', color:'#7DC383' },
-                          { name:'Balanced yBOB',    apy:'18%', risk:'Low',      color:'#6FA8DC' },
-                          { name:'High Yield AVAX',  apy:'24%', risk:'Medium',   color:'#E4C878' },
-                        ].map(v => (
-                          <StatCell key={v.name} name={v.name} value={v.apy} sub={`Risk: ${v.risk}`} color={v.color}/>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                {/* ── PREFS ── */}
-                {tab==='prefs' && (
-                  <div style={{ display:'flex', flexDirection:'column', gap:32 }}>
-                    <div>
-                      <p style={{ ...label, margin: '0 0 18px' }}>Risk Tolerance</p>
-                      <div className="profile-3col" style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:16 }}>
-                        {RISK_LEVELS.map(r => (
-                          <button key={r.v}
-                            onClick={()=>set('riskTolerance')(r.v)}
-                            style={{
-                              padding:'18px 12px', borderRadius:10, cursor:'pointer', textAlign:'center', fontFamily: 'inherit',
-                              border: profile.riskTolerance===r.v ? `1px solid ${r.color}` : `1px solid ${C.hairline}`,
-                              background: 'none', transition:'border-color 0.18s ease',
-                            }}>
-                            {profile.riskTolerance===r.v && <CheckCircle size={15} color={r.color} style={{ display:'block', margin:'0 auto 8px' }}/>}
-                            <p style={{ fontSize:14, fontWeight:700, color: C.paper, margin:'0 0 4px' }}>{r.label}</p>
-                            <p style={{ fontSize:11.5, color: C.inkLight, margin:'0 0 10px' }}>Expected yield</p>
-                            <p style={{ ...SERIF, fontSize:22, fontWeight:600, color:r.color, margin:0 }}>{r.apy}</p>
+          <div className="pf-wrap pf-grid">
+            <div className="pf-main">
+              {/* Profile strength: what is left, and a tap takes you there */}
+              <section className="pf-sec">
+                <div className="pf-strength-top">
+                  <h2>Profile strength</h2>
+                  <b>{complete}%</b>
+                </div>
+                <div className="pf-bar"><motion.span initial={{ width: 0 }} animate={{ width: `${complete}%` }} transition={{ duration: 0.8, ease: 'easeOut' }} /></div>
+                {missing.length ? (
+                  <ul className="pf-todo">
+                    {STEPS.map((s) => {
+                      const ok = !missing.includes(s);
+                      return (
+                        <li key={s.key}>
+                          <button type="button" onClick={() => focusField(s.key)} className={ok ? 'is-done' : ''} disabled={ok}>
+                            {ok ? <CheckCircle2 size={16} /> : <Circle size={16} />} {ok ? s.done : s.todo}
                           </button>
-                        ))}
-                      </div>
-                    </div>
-
-                    <FormRow label="Preferred Vault">
-                      <KSelect value={profile.preferredVault} onChange={set('preferredVault')} options={VAULTS} placeholder="Choose vault..."/>
-                    </FormRow>
-
-                    <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', paddingBottom:20, borderBottom: `1px solid ${C.hairline}` }}>
-                      <div>
-                        <p style={{ fontSize:14, fontWeight:700, color: C.paper, margin:'0 0 4px' }}>Notifications</p>
-                        <p style={{ fontSize:12.5, color: C.inkLight, margin:0 }}>Yield payouts, DAO votes, patrol alerts</p>
-                      </div>
-                      <button onClick={()=>set('notifications')(!profile.notifications)}
-                        style={{ width:44, height:24, borderRadius:12, border: `1px solid ${profile.notifications ? C.gold : C.hairline}`, cursor:'pointer', padding:0, background: profile.notifications ? 'rgba(200,155,60,0.18)' : 'none', transition:'all 0.2s', position:'relative', flexShrink:0 }}>
-                        <span style={{ position:'absolute', top:2, left: profile.notifications ? 22 : 2, width:18, height:18, borderRadius:'50%', background: profile.notifications ? C.goldLight : C.inkLight, transition:'left 0.2s' }}/>
-                      </button>
-                    </div>
-
-                    {profile.updatedAt && (
-                      <p style={{ fontSize:12, color: C.inkLight, margin:0 }}>
-                        Last saved: {new Date(profile.updatedAt).toLocaleString('en-KE')}
-                      </p>
-                    )}
-                  </div>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                ) : (
+                  <p className="pf-muted"><CheckCircle2 size={15} color={C.green} style={{ verticalAlign: '-3px' }} /> Your profile is complete. Thank you!</p>
                 )}
+              </section>
 
-                {/* Save button */}
-                <button onClick={save} disabled={saving||!canAuth}
-                  style={{ marginTop:40, width:'100%', padding:'15px', borderRadius:999, border:'none', cursor:canAuth?'pointer':'not-allowed', background: saved ? 'rgba(200,155,60,0.18)' : C.gold, color: saved ? C.goldLight : C.ink, fontSize:14, fontWeight:700, fontFamily: 'inherit', display:'flex', alignItems:'center', justifyContent:'center', gap:9, opacity: saving||!canAuth ? 0.5 : 1 }}>
-                  {saving?<><RefreshCw size={16} style={{animation:'spin 1s linear infinite'}}/> Saving profile…</>
-                  :saved?<><CheckCircle size={16}/> Profile Saved</>
-                  :<><Save size={16}/> Save Profile</>}
-                </button>
-              </motion.div>
-            </AnimatePresence>
+              {/* Personal details */}
+              <section className="pf-sec">
+                <h2>Personal details</h2>
+                <p className="pf-muted">How people in your group know and reach you.</p>
+                <div className="pf-fields">
+                  <div className="pf-span">
+                    <Field id="pf-displayName" label="Full name">
+                      <input id="pf-displayName" value={profile.displayName} onChange={(e) => set('displayName')(e.target.value)} placeholder="e.g. Grace Wangari" autoComplete="name" />
+                    </Field>
+                  </div>
+                  <Field id="pf-phone" label="Phone number">
+                    <input id="pf-phone" type="tel" value={profile.phone} onChange={(e) => set('phone')(e.target.value)} placeholder="+254 7XX XXX XXX" autoComplete="tel" />
+                  </Field>
+                  <Field id="pf-county" label="County">
+                    <select id="pf-county" value={profile.county} onChange={(e) => set('county')(e.target.value)} className={profile.county ? '' : 'is-empty'}>
+                      <option value="" disabled>Choose your county</option>
+                      {COUNTIES.map((c) => <option key={c} value={c}>{c}</option>)}
+                    </select>
+                  </Field>
+                  <div className="pf-span">
+                    <Field id="pf-idNumber" label="National ID (optional)" hint="Private. Only used to confirm CFA membership.">
+                      <input id="pf-idNumber" value={profile.idNumber} onChange={(e) => set('idNumber')(e.target.value)} placeholder="ID number" inputMode="numeric" />
+                    </Field>
+                  </div>
+                </div>
+              </section>
+
+              {/* CFA group */}
+              <section className="pf-sec">
+                <h2>CFA group</h2>
+                <p className="pf-muted">Your Community Forest Association and nursery group.</p>
+                <div className="pf-fields">
+                  <div className="pf-span">
+                    <Field id="pf-cfaGroup" label="Group name">
+                      <input id="pf-cfaGroup" value={profile.cfaGroup} onChange={(e) => set('cfaGroup')(e.target.value)} placeholder="e.g. Oloolua Youth Guardians" />
+                    </Field>
+                  </div>
+                  <Field id="pf-cfaRole" label="Your role">
+                    <select id="pf-cfaRole" value={profile.cfaRole} onChange={(e) => set('cfaRole')(e.target.value)} className={profile.cfaRole ? '' : 'is-empty'}>
+                      <option value="" disabled>Choose your role</option>
+                      {CFA_ROLES.map((r) => <option key={r} value={r}>{r}</option>)}
+                    </select>
+                  </Field>
+                  <Field id="pf-cfaJoinYear" label="Year you joined">
+                    <input id="pf-cfaJoinYear" type="number" inputMode="numeric" min={1990} max={2100} value={profile.cfaJoinYear} onChange={(e) => set('cfaJoinYear')(e.target.value)} placeholder="2024" />
+                  </Field>
+                  <div className="pf-span">
+                    <Field id="pf-cfaRegion" label="Forest or region">
+                      <input id="pf-cfaRegion" value={profile.cfaRegion} onChange={(e) => set('cfaRegion')(e.target.value)} placeholder="e.g. Oloolua Forest, Nairobi" />
+                    </Field>
+                  </div>
+                </div>
+                {profile.updatedAt && <p className="pf-small">Last saved {new Date(profile.updatedAt).toLocaleString('en-KE', { dateStyle: 'medium', timeStyle: 'short' })}</p>}
+              </section>
+            </div>
+
+            <aside className="pf-side">
+              {points && (
+                <Link href="/mine" prefetch={false} className="pf-points">
+                  <span className="pf-label">Your points</span>
+                  <b>{points.total.toLocaleString()}</b>
+                  <span className="pf-muted">{LEVELS[levelIdx].name}{nextLevel ? ` · ${(nextLevel.from - points.lifetime).toLocaleString()} to ${nextLevel.name}` : ' · top level'}</span>
+                  <span className="pf-points-go">Collect today&rsquo;s points <ChevronRight size={14} /></span>
+                </Link>
+              )}
+
+              <nav className="pf-sec pf-links" aria-label="Go to">
+                <h2>Go to</h2>
+                {GO_TO.map((l) => (
+                  <Link key={l.href} href={l.href} prefetch={false} className="pf-link">
+                    <span className="pf-link-icon"><l.Icon size={17} /></span>
+                    <span><b>{l.label}</b><small>{l.hint}</small></span>
+                    <ChevronRight size={15} className="pf-link-arrow" />
+                  </Link>
+                ))}
+              </nav>
+
+              <section className="pf-sec">
+                <h2>Account</h2>
+                <dl className="pf-account">
+                  {email && <><dt>Email</dt><dd>{email}</dd></>}
+                  {effectiveAddress && (
+                    <>
+                      <dt>Wallet <span className="pf-small">(optional)</span></dt>
+                      <dd>
+                        <button type="button" className="pf-copy" onClick={copyAddr} title="Copy wallet address">
+                          <Wallet size={13} /> {effectiveAddress.slice(0, 6)}…{effectiveAddress.slice(-4)}
+                          {copied ? <CheckCircle2 size={13} color={C.green} /> : <Copy size={13} />}
+                        </button>
+                      </dd>
+                    </>
+                  )}
+                </dl>
+                <button className="pf-btn pf-btn--ghost pf-btn--wide" onClick={() => { void signOut(); }}><LogOut size={15} /> Sign out</button>
+              </section>
+            </aside>
           </div>
-        </div>
-      </div>
 
-      {/* Toast */}
+          {/* Save bar: only when something changed */}
+          <AnimatePresence>
+            {dirty && (
+              <motion.div className="pf-savebar" initial={{ y: 80, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 80, opacity: 0 }} transition={{ duration: 0.22 }}>
+                <span>You have unsaved changes</span>
+                <div>
+                  <button className="pf-btn pf-btn--text" onClick={() => setProfile(JSON.parse(baseline))} disabled={saving}>Undo</button>
+                  <button className="pf-btn" onClick={() => { void save(); }} disabled={saving}>
+                    {saving ? <><RefreshCw size={15} className="pf-spin" /> Saving…</> : <><Save size={15} /> Save changes</>}
+                  </button>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </>
+      )}
+
       <AnimatePresence>
         {toast && (
-          <motion.div initial={{ opacity:0, y:12 }} animate={{ opacity:1, y:0 }} exit={{ opacity:0, y:12 }}
-            style={{ position:'fixed', bottom:100, left:'50%', transform:'translateX(-50%)', padding:'11px 24px', borderRadius:999, zIndex:200, whiteSpace:'nowrap', background: C.bg, border: `1px solid ${C.hairline}`, color: toast.includes('saved') ? C.goldLight : C.red, fontSize:13, fontWeight:700 }}>
-            {toast}
+          <motion.div className={`pf-toast ${toast.ok ? 'is-ok' : 'is-bad'}`} role="status"
+            initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 12 }}>
+            {toast.ok ? <CheckCircle2 size={15} /> : null} {toast.text}
           </motion.div>
         )}
       </AnimatePresence>
-
-      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
     </main>
   );
 }
+
+const CSS = `
+.pf { min-height: 100dvh; background: ${C.bg}; color: ${C.paper}; font-family: 'Inter', system-ui, sans-serif; padding-bottom: 140px; }
+.pf-wrap { max-width: 1080px; margin: 0 auto; padding: 0 24px; }
+.pf h1, .pf h2 { margin: 0; letter-spacing: -0.01em; }
+.pf-muted { color: ${C.inkLight}; font-size: 14px; margin: 4px 0 0; line-height: 1.55; }
+.pf-small { color: ${C.inkLight}; font-size: 12.5px; margin: 14px 0 0; }
+.pf-label { font-size: 12px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: ${C.inkLight}; }
+
+/* Buttons */
+.pf-btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 11px 20px; border-radius: 999px; border: none; background: ${C.gold}; color: ${C.ink}; font: 700 14px 'Inter', system-ui, sans-serif; cursor: pointer; transition: background-color .15s ease, transform .15s ease; min-height: 44px; }
+.pf-btn:hover { background: ${C.goldLight}; }
+.pf-btn:active { transform: scale(.98); }
+.pf-btn:disabled { opacity: .6; cursor: default; }
+.pf-btn--ghost { background: rgba(246,242,231,0.06); color: ${C.paper}; border: 1px solid ${C.line}; }
+.pf-btn--ghost:hover { background: rgba(246,242,231,0.12); }
+.pf-btn--text { background: none; color: ${C.paperDim}; padding: 11px 14px; }
+.pf-btn--text:hover { background: rgba(246,242,231,0.08); }
+.pf-btn--wide { width: 100%; }
+.pf-spin { animation: pf-spin 1s linear infinite; }
+@keyframes pf-spin { to { transform: rotate(360deg); } }
+
+/* Signed out */
+.pf-signin { position: relative; min-height: 100dvh; display: grid; place-items: center; padding: 32px 16px 120px; }
+.pf-signin-photo { position: absolute; inset: 0; background: linear-gradient(180deg, rgba(14,36,24,.6), rgba(14,36,24,.96) 70%), url('/images/home-hero.jpg') center / cover; }
+.pf-signin-card { position: relative; width: 100%; max-width: 420px; background: rgba(18,48,31,.92); border: 1px solid ${C.line}; border-radius: 24px; padding: 32px 28px; box-shadow: 0 30px 80px rgba(0,0,0,.35); display: flex; flex-direction: column; gap: 12px; }
+.pf-signin-card h1 { font-size: 30px; font-weight: 700; margin-top: 6px; }
+.pf-badge { align-self: flex-start; display: inline-flex; align-items: center; gap: 6px; padding: 5px 12px; border-radius: 999px; border: 1px solid rgba(228,200,120,.35); color: ${C.goldLight}; font-size: 12.5px; font-weight: 600; }
+.pf-benefits { list-style: none; padding: 0; margin: 8px 0 10px; display: grid; gap: 10px; }
+.pf-benefits li { display: flex; gap: 10px; align-items: flex-start; font-size: 14.5px; color: ${C.paperDim}; }
+.pf-benefits svg { color: ${C.green}; flex-shrink: 0; margin-top: 1px; }
+.pf-g { width: 20px; height: 20px; border-radius: 50%; background: #fff; color: #4285F4; display: grid; place-items: center; font-weight: 800; font-size: 13px; }
+.pf-signin-card .pf-small { text-align: center; margin-top: 6px; }
+
+/* Header */
+.pf-hero { position: relative; }
+.pf-cover { height: 190px; background: linear-gradient(180deg, rgba(14,36,24,.15), rgba(14,36,24,1)), url('/images/home-hero.jpg') center 40% / cover; }
+.pf-hero-row { display: flex; align-items: flex-end; gap: 22px; margin-top: -70px; position: relative; }
+.pf-avatar { width: 112px; height: 112px; flex-shrink: 0; border-radius: 50%; background: ${C.gold}; color: ${C.ink}; border: 4px solid ${C.bg}; display: grid; place-items: center; font-size: 40px; font-weight: 700; }
+.pf-who { flex: 1; min-width: 0; padding-bottom: 4px; }
+.pf-who h1 { font-size: clamp(24px, 3.2vw, 34px); font-weight: 700; overflow-wrap: anywhere; }
+.pf-meta { display: flex; flex-wrap: wrap; gap: 6px 18px; margin-top: 6px; color: ${C.paperDim}; font-size: 14px; }
+.pf-meta span { display: inline-flex; align-items: center; gap: 6px; min-width: 0; overflow-wrap: anywhere; }
+.pf-meta svg { color: ${C.goldLight}; flex-shrink: 0; }
+.pf-chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+.pf-chip { display: inline-flex; align-items: center; gap: 6px; padding: 5px 12px; border-radius: 999px; border: 1px solid ${C.line}; color: ${C.paperDim}; font-size: 12.5px; font-weight: 600; text-decoration: none; }
+.pf-chip--gold { color: ${C.goldLight}; border-color: rgba(228,200,120,.35); }
+.pf-chip--green { color: ${C.green}; border-color: rgba(125,195,131,.35); }
+a.pf-chip:hover { background: rgba(246,242,231,.06); }
+.pf-signout { flex-shrink: 0; margin-bottom: 4px; }
+
+/* Body */
+.pf-grid { display: grid; grid-template-columns: minmax(0, 1fr) 320px; gap: 48px; margin-top: 36px; }
+.pf-sec { padding: 28px 0; border-top: 1px solid ${C.line}; }
+.pf-main .pf-sec:first-child { border-top: 0; padding-top: 0; }
+.pf-sec h2 { font-size: 19px; font-weight: 700; }
+
+.pf-strength-top { display: flex; align-items: baseline; justify-content: space-between; }
+.pf-strength-top b { font-size: 22px; color: ${C.goldLight}; }
+.pf-bar { height: 6px; border-radius: 6px; background: rgba(246,242,231,.08); margin: 12px 0 14px; overflow: hidden; }
+.pf-bar span { display: block; height: 100%; border-radius: 6px; background: linear-gradient(90deg, ${C.gold}, ${C.goldLight}); }
+.pf-todo { list-style: none; padding: 0; margin: 0; display: flex; flex-wrap: wrap; gap: 8px; }
+.pf-todo button { display: inline-flex; align-items: center; gap: 7px; padding: 8px 13px; border-radius: 999px; border: 1px dashed rgba(228,200,120,.45); background: none; color: ${C.goldLight}; font: 600 13px 'Inter', system-ui, sans-serif; cursor: pointer; }
+.pf-todo button:hover { background: rgba(228,200,120,.08); }
+.pf-todo button.is-done { border-style: solid; border-color: rgba(125,195,131,.3); color: ${C.green}; cursor: default; opacity: .85; }
+
+.pf-fields { display: grid; grid-template-columns: 1fr 1fr; gap: 18px 20px; margin-top: 20px; }
+.pf-span { grid-column: 1 / -1; }
+.pf-field { display: flex; flex-direction: column; gap: 7px; }
+.pf-field input, .pf-field select {
+  width: 100%; box-sizing: border-box; min-height: 48px; padding: 12px 14px; border-radius: 12px;
+  border: 1px solid ${C.line}; background: rgba(246,242,231,.04); color: ${C.paper};
+  font: 500 15px 'Inter', system-ui, sans-serif; outline: none; transition: border-color .15s ease, background-color .15s ease, box-shadow .15s ease;
+}
+.pf-field input::placeholder { color: rgba(155,163,150,.7); }
+.pf-field input:hover, .pf-field select:hover { border-color: rgba(246,242,231,.2); }
+.pf-field input:focus, .pf-field select:focus { border-color: ${C.gold}; background: rgba(246,242,231,.06); box-shadow: 0 0 0 3px rgba(200,155,60,.18); }
+.pf-field select { appearance: none; cursor: pointer; padding-right: 40px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%23C9CFC2' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat; background-position: right 14px center; }
+.pf-field select.is-empty { color: rgba(155,163,150,.85); }
+.pf-field option { background: ${C.bg}; color: ${C.paper}; }
+.pf-hint { font-size: 12.5px; color: ${C.inkLight}; }
+
+/* Side */
+.pf-side .pf-sec:first-child { border-top: 0; padding-top: 0; }
+.pf-points { display: flex; flex-direction: column; gap: 4px; padding: 20px; margin-bottom: 8px; border-radius: 18px; text-decoration: none; color: ${C.paper};
+  background: linear-gradient(135deg, rgba(200,155,60,.18), rgba(200,155,60,.05)); border: 1px solid rgba(228,200,120,.25); transition: border-color .15s ease; }
+.pf-points:hover { border-color: rgba(228,200,120,.5); }
+.pf-points b { font-size: 34px; font-weight: 700; line-height: 1.1; }
+.pf-points-go { display: inline-flex; align-items: center; gap: 4px; margin-top: 8px; color: ${C.goldLight}; font-size: 13.5px; font-weight: 600; }
+.pf-links h2, .pf-side .pf-sec h2 { margin-bottom: 8px; }
+.pf-link { display: flex; align-items: center; gap: 12px; padding: 10px 8px; margin: 0 -8px; border-radius: 12px; text-decoration: none; color: ${C.paper}; transition: background-color .15s ease; }
+.pf-link:hover { background: rgba(246,242,231,.05); }
+.pf-link-icon { width: 36px; height: 36px; border-radius: 10px; display: grid; place-items: center; background: rgba(228,200,120,.1); color: ${C.goldLight}; flex-shrink: 0; }
+.pf-link b { display: block; font-size: 14px; }
+.pf-link small { display: block; font-size: 12.5px; color: ${C.inkLight}; margin-top: 1px; }
+.pf-link-arrow { margin-left: auto; color: ${C.inkLight}; flex-shrink: 0; }
+.pf-account { margin: 4px 0 16px; display: grid; grid-template-columns: auto 1fr; gap: 10px 14px; font-size: 13.5px; }
+.pf-account dt { color: ${C.inkLight}; }
+.pf-account dd { margin: 0; color: ${C.paperDim}; text-align: right; overflow-wrap: anywhere; }
+.pf-copy { display: inline-flex; align-items: center; gap: 6px; background: none; border: 0; padding: 0; color: ${C.paperDim}; font: 500 13px 'Inter', system-ui, sans-serif; cursor: pointer; }
+.pf-copy:hover { color: ${C.goldLight}; }
+
+/* Save bar and toast */
+.pf-savebar { position: fixed; left: 50%; bottom: 88px; transform: translateX(-50%); z-index: 60; width: min(560px, calc(100% - 24px)); box-sizing: border-box;
+  display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 10px 10px 20px; border-radius: 999px;
+  background: ${C.band}; border: 1px solid rgba(228,200,120,.3); box-shadow: 0 16px 40px rgba(0,0,0,.4); font-size: 14px; font-weight: 600; }
+.pf-savebar > div { display: flex; gap: 4px; }
+.pf-toast { position: fixed; left: 50%; bottom: 152px; transform: translateX(-50%); z-index: 70; display: inline-flex; align-items: center; gap: 8px; padding: 11px 20px; border-radius: 999px; background: ${C.band}; border: 1px solid ${C.line}; font-size: 14px; font-weight: 600; white-space: nowrap; }
+.pf-toast.is-ok { color: ${C.green}; }
+.pf-toast.is-bad { color: ${C.red}; }
+
+@media (max-width: 860px) {
+  .pf-grid { grid-template-columns: 1fr; gap: 8px; }
+  .pf-side { border-top: 1px solid ${C.line}; padding-top: 28px; }
+}
+@media (max-width: 600px) {
+  .pf-wrap { padding: 0 16px; }
+  .pf-cover { height: 150px; }
+  .pf-hero-row { flex-direction: column; align-items: flex-start; gap: 12px; margin-top: -56px; }
+  .pf-avatar { width: 92px; height: 92px; font-size: 32px; }
+  .pf-signout { display: none; }
+  .pf-fields { grid-template-columns: 1fr; }
+  .pf-savebar { border-radius: 18px; flex-wrap: wrap; padding: 12px 12px 12px 16px; }
+  .pf-savebar > span { font-size: 13px; }
+}
+`;
