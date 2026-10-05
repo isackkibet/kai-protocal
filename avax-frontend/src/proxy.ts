@@ -79,8 +79,11 @@ function policyFor(pathname: string, method = 'GET'): readonly typeof POLICIES[k
 
 const MAX_BODY_BYTES = 512 * 1024; // AI prompts and JSON records; generous
 /** Evidence photos/PDFs: 3 MB file + form fields (route re-checks the file). */
-const MAX_UPLOAD_BYTES = 3 * 1024 * 1024 + 64 * 1024;
+/** Hub posts also carry an article of up to 60,000 characters next to the picture. */
+const MAX_UPLOAD_BYTES = 3 * 1024 * 1024 + 320 * 1024;
 const UPLOAD_PATHS = new Set(['/api/cfa/evidence', '/api/murals', '/api/hubs/oloolua/items', '/api/hubs/sihu/items']);
+/** Editing a hub item (/api/hubs/<hub>/items/<id>) may also replace its picture. */
+const isUploadPath = (p: string) => UPLOAD_PATHS.has(p) || /^\/api\/hubs\/(oloolua|sihu)\/items\/[0-9a-f-]{36}$/.test(p);
 const ALLOWED_CONTENT_TYPES = new Set([
   'application/json',
   'application/x-www-form-urlencoded',
@@ -92,7 +95,7 @@ function checkBody(req: NextRequest, pathname: string): string | null {
   if (req.method === 'GET' || req.method === 'HEAD' || req.method === 'OPTIONS') return null;
 
   const declared = Number(req.headers.get('content-length') ?? '0');
-  if (declared > (UPLOAD_PATHS.has(pathname) ? MAX_UPLOAD_BYTES : MAX_BODY_BYTES)) return 'payload_too_large';
+  if (declared > (isUploadPath(pathname) ? MAX_UPLOAD_BYTES : MAX_BODY_BYTES)) return 'payload_too_large';
 
   const contentType = req.headers.get('content-type') ?? '';
   // Strip parameters like "; charset=utf-8".

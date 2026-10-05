@@ -6,7 +6,7 @@ import {
   ArrowLeft, ArrowRight, BookOpen, CheckCircle2, ExternalLink, Fingerprint, GitBranch, Newspaper, PenTool,
   ShieldCheck, Sprout, TreePine, type LucideIcon,
 } from 'lucide-react';
-import { OLOOLUA_SITE_URL } from '@/lib/hubs/hub-links';
+import { OLOOLUA_SITE_URL, SIHU_SITE_URL } from '@/lib/hubs/hub-links';
 
 /**
  * /hubs — the public portal for both Information Hubs on the KAI conservation
@@ -30,7 +30,7 @@ const REPOS = {
   oloolua: link(process.env.NEXT_PUBLIC_OLOOLUA_REPO_URL),
   sihu: link(process.env.NEXT_PUBLIC_SIHU_REPO_URL),
 };
-const PORTALS = { oloolua: null, sihu: link(process.env.NEXT_PUBLIC_SIHU_PORTAL_URL) };
+const PORTALS = { oloolua: null, sihu: null };
 
 interface RecordRow { id: string; recordType: string; verificationStatus: string; anchorStatus: string; createdAt: string }
 interface Post { id: string; slug: string; title: string; summary: string; creator: string; publishedAt: string; category: string }
@@ -98,7 +98,7 @@ export default function HubsPage() {
             tint={C.blue} icon={Newspaper} name="SIHU Information Hub" by="Sango · Lake Victoria Basin"
             what="Members write stories and local information. Editors review each one before it is published."
             stats={[{ v: posts ? String(posts.length) : '…', l: 'published stories' }]}
-            open={{ href: '/hubs/sihu', label: 'Visit the hub', icon: Newspaper }}
+            open={{ href: SIHU_SITE_URL, label: 'Visit the hub', icon: Newspaper }}
             manage={[{ href: '/hub', label: 'All stories', icon: Newspaper }, { href: '/hub/create', label: 'Write a story', icon: PenTool }, { href: '/hub/review', label: 'Editor review', icon: ShieldCheck }]}
             repo={REPOS.sihu} portal={PORTALS.sihu}
           />

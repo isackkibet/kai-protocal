@@ -12,6 +12,8 @@ export async function GET(_req: Request, { params }: { params: Promise<{ hub: st
     headers: {
       'Content-Type': item.imageMime, 'Content-Length': String(item.image.length), 'X-Content-SHA256': item.imageSha256 ?? '',
       'X-Content-Type-Options': 'nosniff', 'Content-Security-Policy': "sandbox; default-src 'none'", 'Cache-Control': 'public, max-age=3600',
+      // The hub's own websites (SIHU, Oloolua) show these pictures.
+      'Access-Control-Allow-Origin': '*', 'Cross-Origin-Resource-Policy': 'cross-origin',
     },
   });
 }

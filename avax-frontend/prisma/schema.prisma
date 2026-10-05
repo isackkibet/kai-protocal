@@ -1689,10 +1689,12 @@ model HubProfile {
 model HubItem {
   id          String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   hub         String
-  /// news | activity | photo | video | podcast
+  /// news | story | activity | photo | video | podcast
   kind        String
   title       String
   summary     String?
+  /// Full text of a news article or story (up to 60,000 characters).
+  body        String?
   url         String?
   image       Bytes?
   imageMime   String?   @map("image_mime")
@@ -1702,6 +1704,7 @@ model HubItem {
   authorEmail String?   @map("author_email")
   authorName  String?   @map("author_name")
   createdAt   DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt   DateTime  @default(now()) @map("updated_at") @db.Timestamptz(6)
 
   @@map("hub_items")
 }

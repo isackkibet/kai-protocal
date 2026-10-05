@@ -1,6 +1,9 @@
 import type { NextConfig } from "next";
 
-const SIHU_URL = process.env.NEXT_PUBLIC_SIHU_URL || "http://localhost:3000";
+// The SIHU (Sango Information Hub) website, kept in its own design and hosted
+// on its own. Its content comes from this app's Information Hub admin.
+const SIHU_URL = [process.env.NEXT_PUBLIC_SIHU_PORTAL_URL, process.env.NEXT_PUBLIC_SIHU_URL]
+  .find((u) => u && /^https:\/\//.test(u))?.replace(/\/+$/, "") || "https://sihu-com.vercel.app";
 // The original Oloolua Youth Guardians website, kept exactly as its makers
 // designed it and hosted on its own. Information Hub links open it directly.
 const OLOOLUA_URL = [process.env.NEXT_PUBLIC_OLOOLUA_PORTAL_URL, process.env.NEXT_PUBLIC_OLOOLUA_URL]
@@ -83,6 +86,7 @@ const nextConfig: NextConfig = {
         permanent: false,
       },
       { source: "/hubs/oloolua", destination: OLOOLUA_URL, permanent: false },
+      { source: "/hubs/sihu", destination: SIHU_URL, permanent: false },
       // Crypto features (exchange, tokens, pools, NFT trading...) are
       // switched off while KAI focuses on conservation records and murals.
       // The code stays; set NEXT_PUBLIC_CRYPTO_FEATURES=on to bring them back.

@@ -7,7 +7,7 @@ import {
   Home, Bot, UserCircle2, Newspaper, TreePine,
   ChevronRight, X, BookOpen, PenTool, Sprout, ExternalLink, LayoutGrid,
 } from 'lucide-react';
-import { OLOOLUA_SITE_URL } from '@/lib/hubs/hub-links';
+import { OLOOLUA_SITE_URL, SIHU_SITE_URL } from '@/lib/hubs/hub-links';
 
 const itemStyle = (active: boolean): React.CSSProperties => ({
   display: 'flex', flexDirection: 'column', alignItems: 'center',
@@ -29,7 +29,7 @@ const HUB_OPTIONS = [
     name: 'News & stories',
     source: 'SIHU',
     desc: 'Read local news from the Lake Victoria Basin, or write your own story.',
-    href: '/hubs/sihu',
+    href: SIHU_SITE_URL,
     match: (p: string) => p.startsWith('/hub/') || p === '/hub' || p.startsWith('/hubs/sihu'),
     icon: Newspaper,
     accent: '#6FA8DC',
@@ -39,7 +39,7 @@ const HUB_OPTIONS = [
       { label: 'Read news', href: '/hub#latest', icon: BookOpen },
       { label: 'Write a story', href: '/hub/create', icon: PenTool },
     ],
-    portal: ext(process.env.NEXT_PUBLIC_SIHU_PORTAL_URL),
+    portal: null,
   },
   {
     id: 'oloolua',

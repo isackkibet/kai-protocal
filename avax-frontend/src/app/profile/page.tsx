@@ -10,7 +10,7 @@ import { safeNext } from '@/components/shared/SignInOnProfile';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Trees, Users, Wallet, ChevronRight, CheckCircle2, Copy, LogOut, MapPin, Mail,
-  Save, RefreshCw, Sprout, Gift, Globe2, ShieldCheck, BookOpen, Circle, Flame, Trophy, Clock, type LucideIcon,
+  Save, RefreshCw, Sprout, Gift, Globe2, ShieldCheck, BookOpen, Circle, Flame, Trophy, Clock, Newspaper, type LucideIcon,
 } from 'lucide-react';
 
 interface Profile {
@@ -159,6 +159,7 @@ export default function ProfilePage() {
   const [activity, setActivity] = useState<Activity[]>([]);
   const [wait, setWait] = useState(0);
   const [claiming, setClaiming] = useState(false);
+  const [manages, setManages] = useState<('sihu' | 'oloolua')[]>([]);
 
   const say = (text: string, ok: boolean) => { setToast({ text, ok }); setTimeout(() => setToast(null), 3200); };
 
@@ -217,6 +218,10 @@ export default function ProfilePage() {
     setMember(m ? (m.member ?? null) : undefined);
     const a = ar?.ok ? await ar.json().catch(() => null) : null;
     if (Array.isArray(a?.data)) setActivity(a.data.slice(0, 4));
+    // Hub managers get a shortcut to the Information Hub admin.
+    const hubs = ['sihu', 'oloolua'] as const;
+    const can = await Promise.all(hubs.map((h) => fetch(`/api/hubs/${h}/manage`, { headers }).then((r) => r.json()).then((d) => !!d.admin).catch(() => false)));
+    setManages(hubs.filter((_, i) => can[i]));
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [privy.authenticated]);
 
@@ -516,6 +521,13 @@ export default function ProfilePage() {
 
               <nav className="pf-sec pf-links" aria-label="Go to">
                 <h2>Go to</h2>
+                {manages.map((h) => (
+                  <Link key={h} href={`/hubs/${h}/admin`} prefetch={false} className="pf-link pf-link--admin">
+                    <span className="pf-link-icon"><Newspaper size={17} /></span>
+                    <span><b>Manage {h === 'sihu' ? 'SIHU Information Hub' : 'Oloolua hub'}</b><small>Publish news, stories, photos and videos</small></span>
+                    <ChevronRight size={15} className="pf-link-arrow" />
+                  </Link>
+                ))}
                 {GO_TO.map((l) => (
                   <Link key={l.href} href={l.href} prefetch={false} className="pf-link">
                     <span className="pf-link-icon"><l.Icon size={17} /></span>
@@ -701,6 +713,7 @@ a.pf-stat:hover { border-color: rgba(228,200,120,.35); background: rgba(246,242,
 .pf-links h2, .pf-side .pf-sec h2 { margin-bottom: 8px; }
 .pf-link { display: flex; align-items: center; gap: 12px; padding: 10px 8px; margin: 0 -8px; border-radius: 12px; text-decoration: none; color: ${C.paper}; transition: background-color .15s ease; }
 .pf-link:hover { background: rgba(246,242,231,.05); }
+.pf-link--admin .pf-link-icon { background: rgba(111,168,220,.15); color: #9cc5ea; }
 .pf-link-icon { width: 36px; height: 36px; border-radius: 10px; display: grid; place-items: center; background: rgba(228,200,120,.1); color: ${C.goldLight}; flex-shrink: 0; }
 .pf-link b { display: block; font-size: 14px; }
 .pf-link small { display: block; font-size: 12.5px; color: ${C.inkLight}; margin-top: 1px; }

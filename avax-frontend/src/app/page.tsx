@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { ArrowRight, BookOpen, CheckCircle2, Fingerprint, Newspaper, PenTool, Sprout, TreePine, Users, type LucideIcon } from 'lucide-react';
 import QuickActions from '@/components/shared/QuickActions';
-import { OLOOLUA_SITE_URL } from '@/lib/hubs/hub-links';
+import { OLOOLUA_SITE_URL, SIHU_SITE_URL } from '@/lib/hubs/hub-links';
 
 /**
  * Home: KAI Nuvari is a conservation information and provenance platform.
@@ -96,7 +96,7 @@ export default function Home() {
               <p className="hm-hub-by">Sango · Lake Victoria Basin</p>
               <p>Local news, stories and community information, reviewed before it is published.</p>
               <div className="hm-hub-links">
-                <Link href="/hubs/sihu" prefetch={false}><Newspaper size={15} /> Visit the hub</Link>
+                <a href={SIHU_SITE_URL} target="_blank" rel="noopener noreferrer"><Newspaper size={15} /> Visit the hub</a>
                 <Link href="/hub" prefetch={false}><BookOpen size={15} /> Read stories</Link>
                 <Link href="/hub/create" prefetch={false}><PenTool size={15} /> Write a story</Link>
               </div>

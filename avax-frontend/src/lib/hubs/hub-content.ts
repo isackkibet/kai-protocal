@@ -16,7 +16,7 @@ import { sniffMime } from '@/lib/nursery/evidence-rules';
 
 export const HUB_IDS = ['oloolua', 'sihu'] as const;
 export type HubId = (typeof HUB_IDS)[number];
-export const HUB_KINDS = ['news', 'activity', 'photo', 'video', 'podcast'] as const;
+export const HUB_KINDS = ['news', 'story', 'activity', 'photo', 'video', 'podcast'] as const;
 export type HubKind = (typeof HUB_KINDS)[number];
 export const isHubId = (v: string): v is HubId => (HUB_IDS as readonly string[]).includes(v);
 export const isHubKind = (v: string): v is HubKind => (HUB_KINDS as readonly string[]).includes(v);
@@ -93,34 +93,93 @@ export const HUBS: Record<HubId, HubInfo> = {
 
 export interface HubItemView {
   id: string; hub: HubId; kind: HubKind; title: string; summary: string | null; url: string | null;
-  hasImage: boolean; happenedOn: string | null; authorName: string | null; createdAt: string;
+  hasImage: boolean; hasBody: boolean; happenedOn: string | null; authorName: string | null; createdAt: string;
+  updatedAt: string; published: boolean;
 }
+
+/** One item with its full text (news articles and stories). */
+export interface HubItemFull extends HubItemView { body: string | null }
 
 export async function hubProfile(prisma: PrismaClient, hub: HubId) {
   const row = await prisma.hubProfile.findUnique({ where: { hub } });
   return { about: row?.about || HUBS[hub].defaultAbout, mission: row?.mission || HUBS[hub].defaultMission, updatedAt: row?.updatedAt?.toISOString() ?? null };
 }
 
-export async function hubItems(prisma: PrismaClient, hub: HubId, opts: { kind?: HubKind; take?: number } = {}): Promise<HubItemView[]> {
+const ITEM_SELECT = {
+  id: true, hub: true, kind: true, title: true, summary: true, url: true, imageSha256: true, happenedOn: true,
+  authorName: true, createdAt: true, updatedAt: true, published: true, body: true,
+} as const;
+
+type ItemRow = {
+  id: string; hub: string; kind: string; title: string; summary: string | null; url: string | null; imageSha256: string | null;
+  happenedOn: Date | null; authorName: string | null; createdAt: Date; updatedAt: Date; published: boolean; body: string | null;
+};
+
+const toView = (r: ItemRow): HubItemView => ({
+  id: r.id, hub: r.hub as HubId, kind: r.kind as HubKind, title: r.title, summary: r.summary, url: r.url,
+  hasImage: !!r.imageSha256, hasBody: !!r.body?.trim(), happenedOn: r.happenedOn ? r.happenedOn.toISOString().slice(0, 10) : null,
+  authorName: r.authorName, createdAt: r.createdAt.toISOString(), updatedAt: r.updatedAt.toISOString(), published: r.published,
+});
+
+/** Published items, newest first. `all` also returns hidden ones (for hub managers). */
+export async function hubItems(prisma: PrismaClient, hub: HubId, opts: { kind?: HubKind; take?: number; all?: boolean } = {}): Promise<HubItemView[]> {
   const rows = await prisma.hubItem.findMany({
-    where: { hub, published: true, ...(opts.kind ? { kind: opts.kind } : {}) },
+    where: { hub, ...(opts.all ? {} : { published: true }), ...(opts.kind ? { kind: opts.kind } : {}) },
     orderBy: [{ happenedOn: { sort: 'desc', nulls: 'last' } }, { createdAt: 'desc' }],
     take: opts.take ?? 60,
-    select: { id: true, hub: true, kind: true, title: true, summary: true, url: true, imageSha256: true, happenedOn: true, authorName: true, createdAt: true },
+    select: ITEM_SELECT,
   });
-  return rows.map((r) => ({
-    id: r.id, hub: r.hub as HubId, kind: r.kind as HubKind, title: r.title, summary: r.summary, url: r.url,
-    hasImage: !!r.imageSha256, happenedOn: r.happenedOn ? r.happenedOn.toISOString().slice(0, 10) : null,
-    authorName: r.authorName, createdAt: r.createdAt.toISOString(),
-  }));
+  return rows.map(toView);
 }
 
+/** One item with its full text. Hidden items only when `all` (hub managers). */
+export async function hubItem(prisma: PrismaClient, hub: HubId, id: string, opts: { all?: boolean } = {}): Promise<HubItemFull | null> {
+  if (!/^[0-9a-f-]{36}$/.test(id)) return null;
+  const r = await prisma.hubItem.findFirst({ where: { id, hub, ...(opts.all ? {} : { published: true }) }, select: ITEM_SELECT });
+  return r ? { ...toView(r), body: r.body } : null;
+}
+
+/** What a create or edit form may set, checked. Image handling stays in the route. */
+export type HubItemInput = { kind: HubKind; title: string; summary: string | null; body: string | null; url: string | null; happenedOn: Date | null };
+
+export function readHubItemForm(form: FormData): { ok: true; data: HubItemInput } | { ok: false; error: string; field: string } {
+  const str = (k: string, max: number) => String(form.get(k) ?? '').trim().slice(0, max);
+  const kind = str('kind', 20);
+  const title = str('title', 160);
+  const summary = str('summary', 2000) || null;
+  const body = String(form.get('body') ?? '').replace(/\r\n/g, '\n').trim().slice(0, 60000) || null;
+  const url = str('url', 500) || null;
+  const day = str('happenedOn', 10);
+  if (!isHubKind(kind)) return { ok: false, error: 'Choose what you are adding.', field: 'kind' };
+  if (title.length < 3) return { ok: false, error: 'Add a title of at least 3 letters.', field: 'title' };
+  if (url && !/^https:\/\/[^\s]+$/.test(url)) return { ok: false, error: 'Links must start with https://', field: 'url' };
+  if ((kind === 'video' || kind === 'podcast') && !url) return { ok: false, error: 'Add the link to the video or podcast.', field: 'url' };
+  if ((kind === 'news' || kind === 'story') && !body && !summary) return { ok: false, error: 'Write the story, or at least a short summary.', field: 'body' };
+  const happenedOn = /^\d{4}-\d{2}-\d{2}$/.test(day) && !Number.isNaN(Date.parse(day)) ? new Date(`${day}T00:00:00Z`) : null;
+  return { ok: true, data: { kind, title, summary, body, url, happenedOn } };
+}
+
+/** Public hub content may be read by the hub's own websites (no cookies). */
+export const PUBLIC_READ_HEADERS = { 'Access-Control-Allow-Origin': '*', 'Cache-Control': 'public, max-age=60, s-maxage=60' } as const;
+
+/** Platform admins who may manage every hub (HUB_ADMIN_EMAILS, comma separated). */
+const isHubAdminEmail = (email: string | null | undefined) =>
+  !!email && (process.env.HUB_ADMIN_EMAILS ?? '').split(',').map((e) => e.trim().toLowerCase()).filter(Boolean).includes(email.trim().toLowerCase());
+
 /**
- * Who may manage a hub: Oloolua -> CFA admins (verified CFA membership);
- * SIHU -> SIHU editors (SIHU_EDITOR_EMAILS). Returns the manager's name and
- * email for attribution, or null.
+ * Who may manage a hub: platform hub admins (HUB_ADMIN_EMAILS) manage every
+ * hub; Oloolua -> CFA admins (verified CFA membership); SIHU -> SIHU editors
+ * (SIHU_EDITOR_EMAILS). Returns the manager's name and email for
+ * attribution, or null.
  */
 export async function hubManager(prisma: PrismaClient, req: Request, hub: HubId): Promise<{ name: string; email: string | null } | null> {
+  if (process.env.HUB_ADMIN_EMAILS) {
+    const privyUserId = await verifyPrivyUserId(req.headers.get('authorization'));
+    if (privyUserId) {
+      const user = await prisma.kaiUser.findUnique({ where: { privyUserId }, select: { name: true, email: true } });
+      if (isHubAdminEmail(user?.email)) return { name: user?.name ?? 'Hub admin', email: user?.email ?? null };
+    }
+  }
   if (hub === 'oloolua') {
     const cfa = await getNurseryCfa(prisma);
     const session = await getSessionMember(prisma, req);
