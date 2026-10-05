@@ -14,7 +14,10 @@ import { verifyTransaction } from '@/lib/payments/paystack';
  * this takes real money).
  */
 
-export const muralCheckoutEnabled = () => process.env.MURAL_CHECKOUT_ENABLED === 'true';
+// Tolerant of how the value was pasted in Vercel: spaces, a new line,
+// quotes or capitals ("True", "yes", "1", "on") all count as on.
+export const muralCheckoutEnabled = () =>
+  /^(true|yes|1|on)$/i.test((process.env.MURAL_CHECKOUT_ENABLED ?? '').trim().replace(/^["']|["']$/g, ''));
 
 export interface MuralPaymentMeta {
   kind: 'mural';
