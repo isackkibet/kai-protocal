@@ -3,6 +3,11 @@ import type { NextConfig } from "next";
 const SIHU_URL = process.env.NEXT_PUBLIC_SIHU_URL || "http://localhost:3000";
 const OLOOLUA_URL = process.env.NEXT_PUBLIC_OLOOLUA_URL || "http://localhost:3002";
 
+const CRYPTO_ROUTES = [
+  "pools", "swap", "vaults", "taas", "securities", "connft", "mine", "nuvari", "products", "pay",
+  "kai-bar", "saving", "sme", "policy", "sdg", "apps", "wallet", "ai", "chat", "voice",
+];
+
 const nextConfig: NextConfig = {
   // Do not advertise the framework — it tells vulnerability scanners exactly
   // which Next.js advisories to try against us.
@@ -74,6 +79,14 @@ const nextConfig: NextConfig = {
         destination: OLOOLUA_URL,
         permanent: false,
       },
+      // Crypto features (exchange, tokens, pools, NFT trading, airdrop...) are
+      // switched off while KAI focuses on conservation records and murals.
+      // The code stays; set NEXT_PUBLIC_CRYPTO_FEATURES=on to bring them back.
+      ...(process.env.NEXT_PUBLIC_CRYPTO_FEATURES === "on" ? [] : CRYPTO_ROUTES.map((r) => ({
+        source: `/${r}/:path*`, destination: "/", permanent: false,
+      }))),
+      // The CFA page held a token treasury tab; the CFA's work lives in the nursery.
+      { source: "/cfa", destination: "/nursery", permanent: false },
       {
         // KAI Web opens full screen with its own menu (it can't be framed:
         // X-Frame-Options is DENY). See src/app/kai/page.tsx.

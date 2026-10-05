@@ -1,316 +1,189 @@
 'use client';
 
-import { useState, useEffect, useSyncExternalStore } from 'react';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
-import dynamic from 'next/dynamic';
-import { motion } from 'framer-motion';
-import { useBalance, useReadContracts } from 'wagmi';
-import { formatUnits } from 'viem';
-import { useKaivaxStore } from '@/store/useKaivaxStore';
-const WalletConnectModal = dynamic(() => import('@/components/wallet/WalletConnectModal'), { ssr: false });
-import { ECOSYSTEM_TOKENS, TICKER_TOKENS } from '@/lib/blockchain/tokens';
-import { ERC20_ABI } from '@/lib/blockchain/erc20abi';
-import { usePrivyAuth } from '@/lib/auth/privy-auth';
-import { useActiveAccount } from '@/hooks/useActiveAccount';
-import NurseryShortcut from '@/components/cfa/NurseryShortcut';
-import QuickActions, { QUICK_COUNT } from '@/components/shared/QuickActions';
-import {
-  LayoutGrid, Copy, RefreshCw, Link2, UserRound, type LucideIcon,
-} from 'lucide-react';
+import { ArrowRight, BookOpen, CheckCircle2, Fingerprint, Newspaper, PenTool, Sprout, TreePine, Users, type LucideIcon } from 'lucide-react';
+import QuickActions from '@/components/shared/QuickActions';
 
-/* Same editorial system as /hub: solid pine background, one gold accent,
-   serif display type for values/headlines, mono for small-caps labels. */
+/**
+ * Home: KAI Nuvari is a conservation information and provenance platform.
+ * Community Forest Associations record their work in their Information Hub;
+ * records are checked, timestamped on Avalanche and published; murals carry
+ * that verified story. (Crypto features are hidden: see next.config.ts.)
+ */
+
 const C = {
-  bg:        '#0B1C14',
-  pineDeep:  '#0A2A20',
-  pineLight: '#2D5A3D',
-  gold:      '#C89B3C',
-  goldLight: '#E4C878',
-  paper:     '#F6F2E7',
-  paperDim:  '#EFE9D9',
-  ink:       '#1B1A14',
-  inkLight:  '#9BA396',
-  hairline:  'rgba(200,155,60,0.14)',
-};
-const MONO  = { fontFamily: "'IBM Plex Mono', monospace" } as const;
-/* Poppins for headings/values (bold) + body (regular) — editorial style only,
-   palette stays pine/gold/paper. */
-const SERIF = { fontFamily: "'Poppins', sans-serif" } as const;
-
-const HL = {
-  green: { color: C.goldLight, fontWeight: 700 } as React.CSSProperties,
+  bg: '#0E2418', band: '#12301F', card: '#15352A', line: 'rgba(246,242,231,0.08)',
+  paper: '#F6F2E7', dim: '#C9CFC2', ink: '#9BA396', gold: '#C89B3C', goldLight: '#E4C878', green: '#7DC383', blue: '#6FA8DC',
 };
 
-/* Small-caps mono eyebrow label, matching /hub's section labels. */
-const label: React.CSSProperties = { ...MONO, fontSize: 10, letterSpacing: 1.4, textTransform: 'uppercase', color: C.goldLight, fontWeight: 600, margin: '0 0 10px' };
+interface Live { seedlings?: number; planted?: number; verified?: number; stories?: number }
 
-/* Every section opens the same way — icon + eyebrow label, optional status
-   badge on the right — so the page reads as clearly split sections instead
-   of one long scroll, the same clarity the hero's Connect Wallet button has. */
-function SectionHeader({ icon: Icon, eyebrow, badge }: { icon: LucideIcon; eyebrow: string; badge?: string }) {
-  return (
-    <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:18 }}>
-      <div style={{ display:'flex', alignItems:'center', gap:9 }}>
-        <Icon size={14} color={C.goldLight} strokeWidth={2} />
-        <p style={{ ...label, margin:0 }}>{eyebrow}</p>
-      </div>
-      {badge && <span style={{ ...MONO, fontSize:11, fontWeight:600, color:C.goldLight }}>{badge}</span>}
-    </div>
-  );
-}
-
-/* Sections render fully visible on load — no hide-until-scroll animation,
-   so everything is on the page at once. */
-const reveal = {} as const;
-
-function buildCalls(addr: `0x${string}` | undefined) {
-  if (!addr) return [];
-  return ECOSYSTEM_TOKENS.filter(t => t.address).map(t => ({
-    address: t.address as `0x${string}`,
-    abi: ERC20_ABI,
-    functionName: 'balanceOf' as const,
-    args: [addr],
-  }));
-}
-
-/* No price oracle is wired up yet — these are manually maintained estimates,
-   not a live feed. Keep the UI label ("Estimated portfolio value") honest about that. */
-const ESTIMATED_USD_RATES: Record<string, number> = {
-  avax: 26, ybob: 1, nvr: 0.12, ygold: 2.01, ytoken: 0.27, gami: 0.056, cents: 0.009,
-};
+const STEPS: { icon: LucideIcon; title: string; text: string }[] = [
+  { icon: Sprout, title: 'Record', text: 'A CFA member records nursery or planting work in their hub.' },
+  { icon: CheckCircle2, title: 'Check', text: 'A verifier in the CFA checks the record and approves it.' },
+  { icon: Fingerprint, title: 'Timestamp', text: 'A fingerprint of the record is saved on Avalanche.' },
+  { icon: BookOpen, title: 'Publish', text: 'Anyone can read it and check that it was never changed.' },
+];
 
 export default function Home() {
-  const router = useRouter();
-  const { address, isConnected } = useActiveAccount();
-  const { authenticated: privyAuthenticated, address: privyAddress } = usePrivyAuth();
-  const mounted = useSyncExternalStore(() => () => {}, () => true, () => false);
-  const connected = mounted && isConnected;
-  const { data: avaxBal, refetch: refetchAvax } = useBalance({ address });
-  const { connectWallet, disconnectWallet, setAvaxBalance, setAllBalances } = useKaivaxStore();
-
-  const [showModal,  setShowModal]  = useState(false);
-  const [refreshing, setRefreshing] = useState(false);
-  const [copied,     setCopied]     = useState(false);
-  const [profile,    setProfile]    = useState<{ name?: string; displayName?: string } | null>(null);
+  const [live, setLive] = useState<Live>({});
 
   useEffect(() => {
-    isConnected && address ? connectWallet('metamask', address) : disconnectWallet();
-  }, [isConnected, address]);
+    let on = true;
+    const set = (patch: Live) => { if (on) setLive((l) => ({ ...l, ...patch })); };
+    fetch('/api/cfa/nursery/summary').then((r) => r.json()).then((d) => set({ seedlings: d?.stats?.totalSeedlings ?? 0, planted: d?.stats?.planted ?? 0 })).catch(() => {});
+    fetch('/api/mrv/records').then((r) => r.json()).then((d) => set({ verified: (d?.records ?? []).filter((r: { verificationStatus: string }) => r.verificationStatus === 'VERIFIED').length })).catch(() => {});
+    fetch('/api/hub/feed').then((r) => r.json()).then((d) => set({ stories: (d?.posts ?? []).length })).catch(() => {});
+    return () => { on = false; };
+  }, []);
 
-  useEffect(() => {
-    if (!address) { setProfile(null); return; }
-    fetch(`/api/profile?wallet=${address}`)
-      .then(r => r.json())
-      .then(d => setProfile(d.profile ?? null))
-      .catch(() => setProfile(null));
-  }, [address]);
-
-  useEffect(() => {
-    if (avaxBal) setAvaxBalance(Number(formatUnits(avaxBal.value, avaxBal.decimals)));
-  }, [avaxBal]);
-
-  const contractCalls = buildCalls(address);
-  const { data: tokenData, refetch: refetchTokens } = useReadContracts({ contracts: contractCalls });
-
-  const tokenBals: Record<string,number> = (() => {
-    const out: Record<string,number> = {};
-    ECOSYSTEM_TOKENS.filter(t => t.address).forEach((t,i) => {
-      const r = tokenData?.[i];
-      out[t.symbol.toLowerCase()] = r?.status==='success' && r.result!==undefined
-        ? Number(formatUnits(r.result as bigint,18)) : 0;
-    });
-    ECOSYSTEM_TOKENS.filter(t => !t.address).forEach(t => { out[t.symbol.toLowerCase()] = 0; });
-    return out;
-  })();
-
-  useEffect(() => {
-    if (isConnected)
-      setAllBalances({ nvr:tokenBals.nvr??0, ybob:tokenBals.ybob??0, ytoken:tokenBals.ytoken??0, ygold:tokenBals.ygold??0, gami:tokenBals.gami??0, cents:tokenBals.cents??0 });
-  }, [JSON.stringify(tokenBals), isConnected]);
-
-  const handleRefresh = async () => {
-    if (refreshing) return;
-    setRefreshing(true);
-    await Promise.allSettled([refetchAvax(), refetchTokens()]);
-    setRefreshing(false);
-  };
-
-  const copyAddress = () => {
-    if (!address) return;
-    navigator.clipboard.writeText(address);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 1600);
-  };
-
-  const avaxAmt = avaxBal ? Number(formatUnits(avaxBal.value, avaxBal.decimals)) : 0;
-  const allTokens = [
-    { symbol:'AVAX', value:avaxAmt, deployed:true },
-    ...ECOSYSTEM_TOKENS.map(t => ({ symbol:t.symbol, value:tokenBals[t.symbol.toLowerCase()]??0, deployed:!!t.address })),
-  ];
-  const totalUsd = avaxAmt*ESTIMATED_USD_RATES.avax
-    + (tokenBals.ybob??0)*ESTIMATED_USD_RATES.ybob
-    + (tokenBals.nvr??0)*ESTIMATED_USD_RATES.nvr
-    + (tokenBals.ygold??0)*ESTIMATED_USD_RATES.ygold
-    + (tokenBals.ytoken??0)*ESTIMATED_USD_RATES.ytoken
-    + (tokenBals.gami??0)*ESTIMATED_USD_RATES.gami
-    + (tokenBals.cents??0)*ESTIMATED_USD_RATES.cents;
-  const activeTokenCount = allTokens.filter(b => b.value > 0).length;
-  const balancesLoading = connected && tokenData === undefined;
-  const displayName = mounted ? (profile?.displayName || profile?.name || (address ? `${address.slice(0,6)}…${address.slice(-4)}` : '')) : '';
+  const num = (v?: number) => (v == null ? '…' : v.toLocaleString());
 
   return (
-    <main style={{ minHeight:'100dvh', background:C.bg, color:C.paper, fontFamily:"'Poppins', 'IBM Plex Sans', var(--font-sans)", position:'relative', paddingBottom:80 }}>
-      {/* kaiweb fonts — Poppins display + IBM Plex Mono small-caps labels */}
-      <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap');
-      `}</style>
+    <main className="hm">
+      {/* Hero */}
+      <section className="hm-hero">
+        <div className="hm-wrap">
+          <p className="hm-eyebrow">KAI Nuvari · Conservation records</p>
+          <h1>Conservation work you can trust.</h1>
+          <p className="hm-lead">
+            Community Forest Associations record their nursery and tree-planting work. We check it, timestamp it on Avalanche and publish it,
+            and our murals carry that verified story.
+          </p>
+          <div className="hm-btns">
+            <Link href="/hubs" className="hm-btn" prefetch={false}>Open the Information Hubs <ArrowRight size={16} /></Link>
+            <Link href="/nursery" className="hm-btn hm-btn--ghost" prefetch={false}>Record nursery work</Link>
+          </div>
+        </div>
+      </section>
 
-      {/* TICKER */}
-      <div className="ticker-wrap" style={{ padding:'6px 0', position:'relative', zIndex:5, borderBottom:`1px solid ${C.hairline}` }}>
-        <div className="ticker-track" style={{ display:'inline-flex', gap:36, paddingLeft:20, whiteSpace:'nowrap' }}>
-          {[...TICKER_TOKENS,...TICKER_TOKENS,...TICKER_TOKENS].map((t,i) => (
-            <span key={i} style={{ ...MONO, fontSize:11, fontWeight:500 }}>
-              <span style={{ color:C.inkLight }}>{t.s} </span>
-              <span style={{ color:C.paperDim, fontWeight:600 }}>{t.p} </span>
-              <span style={{ color:C.goldLight, fontWeight:700 }}>{t.c}</span>
-            </span>
+      {/* Live numbers */}
+      <section className="hm-band">
+        <div className="hm-wrap hm-stats">
+          {[
+            { v: num(live.seedlings), l: 'seedlings recorded' },
+            { v: num(live.planted), l: 'trees planted' },
+            { v: num(live.verified), l: 'verified records' },
+            { v: num(live.stories), l: 'published stories' },
+          ].map((s) => (
+            <div key={s.l} className="hm-stat"><b>{s.v}</b><span>{s.l}</span></div>
           ))}
         </div>
-      </div>
+      </section>
 
-      <div className="home-container" style={{ position:'relative', zIndex:5 }}>
-
-        {/* SECTION 1 — CONNECT WALLET (hero photo). Colors are the original
-            KAI palette only; the photo is a mask. */}
-        <div style={{
-          width: '100vw', marginLeft: '50%', transform: 'translateX(-50%)',
-          position: 'relative', zIndex: 5,
-          minHeight: 'clamp(420px, 56vh, 560px)',
-          display: 'flex', alignItems: 'flex-start',
-          padding: '80px 0 56px',
-          boxSizing: 'border-box',
-          backgroundImage:
-            `linear-gradient(180deg, rgba(11,28,20,0.15) 0%, rgba(11,28,20,0.75) 60%, ${C.bg} 88%, ${C.bg} 100%),` +
-            `linear-gradient(90deg, rgba(11,28,20,0.97) 0%, rgba(11,28,20,0.80) 32%, rgba(11,28,20,0.32) 64%, rgba(11,28,20,0.10) 100%),` +
-            'url("/images/home-hero.jpg")',
-          backgroundSize: 'cover', backgroundPosition: 'center 30%',
-          textAlign: 'left',
-        }}>
-          {/* Same content width as .home-container (1120px - 2 × 24px), so every left edge lines up. */}
-          <div style={{ width: 'min(1072px, calc(100% - 48px))', marginInline: 'auto', boxSizing: 'border-box', position: 'relative', zIndex: 2 }}>
-            <div style={{ maxWidth: 660 }}>
-              {/* Pill badge — original gold dot, not the screenshot's orange */}
-              <div style={{ display: 'inline-flex', alignItems: 'center', gap: 9, padding: '7px 14px', borderRadius: 999, background: 'rgba(246,242,231,0.06)', border: `1px solid rgba(228,200,120,0.28)` }}>
-                <span style={{ width: 8, height: 8, borderRadius: '50%', background: C.goldLight, boxShadow: '0 0 10px rgba(228,200,120,0.9)' }} />
-                <span style={{ ...MONO, fontSize: 10, letterSpacing: 1.4, textTransform: 'uppercase', color: C.goldLight, fontWeight: 600 }}>Avalanche C-Chain · Forest Finance</span>
+      {/* The two hubs */}
+      <section className="hm-sec">
+        <div className="hm-wrap">
+          <h2>Two Information Hubs, one platform</h2>
+          <p className="hm-intro">Each group manages its own information. Approved work is published for everyone.</p>
+          <div className="hm-hubs">
+            <article className="hm-hub" style={{ ['--tint' as string]: C.green }}>
+              <span className="hm-hub-icon"><TreePine size={22} /></span>
+              <h3>Oloolua Conservation Hub</h3>
+              <p className="hm-hub-by">Oloolua Community Forest Association · Youth Guardians</p>
+              <p>Nursery groups, seedlings, planting and survival checks, with verified records.</p>
+              <div className="hm-hub-links">
+                <Link href="/nursery" prefetch={false}><Sprout size={15} /> Nursery groups</Link>
+                <Link href="/conservation" prefetch={false}><BookOpen size={15} /> Guides and knowledge</Link>
               </div>
-
-              <h1 style={{ ...SERIF, fontSize: 'clamp(2.6rem, 1.9rem + 3vw, 4.3rem)', fontWeight: 700, margin: '24px 0 0', letterSpacing: '-0.5px', lineHeight: 1.08 }}>
-                <span style={HL.green}>KAI</span> <span style={{ color: C.paper }}>Nuvari</span>
-              </h1>
-              <p style={{ fontSize: 16, color: C.paperDim, margin: '32px 0 0', maxWidth: 490, lineHeight: 1.6 }}>
-                A DeFi ecosystem on Avalanche C-Chain with six tokens, yield vaults, liquidity pools, and DAO governance,
-                plus community savings groups and a KAI agent that can check balances and find yield for you.
-                Connect a wallet to see your portfolio, join a dashboard, and get started.
-              </p>
-
-              <motion.button whileTap={{ scale: 0.98 }} onClick={() => {
-                if (privyAuthenticated) { router.push('/wallet'); return; }
-                setShowModal(true);
-              }}
-                style={{
-                  marginTop: 40, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 10,
-                  padding: '16px 32px', borderRadius: 999, cursor: 'pointer', border: 'none',
-                  background: C.gold,
-                  fontSize: 14, fontWeight: 700, color: C.ink, fontFamily: 'inherit',
-                }}>
-                <Link2 size={16}/>
-                {connected
-                  ? `Connected: ${address?.slice(0,6)}…${address?.slice(-4)}`
-                  : privyAuthenticated && privyAddress
-                    ? `Your Wallet: ${privyAddress.slice(0,6)}…${privyAddress.slice(-4)}`
-                    : 'Connect Wallet'}
-                {(connected || privyAuthenticated) && <span style={{ width: 8, height: 8, borderRadius: '50%', background: C.ink }} />}
-              </motion.button>
-
-              <p style={{ marginTop: 18, ...MONO, fontSize: 11, letterSpacing: 1, textTransform: 'uppercase', color: C.inkLight }}>MetaMask and Core Wallet supported</p>
-            </div>
+            </article>
+            <article className="hm-hub" style={{ ['--tint' as string]: C.blue }}>
+              <span className="hm-hub-icon"><Newspaper size={22} /></span>
+              <h3>SIHU Information Hub</h3>
+              <p className="hm-hub-by">Sango · Lake Victoria Basin</p>
+              <p>Local news, stories and community information, reviewed before it is published.</p>
+              <div className="hm-hub-links">
+                <Link href="/hub" prefetch={false}><Newspaper size={15} /> Read stories</Link>
+                <Link href="/hub/create" prefetch={false}><PenTool size={15} /> Write a story</Link>
+              </div>
+            </article>
           </div>
+          <Link href="/hubs" className="hm-more" prefetch={false}><Users size={15} /> See both hubs and what they published <ArrowRight size={15} /></Link>
         </div>
+      </section>
 
-        {/* NURSERY — easy to find, with live numbers */}
-        <NurseryShortcut />
-
-        {/* SECTION 2 — PROFILE */}
-        <motion.section className="home-section home-band home-band--profile" aria-label="Profile" {...reveal}>
-          <SectionHeader icon={UserRound} eyebrow="Profile" badge={connected ? '● Active' : undefined} />
-          <div style={{ display:'flex', alignItems:'center', gap:14, marginBottom:24 }}>
-            <div style={{ position:'relative', flexShrink:0 }}>
-              <div style={{
-                width:52, height:52, borderRadius:'50%', background:C.gold,
-                display:'flex', alignItems:'center', justifyContent:'center',
-                ...SERIF, fontSize:20, fontWeight:600, color:C.ink,
-              }}>{(displayName || 'K').charAt(0).toUpperCase()}</div>
-              <span style={{ position:'absolute', bottom:1, right:0, width:11, height:11, borderRadius:'50%', background:C.pineLight, border:`2px solid ${C.bg}` }} />
-            </div>
-            <div style={{ flex:1, minWidth:0 }}>
-              <p style={{ ...SERIF, fontSize:18, fontWeight:600, margin:0, color:C.paper }}>
-                {connected || privyAuthenticated ? (displayName || 'KAI Member') : 'Not connected'}
-              </p>
-              <p style={{ fontSize:14, color:C.inkLight, margin:'3px 0 0', lineHeight:1.5 }}>
-                {connected || privyAuthenticated
-                  ? "You're an active KAI Nuvari member on Avalanche Fuji, based in Kenya."
-                  : 'Connect a wallet to see your profile.'}
-              </p>
-              {connected && !profile && (
-                <Link href="/profile" className="text-link" style={{ fontSize:12 }}>Complete your profile</Link>
-              )}
-            </div>
-          </div>
-
-          <div className="home-stats">
-            {[
-              { l:'Est. value', v: connected ? (balancesLoading ? '…' : `$${totalUsd.toFixed(2)}`) : '$0.00', color:C.goldLight },
-              { l:'Network',   v:'Fuji',   color:null },
-              { l:'Tokens',    v:connected ? (balancesLoading ? '…' : String(activeTokenCount)) : '0', color:null },
-              { l:'Status',    v:connected ? 'Active' : 'Idle', color:connected ? C.goldLight : null },
-            ].map(s => (
-              <div key={s.l} className="home-stat">
-                <p className="home-stat-value" style={{ color: s.color ?? C.paper }}>{s.v}</p>
-                <p className="home-stat-label">{s.l}</p>
-              </div>
+      {/* How a record becomes trusted */}
+      <section className="hm-sec">
+        <div className="hm-wrap">
+          <h2>How a record becomes trusted</h2>
+          <ol className="hm-steps">
+            {STEPS.map((s, i) => (
+              <li key={s.title}>
+                <span className="hm-step-n">Step {i + 1}</span>
+                <h3><s.icon size={17} /> {s.title}</h3>
+                <p>{s.text}</p>
+              </li>
             ))}
+          </ol>
+        </div>
+      </section>
+
+      {/* Murals */}
+      <section className="hm-sec">
+        <div className="hm-wrap hm-mural">
+          <div>
+            <h2>Murals with a verified story</h2>
+            <p className="hm-intro">
+              Each mural or portrait comes with the record of the trees behind it: which CFA, who planted, when, and the proof on Avalanche.
+            </p>
           </div>
+          <Link href="/murals" className="hm-btn" prefetch={false}>See the murals <ArrowRight size={16} /></Link>
+        </div>
+      </section>
 
-          {connected ? (
-            <div style={{ display:'flex', alignItems:'center', gap:14, flexWrap:'wrap', marginTop:18, paddingTop:16, borderTop:`1px solid ${C.hairline}` }}>
-              <span style={{ ...MONO, fontSize:12, color:C.inkLight, wordBreak:'break-all' }}>{address}</span>
-              <button onClick={copyAddress} style={{ background:'none', border:'none', cursor:'pointer', color:copied?C.goldLight:C.inkLight, fontSize:12, fontWeight:600, display:'flex', alignItems:'center', gap:4, padding:0 }}>
-                {copied?'Copied':(<><Copy size={12}/> Copy</>)}
-              </button>
-              <button onClick={handleRefresh} style={{ background:'none', border:'none', cursor:'pointer', color:C.inkLight, fontSize:12, fontWeight:600, display:'flex', alignItems:'center', gap:4, padding:0 }}>
-                <RefreshCw size={12} style={{ animation:refreshing?'spin 1s linear infinite':'none' }} /> Refresh
-              </button>
-            </div>
-          ) : (
-            <button onClick={() => setShowModal(true)} className="text-link" style={{ background:'none', border:'none', cursor:'pointer', padding:0, font:'inherit', fontSize:14, marginTop:18 }}>
-              Connect a wallet to see your balances
-            </button>
-          )}
-        </motion.section>
-
-        {/* SECTION 3 — QUICK ACTIONS, a single compact grid so all 13 are
-            visible at once and arranged in one place. */}
-        <motion.section className="home-section home-section--qa home-band home-band--qa" id="actions"
-          style={{ scrollMarginTop:70 }} {...reveal}>
-          <SectionHeader icon={LayoutGrid} eyebrow="Quick actions" badge={`● ${QUICK_COUNT} apps`} />
+      {/* Everything else */}
+      <section className="hm-sec" id="actions">
+        <div className="hm-wrap">
+          <h2>Quick actions</h2>
           <QuickActions />
-        </motion.section>
+        </div>
+      </section>
 
-      </div>
+      <style>{`
+        .hm { min-height: 100dvh; background: ${C.bg}; color: ${C.paper}; font-family: 'Inter', system-ui, sans-serif; padding-bottom: 110px; }
+        .hm-wrap { width: min(1080px, calc(100% - 32px)); margin: 0 auto; }
+        .hm-hero { padding: 72px 0 56px; }
+        .hm-eyebrow { margin: 0 0 14px; font-size: 12.5px; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; color: ${C.goldLight}; }
+        .hm-hero h1 { margin: 0; font-size: clamp(34px, 6vw, 58px); line-height: 1.08; font-weight: 700; letter-spacing: -0.01em; max-width: 15ch; }
+        .hm-lead { margin: 18px 0 0; font-size: clamp(16px, 2vw, 19px); line-height: 1.6; color: ${C.dim}; max-width: 54ch; }
+        .hm-btns { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 28px; }
+        .hm-btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 13px 22px; border-radius: 999px; background: ${C.gold}; color: #1B1A14; font-weight: 700; font-size: 15px; text-decoration: none; min-height: 48px; white-space: nowrap; }
+        .hm-btn--ghost { background: rgba(246,242,231,0.08); color: ${C.paper}; }
 
-      {showModal && <WalletConnectModal onClose={() => setShowModal(false)} />}
+        .hm-band { background: ${C.band}; padding: 32px 0; }
+        .hm-stats { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; }
+        @media (min-width: 760px) { .hm-stats { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+        .hm-stat { display: grid; gap: 4px; }
+        .hm-stat b { font-size: clamp(28px, 4vw, 38px); color: ${C.goldLight}; font-variant-numeric: tabular-nums; }
+        .hm-stat span { color: ${C.dim}; font-size: 14px; }
+
+        .hm-sec { padding: 56px 0 0; }
+        .hm-sec h2 { margin: 0 0 6px; font-size: clamp(22px, 3vw, 30px); font-weight: 700; }
+        .hm-intro { margin: 0; color: ${C.dim}; font-size: 15.5px; line-height: 1.55; max-width: 60ch; }
+
+        .hm-hubs { display: grid; gap: 14px; margin-top: 20px; grid-template-columns: 1fr; }
+        @media (min-width: 760px) { .hm-hubs { grid-template-columns: 1fr 1fr; } }
+        .hm-hub { padding: 22px; border-radius: 18px; background: ${C.card}; border-top: 3px solid var(--tint); display: grid; gap: 6px; align-content: start; }
+        .hm-hub-icon { display: grid; place-items: center; width: 44px; height: 44px; border-radius: 50%; color: var(--tint); background: color-mix(in srgb, var(--tint) 16%, ${C.bg}); margin-bottom: 6px; }
+        .hm-hub h3 { margin: 0; font-size: 19px; }
+        .hm-hub-by { margin: 0; font-size: 13px; color: var(--tint); font-weight: 600; }
+        .hm-hub p { margin: 0; color: ${C.dim}; font-size: 14.5px; line-height: 1.5; }
+        .hm-hub-links { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+        .hm-hub-links a { display: inline-flex; align-items: center; gap: 6px; padding: 9px 14px; border-radius: 999px; background: rgba(246,242,231,0.07); color: ${C.paper}; text-decoration: none; font-size: 13.5px; font-weight: 600; min-height: 40px; }
+        .hm-hub-links a:hover { background: rgba(246,242,231,0.12); }
+        .hm-more { display: inline-flex; align-items: center; gap: 8px; margin-top: 16px; color: ${C.goldLight}; font-weight: 600; font-size: 14.5px; text-decoration: none; }
+
+        .hm-steps { list-style: none; margin: 20px 0 0; padding: 0; display: grid; gap: 12px; grid-template-columns: 1fr; }
+        @media (min-width: 640px) { .hm-steps { grid-template-columns: 1fr 1fr; } }
+        @media (min-width: 980px) { .hm-steps { grid-template-columns: repeat(4, 1fr); } }
+        .hm-steps li { padding: 18px; border-radius: 16px; background: ${C.card}; display: grid; gap: 6px; }
+        .hm-step-n { font-size: 12px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: ${C.goldLight}; }
+        .hm-steps h3 { margin: 0; display: flex; align-items: center; gap: 8px; font-size: 16.5px; }
+        .hm-steps p { margin: 0; color: ${C.dim}; font-size: 14.5px; line-height: 1.5; }
+
+        .hm-mural { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 18px; padding: 26px; border-radius: 18px; background: ${C.band}; border-left: 3px solid ${C.gold}; box-sizing: border-box; }
+      `}</style>
     </main>
   );
 }

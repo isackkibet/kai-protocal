@@ -176,7 +176,7 @@ export default function WalletConnectModal({ onClose }: WalletConnectModalProps)
           : String(result.reason ?? 'Email sign-in failed. Please try again.'),
       );
     } else if (result.ok) {
-      router.push('/wallet');
+      router.push('/profile');
     }
   };
 
@@ -192,7 +192,7 @@ export default function WalletConnectModal({ onClose }: WalletConnectModalProps)
           : String(result.reason ?? 'Google sign-in failed. Please try again.'),
       );
     } else if (result.ok) {
-      router.push('/wallet');
+      router.push('/profile');
     }
   };
 
@@ -249,7 +249,7 @@ export default function WalletConnectModal({ onClose }: WalletConnectModalProps)
             label="Signed in via Kainovari"
             address={privyAddress}
             sub="Embedded Avalanche wallet"
-            onPrimary={() => { router.push('/wallet'); onClose(); }}
+            onPrimary={() => { router.push('/profile'); onClose(); }}
             primaryLabel="View wallet"
             onSignOut={privyLogout}
           />

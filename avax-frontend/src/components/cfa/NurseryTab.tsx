@@ -315,15 +315,15 @@ export default function NurseryTab() {
             )}
           </Step>
 
-          <Step n={3} done={!needsSetup} title="Add species and a nursery location"
-            hint="The list of trees you grow and the places in the nursery where batches are kept.">
+          <Step n={3} done={!needsSetup} title="Add species and a nursery group"
+            hint="The trees you grow, and the nursery groups of your CFA that raise them.">
             {isMember && needsSetup && (isAdmin ? (
               <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
                 <StepButton onClick={() => setModal('species')} done={(summary?.species.length ?? 0) > 0}>
                   {(summary?.species.length ?? 0) > 0 ? `✓ ${summary!.species.length} species` : 'Add species'}
                 </StepButton>
                 <StepButton onClick={() => setModal('location')} done={(summary?.locations.length ?? 0) > 0}>
-                  {(summary?.locations.length ?? 0) > 0 ? `✓ ${summary!.locations.length} location${summary!.locations.length === 1 ? '' : 's'}` : 'Add location'}
+                  {(summary?.locations.length ?? 0) > 0 ? `✓ ${summary!.locations.length} nursery group${summary!.locations.length === 1 ? '' : 's'}` : 'Add nursery group'}
                 </StepButton>
               </div>
             ) : (
@@ -369,7 +369,7 @@ export default function NurseryTab() {
         <ActionTile icon={<ArrowRightLeft size={16} color={C.goldLight} />} label="Transfer Seedlings" onClick={() => setModal('transfer')} disabled={!isMember || inNursery.length === 0} />
         <ActionTile icon={<Skull size={16} color={C.red} />} label="Record Loss" onClick={() => setModal('loss')} disabled={!isMember || inNursery.length === 0} />
         {isAdmin && <ActionTile icon={<Plus size={16} color="#C48FE0" />} label="Add Species" onClick={() => setModal('species')} />}
-        {isAdmin && <ActionTile icon={<MapPin size={16} color="#C48FE0" />} label="Add Location" onClick={() => setModal('location')} />}
+        {isAdmin && <ActionTile icon={<MapPin size={16} color="#C48FE0" />} label="Add Nursery Group" onClick={() => setModal('location')} />}
       </div>
 
       <Link href="/workspace" style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12, color: C.goldLight, fontSize: 12.5, fontWeight: 600, textDecoration: 'none' }}>
@@ -463,7 +463,7 @@ export function NurseryModal({
 }) {
   const titles: Record<Exclude<ModalType, null>, string> = {
     species: 'Add Species',
-    location: 'Add Nursery Location',
+    location: 'Add Nursery Group',
     batch: 'Add Seedling Batch',
     plant: 'Plant Seedlings',
     activity: 'Log Nursery Activity',
@@ -562,7 +562,7 @@ function LocationForm({ submitting, onSubmit }: { submitting: boolean; onSubmit:
         longitude: longitude.trim() ? Number(longitude) : null,
       });
     }}>
-      <Field label="Location name">
+      <Field label="Nursery group name">
         <input required value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. Main Nursery, Section A" style={inputStyle} />
       </Field>
       <Field label="Description (optional)">
@@ -576,7 +576,7 @@ function LocationForm({ submitting, onSubmit }: { submitting: boolean; onSubmit:
           <input type="number" step="any" min={-180} max={180} value={longitude} onChange={(e) => setLongitude(e.target.value)} placeholder="36.7091" style={inputStyle} />
         </Field>
       </div>
-      <SubmitButton submitting={submitting} label="Add Location" />
+      <SubmitButton submitting={submitting} label="Add Nursery Group" />
     </form>
   );
 }
@@ -602,7 +602,7 @@ function BatchForm({ summary, submitting, onSubmit }: { summary: NurserySummary;
           {summary.species.map((sp) => <option key={sp.id} value={sp.id} style={optionStyle}>{sp.commonName} ({sp.scientificName})</option>)}
         </select>
       </Field>
-      <Field label="Nursery location">
+      <Field label="Nursery group">
         <select required value={locationId} onChange={(e) => setLocationId(e.target.value)} style={inputStyle}>
           {summary.locations.map((l) => <option key={l.id} value={l.id} style={optionStyle}>{l.name}</option>)}
         </select>
@@ -694,7 +694,7 @@ function ActivityForm({ summary, submitting, onSubmit }: { summary: NurserySumma
           {Object.entries(ACTIVITY_LABELS).filter(([k]) => k !== 'planting').map(([k, v]) => <option key={k} value={k} style={optionStyle}>{v}</option>)}
         </select>
       </Field>
-      <Field label="Location">
+      <Field label="Nursery group">
         <select required value={locationId} onChange={(e) => setLocationId(e.target.value)} style={inputStyle}>
           {summary.locations.map((l) => <option key={l.id} value={l.id} style={optionStyle}>{l.name}</option>)}
         </select>

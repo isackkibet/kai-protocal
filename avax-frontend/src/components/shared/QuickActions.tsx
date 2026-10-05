@@ -3,12 +3,11 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import {
-  Bot, CircleDollarSign, Droplets, FlaskConical, Gift, Globe, ImageIcon, LayoutGrid, Link2, Lock, MessagesSquare, Mic,
-  ScanLine, ShieldCheck, Sprout, type LucideIcon,
+  BookOpen, Frame, Globe2, Link2, MessagesSquare, Newspaper, PenTool, ShieldCheck, Sprout, UserRound, type LucideIcon,
 } from 'lucide-react';
 
 /**
- * Home "Quick actions": every app as a tile with a line icon in a tinted
+ * Home "Quick actions": every conservation app as a tile with a line icon in a tinted
  * badge, what it does in a few words, and live numbers where they help
  * (seedlings in the nursery, records waiting for a verifier). Conservation
  * comes first so the nursery is easy to find.
@@ -21,42 +20,26 @@ export const QUICK_GROUPS: Group[] = [
   {
     title: 'Conservation', tint: '#7DC383',
     items: [
-      { name: 'Nursery', hint: 'Seedlings & planting', href: '/nursery', icon: Sprout, image: '/images/apps/nursery.jpg', live: 'nursery' },
+      { name: 'Nursery groups', hint: 'Seedlings & planting', href: '/nursery', icon: Sprout, image: '/images/apps/nursery.jpg', live: 'nursery' },
       { name: 'Kanuvari AI', hint: 'Just say it', href: '/workspace', icon: MessagesSquare, image: '/images/apps/kanuvari-ai.jpg' },
       { name: 'Verification', hint: 'Check records', href: '/mrv', icon: ShieldCheck, image: '/images/apps/verification.jpg', live: 'verify' },
     ],
   },
   {
-    title: 'Agents', tint: '#6FA8DC',
+    title: 'Information Hubs', tint: '#6FA8DC',
     items: [
-      { name: 'Voice Agent', hint: 'Talk to KAI', href: '/voice', icon: Mic, image: '/images/apps/voice-agent.jpg' },
-      { name: 'AI Agent', hint: 'Ask about tokens and DeFi', href: '/ai', icon: Bot, image: '/images/apps/ai-agent.jpg' },
+      { name: 'Both hubs', hint: 'What each hub published', href: '/hubs', icon: Globe2 },
+      { name: 'SIHU stories', hint: 'Read local news', href: '/hub', icon: Newspaper },
+      { name: 'Write a story', hint: 'For the SIHU hub', href: '/hub/create', icon: PenTool },
+      { name: 'Guides', hint: 'Jaza Miti and more', href: '/conservation', icon: BookOpen },
     ],
   },
   {
-    title: 'DeFi · Earn', tint: '#C89B3C',
+    title: 'Explore', tint: '#C89B3C',
     items: [
-      { name: 'Securities', hint: 'Tokenised assets', href: '/securities', icon: ShieldCheck, image: '/images/apps/securities.jpg' },
-      { name: 'Pools', hint: 'Swap and add liquidity', href: '/pools', icon: Droplets, image: '/images/apps/pools.jpg' },
-      { name: 'Vaults', hint: 'Earn yield', href: '/vaults', icon: Lock, image: '/images/apps/vaults.jpg' },
-      { name: 'TaaS', hint: 'Create your own token', href: '/taas', icon: LayoutGrid, image: '/images/apps/taas.jpg' },
-    ],
-  },
-  {
-    title: 'Shop · Pay', tint: '#C48FE0',
-    items: [
-      { name: 'Scan & Pay', hint: 'M-Pesa and QR', href: '/pay', icon: ScanLine, image: '/images/apps/scan-pay.jpg' },
-      { name: 'Products', hint: 'Buy with yBOB', href: '/products', icon: CircleDollarSign, image: '/images/apps/products.jpg' },
-      { name: 'NFT Mkt', hint: 'Conservation NFTs', href: '/connft', icon: ImageIcon, image: '/images/apps/nft-mkt.jpg' },
-      { name: 'Airdrop', hint: 'Daily drop and points', href: '/mine', icon: Gift, image: '/images/apps/airdrop.jpg' },
-    ],
-  },
-  {
-    title: 'Explore', tint: '#6FC3B8',
-    items: [
-      { name: 'Playground', hint: 'Try KAI operations', href: '/nuvari', icon: FlaskConical, image: '/images/apps/playground.jpg' },
-      { name: 'SDG Impact', hint: 'Impact by goal', href: '/sdg', icon: Globe, image: '/images/apps/sdg.jpg' },
+      { name: 'Murals', hint: 'Art with a verified story', href: '/murals', icon: Frame },
       { name: 'KAI Web', hint: 'The KAI website', href: '/kai', icon: Link2, image: '/images/apps/kai-web.jpg' },
+      { name: 'Profile', hint: 'Your account', href: '/profile', icon: UserRound },
     ],
   },
 ];

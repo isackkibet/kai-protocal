@@ -4,10 +4,9 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  Home, Bot, Gift, UserCircle2, Newspaper, TreePine,
+  Home, Bot, UserCircle2, Newspaper, TreePine,
   ChevronRight, X, BookOpen, PenTool, Sprout, ExternalLink, LayoutGrid,
 } from 'lucide-react';
-import { useAIChatStore } from '@/store/useAIChatStore';
 
 const itemStyle = (active: boolean): React.CSSProperties => ({
   display: 'flex', flexDirection: 'column', alignItems: 'center',
@@ -28,7 +27,7 @@ const HUB_OPTIONS = [
     id: 'sihu',
     name: 'News & stories',
     source: 'SIHU',
-    desc: 'Read local news from the Lake Victoria Basin, or write your own story and earn tips.',
+    desc: 'Read local news from the Lake Victoria Basin, or write your own story.',
     href: '/hub',
     match: (p: string) => p.startsWith('/hub'),
     icon: Newspaper,
@@ -37,7 +36,7 @@ const HUB_OPTIONS = [
     border: 'rgba(56, 189, 248, 0.35)',
     quick: [
       { label: 'Read news', href: '/hub#latest', icon: BookOpen },
-      { label: 'Write a story', href: '/hub/create', icon: PenTool, badge: 'Earn tips' },
+      { label: 'Write a story', href: '/hub/create', icon: PenTool },
     ],
     portal: ext(process.env.NEXT_PUBLIC_SIHU_PORTAL_URL),
   },
@@ -45,7 +44,7 @@ const HUB_OPTIONS = [
     id: 'oloolua',
     name: 'Forest conservation',
     source: 'Oloolua Youth Guardians',
-    desc: 'Plant trees with your community forest group, learn proven methods and record your work.',
+    desc: 'Your CFA nursery groups: record seedlings, planting and survival, with verified records.',
     href: '/conservation',
     match: (p: string) => p.startsWith('/conservation') || p.startsWith('/cfa') || p.startsWith('/nursery'),
     icon: TreePine,
@@ -53,7 +52,7 @@ const HUB_OPTIONS = [
     bg: 'linear-gradient(135deg, rgba(16, 185, 129, 0.16) 0%, rgba(4, 21, 14, 0.95) 100%)',
     border: 'rgba(16, 185, 129, 0.35)',
     quick: [
-      { label: 'Log a planting', href: '/nursery', icon: Sprout, badge: '+20 pts' },
+      { label: 'Nursery groups', href: '/nursery', icon: Sprout },
       { label: 'Guides', href: '/conservation/methodologies', icon: BookOpen },
     ],
     portal: ext(process.env.NEXT_PUBLIC_OLOOLUA_PORTAL_URL),
@@ -71,8 +70,6 @@ export default function BottomNav() {
     const next = typeof v === 'function' ? v(hubMenuOpen) : v;
     setMenuPath(next ? path : null);
   };
-  const isChatOpen = useAIChatStore(s => s.isOpen);
-  const toggleChat  = useAIChatStore(s => s.toggle);
 
   // /cfa is part of the Oloolua hub, so the indicator has to follow the same
   // rule the picker's match() uses or the icon stays unlit on those pages.
@@ -227,11 +224,6 @@ export default function BottomNav() {
                             >
                               <QIcon size={13} color={opt.accent} />
                               <span style={{ fontSize: 12, fontWeight: 600 }}>{q.label}</span>
-                              {q.badge && (
-                                <span style={{ fontSize: 10, fontWeight: 700, color: '#020617', background: opt.accent, padding: '1px 6px', borderRadius: 999 }}>
-                                  {q.badge}
-                                </span>
-                              )}
                             </button>
                           );
                         })}
@@ -256,7 +248,7 @@ export default function BottomNav() {
 
               {/* Overview of both hubs */}
               <button
-                onClick={() => selectHub('/hub')}
+                onClick={() => selectHub('/hubs')}
                 style={{
                   marginTop: 14, width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
                   padding: '11px 0', borderRadius: 12, border: '1px solid rgba(200, 155, 60, 0.30)', background: 'none',
@@ -264,7 +256,7 @@ export default function BottomNav() {
                 }}
               >
                 <LayoutGrid size={15} />
-                <span style={{ fontSize: 13, fontWeight: 700 }}>See everything you can do</span>
+                <span style={{ fontSize: 13, fontWeight: 700 }}>See both hubs together</span>
               </button>
             </motion.div>
           </div>
@@ -291,22 +283,18 @@ export default function BottomNav() {
           }}>Home</span>
         </Link>
 
-        {/* Airdrop */}
-        <Link href="/mine" style={itemStyle(path?.startsWith('/mine'))} prefetch={false}>
-          {path?.startsWith('/mine') && <motion.span layoutId="nav-indicator" style={{
+        {/* Nursery groups */}
+        <Link href="/nursery" style={itemStyle(!!path?.startsWith('/nursery'))} prefetch={false}>
+          {path?.startsWith('/nursery') && <motion.span layoutId="nav-indicator" style={{
             position: 'absolute', top: 0, left: '20%', right: '20%',
-            height: 2, borderRadius: '0 0 4px 4px',
-            background: 'linear-gradient(90deg, transparent, #10b981, transparent)',
+            height: 2, borderRadius: '0 0 4px 4px', background: '#7DC383',
           }} />}
-          <motion.span whileHover={{ y: -2 }} whileTap={{ scale: 0.9 }} style={{ display: 'inline-flex' }}>
-            <Gift size={22} strokeWidth={path?.startsWith('/mine') ? 2.4 : 1.7}
-              color={path?.startsWith('/mine') ? '#10b981' : 'rgba(255,255,255,0.32)'}
-              style={{ transition: 'all 0.2s', transform: path?.startsWith('/mine') ? 'scale(1.08) translateY(-1px)' : 'scale(1)' }} />
-          </motion.span>
+          <Sprout size={22} strokeWidth={path?.startsWith('/nursery') ? 2.4 : 1.7}
+            color={path?.startsWith('/nursery') ? '#7DC383' : 'rgba(255,255,255,0.45)'} />
           <span style={{
-            fontSize: 11, fontWeight: path?.startsWith('/mine') ? 800 : 500, letterSpacing: 0.3,
-            color: path?.startsWith('/mine') ? '#10b981' : 'rgba(255,255,255,0.30)', transition: 'all 0.2s',
-          }}>Airdrop</span>
+            fontSize: 11, fontWeight: path?.startsWith('/nursery') ? 800 : 500, letterSpacing: 0.3,
+            color: path?.startsWith('/nursery') ? '#7DC383' : 'rgba(255,255,255,0.45)',
+          }}>Nursery</span>
         </Link>
 
         {/* Info Hub (Opens dual hub options: SIHU News Hub vs Oloolua Conservation Hub) */}
@@ -328,7 +316,7 @@ export default function BottomNav() {
           <span style={{
             fontSize: 11, fontWeight: (isInfoHubActive || hubMenuOpen) ? 800 : 500, letterSpacing: 0.3,
             color: (isInfoHubActive || hubMenuOpen) ? '#10b981' : 'rgba(255,255,255,0.30)', transition: 'all 0.2s',
-          }}>Info Hub</span>
+          }}>Hubs</span>
         </button>
 
         {/* Profile */}
@@ -349,23 +337,19 @@ export default function BottomNav() {
           }}>Profile</span>
         </Link>
 
-        {/* Agent */}
-        <button onClick={toggleChat} style={itemStyle(isChatOpen)} aria-pressed={isChatOpen}>
-          {isChatOpen && <motion.span layoutId="nav-indicator" style={{
+        {/* Kanuvari AI */}
+        <Link href="/workspace" style={itemStyle(!!path?.startsWith('/workspace'))} prefetch={false}>
+          {path?.startsWith('/workspace') && <motion.span layoutId="nav-indicator" style={{
             position: 'absolute', top: 0, left: '20%', right: '20%',
-            height: 2, borderRadius: '0 0 4px 4px',
-            background: 'linear-gradient(90deg, transparent, #10b981, transparent)',
+            height: 2, borderRadius: '0 0 4px 4px', background: '#7DC383',
           }} />}
-          <motion.span whileHover={{ y: -2 }} whileTap={{ scale: 0.9 }} style={{ display: 'inline-flex' }}>
-            <Bot size={22} strokeWidth={isChatOpen ? 2.4 : 1.7}
-              color={isChatOpen ? '#10b981' : 'rgba(255,255,255,0.32)'}
-              style={{ transition: 'all 0.2s', transform: isChatOpen ? 'scale(1.08) translateY(-1px)' : 'scale(1)' }} />
-          </motion.span>
+          <Bot size={22} strokeWidth={path?.startsWith('/workspace') ? 2.4 : 1.7}
+            color={path?.startsWith('/workspace') ? '#7DC383' : 'rgba(255,255,255,0.45)'} />
           <span style={{
-            fontSize: 11, fontWeight: isChatOpen ? 800 : 500, letterSpacing: 0.3,
-            color: isChatOpen ? '#10b981' : 'rgba(255,255,255,0.30)', transition: 'all 0.2s',
-          }}>Agent</span>
-        </button>
+            fontSize: 11, fontWeight: path?.startsWith('/workspace') ? 800 : 500, letterSpacing: 0.3,
+            color: path?.startsWith('/workspace') ? '#7DC383' : 'rgba(255,255,255,0.45)',
+          }}>Ask AI</span>
+        </Link>
       </nav>
     </>
   );

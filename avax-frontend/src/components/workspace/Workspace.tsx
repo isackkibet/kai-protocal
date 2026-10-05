@@ -197,7 +197,7 @@ export default function Workspace({ embedded = false, fullScreen = false }: { em
     if (!authenticated) { say('Sign in with Google first (link at the top), then join the CFA on /nursery.'); return; }
     if (isMember === false) { say('Join the CFA first: open /nursery and press “Join Oloolua CFA”.'); return; }
     const setupDone = summary.species.length > 0 && summary.locations.length > 0;
-    if (!setupDone) { say('A CFA admin must first add the species you grow and a nursery location (on /nursery).'); return; }
+    if (!setupDone) { say('A CFA admin must first add the species you grow and a nursery group (on /nursery).'); return; }
     if (q.needs === 'stock' && !summary.batches.some((b) => b.status === 'in_inventory')) { say('There are no seedlings in the nursery yet. Use “Add seedlings” first.'); return; }
     if (q.needs === 'any' && !summary.batches.length) { say('There are no batches yet. Use “Add seedlings” first.'); return; }
     setQuick(q.type);
@@ -429,57 +429,6 @@ export default function Workspace({ embedded = false, fullScreen = false }: { em
       {sectionLabel('Main')}
       <SideLink href="/" icon={<Home size={16} />} label="Home" />
       <SideLink href="/nursery" icon={<LayoutDashboard size={16} />} label="Overview" />
-      <details>
-        <summary className="kv-nav" style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '9px 10px', borderRadius: 10, color: C.paperDim, fontSize: 13.5, cursor: 'pointer', listStyle: 'none' }}>
-          <MessageSquare size={16} /><span style={{ flex: 1 }}>Chats</span><ChevronDown size={14} />
-        </summary>
-        {(['Today', 'Yesterday', 'Previous'] as const).map((g) => groups[g].length > 0 && (
-          <div key={g}>
-            <p style={{ fontSize: 10.5, color: C.inkLight, margin: '6px 12px 2px' }}>{g}</p>
-            {groups[g].map((t) => (
-              <div key={t.id} style={{ display: 'flex', alignItems: 'center' }}>
-                <button onClick={() => openThread(t)} className="kv-nav" style={{ flex: 1, textAlign: 'left', padding: '6px 12px', background: t.id === threadId ? 'rgba(200,155,60,0.1)' : 'none', border: 'none', borderRadius: 8, color: C.paperDim, fontSize: 12.5, cursor: 'pointer', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontFamily: 'inherit' }}>{t.title}</button>
-                <button aria-label={`Delete chat ${t.title}`} onClick={() => { deleteThread(userKey, t.id); setThreads(loadThreads(userKey)); }} style={{ background: 'none', border: 'none', color: C.inkLight, cursor: 'pointer', padding: 4 }}><Trash2 size={12} /></button>
-              </div>
-            ))}
-          </div>
-        ))}
-        {!threads.length && <p style={{ fontSize: 12, color: C.inkLight, margin: '4px 12px' }}>No saved chats yet.</p>}
-      </details>
-      <details>
-        <summary className="kv-nav" style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '9px 10px', borderRadius: 10, color: C.paperDim, fontSize: 13.5, cursor: 'pointer', listStyle: 'none' }}>
-          <Wrench size={16} /><span style={{ flex: 1 }}>Tools</span><ChevronDown size={14} />
-        </summary>
-        {STARTERS.map((s) => <PromptButton onPick={pick} key={s.q} q={s.q} icon={<span style={{ width: 16 }} />} label={s.label} />)}
-      </details>
-      <details>
-        <summary className="kv-nav" style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '9px 10px', borderRadius: 10, color: C.paperDim, fontSize: 13.5, cursor: 'pointer', listStyle: 'none' }}>
-          <FolderOpen size={16} /><span style={{ flex: 1 }}>Projects</span><ChevronDown size={14} />
-        </summary>
-        <button onClick={() => { setProject(''); try { localStorage.removeItem('kanuvari.project'); } catch { /* optional */ } }} className="kv-nav" style={{ display: 'block', width: '100%', textAlign: 'left', padding: '6px 12px', background: !project ? 'rgba(200,155,60,0.1)' : 'none', border: 'none', borderRadius: 8, color: C.paperDim, fontSize: 12.5, cursor: 'pointer', fontFamily: 'inherit' }}>No project (whole CFA)</button>
-        {summary.locations.map((l) => (
-          <button key={l.id} onClick={() => { setProject(l.name); try { localStorage.setItem('kanuvari.project', l.name); } catch { /* optional */ } setSidebarOpen(false); }} className="kv-nav" style={{ display: 'block', width: '100%', textAlign: 'left', padding: '6px 12px', background: project === l.name ? 'rgba(200,155,60,0.1)' : 'none', border: 'none', borderRadius: 8, color: C.paperDim, fontSize: 12.5, cursor: 'pointer', fontFamily: 'inherit' }}>{l.name}</button>
-        ))}
-        {!summary.locations.length && <p style={{ fontSize: 12, color: C.inkLight, margin: '4px 12px' }}>No nurseries yet. An admin adds them on /nursery.</p>}
-      </details>
-
-      {sectionLabel('Conservation')}
-      <PromptButton onPick={pick} q="I want to submit new information about our nursery" icon={<Leaf size={16} />} label="Submit information" />
-      <PromptButton onPick={pick} q="Query the nursery database: " icon={<Database size={16} />} label="Query database" />
-      <SideLink href="/nursery" icon={<Sprout size={16} />} label="Nursery & seedlings" />
-      <SideLink href="/nursery" icon={<ImageIcon size={16} />} label="Evidence" />
-      <SideLink href="/mrv" icon={<ShieldCheck size={16} />} label="Verification" />
-      <SideLink href="/nursery" icon={<BarChart3 size={16} />} label="Conservation dashboard" />
-
-      <details>
-        <summary className="kv-nav" style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '9px 10px', borderRadius: 10, color: C.inkLight, fontSize: 12.5, cursor: 'pointer', listStyle: 'none', marginTop: 12 }}>
-          <span style={{ flex: 1 }}>Finance &amp; Community (coming soon)</span><ChevronDown size={14} />
-        </summary>
-        <SideLink href="/wallet" icon={<span style={{ width: 16 }} />} label="Portfolio" soon />
-        <SideLink href="/swap" icon={<span style={{ width: 16 }} />} label="Swap tokens" soon />
-        <SideLink href="/vaults" icon={<span style={{ width: 16 }} />} label="Vaults & yield" soon />
-        <SideLink href="/kai-bar" icon={<span style={{ width: 16 }} />} label="Airdrop & points" soon />
-      </details>
 
       {sectionLabel('System')}
       <SideLink href="/profile" icon={<Settings size={16} />} label="Settings" />
@@ -516,7 +465,7 @@ export default function Workspace({ embedded = false, fullScreen = false }: { em
           {!embedded && <button onClick={() => setSidebarOpen(true)} className="kv-mobile-only" aria-label="Open menu" style={{ background: 'none', border: 'none', color: C.paperDim, cursor: 'pointer', padding: 6 }}><Menu size={20} /></button>}
           <p style={{ margin: 0, fontWeight: 700, fontSize: 14.5, flex: 1, minWidth: 0 }}>
             {fullScreen
-              ? <><Link href="/" aria-label="Home" style={{ color: C.inkLight, textDecoration: 'none', marginRight: 10 }}>←</Link>Oloolua CFA Nursery</>
+              ? <><Link href="/" aria-label="Home" style={{ color: C.inkLight, textDecoration: 'none', marginRight: 10 }}>←</Link>Oloolua CFA › Nursery groups</>
               : embedded ? 'Nursery AI' : 'Nursery Assistant'}
             {project ? <span style={{ color: C.inkLight, fontWeight: 500 }}> · {project}</span> : null}
           </p>
