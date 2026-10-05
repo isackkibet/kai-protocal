@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { Leaf } from 'lucide-react';
 import { usePrivyAuth } from '@/lib/auth/privy-auth';
-import { HUB_THEME, MONO, SERIF } from '@/lib/hubs/hub-theme';
+import { HUB_THEME, SANS, SERIF } from '@/lib/hubs/hub-theme';
 
 const NAV = [
   { href: '/conservation', label: 'Home' },
@@ -26,18 +26,18 @@ export default function ConservationHeader() {
         </div>
         <div>
           <span style={{ ...SERIF, fontSize: 22, fontWeight: 600, color: HUB_THEME.paper, lineHeight: 1 }}>KAI Nuvari</span>
-          <span style={{ ...MONO, fontSize: 9, letterSpacing: 1.4, color: HUB_THEME.goldLight, display: 'block', marginTop: 2 }}>CONSERVATION / CFA HUB</span>
+          <span style={{ ...SANS, fontSize: 12.5, color: HUB_THEME.goldLight, display: 'block', marginTop: 2, fontWeight: 600 }}>Oloolua Conservation Hub</span>
         </div>
       </Link>
 
-      <nav style={{ display: 'flex', gap: 18, marginLeft: 18, flexWrap: 'wrap' }}>
+      <nav style={{ display: 'flex', gap: 6, flexWrap: 'wrap', width: '100%', order: 3 }}>
         {NAV.map(n => {
           const active = n.href === '/conservation' ? pathname === '/conservation' : pathname.startsWith(n.href);
           return (
             <Link key={n.href} href={n.href}
-              style={{ ...MONO, fontSize: 11, letterSpacing: 1.2, textTransform: 'uppercase', textDecoration: 'none',
-                color: active ? HUB_THEME.goldLight : HUB_THEME.inkLight, fontWeight: active ? 600 : 400,
-                borderBottom: active ? `2px solid ${HUB_THEME.gold}` : '2px solid transparent', paddingBottom: 4 }}>
+              style={{ ...SANS, fontSize: 14, textDecoration: 'none', padding: '8px 14px', borderRadius: 999,
+                color: active ? '#1B1A14' : HUB_THEME.paperDim, background: active ? HUB_THEME.gold : 'rgba(246,242,231,0.07)',
+                fontWeight: 600 }}>
               {n.label}
             </Link>
           );
@@ -45,16 +45,16 @@ export default function ConservationHeader() {
       </nav>
 
       <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 10 }}>
-        <Link href="/hub" style={{ ...MONO, fontSize: 11, letterSpacing: 1, textTransform: 'uppercase', textDecoration: 'none', color: HUB_THEME.inkLight }}>
-          SIHU ↗
+        <Link href="/hubs" style={{ ...SANS, fontSize: 13.5, fontWeight: 600, textDecoration: 'none', color: HUB_THEME.paperDim }}>
+          All hubs
         </Link>
         {ready && !authenticated ? (
           <button onClick={() => { signInWithEmail(); }}
-            style={{ ...MONO, fontSize: 11, letterSpacing: 1, textTransform: 'uppercase', background: HUB_THEME.gold, color: HUB_THEME.ink, border: 'none', borderRadius: 999, padding: '9px 18px', cursor: 'pointer', fontWeight: 600 }}>
+            style={{ ...SANS, fontSize: 13.5, background: HUB_THEME.gold, color: HUB_THEME.ink, border: 'none', borderRadius: 999, padding: '9px 18px', cursor: 'pointer', fontWeight: 700 }}>
             Sign in
           </button>
         ) : (
-          <span style={{ ...MONO, fontSize: 11, letterSpacing: 1, textTransform: 'uppercase', color: HUB_THEME.goldLight }}>
+          <span style={{ ...SANS, fontSize: 13.5, fontWeight: 600, color: HUB_THEME.goldLight }}>
             {name?.split(' ')[0] ?? '●'}
           </span>
         )}

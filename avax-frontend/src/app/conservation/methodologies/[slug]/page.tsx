@@ -45,9 +45,9 @@ export default async function MethodologyPage({ params }: { params: Promise<{ sl
 
       <section style={{ padding: '28px 0 10px' }}>
         <div style={{ display: 'flex', gap: 10, alignItems: 'center', marginBottom: 14, flexWrap: 'wrap' }}>
-          <span style={{ ...MONO, fontSize: 9, letterSpacing: 1.4, textTransform: 'uppercase', color: HUB_THEME.goldLight }}>Methodology</span>
-          <span style={{ ...MONO, fontSize: 9, letterSpacing: 1.4, textTransform: 'uppercase', color: HUB_THEME.inkLight }}>{m.ownerType.replaceAll('_', ' ')}</span>
-          {m.featured && <span style={{ ...MONO, fontSize: 9, letterSpacing: 1, textTransform: 'uppercase', color: HUB_THEME.gold }}>Featured</span>}
+          <span style={{ ...MONO, fontSize: 11.5, letterSpacing: 1.4, textTransform: 'uppercase', color: HUB_THEME.goldLight }}>Methodology</span>
+          <span style={{ ...MONO, fontSize: 11.5, letterSpacing: 1.4, textTransform: 'uppercase', color: HUB_THEME.inkLight }}>{m.ownerType.replaceAll('_', ' ')}</span>
+          {m.featured && <span style={{ ...MONO, fontSize: 11.5, letterSpacing: 1, textTransform: 'uppercase', color: HUB_THEME.gold }}>Featured</span>}
         </div>
         <h1 style={{ ...SERIF, fontSize: 44, fontWeight: 600, lineHeight: 1.1, margin: '0 0 14px' }}>{m.name}</h1>
         <p style={{ ...SANS, fontSize: 18, color: 'rgba(246,242,231,0.75)', lineHeight: 1.6, maxWidth: 700, margin: 0 }}>

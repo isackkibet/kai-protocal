@@ -31,8 +31,8 @@ interface Member {
 }
 
 const W: React.CSSProperties = { width: '100%', maxWidth: 960, margin: '0 auto', padding: '0 24px', boxSizing: 'border-box' };
-const label: React.CSSProperties = { fontFamily: 'var(--font-plex-mono), monospace', fontSize: 10, letterSpacing: 1.4, textTransform: 'uppercase', color: C.goldLight, fontWeight: 600, margin: 0 };
-const SERIF: React.CSSProperties = { fontFamily: "'Poppins', sans-serif" };
+const label: React.CSSProperties = { fontFamily: "'Inter', system-ui, sans-serif", fontSize: 12, letterSpacing: 1.4, textTransform: 'uppercase', color: C.goldLight, fontWeight: 600, margin: 0 };
+const SERIF: React.CSSProperties = { fontFamily: "'Inter', system-ui, sans-serif" };
 
 export default function AdminWaitlistPage() {
   const [key, setKey] = useState(() => {
@@ -108,7 +108,7 @@ export default function AdminWaitlistPage() {
   const selfClaimed = members?.filter(m => m.whitelisted && m.joinedBy === 'SELF').length ?? 0;
 
   return (
-    <main style={{ minHeight: '100dvh', background: C.bg, color: C.paper, fontFamily: "'Poppins', 'IBM Plex Sans', var(--font-sans)", paddingBottom: 80 }}>
+    <main style={{ minHeight: '100dvh', background: C.bg, color: C.paper, fontFamily: "'Inter', system-ui, sans-serif", paddingBottom: 80 }}>
       <div style={{ ...W, paddingTop: 40 }}>
         <Link href="/" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, textDecoration: 'none', color: C.inkLight, fontSize: 13, marginBottom: 28 }}
           onMouseEnter={e => (e.currentTarget.style.color = C.paperDim)}
@@ -127,7 +127,7 @@ export default function AdminWaitlistPage() {
             onChange={e => setKey(e.target.value)}
             placeholder="Admin key"
             type="password"
-            style={{ flex: 1, minWidth: 200, padding: '11px 14px', borderRadius: 10, border: `1px solid ${C.hairline}`, background: 'none', color: C.paper, fontSize: 13, outline: 'none', fontFamily: 'var(--font-plex-mono), monospace' }}
+            style={{ flex: 1, minWidth: 200, padding: '11px 14px', borderRadius: 10, border: `1px solid ${C.hairline}`, background: 'none', color: C.paper, fontSize: 13, outline: 'none', fontFamily: "'Inter', system-ui, sans-serif" }}
             onKeyDown={e => { if (e.key === 'Enter' && key) void load(key); }}
           />
           <button onClick={() => key && void load(key)} disabled={loading || !key}
@@ -142,15 +142,15 @@ export default function AdminWaitlistPage() {
             <div style={{ marginTop: 24, display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12 }}>
               <div style={{ padding: '16px', border: `1px solid ${C.hairline}`, borderRadius: 12 }}>
                 <p style={label}>Joined</p>
-                <p style={{ fontSize: 28, fontWeight: 700, margin: '6px 0 0', fontFamily: 'var(--font-plex-mono), monospace' }}>{joined}</p>
+                <p style={{ fontSize: 28, fontWeight: 700, margin: '6px 0 0', fontFamily: "'Inter', system-ui, sans-serif" }}>{joined}</p>
               </div>
               <div style={{ padding: '16px', border: `1px solid ${C.gold}`, borderRadius: 12 }}>
                 <p style={label}>Whitelisted</p>
-                <p style={{ fontSize: 28, fontWeight: 700, margin: '6px 0 0', color: C.goldLight, fontFamily: 'var(--font-plex-mono), monospace' }}>{whitelisted}</p>
+                <p style={{ fontSize: 28, fontWeight: 700, margin: '6px 0 0', color: C.goldLight, fontFamily: "'Inter', system-ui, sans-serif" }}>{whitelisted}</p>
               </div>
               <div style={{ padding: '16px', border: `1px solid ${C.hairline}`, borderRadius: 12 }}>
                 <p style={label}>Self-claimed</p>
-                <p style={{ fontSize: 28, fontWeight: 700, margin: '6px 0 0', fontFamily: 'var(--font-plex-mono), monospace' }}>{selfClaimed}</p>
+                <p style={{ fontSize: 28, fontWeight: 700, margin: '6px 0 0', fontFamily: "'Inter', system-ui, sans-serif" }}>{selfClaimed}</p>
               </div>
             </div>
 
@@ -174,17 +174,17 @@ export default function AdminWaitlistPage() {
                     <p style={{ fontSize: 13.5, fontWeight: 700, margin: 0, display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
                       {m.name}
                       {m.whitelisted && (
-                        <span style={{ fontSize: 10, letterSpacing: 0.8, textTransform: 'uppercase', color: C.gold, border: `1px solid ${C.gold}`, borderRadius: 999, padding: '2px 8px', fontWeight: 700 }}>
+                        <span style={{ fontSize: 12, letterSpacing: 0.8, textTransform: 'uppercase', color: C.gold, border: `1px solid ${C.gold}`, borderRadius: 999, padding: '2px 8px', fontWeight: 700 }}>
                           {m.joinedBy === 'SELF' ? 'Self-claimed' : 'Whitelisted'}
                         </span>
                       )}
                     </p>
-                    <p style={{ fontSize: 11.5, color: C.inkLight, margin: '2px 0 0', fontFamily: 'var(--font-plex-mono), monospace', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    <p style={{ fontSize: 11.5, color: C.inkLight, margin: '2px 0 0', fontFamily: "'Inter', system-ui, sans-serif", overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                       {m.email}
                       {m.walletAddress ? ` · ${m.walletAddress.slice(0, 6)}…${m.walletAddress.slice(-4)}` : ''}
                     </p>
                   </div>
-                  <div style={{ textAlign: 'right', flexShrink: 0, fontSize: 11, color: C.inkLight, fontFamily: 'var(--font-plex-mono), monospace' }}>
+                  <div style={{ textAlign: 'right', flexShrink: 0, fontSize: 11, color: C.inkLight, fontFamily: "'Inter', system-ui, sans-serif" }}>
                     <p style={{ margin: 0 }}>Joined {fc(m.joinedAt)}</p>
                     <p style={{ margin: '2px 0 0' }}>{m.whitelisted ? `WL ${fc(m.whitelistedAt!)}` : 'Not whitelisted'}</p>
                   </div>

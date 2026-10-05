@@ -20,7 +20,7 @@ export default function MethodologiesIndex() {
           </div>
           <h1 style={{ ...SERIF, fontSize: 32, fontWeight: 600, margin: 0 }}>Conservation methodologies</h1>
         </div>
-        <p style={{ ...MONO, fontSize: 10, letterSpacing: 1.4, textTransform: 'uppercase', color: HUB_THEME.inkLight, margin: 0 }}>
+        <p style={{ ...MONO, fontSize: 12, letterSpacing: 1.4, textTransform: 'uppercase', color: HUB_THEME.inkLight, margin: 0 }}>
           Structured, modular pages · new methodologies can be added without rebuilding the platform
         </p>
         <p style={{ fontSize: 15, color: HUB_THEME.inkLight, lineHeight: 1.7, maxWidth: 660, margin: '20px 0 0' }}>
@@ -44,14 +44,14 @@ export default function MethodologiesIndex() {
                 <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap', marginBottom: 8 }}>
                   <h2 style={{ ...SERIF, fontSize: 26, fontWeight: 600, color: HUB_THEME.paper, margin: 0 }}>{m.name}</h2>
                   {m.featured && (
-                    <span style={{ ...MONO, fontSize: 9, letterSpacing: 1, textTransform: 'uppercase', color: HUB_THEME.gold, border: `1px solid ${HUB_THEME.gold}`, borderRadius: 999, padding: '3px 10px' }}>Featured</span>
+                    <span style={{ ...MONO, fontSize: 11.5, letterSpacing: 1, textTransform: 'uppercase', color: HUB_THEME.gold, border: `1px solid ${HUB_THEME.gold}`, borderRadius: 999, padding: '3px 10px' }}>Featured</span>
                   )}
                 </div>
                 <p style={{ fontSize: 15, color: 'rgba(246,242,231,0.75)', lineHeight: 1.65, margin: 0 }}>{m.shortDescription}</p>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 20, marginTop: 14, flexWrap: 'wrap' }}>
-                  <span style={{ ...MONO, fontSize: 10, color: HUB_THEME.inkLight }}>{m.activities.length} activities</span>
-                  <span style={{ ...MONO, fontSize: 10, color: HUB_THEME.inkLight }}>{m.requiredData.length} data fields</span>
-                  <span style={{ ...MONO, fontSize: 10, color: HUB_THEME.inkLight }}>{m.relatedCfas.join(', ') || 'Not yet connected'}</span>
+                  <span style={{ ...MONO, fontSize: 12, color: HUB_THEME.inkLight }}>{m.activities.length} activities</span>
+                  <span style={{ ...MONO, fontSize: 12, color: HUB_THEME.inkLight }}>{m.requiredData.length} data fields</span>
+                  <span style={{ ...MONO, fontSize: 12, color: HUB_THEME.inkLight }}>{m.relatedCfas.join(', ') || 'Not yet connected'}</span>
                   <span style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, fontWeight: 700, color: HUB_THEME.gold }}>
                     Read the methodology <ArrowRight size={14} />
                   </span>

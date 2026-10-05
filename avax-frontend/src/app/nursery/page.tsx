@@ -18,7 +18,7 @@ export const metadata: Metadata = {
  */
 export default function NurseryPage() {
   return (
-    <main style={{ minHeight: '100dvh', background: '#0B1C14', color: '#F6F2E7', fontFamily: "'Poppins', 'IBM Plex Sans', var(--font-sans)" }}>
+    <main style={{ minHeight: '100dvh', background: '#0E2418', color: '#F6F2E7', fontFamily: "'Inter', system-ui, sans-serif" }}>
       {/* The Nursery AI fills the screen when the page opens; the main KAI
           assistant stays on the rest of the app. */}
       <section aria-label="Nursery AI">

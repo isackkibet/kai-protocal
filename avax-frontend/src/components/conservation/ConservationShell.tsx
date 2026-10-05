@@ -9,16 +9,15 @@ import Link from 'next/link';
  */
 export default function ConservationShell({ children }: { children: React.ReactNode }) {
   return (
-    <main style={{ minHeight: '100dvh', background: HUB_THEME.bg, color: HUB_THEME.paper, fontFamily: "'IBM Plex Sans', sans-serif", paddingBottom: 80 }}>
+    <main style={{ minHeight: '100dvh', background: HUB_THEME.bg, color: HUB_THEME.paper, fontFamily: "'Inter', system-ui, sans-serif", paddingBottom: 80 }}>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@0,9..144,300..700&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&display=swap');
-      `}</style>
+        `}</style>
       <div style={{ maxWidth: 1080, margin: '0 auto', padding: '0 28px' }}>
         <ConservationHeader />
         {children}
         <footer style={{ marginTop: 70, padding: '34px 0 20px', borderTop: `1px solid ${HUB_THEME.hairline}`, display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap', gap: 14 }}>
           <div>
-            <p style={{ ...MONO, fontSize: 10, letterSpacing: 1.2, textTransform: 'uppercase', color: HUB_THEME.goldLight, margin: 0 }}>
+            <p style={{ ...MONO, fontSize: 12, letterSpacing: 1.2, textTransform: 'uppercase', color: HUB_THEME.goldLight, margin: 0 }}>
               KAI NUVARI · CONSERVATION / CFA INFORMATION HUB
             </p>
             <p style={{ fontSize: 12, color: HUB_THEME.inkLight, margin: '6px 0 0', maxWidth: 460, lineHeight: 1.6 }}>

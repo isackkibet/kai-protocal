@@ -34,19 +34,19 @@ export default function ResourcesPage() {
             <div style={{ display: 'flex', gap: 16, alignItems: 'flex-start' }}>
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginBottom: 8 }}>
-                  <span style={{ ...MONO, fontSize: 9, letterSpacing: 1.3, textTransform: 'uppercase', color: HUB_THEME.goldLight }}>{r.kind}</span>
-                  <span style={{ ...MONO, fontSize: 9, letterSpacing: 1, textTransform: 'uppercase', color: r.sourceType === 'KAI_CREATED' ? HUB_THEME.pineLight : HUB_THEME.inkLight }}>
+                  <span style={{ ...MONO, fontSize: 11.5, letterSpacing: 1.3, textTransform: 'uppercase', color: HUB_THEME.goldLight }}>{r.kind}</span>
+                  <span style={{ ...MONO, fontSize: 11.5, letterSpacing: 1, textTransform: 'uppercase', color: r.sourceType === 'KAI_CREATED' ? HUB_THEME.pineLight : HUB_THEME.inkLight }}>
                     {r.sourceType === 'KAI_CREATED' ? 'KAI Nuvari' : 'External'}
                   </span>
                   {r.methodologySlug && (
-                    <Link href={`/conservation/methodologies/${r.methodologySlug}`} style={{ ...MONO, fontSize: 9, letterSpacing: 1, textTransform: 'uppercase', color: HUB_THEME.gold, textDecoration: 'none' }}>
+                    <Link href={`/conservation/methodologies/${r.methodologySlug}`} style={{ ...MONO, fontSize: 11.5, letterSpacing: 1, textTransform: 'uppercase', color: HUB_THEME.gold, textDecoration: 'none' }}>
                       {methodById[r.methodologySlug]} →
                     </Link>
                   )}
                 </div>
                 <h2 style={{ ...SERIF, fontSize: 21, fontWeight: 600, color: HUB_THEME.paper, margin: '0 0 6px' }}>{r.title}</h2>
                 <p style={{ fontSize: 14, color: HUB_THEME.inkLight, lineHeight: 1.6, margin: 0 }}>{r.description}</p>
-                <p style={{ ...MONO, fontSize: 10, color: HUB_THEME.inkLight, margin: '10px 0 0' }}>Source: {r.sourceName} · Attribution preserved</p>
+                <p style={{ ...MONO, fontSize: 12, color: HUB_THEME.inkLight, margin: '10px 0 0' }}>Source: {r.sourceName} · Attribution preserved</p>
               </div>
               <a href={r.url} target="_blank" rel="noreferrer" style={{ ...MONO, fontSize: 11, letterSpacing: 1, textTransform: 'uppercase', color: HUB_THEME.goldLight, textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0, marginTop: 4 }}>
                 Open <ExternalLink size={12} />

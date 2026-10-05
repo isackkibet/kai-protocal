@@ -68,7 +68,7 @@ export default function KnowledgePage() {
               style={{ borderTop: `1px solid ${HUB_THEME.hairline}`, padding: '24px 2px' }}>
               <button onClick={() => setOpen(expanded ? null : k.slug)}
                 style={{ background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left', width: '100%', color: 'inherit', fontFamily: 'inherit' }}>
-                <span style={{ ...MONO, fontSize: 9, letterSpacing: 1.3, textTransform: 'uppercase', color: HUB_THEME.goldLight }}>{k.category}</span>
+                <span style={{ ...MONO, fontSize: 11.5, letterSpacing: 1.3, textTransform: 'uppercase', color: HUB_THEME.goldLight }}>{k.category}</span>
                 <h2 style={{ ...SERIF, fontSize: 24, fontWeight: 600, color: HUB_THEME.paper, margin: '8px 0 8px' }}>{k.title}</h2>
                 <p style={{ fontSize: 14, color: HUB_THEME.inkLight, lineHeight: 1.6, margin: 0 }}>{k.summary}</p>
               </button>
@@ -76,7 +76,7 @@ export default function KnowledgePage() {
                 {hasBodyOpen && (
                   <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} style={{ overflow: 'hidden' }}>
                     <p style={{ ...SANS, fontSize: 15, color: 'rgba(246,242,231,0.85)', lineHeight: 1.8, margin: '14px 0 0', whiteSpace: 'pre-line' }}>{k.body}</p>
-                    <p style={{ ...MONO, fontSize: 10, color: HUB_THEME.inkLight, margin: '14px 0 0' }}>Source: {k.sourceAttribution}</p>
+                    <p style={{ ...MONO, fontSize: 12, color: HUB_THEME.inkLight, margin: '14px 0 0' }}>Source: {k.sourceAttribution}</p>
                   </motion.div>
                 )}
               </AnimatePresence>

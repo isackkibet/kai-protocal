@@ -31,7 +31,7 @@ export default async function ArticlePage({ params }: { params: Promise<{ slug: 
 
   if (!post || post.status !== 'PUBLISHED') {
     return (
-      <main style={{ minHeight: '100dvh', background: HUB_THEME.bg, color: HUB_THEME.paper, fontFamily: "'IBM Plex Sans', sans-serif", padding: '0 28px' }}>
+      <main style={{ minHeight: '100dvh', background: HUB_THEME.bg, color: HUB_THEME.paper, fontFamily: "'Inter', system-ui, sans-serif", padding: '0 28px' }}>
         <div style={{ maxWidth: 820, margin: '0 auto', padding: '160px 0', textAlign: 'center' }}>
           <p style={{ ...SERIF, fontSize: 28, fontWeight: 600 }}>Story not found</p>
           <p style={{ color: HUB_THEME.inkLight, margin: '10px 0 26px' }}>This story may not be published yet, or the link is wrong.</p>
@@ -44,9 +44,8 @@ export default async function ArticlePage({ params }: { params: Promise<{ slug: 
   const paragraphs = post.body.split('\n\n').filter(Boolean);
 
   return (
-    <main style={{ minHeight: '100dvh', background: HUB_THEME.bg, color: HUB_THEME.paper, fontFamily: "'IBM Plex Sans', sans-serif", paddingBottom: 90 }}>
+    <main style={{ minHeight: '100dvh', background: HUB_THEME.bg, color: HUB_THEME.paper, fontFamily: "'Inter', system-ui, sans-serif", paddingBottom: 90 }}>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300..700;1,9..144,300..700&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&display=swap');
         .story-wrap { max-width: 900px; margin: 0 auto; padding: 0 28px; }
         @media (max-width: 640px) { .story-wrap { padding: 0 16px; } }
       `}</style>
@@ -64,11 +63,11 @@ export default async function ArticlePage({ params }: { params: Promise<{ slug: 
 
         <div style={{ borderTop: `1px solid ${HUB_THEME.hairline}`, borderBottom: `1px solid ${HUB_THEME.hairline}`, padding: '44px 0 30px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 16, flexWrap: 'wrap' }}>
-            <span style={{ ...MONO, fontSize: 10, letterSpacing: 1.3, textTransform: 'uppercase', color: HUB_THEME.goldLight, display: 'flex', alignItems: 'center', gap: 5 }}>
+            <span style={{ ...MONO, fontSize: 12, letterSpacing: 1.3, textTransform: 'uppercase', color: HUB_THEME.goldLight, display: 'flex', alignItems: 'center', gap: 5 }}>
               <Newspaper size={12} /> {TYPE_LABEL[post.contentType] ?? humanize(post.contentType)}
             </span>
             <span style={{ height: 1, width: 40, background: HUB_THEME.hairline }} />
-            <span style={{ ...MONO, fontSize: 10, letterSpacing: 1, textTransform: 'uppercase', color: HUB_THEME.inkLight }}>
+            <span style={{ ...MONO, fontSize: 12, letterSpacing: 1, textTransform: 'uppercase', color: HUB_THEME.inkLight }}>
               {humanize(post.category)}
             </span>
           </div>
@@ -90,13 +89,13 @@ export default async function ArticlePage({ params }: { params: Promise<{ slug: 
             <div>
               <p style={{ fontSize: 14, fontWeight: 700, color: HUB_THEME.paper, margin: 0 }}>
                 {post.creatorName}
-                {post.authorBadge && <span style={{ ...MONO, fontSize: 9, letterSpacing: 1, color: HUB_THEME.goldLight, marginLeft: 8 }}>{humanize(post.authorBadge)}</span>}
+                {post.authorBadge && <span style={{ ...MONO, fontSize: 11.5, letterSpacing: 1, color: HUB_THEME.goldLight, marginLeft: 8 }}>{humanize(post.authorBadge)}</span>}
               </p>
               <p style={{ ...MONO, fontSize: 11, color: HUB_THEME.inkLight, margin: '2px 0 0' }}>
                 {post.publishedAt ? new Date(post.publishedAt).toLocaleDateString('en-KE', { year: 'numeric', month: 'long', day: 'numeric' }) : ''} · {post.viewsCount.toLocaleString()} reads
               </p>
             </div>
-            <span style={{ marginLeft: 'auto', ...MONO, fontSize: 10, color: HUB_THEME.inkLight, display: 'flex', alignItems: 'center', gap: 5 }}>
+            <span style={{ marginLeft: 'auto', ...MONO, fontSize: 12, color: HUB_THEME.inkLight, display: 'flex', alignItems: 'center', gap: 5 }}>
               <ShieldCheck size={13} color={HUB_THEME.pineLight} /> Checked and approved by a SIHU editor
             </span>
           </div>

@@ -45,8 +45,8 @@ interface Summary {
 }
 
 const W: React.CSSProperties = { width: '100%', maxWidth: 960, margin: '0 auto', padding: '0 24px', boxSizing: 'border-box' };
-const label: React.CSSProperties = { fontFamily: 'var(--font-plex-mono), monospace', fontSize: 10, letterSpacing: 1.4, textTransform: 'uppercase', color: C.goldLight, fontWeight: 600, margin: 0 };
-const SERIF: React.CSSProperties = { fontFamily: "'Poppins', sans-serif" };
+const label: React.CSSProperties = { fontFamily: "'Inter', system-ui, sans-serif", fontSize: 12, letterSpacing: 1.4, textTransform: 'uppercase', color: C.goldLight, fontWeight: 600, margin: 0 };
+const SERIF: React.CSSProperties = { fontFamily: "'Inter', system-ui, sans-serif" };
 
 function providerIcon(p: string) {
   if (p === 'GOOGLE') return LogIn;
@@ -98,7 +98,7 @@ export default function AdminMembersPage() {
   const fc = (iso: string) => new Date(iso).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
 
   return (
-    <main style={{ minHeight: '100dvh', background: C.bg, color: C.paper, fontFamily: "'Poppins', 'IBM Plex Sans', var(--font-sans)", paddingBottom: 80 }}>
+    <main style={{ minHeight: '100dvh', background: C.bg, color: C.paper, fontFamily: "'Inter', system-ui, sans-serif", paddingBottom: 80 }}>
       <div style={{ ...W, paddingTop: 40 }}>
         <Link href="/" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, textDecoration: 'none', color: C.inkLight, fontSize: 13, marginBottom: 28 }}
           onMouseEnter={e => (e.currentTarget.style.color = C.paperDim)}
@@ -120,7 +120,7 @@ export default function AdminMembersPage() {
             onChange={e => setKey(e.target.value)}
             placeholder="Admin key"
             type="password"
-            style={{ flex: 1, minWidth: 200, padding: '11px 14px', borderRadius: 10, border: `1px solid ${C.hairline}`, background: 'none', color: C.paper, fontSize: 13, outline: 'none', fontFamily: 'var(--font-plex-mono), monospace' }}
+            style={{ flex: 1, minWidth: 200, padding: '11px 14px', borderRadius: 10, border: `1px solid ${C.hairline}`, background: 'none', color: C.paper, fontSize: 13, outline: 'none', fontFamily: "'Inter', system-ui, sans-serif" }}
             onKeyDown={e => { if (e.key === 'Enter' && key) void load(key); }}
           />
           <button onClick={() => key && void load(key)} disabled={loading || !key}
@@ -134,23 +134,23 @@ export default function AdminMembersPage() {
           <div style={{ marginTop: 24, display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: 12 }}>
             <div style={{ padding: '16px', border: `1px solid ${C.gold}`, borderRadius: 12 }}>
               <p style={label}>Total members</p>
-              <p style={{ fontSize: 28, fontWeight: 700, margin: '6px 0 0', color: C.goldLight, fontFamily: 'var(--font-plex-mono), monospace' }}>{summary.total}</p>
+              <p style={{ fontSize: 28, fontWeight: 700, margin: '6px 0 0', color: C.goldLight, fontFamily: "'Inter', system-ui, sans-serif" }}>{summary.total}</p>
             </div>
             <div style={{ padding: '16px', border: `1px solid ${C.hairline}`, borderRadius: 12 }}>
               <p style={label}>Via email</p>
-              <p style={{ fontSize: 28, fontWeight: 700, margin: '6px 0 0', fontFamily: 'var(--font-plex-mono), monospace' }}>{summary.byProvider.EMAIL ?? 0}</p>
+              <p style={{ fontSize: 28, fontWeight: 700, margin: '6px 0 0', fontFamily: "'Inter', system-ui, sans-serif" }}>{summary.byProvider.EMAIL ?? 0}</p>
             </div>
             <div style={{ padding: '16px', border: `1px solid ${C.hairline}`, borderRadius: 12 }}>
               <p style={label}>Via Google</p>
-              <p style={{ fontSize: 28, fontWeight: 700, margin: '6px 0 0', fontFamily: 'var(--font-plex-mono), monospace' }}>{summary.byProvider.GOOGLE ?? 0}</p>
+              <p style={{ fontSize: 28, fontWeight: 700, margin: '6px 0 0', fontFamily: "'Inter', system-ui, sans-serif" }}>{summary.byProvider.GOOGLE ?? 0}</p>
             </div>
             <div style={{ padding: '16px', border: `1px solid ${C.hairline}`, borderRadius: 12 }}>
               <p style={label}>Wallet only</p>
-              <p style={{ fontSize: 28, fontWeight: 700, margin: '6px 0 0', fontFamily: 'var(--font-plex-mono), monospace' }}>{summary.walletOnly ?? 0}</p>
+              <p style={{ fontSize: 28, fontWeight: 700, margin: '6px 0 0', fontFamily: "'Inter', system-ui, sans-serif" }}>{summary.walletOnly ?? 0}</p>
             </div>
             <div style={{ padding: '16px', border: `1px solid ${C.hairline}`, borderRadius: 12 }}>
               <p style={label}>Wallet attached</p>
-              <p style={{ fontSize: 28, fontWeight: 700, margin: '6px 0 0', fontFamily: 'var(--font-plex-mono), monospace' }}>{summary.withWallet}</p>
+              <p style={{ fontSize: 28, fontWeight: 700, margin: '6px 0 0', fontFamily: "'Inter', system-ui, sans-serif" }}>{summary.withWallet}</p>
             </div>
           </div>
         )}
@@ -171,21 +171,21 @@ export default function AdminMembersPage() {
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <p style={{ fontSize: 13.5, fontWeight: 700, margin: 0, display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
                       {m.name}
-                      <span style={{ fontSize: 10, letterSpacing: 0.8, textTransform: 'uppercase', color: C.gold, border: `1px solid ${C.gold}`, borderRadius: 999, padding: '2px 8px', fontWeight: 700 }}>
+                      <span style={{ fontSize: 12, letterSpacing: 0.8, textTransform: 'uppercase', color: C.gold, border: `1px solid ${C.gold}`, borderRadius: 999, padding: '2px 8px', fontWeight: 700 }}>
                         {m.authProvider}
                       </span>
                       {m.walletAddress && (
-                        <span style={{ fontSize: 10, color: C.inkLight, display: 'inline-flex', alignItems: 'center', gap: 3 }}>
+                        <span style={{ fontSize: 12, color: C.inkLight, display: 'inline-flex', alignItems: 'center', gap: 3 }}>
                           <Wallet size={10} /> connected
                         </span>
                       )}
                     </p>
-                    <p style={{ fontSize: 11.5, color: C.inkLight, margin: '2px 0 0', fontFamily: 'var(--font-plex-mono), monospace', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    <p style={{ fontSize: 11.5, color: C.inkLight, margin: '2px 0 0', fontFamily: "'Inter', system-ui, sans-serif", overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                       {m.email}
                       {m.walletAddress ? ` · ${m.walletAddress.slice(0, 6)}…${m.walletAddress.slice(-4)}` : ' · no wallet yet'}
                     </p>
                   </div>
-                  <div style={{ textAlign: 'right', flexShrink: 0, fontSize: 11, color: C.inkLight, fontFamily: 'var(--font-plex-mono), monospace' }}>
+                  <div style={{ textAlign: 'right', flexShrink: 0, fontSize: 11, color: C.inkLight, fontFamily: "'Inter', system-ui, sans-serif" }}>
                     <p style={{ margin: 0 }}>Joined {fc(m.joinedAt)}</p>
                     <p style={{ margin: '2px 0 0' }}>{m.status}</p>
                   </div>
@@ -205,14 +205,14 @@ export default function AdminMembersPage() {
                   <Wallet size={16} color={C.inkLight} />
                 </div>
                 <div style={{ flex: 1, minWidth: 0 }}>
-                  <p style={{ fontSize: 13, fontWeight: 700, margin: 0, fontFamily: 'var(--font-plex-mono), monospace', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  <p style={{ fontSize: 13, fontWeight: 700, margin: 0, fontFamily: "'Inter', system-ui, sans-serif", overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                     {w.address}
                   </p>
                   <p style={{ fontSize: 11.5, color: C.inkLight, margin: '2px 0 0' }}>
                     {w.connector ?? 'Browser wallet'} · {w.visits} {w.visits === 1 ? 'visit' : 'visits'}
                   </p>
                 </div>
-                <div style={{ textAlign: 'right', flexShrink: 0, fontSize: 11, color: C.inkLight, fontFamily: 'var(--font-plex-mono), monospace' }}>
+                <div style={{ textAlign: 'right', flexShrink: 0, fontSize: 11, color: C.inkLight, fontFamily: "'Inter', system-ui, sans-serif" }}>
                   <p style={{ margin: 0 }}>Joined {fc(w.firstSeenAt)}</p>
                   <p style={{ margin: '2px 0 0' }}>Last seen {fc(w.lastSeenAt)}</p>
                 </div>

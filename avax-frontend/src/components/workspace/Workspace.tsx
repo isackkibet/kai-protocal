@@ -30,7 +30,7 @@ import RecordCard, { type SavedResult } from './RecordCard';
  */
 
 const C = {
-  bg: '#0B1C14', panel: '#0E2418', gold: '#C89B3C', goldLight: '#E4C878', paper: '#F6F2E7', paperDim: '#EFE9D9',
+  bg: '#0E2418', panel: '#12301F', gold: '#C89B3C', goldLight: '#E4C878', paper: '#F6F2E7', paperDim: '#EFE9D9',
   inkLight: '#9BA396', hairline: 'rgba(200,155,60,0.16)', red: '#E88C7D', green: '#7DC383',
 };
 
@@ -79,7 +79,7 @@ function getRecognizer(): (new () => Recognizer) | null {
 function SideLink({ href, icon, label, soon }: { href: string; icon: React.ReactNode; label: string; soon?: boolean }) {
   return (
     <Link href={href} className="kv-nav" style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '9px 10px', borderRadius: 10, color: C.paperDim, textDecoration: 'none', fontSize: 13.5 }}>
-      {icon}<span style={{ flex: 1 }}>{label}</span>{soon && <span style={{ fontSize: 9.5, color: C.inkLight, border: `1px solid ${C.hairline}`, borderRadius: 999, padding: '1px 6px' }}>beta</span>}
+      {icon}<span style={{ flex: 1 }}>{label}</span>{soon && <span style={{ fontSize: 11.5, color: C.inkLight, border: `1px solid ${C.hairline}`, borderRadius: 999, padding: '1px 6px' }}>beta</span>}
     </Link>
   );
 }
@@ -410,7 +410,7 @@ export default function Workspace({ embedded = false, fullScreen = false }: { em
 
   const groups = groupThreads(threads, new Date(clock));
   const pick = (q: string) => { setInput(q); setSidebarOpen(false); };
-  const sectionLabel = (t: string) => <p style={{ fontSize: 10, letterSpacing: 1.3, textTransform: 'uppercase', color: C.goldLight, fontWeight: 700, margin: '16px 10px 4px' }}>{t}</p>;
+  const sectionLabel = (t: string) => <p style={{ fontSize: 12, letterSpacing: 1.3, textTransform: 'uppercase', color: C.goldLight, fontWeight: 700, margin: '16px 10px 4px' }}>{t}</p>;
 
   const sidebar = (
     <nav aria-label="Kanuvari" style={{ display: 'flex', flexDirection: 'column', height: '100%', overflowY: 'auto', padding: '14px 10px 24px' }}>
@@ -418,7 +418,7 @@ export default function Workspace({ embedded = false, fullScreen = false }: { em
         <Sprout size={20} color={C.goldLight} />
         <div style={{ flex: 1 }}>
           <p style={{ margin: 0, fontWeight: 700, fontSize: 15, color: C.paper }}>Kanuvari</p>
-          <p style={{ margin: 0, fontSize: 10.5, color: C.inkLight }}>by Kaibar Nuvari</p>
+          <p style={{ margin: 0, fontSize: 12.5, color: C.inkLight }}>by Kaibar Nuvari</p>
         </div>
         <button onClick={() => setSidebarOpen(false)} className="kv-mobile-only" aria-label="Close menu" style={{ background: 'none', border: 'none', color: C.inkLight, cursor: 'pointer' }}><X size={18} /></button>
       </div>
@@ -442,7 +442,7 @@ export default function Workspace({ embedded = false, fullScreen = false }: { em
       ? { display: 'flex', height: '100dvh', background: C.bg, color: C.paper, fontFamily: 'inherit' }
       : embedded
       ? { display: 'flex', height: 'calc(100dvh - 120px)', minHeight: 480, background: C.panel, color: C.paper, border: `1px solid ${C.hairline}`, borderRadius: 18, overflow: 'hidden', fontFamily: 'inherit' }
-      : { display: 'flex', height: '100dvh', background: C.bg, color: C.paper, fontFamily: "'Poppins', 'IBM Plex Sans', var(--font-sans)" }}>
+      : { display: 'flex', height: '100dvh', background: C.bg, color: C.paper, fontFamily: "'Inter', system-ui, sans-serif" }}>
       <style>{`
         .kv-nav:hover { background: rgba(200,155,60,0.08) !important; }
         .kv-nav:focus-visible, button:focus-visible, textarea:focus-visible { outline: 2px solid #E4C878; outline-offset: 2px; }
@@ -552,7 +552,7 @@ export default function Workspace({ embedded = false, fullScreen = false }: { em
                     {a.preview ? <img src={a.preview} alt="" style={{ width: 34, height: 34, objectFit: 'cover', borderRadius: 6 }} /> : <FileText size={18} color={C.goldLight} />}
                     <div style={{ minWidth: 0 }}>
                       <p style={{ margin: 0, fontSize: 12, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{a.file.name}</p>
-                      <p style={{ margin: 0, fontSize: 10.5, color: a.note ? C.red : C.inkLight }}>{a.note ?? (a.kind === 'evidence' ? 'Evidence for the next record' : 'Will be read by the AI')}</p>
+                      <p style={{ margin: 0, fontSize: 12.5, color: a.note ? C.red : C.inkLight }}>{a.note ?? (a.kind === 'evidence' ? 'Evidence for the next record' : 'Will be read by the AI')}</p>
                     </div>
                     <button aria-label={`Remove ${a.file.name}`} onClick={() => removeAttachment(a.id)} style={{ background: 'none', border: 'none', color: C.inkLight, cursor: 'pointer' }}><X size={14} /></button>
                   </div>
@@ -576,7 +576,7 @@ export default function Workspace({ embedded = false, fullScreen = false }: { em
                 <div style={{ position: 'absolute', bottom: 56, left: 6, zIndex: 20, background: C.panel, border: `1px solid ${C.hairline}`, borderRadius: 14, padding: 6, width: 240, boxShadow: '0 12px 40px rgba(0,0,0,.5)' }}>
                   <button onClick={() => cameraRef.current?.click()} className="kv-nav" style={{ display: 'flex', gap: 10, alignItems: 'center', width: '100%', padding: '10px', background: 'none', border: 'none', color: C.paperDim, borderRadius: 10, cursor: 'pointer', fontSize: 13.5, fontFamily: 'inherit' }}><Camera size={16} /> Take a photo</button>
                   <button onClick={() => fileRef.current?.click()} className="kv-nav" style={{ display: 'flex', gap: 10, alignItems: 'center', width: '100%', padding: '10px', background: 'none', border: 'none', color: C.paperDim, borderRadius: 10, cursor: 'pointer', fontSize: 13.5, fontFamily: 'inherit' }}><Paperclip size={16} /> Upload a file</button>
-                  <p style={{ fontSize: 10.5, color: C.inkLight, margin: '4px 10px 6px', lineHeight: 1.45 }}>Photos (JPG, PNG, WEBP) and PDF become evidence. CSV and TXT are read by the AI. Up to 5 files.</p>
+                  <p style={{ fontSize: 12.5, color: C.inkLight, margin: '4px 10px 6px', lineHeight: 1.45 }}>Photos (JPG, PNG, WEBP) and PDF become evidence. CSV and TXT are read by the AI. Up to 5 files.</p>
                 </div>
               )}
               <input ref={fileRef} type="file" accept={ACCEPT} multiple hidden onChange={(e) => { void addFiles(e.target.files); e.target.value = ''; }} />
@@ -593,7 +593,7 @@ export default function Workspace({ embedded = false, fullScreen = false }: { em
                 <Send size={18} />
               </button>
             </div>
-            <p style={{ textAlign: 'center', fontSize: 10.5, color: C.inkLight, margin: '6px 0 0' }}>
+            <p style={{ textAlign: 'center', fontSize: 12.5, color: C.inkLight, margin: '6px 0 0' }}>
               Kanuvari reads and drafts; nothing is saved until you press Confirm &amp; Save. {listening ? 'Speak now; you can edit the text before sending.' : ''}
             </p>
           </div>

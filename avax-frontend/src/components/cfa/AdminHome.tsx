@@ -16,7 +16,7 @@ const C = {
   gold: '#C89B3C', goldLight: '#E4C878', paper: '#F6F2E7', paperDim: '#EFE9D9', inkLight: '#9BA396',
   hairline: 'rgba(200,155,60,0.14)', green: '#7DC383', panel: 'rgba(200,155,60,0.06)',
 };
-const MONO: React.CSSProperties = { fontFamily: 'var(--font-plex-mono), monospace' };
+const MONO: React.CSSProperties = { fontFamily: "'Inter', system-ui, sans-serif" };
 
 export type AdminAction = 'species' | 'location' | 'batch' | 'team';
 
@@ -116,7 +116,7 @@ export default function AdminHome({ counts, onAction }: { counts: Counts; onActi
   return (
     <section style={{ marginBottom: 28, paddingBottom: 24, borderBottom: `1px solid ${C.hairline}` }}>
       <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap', marginBottom: 14 }}>
-        <p style={{ ...MONO, fontSize: 10, letterSpacing: 1.4, textTransform: 'uppercase', color: C.goldLight, fontWeight: 600, margin: 0 }}>Your admin checklist</p>
+        <p style={{ ...MONO, fontSize: 12, letterSpacing: 1.4, textTransform: 'uppercase', color: C.goldLight, fontWeight: 600, margin: 0 }}>Your admin checklist</p>
         <p style={{ fontSize: 11.5, color: C.inkLight, margin: 0 }}>Setup {setupDone} of {setup.length} done</p>
       </div>
 
@@ -154,7 +154,7 @@ export default function AdminHome({ counts, onAction }: { counts: Counts; onActi
               ...(t.done ? { background: C.green, color: '#0E2418' } : { border: `1px solid ${t === next ? C.gold : C.hairline}`, color: t === next ? C.goldLight : C.inkLight }),
             }}>{t.done && !t.ongoing ? <Check size={14} /> : t.icon}</span>
             <span style={{ flex: 1, minWidth: 0, fontSize: 13.5, fontWeight: t === next ? 700 : 500 }}>{t.title}</span>
-            <span style={{ ...MONO, fontSize: 10.5, flexShrink: 0, color: t.done ? C.green : t === next ? C.goldLight : C.inkLight }}>{t.state}</span>
+            <span style={{ ...MONO, fontSize: 12.5, flexShrink: 0, color: t.done ? C.green : t === next ? C.goldLight : C.inkLight }}>{t.state}</span>
           </button>
         ))}
       </div>

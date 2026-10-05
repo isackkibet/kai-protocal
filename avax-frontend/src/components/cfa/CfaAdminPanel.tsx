@@ -17,7 +17,7 @@ interface Member { id: string; name: string; email: string; role: string; status
 interface Location { id: string; name: string; description: string | null; latitude: string | number | null; longitude: string | number | null }
 
 const C = { gold: '#C89B3C', goldLight: '#E4C878', paper: '#F6F2E7', paperDim: '#EFE9D9', inkLight: '#9BA396', hairline: 'rgba(200,155,60,0.14)', red: '#E88C7D', bg: '#0E2418', green: '#7DC383' };
-const MONO: React.CSSProperties = { fontFamily: 'var(--font-plex-mono), monospace' };
+const MONO: React.CSSProperties = { fontFamily: "'Inter', system-ui, sans-serif" };
 const input: React.CSSProperties = { padding: '7px 2px', border: 'none', borderBottom: `1px solid ${C.hairline}`, background: 'none', color: C.paper, fontSize: 13, outline: 'none', fontFamily: 'inherit', minWidth: 0, width: '100%' };
 const option: React.CSSProperties = { background: C.bg };
 
@@ -35,7 +35,7 @@ const roleLabel = (id: string) => ROLES.find((r) => r.id === id)?.label ?? id;
 function Field({ label, hint, children }: { label: string; hint?: string; children: React.ReactNode }) {
   return (
     <label style={{ display: 'flex', flexDirection: 'column', gap: 4, flex: '1 1 160px', minWidth: 0 }}>
-      <span style={{ ...MONO, fontSize: 9.5, fontWeight: 600, letterSpacing: 0.5, textTransform: 'uppercase', color: C.inkLight }}>{label}</span>
+      <span style={{ ...MONO, fontSize: 11.5, fontWeight: 600, letterSpacing: 0.5, textTransform: 'uppercase', color: C.inkLight }}>{label}</span>
       {children}
       {hint && <span style={{ fontSize: 11, color: C.inkLight }}>{hint}</span>}
     </label>
@@ -137,7 +137,7 @@ export default function CfaAdminPanel({ myMemberId, onChanged }: { myMemberId: s
   return (
     <section style={{ marginBottom: 28 }}>
       <style>{`#cfa-manage details[open] .cfa-chevron { transform: rotate(180deg); } #cfa-manage summary::-webkit-details-marker { display: none; }`}</style>
-      <p style={{ ...MONO, fontSize: 10, letterSpacing: 1.4, textTransform: 'uppercase', color: C.goldLight, fontWeight: 600, margin: '0 0 4px' }}>Manage the CFA</p>
+      <p style={{ ...MONO, fontSize: 12, letterSpacing: 1.4, textTransform: 'uppercase', color: C.goldLight, fontWeight: 600, margin: '0 0 4px' }}>Manage the CFA</p>
       <p style={{ fontSize: 11.5, color: C.inkLight, margin: '0 0 6px' }}>Tap a section to open it. Only admins see this.</p>
 
       <div id="cfa-manage">
@@ -159,7 +159,7 @@ export default function CfaAdminPanel({ myMemberId, onChanged }: { myMemberId: s
                 </p>
               </div>
               {m.id === myMemberId ? (
-                <span style={{ ...MONO, fontSize: 10.5, color: C.green }}>{roleLabel(m.role)}</span>
+                <span style={{ ...MONO, fontSize: 12.5, color: C.green }}>{roleLabel(m.role)}</span>
               ) : (
                 <div style={{ display: 'flex', gap: 8 }}>
                   <select aria-label={`Role of ${m.name}`} value={m.role} disabled={busy}

@@ -175,7 +175,7 @@ export default function ArticleEngage({ post }: { post: ContentPost }) {
       {/* Disclosure line */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap', marginBottom: 22 }}>
         <span style={{
-          ...MONO, fontSize: 10, letterSpacing: 1.2, textTransform: 'uppercase',
+          ...MONO, fontSize: 12, letterSpacing: 1.2, textTransform: 'uppercase',
           color: post.aiDisclosure === 'AI_ASSISTED' ? HUB_THEME.clay : HUB_THEME.pineLight,
           border: `1px solid ${post.aiDisclosure === 'AI_ASSISTED' ? 'rgba(156,75,45,0.35)' : HUB_THEME.hairline}`,
           padding: '5px 10px', borderRadius: 999,
@@ -183,7 +183,7 @@ export default function ArticleEngage({ post }: { post: ContentPost }) {
           {post.aiDisclosure === 'AI_ASSISTED' ? 'AI-assisted, reviewed by an editor' : 'Human-authored'}
         </span>
         {post.tags.map(t => (
-          <span key={t} style={{ ...MONO, fontSize: 10, color: HUB_THEME.inkLight }}>#{t}</span>
+          <span key={t} style={{ ...MONO, fontSize: 12, color: HUB_THEME.inkLight }}>#{t}</span>
         ))}
       </div>
 
@@ -194,7 +194,7 @@ export default function ArticleEngage({ post }: { post: ContentPost }) {
           {busy === 'like' ? <Loader size={16} className="spin" /> :
             <Heart size={16} color={liked ? HUB_THEME.clay : HUB_THEME.goldLight} style={{ fill: liked ? HUB_THEME.clay : 'none' }} />}
           <span style={{ fontSize: 14, fontWeight: 700, color: HUB_THEME.paper }}>{likes}</span>
-          <span style={{ ...MONO, fontSize: 9, letterSpacing: 1, textTransform: 'uppercase', color: HUB_THEME.inkLight }}>Like</span>
+          <span style={{ ...MONO, fontSize: 11.5, letterSpacing: 1, textTransform: 'uppercase', color: HUB_THEME.inkLight }}>Like</span>
         </motion.button>
 
         <motion.button whileTap={{ scale: 0.9 }} onClick={() => act('save')} disabled={busy !== null}
@@ -207,7 +207,7 @@ export default function ArticleEngage({ post }: { post: ContentPost }) {
         <motion.button whileTap={{ scale: 0.9 }} onClick={toggleSpeech} style={actionBtn} aria-label="Listen">
           {speaking ? <Pause size={16} color={HUB_THEME.gold} /> : <Mic size={16} color={HUB_THEME.goldLight} />}
           <span style={{ fontSize: 14, fontWeight: 700, color: HUB_THEME.paper }}>{speaking ? 'Pause' : 'Listen'}</span>
-          <span style={{ ...MONO, fontSize: 9, letterSpacing: 1, textTransform: 'uppercase', color: HUB_THEME.inkLight }}>text-to-speech</span>
+          <span style={{ ...MONO, fontSize: 11.5, letterSpacing: 1, textTransform: 'uppercase', color: HUB_THEME.inkLight }}>text-to-speech</span>
         </motion.button>
 
         <motion.button whileTap={{ scale: 0.9 }} onClick={share} style={actionBtn} aria-label="Share">
@@ -272,7 +272,7 @@ export default function ArticleEngage({ post }: { post: ContentPost }) {
                 <div>
                   <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
                     <b style={{ fontSize: 13, color: HUB_THEME.paper }}>{c.authorName}</b>
-                    <span style={{ ...MONO, fontSize: 10, color: HUB_THEME.inkLight }}>{new Date(c.createdAt).toLocaleDateString()}</span>
+                    <span style={{ ...MONO, fontSize: 12, color: HUB_THEME.inkLight }}>{new Date(c.createdAt).toLocaleDateString()}</span>
                   </div>
                   <p style={{ ...SANS, fontSize: 14, color: 'rgba(246,242,231,0.8)', lineHeight: 1.6, margin: '4px 0 0' }}>{c.body}</p>
                 </div>

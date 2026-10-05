@@ -23,8 +23,8 @@ const C = {
   bg: '#0E2418', gold: '#C89B3C', goldLight: '#E4C878', paper: '#F6F2E7', paperDim: '#EFE9D9',
   inkLight: '#9BA396', hairline: 'rgba(200,155,60,0.14)', red: '#E88C7D', green: '#7DC383',
 };
-const MONO: React.CSSProperties = { fontFamily: 'var(--font-plex-mono), monospace' };
-const label: React.CSSProperties = { ...MONO, fontSize: 10, letterSpacing: 1.4, textTransform: 'uppercase', color: C.goldLight, fontWeight: 600, margin: 0 };
+const MONO: React.CSSProperties = { fontFamily: "'Inter', system-ui, sans-serif" };
+const label: React.CSSProperties = { ...MONO, fontSize: 12, letterSpacing: 1.4, textTransform: 'uppercase', color: C.goldLight, fontWeight: 600, margin: 0 };
 const input: React.CSSProperties = { padding: '8px 2px', border: 'none', borderBottom: `1px solid ${C.hairline}`, background: 'none', color: C.paper, fontSize: 13.5, outline: 'none', fontFamily: 'inherit', width: '100%' };
 
 interface QueueRecord {
@@ -151,7 +151,7 @@ function ReviewTab({ records, authed, onDone }: { records: QueueRecord[]; authed
           <button onClick={() => setOpenId(openId === r.id ? null : r.id)} style={{ width: '100%', display: 'flex', gap: 10, alignItems: 'center', background: 'none', border: 'none', cursor: 'pointer', color: C.paperDim, textAlign: 'left', fontFamily: 'inherit', padding: 0 }}>
             <ClipboardCheck size={15} color={STATUS_COLOR[r.verificationStatus]} />
             <span style={{ flex: 1, fontSize: 13 }}>{describe(r)}{r.currentVersion > 1 ? ` · v${r.currentVersion}` : ''}</span>
-            <span style={{ ...MONO, fontSize: 10, color: STATUS_COLOR[r.verificationStatus] }}>{r.verificationStatus.replace('_', ' ')}</span>
+            <span style={{ ...MONO, fontSize: 12, color: STATUS_COLOR[r.verificationStatus] }}>{r.verificationStatus.replace('_', ' ')}</span>
           </button>
           {openId === r.id && <ReviewDetail summary={r} authed={authed} onDone={onDone} />}
         </div>
@@ -273,7 +273,7 @@ function FixForm({ record, authed, onDone }: { record: QueueRecord; authed: () =
 
   const field = (l: string, el: React.ReactNode) => (
     <label style={{ display: 'flex', flexDirection: 'column', gap: 4, flex: '1 1 120px' }}>
-      <span style={{ ...MONO, fontSize: 9.5, color: C.inkLight, textTransform: 'uppercase' }}>{l}</span>{el}
+      <span style={{ ...MONO, fontSize: 11.5, color: C.inkLight, textTransform: 'uppercase' }}>{l}</span>{el}
     </label>
   );
   return (
@@ -380,7 +380,7 @@ function AnchorTab({ authed, flash }: { authed: () => Promise<Record<string, str
       {pending ? (
         <div style={{ border: `1px solid ${C.hairline}`, borderRadius: 12, padding: 14, marginBottom: 16 }}>
           <p style={{ margin: 0, fontSize: 13.5, fontWeight: 700 }}>A batch of {pending.recordCount} record(s) is waiting for its transaction.</p>
-          <p style={{ ...MONO, fontSize: 10.5, color: C.inkLight, margin: '6px 0 10px', wordBreak: 'break-all' }}>root {pending.merkleRoot}</p>
+          <p style={{ ...MONO, fontSize: 12.5, color: C.inkLight, margin: '6px 0 10px', wordBreak: 'break-all' }}>root {pending.merkleRoot}</p>
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
             <Button disabled={!!step} onClick={() => anchor(pending)}><Anchor size={14} /> Sign with my wallet</Button>
             <Button kind="danger" disabled={!!step} onClick={() => cancel(pending)}>Cancel batch</Button>
@@ -400,7 +400,7 @@ function AnchorTab({ authed, flash }: { authed: () => Promise<Record<string, str
       {state.batches.map((b) => (
         <div key={b.id} style={{ display: 'flex', gap: 10, alignItems: 'center', padding: '8px 0', borderBottom: `1px solid ${C.hairline}`, fontSize: 12.5 }}>
           <span style={{ flex: 1 }}>{b.recordCount} record(s) · {new Date(b.createdAt).toLocaleDateString()}</span>
-          <span style={{ ...MONO, fontSize: 10, color: b.status === 'ANCHORED' ? C.green : b.status === 'PENDING' ? C.goldLight : C.inkLight }}>{b.status}</span>
+          <span style={{ ...MONO, fontSize: 12, color: b.status === 'ANCHORED' ? C.green : b.status === 'PENDING' ? C.goldLight : C.inkLight }}>{b.status}</span>
           {b.txHash && <a href={`${EXPLORER_BASE}/tx/${b.txHash}`} target="_blank" rel="noreferrer" style={{ color: C.goldLight, fontSize: 11.5 }}>Transaction</a>}
         </div>
       ))}

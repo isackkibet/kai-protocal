@@ -5,7 +5,7 @@ import Link from 'next/link';
 import {
   Newspaper, TreePine, ArrowRight, ExternalLink, PenTool, Sprout,
   BookOpen, MessageCircle, Mic, FileText, ShieldCheck, Library,
-  Users, Coins, Search, Sparkles, Send,
+  Users, Search, Sparkles, Send,
 } from 'lucide-react';
 import { SIHU_THEME, OLOOLUA_THEME, MONO, SERIF, SANS } from '@/lib/hubs/hub-theme';
 
@@ -15,9 +15,9 @@ const OLOOLUA_PORTAL_URL = process.env.NEXT_PUBLIC_OLOOLUA_PORTAL_URL || '';
 
 const BLUE = SIHU_THEME.blue;
 const GREEN = OLOOLUA_THEME.emerald;
-const TEXT = '#F8FAFC';
-const DIM = '#94A3B8';
-const LINE = 'rgba(255,255,255,0.08)';
+const TEXT = '#F6F2E7';
+const DIM = '#C9CFC2';
+const LINE = 'rgba(246,242,231,0.08)';
 
 interface FeedPost {
   id: string;
@@ -82,7 +82,7 @@ const HUBS = [
     desc: 'Community news and investigations from the Lake Victoria Basin, checked by an AI pre-review and a human editor before publishing.',
     icon: Newspaper,
     accent: BLUE,
-    bg: 'linear-gradient(180deg, #0B1934 0%, #020617 100%)',
+    bg: '#15352A',
     links: [
       { label: 'Latest stories', href: '#latest', icon: Newspaper },
       { label: 'Write a story', href: '/hub/create', icon: PenTool },
@@ -102,7 +102,7 @@ const HUBS = [
     desc: 'Hands-on forest conservation with the Oloolua Youth Guardians: seedlings, patrols, beekeeping and verified planting records.',
     icon: TreePine,
     accent: GREEN,
-    bg: 'linear-gradient(180deg, #0A2D20 0%, #04150E 100%)',
+    bg: '#15352A',
     links: [
       { label: 'Conservation home', href: '/conservation', icon: TreePine },
       { label: 'Knowledge base', href: '/conservation/knowledge', icon: BookOpen },
@@ -147,11 +147,10 @@ export default function HubPage() {
   return (
     <main style={{
       minHeight: '100dvh',
-      background: 'linear-gradient(180deg, #020617 0%, #071510 50%, #020617 100%)',
+      background: '#0E2418',
       color: TEXT, ...SANS, paddingBottom: 110,
     }}>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500..700&family=IBM+Plex+Mono:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap');
         .hub-wrap { max-width: 1120px; margin: 0 auto; padding: 0 24px; }
         .hub-actions { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
         .hub-stories { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
@@ -182,9 +181,9 @@ export default function HubPage() {
         {headline && (
           <Link href={`/hub/${headline.slug}`} style={{
             marginTop: 20, display: 'flex', alignItems: 'center', gap: 12, textDecoration: 'none',
-            background: 'rgba(2,6,23,0.85)', border: `1px solid ${BLUE}40`, borderRadius: 12, padding: '10px 14px',
+            background: '#15352A', border: '1px solid rgba(246,242,231,0.14)', borderRadius: 12, padding: '10px 14px',
           }}>
-            <span style={{ ...MONO, fontSize: 10, fontWeight: 700, letterSpacing: 1.2, textTransform: 'uppercase', color: '#FFFFFF', background: SIHU_THEME.blueDeep, padding: '3px 9px', borderRadius: 6, flexShrink: 0 }}>
+            <span style={{ ...MONO, fontSize: 12, fontWeight: 700, letterSpacing: 1.2, textTransform: 'uppercase', color: '#FFFFFF', background: SIHU_THEME.blueDeep, padding: '3px 9px', borderRadius: 6, flexShrink: 0 }}>
               Latest
             </span>
             <span style={{ flex: 1, minWidth: 0, fontSize: 13, color: '#E2E8F0', overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis' }}>
@@ -196,7 +195,7 @@ export default function HubPage() {
 
         {/* Masthead */}
         <header style={{ padding: '34px 0 26px' }}>
-          <p style={{ ...MONO, fontSize: 11, letterSpacing: 1.6, textTransform: 'uppercase', color: '#7DD3FC', fontWeight: 700, margin: '0 0 10px' }}>
+          <p style={{ ...MONO, fontSize: 11, letterSpacing: 1.6, textTransform: 'uppercase', color: '#9CC3E8', fontWeight: 700, margin: '0 0 10px' }}>
             KAI Info Hub
           </p>
           <h1 style={{ ...SERIF, fontSize: 'clamp(28px, 5vw, 40px)', fontWeight: 700, margin: 0, lineHeight: 1.15, letterSpacing: '-0.5px' }}>
@@ -220,14 +219,14 @@ export default function HubPage() {
                 <div key={a.title} className="hub-rise" style={{ animationDelay: `${i * 50}ms` }}>
                   <Link href={a.href} className="hub-card" style={{
                     height: '100%', boxSizing: 'border-box', display: 'flex', flexDirection: 'column', textDecoration: 'none', color: TEXT,
-                    background: `linear-gradient(160deg, ${a.accent}1F 0%, rgba(2,6,23,0.9) 70%)`,
-                    border: `1px solid ${a.accent}45`, borderRadius: 18, padding: '20px 18px',
+                    background: '#15352A',
+                    border: 'none', borderTop: `3px solid ${a.accent}`, borderRadius: 18, padding: '20px 18px',
                   }}>
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
                       <span style={{ width: 42, height: 42, borderRadius: 12, background: `${a.accent}26`, color: a.accent, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                         <Icon size={21} />
                       </span>
-                      <span style={{ ...MONO, fontSize: 11, fontWeight: 700, color: '#020617', background: a.accent, padding: '4px 9px', borderRadius: 999, display: 'inline-flex', alignItems: 'center', gap: 5 }}>
+                      <span style={{ ...MONO, fontSize: 11, fontWeight: 700, color: '#10231A', background: a.accent, padding: '4px 9px', borderRadius: 999, display: 'inline-flex', alignItems: 'center', gap: 5 }}>
                         <RewardIcon size={12} /> {a.reward}
                       </span>
                     </div>
@@ -276,10 +275,10 @@ export default function HubPage() {
                   background: 'rgba(11,25,52,0.55)', border: `1px solid ${LINE}`, borderRadius: 16, padding: '16px 16px 14px',
                 }}>
                   <div style={{ display: 'flex', gap: 6, marginBottom: 10, flexWrap: 'wrap' }}>
-                    <span style={{ ...MONO, fontSize: 10, fontWeight: 700, textTransform: 'uppercase', color: '#7DD3FC', background: `${BLUE}1F`, padding: '2px 8px', borderRadius: 4 }}>
+                    <span style={{ ...MONO, fontSize: 12, fontWeight: 700, textTransform: 'uppercase', color: '#9CC3E8', background: `${BLUE}1F`, padding: '2px 8px', borderRadius: 4 }}>
                       {typeLabel(p.contentType)}
                     </span>
-                    <span style={{ ...MONO, fontSize: 10, color: DIM, padding: '2px 0' }}>{humanize(p.category)}</span>
+                    <span style={{ ...MONO, fontSize: 12, color: DIM, padding: '2px 0' }}>{humanize(p.category)}</span>
                   </div>
                   <h3 style={{ fontSize: 15, fontWeight: 700, margin: '0 0 6px', lineHeight: 1.35 }}>{p.title}</h3>
                   {p.summary && (
@@ -287,7 +286,7 @@ export default function HubPage() {
                       {p.summary}
                     </p>
                   )}
-                  <p style={{ ...MONO, fontSize: 10.5, color: '#64748B', margin: 'auto 0 0' }}>{p.creator} · {p.publishedAt}</p>
+                  <p style={{ ...MONO, fontSize: 12.5, color: '#9BA396', margin: 'auto 0 0' }}>{p.creator} · {p.publishedAt}</p>
                 </Link>
               ))}
             </div>
@@ -295,13 +294,13 @@ export default function HubPage() {
         </section>
 
         {/* How a story gets published, step by step */}
-        <section style={{ marginTop: 40, padding: '24px 22px', borderRadius: 20, background: 'linear-gradient(160deg, rgba(56,189,248,0.10) 0%, rgba(2,6,23,0.9) 60%)', border: `1px solid ${BLUE}33` }} aria-labelledby="hub-flow">
+        <section style={{ marginTop: 40, padding: '24px 22px', borderRadius: 20, background: '#12301F', border: 'none' }} aria-labelledby="hub-flow">
           <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: 14, flexWrap: 'wrap', marginBottom: 18 }}>
             <div>
               <h2 id="hub-flow" style={{ ...SERIF, fontSize: 24, fontWeight: 700, margin: 0 }}>How to publish a story</h2>
               <p style={{ fontSize: 13.5, color: DIM, margin: '4px 0 0' }}>Anyone can write. Every story is checked by a person before it goes live.</p>
             </div>
-            <Link href="/hub/create" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '11px 18px', borderRadius: 10, background: BLUE, color: '#020617', fontWeight: 700, fontSize: 13.5, textDecoration: 'none' }}>
+            <Link href="/hub/create" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '11px 18px', borderRadius: 10, background: BLUE, color: '#10231A', fontWeight: 700, fontSize: 13.5, textDecoration: 'none' }}>
               <PenTool size={15} /> Start writing
             </Link>
           </div>
@@ -310,13 +309,13 @@ export default function HubPage() {
               { icon: PenTool, t: 'Write', d: 'Sign in with your email and write your story, guide or field report. Save it as a draft any time.' },
               { icon: Sparkles, t: 'Free AI check', d: 'One tap checks for missing sources, copied text and unsupported claims, so you can fix them first.' },
               { icon: Send, t: 'Editor review', d: 'A SIHU editor reads it and publishes it, or sends it back with a note on what to change.' },
-              { icon: Coins, t: 'Live and earning', d: 'Your story appears in Latest stories. Readers can like, comment, save and tip you in KES.' },
+              { icon: Newspaper, t: 'Published', d: 'Your story appears in Latest stories and on the Information Hubs page. Readers can like, comment and save it.' },
             ].map((step, i) => {
               const SIcon = step.icon;
               return (
-                <li key={step.t} style={{ position: 'relative', padding: '16px 16px', borderRadius: 14, background: 'rgba(2,6,23,0.6)', border: `1px solid ${LINE}` }}>
+                <li key={step.t} style={{ position: 'relative', padding: '16px 16px', borderRadius: 14, background: '#15352A', border: 'none' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
-                    <span style={{ ...MONO, width: 26, height: 26, borderRadius: '50%', background: `${BLUE}26`, color: '#7DD3FC', fontSize: 12, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>{i + 1}</span>
+                    <span style={{ ...MONO, width: 26, height: 26, borderRadius: '50%', background: `${BLUE}26`, color: '#9CC3E8', fontSize: 12, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>{i + 1}</span>
                     <SIcon size={16} color={BLUE} />
                     <span style={{ fontSize: 15, fontWeight: 700 }}>{step.t}</span>
                   </div>
@@ -326,7 +325,7 @@ export default function HubPage() {
             })}
           </ol>
           <p style={{ fontSize: 12.5, color: DIM, margin: '14px 0 0' }}>
-            Are you a SIHU editor? <Link href="/hub/review" style={{ color: '#7DD3FC', fontWeight: 700, textDecoration: 'none' }}>Open the editor desk</Link>
+            Are you a SIHU editor? <Link href="/hub/review" style={{ color: '#9CC3E8', fontWeight: 700, textDecoration: 'none' }}>Open the editor desk</Link>
           </p>
         </section>
 
@@ -339,14 +338,14 @@ export default function HubPage() {
             {HUBS.map(hub => {
               const Icon = hub.icon;
               return (
-                <article key={hub.id} style={{ background: hub.bg, border: `1px solid ${hub.accent}45`, borderRadius: 20, padding: '24px 22px', position: 'relative', overflow: 'hidden' }}>
-                  <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 3, background: `linear-gradient(90deg, ${hub.accent}, transparent)` }} />
+                <article key={hub.id} style={{ background: hub.bg, border: 'none', borderRadius: 20, padding: '24px 22px', position: 'relative', overflow: 'hidden' }}>
+                  <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 3, background: hub.accent }} />
                   <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 12 }}>
                     <span style={{ width: 44, height: 44, borderRadius: 12, background: `${hub.accent}22`, color: hub.accent, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                       <Icon size={22} />
                     </span>
                     <div>
-                      <p style={{ ...MONO, fontSize: 10, letterSpacing: 1.2, textTransform: 'uppercase', color: hub.accent, fontWeight: 700, margin: 0 }}>{hub.label}</p>
+                      <p style={{ ...MONO, fontSize: 12, letterSpacing: 1.2, textTransform: 'uppercase', color: hub.accent, fontWeight: 700, margin: 0 }}>{hub.label}</p>
                       <h3 style={{ ...SERIF, fontSize: 22, fontWeight: 700, margin: '2px 0 0' }}>{hub.name}</h3>
                     </div>
                   </div>
@@ -376,7 +375,7 @@ export default function HubPage() {
                   {hub.portal && (
                     <a href={hub.portal.href} target="_blank" rel="noreferrer" style={{
                       marginTop: 14, display: 'inline-flex', alignItems: 'center', gap: 6, padding: '10px 16px', borderRadius: 10,
-                      background: hub.accent, color: '#020617', fontSize: 13, fontWeight: 700, textDecoration: 'none',
+                      background: hub.accent, color: '#10231A', fontSize: 13, fontWeight: 700, textDecoration: 'none',
                     }}>
                       {hub.portal.label} <ExternalLink size={13} />
                     </a>

@@ -13,7 +13,7 @@ const itemStyle = (active: boolean): React.CSSProperties => ({
   justifyContent: 'center', gap: 3, textDecoration: 'none',
   position: 'relative', padding: '6px clamp(4px, 2vw, 12px)', borderRadius: 12,
   minWidth: 48, flex: 1, transition: 'all 0.2s ease',
-  background: active ? 'rgba(16,185,129,0.12)' : 'transparent',
+  background: active ? 'rgba(125,195,131,0.12)' : 'transparent',
   border: 'none', cursor: 'pointer', font: 'inherit',
   WebkitTapHighlightColor: 'transparent',
   userSelect: 'none',
@@ -31,9 +31,9 @@ const HUB_OPTIONS = [
     href: '/hub',
     match: (p: string) => p.startsWith('/hub'),
     icon: Newspaper,
-    accent: '#38BDF8',
-    bg: 'linear-gradient(135deg, rgba(56, 189, 248, 0.16) 0%, rgba(2, 6, 23, 0.95) 100%)',
-    border: 'rgba(56, 189, 248, 0.35)',
+    accent: '#6FA8DC',
+    bg: '#15352A',
+    border: 'rgba(111,168,220,0.35)',
     quick: [
       { label: 'Read news', href: '/hub#latest', icon: BookOpen },
       { label: 'Write a story', href: '/hub/create', icon: PenTool },
@@ -48,9 +48,9 @@ const HUB_OPTIONS = [
     href: '/conservation',
     match: (p: string) => p.startsWith('/conservation') || p.startsWith('/cfa') || p.startsWith('/nursery'),
     icon: TreePine,
-    accent: '#10B981',
-    bg: 'linear-gradient(135deg, rgba(16, 185, 129, 0.16) 0%, rgba(4, 21, 14, 0.95) 100%)',
-    border: 'rgba(16, 185, 129, 0.35)',
+    accent: '#7DC383',
+    bg: '#15352A',
+    border: 'rgba(125,195,131,0.35)',
     quick: [
       { label: 'Nursery groups', href: '/nursery', icon: Sprout },
       { label: 'Guides', href: '/conservation/methodologies', icon: BookOpen },
@@ -129,11 +129,11 @@ export default function BottomNav() {
               style={{
                 position: 'relative', width: '100%', maxWidth: 460,
                 margin: '0 16px',
-                background: 'linear-gradient(180deg, #0F2A1E 0%, #081610 100%)',
+                background: '#12301F',
                 border: '1px solid rgba(200, 155, 60, 0.30)',
                 borderRadius: 24,
                 padding: '24px 20px 22px',
-                boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.7), 0 0 30px rgba(16, 185, 129, 0.12)',
+                boxShadow: '0 20px 40px rgba(0, 0, 0, 0.45)',
               }}
             >
               {/* Header */}
@@ -193,7 +193,7 @@ export default function BottomNav() {
                           <span style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
                             <span style={{ fontSize: 16, fontWeight: 700, color: '#F6F2E7' }}>{opt.name}</span>
                             {isCurrent && (
-                              <span style={{ fontSize: 10, fontWeight: 700, color: '#020617', background: opt.accent, padding: '2px 7px', borderRadius: 999 }}>
+                              <span style={{ fontSize: 12, fontWeight: 700, color: '#020617', background: opt.accent, padding: '2px 7px', borderRadius: 999 }}>
                                 You are here
                               </span>
                             )}
@@ -270,16 +270,16 @@ export default function BottomNav() {
           {path === '/' && <motion.span layoutId="nav-indicator" style={{
             position: 'absolute', top: 0, left: '20%', right: '20%',
             height: 2, borderRadius: '0 0 4px 4px',
-            background: 'linear-gradient(90deg, transparent, #10b981, transparent)',
+            background: '#7DC383',
           }} />}
           <motion.span whileHover={{ y: -2 }} whileTap={{ scale: 0.9 }} style={{ display: 'inline-flex' }}>
             <Home size={22} strokeWidth={path === '/' ? 2.4 : 1.7}
-              color={path === '/' ? '#10b981' : 'rgba(255,255,255,0.32)'}
+              color={path === '/' ? '#7DC383' : 'rgba(255,255,255,0.45)'}
               style={{ transition: 'all 0.2s', transform: path === '/' ? 'scale(1.08) translateY(-1px)' : 'scale(1)' }} />
           </motion.span>
           <span style={{
             fontSize: 11, fontWeight: path === '/' ? 800 : 500, letterSpacing: 0.3,
-            color: path === '/' ? '#10b981' : 'rgba(255,255,255,0.30)', transition: 'all 0.2s',
+            color: path === '/' ? '#7DC383' : 'rgba(255,255,255,0.45)', transition: 'all 0.2s',
           }}>Home</span>
         </Link>
 
@@ -306,16 +306,16 @@ export default function BottomNav() {
           {(isInfoHubActive || hubMenuOpen) && <motion.span layoutId="nav-indicator" style={{
             position: 'absolute', top: 0, left: '20%', right: '20%',
             height: 2, borderRadius: '0 0 4px 4px',
-            background: 'linear-gradient(90deg, transparent, #10b981, transparent)',
+            background: '#7DC383',
           }} />}
           <motion.span whileHover={{ y: -2 }} whileTap={{ scale: 0.9 }} style={{ display: 'inline-flex' }}>
             <Newspaper size={22} strokeWidth={(isInfoHubActive || hubMenuOpen) ? 2.4 : 1.7}
-              color={(isInfoHubActive || hubMenuOpen) ? '#10b981' : 'rgba(255,255,255,0.32)'}
+              color={(isInfoHubActive || hubMenuOpen) ? '#7DC383' : 'rgba(255,255,255,0.45)'}
               style={{ transition: 'all 0.2s', transform: (isInfoHubActive || hubMenuOpen) ? 'scale(1.08) translateY(-1px)' : 'scale(1)' }} />
           </motion.span>
           <span style={{
             fontSize: 11, fontWeight: (isInfoHubActive || hubMenuOpen) ? 800 : 500, letterSpacing: 0.3,
-            color: (isInfoHubActive || hubMenuOpen) ? '#10b981' : 'rgba(255,255,255,0.30)', transition: 'all 0.2s',
+            color: (isInfoHubActive || hubMenuOpen) ? '#7DC383' : 'rgba(255,255,255,0.45)', transition: 'all 0.2s',
           }}>Hubs</span>
         </button>
 
@@ -324,16 +324,16 @@ export default function BottomNav() {
           {path?.startsWith('/profile') && <motion.span layoutId="nav-indicator" style={{
             position: 'absolute', top: 0, left: '20%', right: '20%',
             height: 2, borderRadius: '0 0 4px 4px',
-            background: 'linear-gradient(90deg, transparent, #10b981, transparent)',
+            background: '#7DC383',
           }} />}
           <motion.span whileHover={{ y: -2 }} whileTap={{ scale: 0.9 }} style={{ display: 'inline-flex' }}>
             <UserCircle2 size={22} strokeWidth={path?.startsWith('/profile') ? 2.4 : 1.7}
-              color={path?.startsWith('/profile') ? '#10b981' : 'rgba(255,255,255,0.32)'}
+              color={path?.startsWith('/profile') ? '#7DC383' : 'rgba(255,255,255,0.45)'}
               style={{ transition: 'all 0.2s', transform: path?.startsWith('/profile') ? 'scale(1.08) translateY(-1px)' : 'scale(1)' }} />
           </motion.span>
           <span style={{
             fontSize: 11, fontWeight: path?.startsWith('/profile') ? 800 : 500, letterSpacing: 0.3,
-            color: path?.startsWith('/profile') ? '#10b981' : 'rgba(255,255,255,0.30)', transition: 'all 0.2s',
+            color: path?.startsWith('/profile') ? '#7DC383' : 'rgba(255,255,255,0.45)', transition: 'all 0.2s',
           }}>Profile</span>
         </Link>
 

@@ -35,8 +35,9 @@ const ANCHOR_TEXT: Record<string, string> = {
 };
 
 const card: React.CSSProperties = { border: `1px solid ${C.hairline}`, borderRadius: 12, padding: '16px 18px', background: C.card };
-const label: React.CSSProperties = { ...MONO, fontSize: 10, letterSpacing: 1.4, textTransform: 'uppercase', color: C.goldLight, fontWeight: 600, margin: 0 };
-const hash: React.CSSProperties = { ...MONO, fontSize: 12, wordBreak: 'break-all', margin: '4px 0 0', color: C.paperDim };
+const label: React.CSSProperties = { ...MONO, fontSize: 12, letterSpacing: 1.4, textTransform: 'uppercase', color: C.goldLight, fontWeight: 600, margin: 0 };
+// Fingerprints stay monospace so each character lines up and is easy to compare.
+const hash: React.CSSProperties = { fontFamily: 'ui-monospace, SFMono-Regular, Menlo, monospace', fontSize: 12.5, wordBreak: 'break-all', margin: '4px 0 0', color: C.paperDim };
 
 function fmt(d: Date | string) {
   return new Date(d).toLocaleString('en-GB', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit', timeZone: 'UTC' }) + ' UTC';
@@ -44,7 +45,7 @@ function fmt(d: Date | string) {
 
 function Shell({ children }: { children: React.ReactNode }) {
   return (
-    <main style={{ minHeight: '100dvh', background: C.bg, color: C.paper, fontFamily: "'IBM Plex Sans', sans-serif", padding: '0 16px 80px' }}>
+    <main style={{ minHeight: '100dvh', background: C.bg, color: C.paper, fontFamily: "'Inter', system-ui, sans-serif", padding: '0 16px 80px' }}>
       <div style={{ maxWidth: 760, margin: '0 auto', paddingTop: 36 }}>
         <Link href="/nursery" style={{ display: 'inline-flex', alignItems: 'center', gap: 6, color: C.inkLight, fontSize: 13, textDecoration: 'none', marginBottom: 24 }}>
           <ArrowLeft size={14} /> Back

@@ -15,7 +15,7 @@ import { dHash } from '@/lib/workspace/image-hash';
 interface EvidenceItem { id: string; fileName: string; mimeType: string; sizeBytes: number; sha256: string; caption: string | null; createdAt: string; url: string }
 
 const C = { gold: '#C89B3C', goldLight: '#E4C878', paperDim: '#EFE9D9', inkLight: '#9BA396', hairline: 'rgba(200,155,60,0.14)', red: '#E88C7D' };
-const MONO: React.CSSProperties = { fontFamily: 'var(--font-plex-mono), monospace' };
+const MONO: React.CSSProperties = { fontFamily: "'Inter', system-ui, sans-serif" };
 
 /** Phone photos are often 4-8 MB: re-encode big ones as JPEG, max 1600 px. */
 async function shrinkIfNeeded(file: File): Promise<File> {
@@ -129,8 +129,8 @@ export default function EvidencePanel({ entityType, entityId, canUpload, quietWh
               // eslint-disable-next-line @next/next/no-img-element
               ? <img src={previews[e.id]} alt={e.caption ?? e.fileName} style={{ width: '100%', height: 70, objectFit: 'cover', borderRadius: 4 }} />
               : <div style={{ height: 70, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{e.mimeType === 'application/pdf' ? <FileText size={22} color={C.goldLight} /> : <Camera size={22} color={C.goldLight} />}</div>}
-            <p style={{ fontSize: 10.5, margin: '4px 0 0', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{e.caption || e.fileName}</p>
-            <p style={{ ...MONO, fontSize: 9, margin: 0, color: C.inkLight }}>{e.sha256.slice(0, 10)}…</p>
+            <p style={{ fontSize: 12.5, margin: '4px 0 0', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{e.caption || e.fileName}</p>
+            <p style={{ fontFamily: 'ui-monospace, SFMono-Regular, Menlo, monospace', fontSize: 11.5, margin: 0, color: C.inkLight }}>{e.sha256.slice(0, 10)}…</p>
           </button>
         ))}
       </div>

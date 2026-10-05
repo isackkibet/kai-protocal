@@ -102,16 +102,15 @@ export default function ReviewPage() {
 
   if (!ready && !waitedEnough) {
     return (
-      <main style={{ minHeight: '100dvh', background: T.bg, color: T.inkLight, display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: "'IBM Plex Sans', sans-serif" }}>
+      <main style={{ minHeight: '100dvh', background: T.bg, color: T.inkLight, display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: "'Inter', system-ui, sans-serif" }}>
         Loading...
       </main>
     );
   }const waiting = posts.filter(p => p.status === 'SUBMITTED').length;
 
   return (
-    <main style={{ minHeight: '100dvh', background: T.bg, color: T.paper, fontFamily: "'IBM Plex Sans', sans-serif", paddingBottom: 110 }}>
+    <main style={{ minHeight: '100dvh', background: T.bg, color: T.paper, fontFamily: "'Inter', system-ui, sans-serif", paddingBottom: 110 }}>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500..700&family=IBM+Plex+Mono:wght@500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap');
         .ed-wrap { max-width: 920px; margin: 0 auto; padding: 0 24px; }
         .ed-rules { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
         .ed-actions { display: grid; grid-template-columns: 1.4fr 1fr 1fr; gap: 8px; }
@@ -218,8 +217,8 @@ export default function ReviewPage() {
                 return (
                   <article key={post.id} style={{ ...card, padding: '20px 20px 18px' }}>
                     <div style={{ display: 'flex', gap: 8, marginBottom: 8, flexWrap: 'wrap', alignItems: 'center' }}>
-                      <span style={{ ...MONO, fontSize: 10.5, fontWeight: 700, color: st.color, border: `1px solid ${st.color}55`, padding: '2px 8px', borderRadius: 999 }}>{st.label}</span>
-                      <span style={{ ...MONO, fontSize: 10.5, color: T.inkLight }}>{humanize(post.contentType)} · {humanize(post.category)} · {post.language === 'SW' ? 'Swahili' : 'English'}</span>
+                      <span style={{ ...MONO, fontSize: 12.5, fontWeight: 700, color: st.color, border: `1px solid ${st.color}55`, padding: '2px 8px', borderRadius: 999 }}>{st.label}</span>
+                      <span style={{ ...MONO, fontSize: 12.5, color: T.inkLight }}>{humanize(post.contentType)} · {humanize(post.category)} · {post.language === 'SW' ? 'Swahili' : 'English'}</span>
                     </div>
                     <h2 style={{ ...SERIF, fontSize: 22, fontWeight: 600, margin: '0 0 4px', lineHeight: 1.3 }}>{post.title}</h2>
                     <p style={{ fontSize: 13, color: T.inkLight, margin: 0 }}>
@@ -232,7 +231,7 @@ export default function ReviewPage() {
                       <p style={{ fontSize: 14.5, color: 'rgba(246,242,231,0.82)', lineHeight: 1.7, margin: 0, whiteSpace: 'pre-wrap', maxHeight: isOpen ? 'none' : 120, overflow: 'hidden' }}>
                         {post.body}
                       </p>
-                      {!isOpen && <div style={{ position: 'absolute', left: 0, right: 0, bottom: 0, height: 48, background: 'linear-gradient(transparent, #0f2419)' }} />}
+                      {!isOpen && <div style={{ position: 'absolute', left: 0, right: 0, bottom: 0, height: 48, background: 'linear-gradient(rgba(21,53,42,0), #15352A)' }} />}
                     </div>
                     <button onClick={() => setOpen(o => ({ ...o, [post.id]: !isOpen }))} style={{ ...linkBtn, marginTop: 8 }}>
                       {isOpen ? <><ChevronUp size={15} /> Show less</> : <><ChevronDown size={15} /> Read the full story and AI check</>}

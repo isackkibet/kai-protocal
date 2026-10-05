@@ -94,7 +94,7 @@ export default function RecordCard({ plan, project, species, attachmentNames, au
   const done = state === 'saved' || state === 'queued' || state === 'cancelled';
   return (
     <div style={{ border: `1px solid ${state === 'error' ? C.red : done ? C.hairline : C.gold}`, borderRadius: 14, padding: 14, background: 'rgba(200,155,60,0.05)', marginTop: 8 }}>
-      <p style={{ margin: 0, fontSize: 10.5, letterSpacing: 1.3, fontWeight: 700, color: C.goldLight }}>
+      <p style={{ margin: 0, fontSize: 12.5, letterSpacing: 1.3, fontWeight: 700, color: C.goldLight }}>
         {plan.endpoint.startsWith('/api/mrv') ? 'VERIFICATION DECISION' : plan.endpoint.startsWith('/api/cfa/members') || plan.endpoint.startsWith('/api/cfa/profile') ? 'CFA CHANGE' : 'NEW CONSERVATION RECORD'}
       </p>
       <dl style={{ display: 'grid', gridTemplateColumns: 'auto 1fr', gap: '6px 14px', margin: '10px 0 0', fontSize: 13.5 }}>

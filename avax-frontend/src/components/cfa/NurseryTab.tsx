@@ -28,9 +28,9 @@ const C = {
   hairline:  'rgba(200,155,60,0.14)',
   red:       '#E88C7D',
 };
-const MONO: React.CSSProperties = { fontFamily: 'var(--font-plex-mono), monospace' };
-const SERIF: React.CSSProperties = { fontFamily: "'Poppins', sans-serif" };
-const label: React.CSSProperties = { ...MONO, fontSize: 10, letterSpacing: 1.4, textTransform: 'uppercase', color: C.goldLight, fontWeight: 600, margin: 0 };
+const MONO: React.CSSProperties = { fontFamily: "'Inter', system-ui, sans-serif" };
+const SERIF: React.CSSProperties = { fontFamily: "'Inter', system-ui, sans-serif" };
+const label: React.CSSProperties = { ...MONO, fontSize: 12, letterSpacing: 1.4, textTransform: 'uppercase', color: C.goldLight, fontWeight: 600, margin: 0 };
 
 // ── Types (shape of GET /api/cfa/nursery/summary) ─────────────────
 export interface SpeciesItem { id: string; commonName: string; scientificName: string; localName: string | null }
@@ -91,7 +91,7 @@ function KPICell({ icon, value, label: l, color }: { icon: React.ReactNode; valu
     <div style={{ textAlign: 'center', padding: '0 4px' }}>
       <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 6 }}>{icon}</div>
       <p style={{ ...SERIF, fontSize: 18, fontWeight: 600, color, margin: '0 0 3px' }}>{value}</p>
-      <p style={{ ...MONO, fontSize: 8.5, color: C.inkLight, margin: 0, fontWeight: 600, letterSpacing: 0.5, textTransform: 'uppercase' }}>{l}</p>
+      <p style={{ ...MONO, fontSize: 11.5, color: C.inkLight, margin: 0, fontWeight: 600, letterSpacing: 0.5, textTransform: 'uppercase' }}>{l}</p>
     </div>
   );
 }
@@ -111,7 +111,7 @@ function ActionTile({ icon, label: l, onClick, disabled }: { icon: React.ReactNo
 function Field({ label: l, children }: { label: string; children: React.ReactNode }) {
   return (
     <label style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-      <span style={{ ...MONO, fontSize: 9.5, fontWeight: 600, letterSpacing: 0.5, textTransform: 'uppercase', color: C.inkLight }}>{l}</span>
+      <span style={{ ...MONO, fontSize: 11.5, fontWeight: 600, letterSpacing: 0.5, textTransform: 'uppercase', color: C.inkLight }}>{l}</span>
       {children}
     </label>
   );
@@ -391,7 +391,7 @@ export default function NurseryTab() {
             <span style={{ flex: 1, minWidth: 0, fontSize: 12.5, color: C.paperDim }}>
               {b.quantity.toLocaleString()} {b.species.commonName} · {b.location.name}
             </span>
-            <span style={{ ...MONO, fontSize: 10, color: b.status === 'planted' ? '#7DC383' : C.inkLight, flexShrink: 0 }}>
+            <span style={{ ...MONO, fontSize: 12, color: b.status === 'planted' ? '#7DC383' : C.inkLight, flexShrink: 0 }}>
               {STATUS_LABELS[b.status] ?? b.status}{b.status === 'planted' && b.plantingDate ? ` ${shortDate(b.plantingDate)}` : ''}
             </span>
             <button onClick={() => { setEvidenceBatch(b); setModal('evidence'); }} aria-label="Photos" title="Photos and documents"
@@ -399,7 +399,7 @@ export default function NurseryTab() {
               <Camera size={14} />
             </button>
             {b.verifyId && (
-              <Link href={`/verify/${b.verifyId}`} style={{ ...MONO, fontSize: 10, color: C.goldLight, textDecoration: 'none', flexShrink: 0 }}>
+              <Link href={`/verify/${b.verifyId}`} style={{ ...MONO, fontSize: 12, color: C.goldLight, textDecoration: 'none', flexShrink: 0 }}>
                 Verify
               </Link>
             )}
@@ -420,7 +420,7 @@ export default function NurseryTab() {
             {a.quantityAffected != null ? ` · ${a.quantityAffected.toLocaleString()} seedlings` : ''}
             {a.description ? ` — ${a.description}` : ''}
           </span>
-          <span style={{ ...MONO, fontSize: 10, color: C.inkLight, flexShrink: 0 }}>{shortDate(a.activityDate)}</span>
+          <span style={{ ...MONO, fontSize: 12, color: C.inkLight, flexShrink: 0 }}>{shortDate(a.activityDate)}</span>
         </div>
       ))}
 

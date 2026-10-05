@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import {
   ArrowLeft, PenLine, Check, AlertTriangle, X, Sparkles, Send,
-  Save, Info, ShieldCheck, Coins, Plus, Lock, FileText,
+  Save, Info, ShieldCheck, Plus, Lock, FileText,
 } from 'lucide-react';
 import { usePrivyAuth } from '@/lib/auth/privy-auth';
 import { HUB_THEME, MONO, SERIF } from '@/lib/hubs/hub-theme';
@@ -39,7 +39,7 @@ const STATUS_INFO: Record<ContentPost['status'], { label: string; color: string;
   CHANGES_REQUESTED: { label: 'Changes requested', color: T.gold,      note: 'The editor asked for changes. Edit your story and submit again.' },
   SUBMITTED:         { label: 'In review',         color: T.goldLight, note: 'An editor is reviewing your story. You cannot edit it while it is in review.' },
   APPROVED:          { label: 'Approved',          color: T.pineLight, note: 'Approved by the editor and about to go live.' },
-  PUBLISHED:         { label: 'Published',         color: T.pineLight, note: 'Your story is live. Readers can now read and tip it.' },
+  PUBLISHED:         { label: 'Published',         color: T.pineLight, note: 'Your story is live. Everyone can read it now.' },
   REJECTED:          { label: 'Not accepted',      color: T.clay,      note: 'The editor did not accept this story. You can start a new one.' },
 };
 
@@ -206,16 +206,15 @@ export default function CreatePage() {
 
   if (!ready && !waitedEnough) {
     return (
-      <main style={{ minHeight: '100dvh', background: T.bg, color: T.inkLight, display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: "'IBM Plex Sans', sans-serif" }}>
+      <main style={{ minHeight: '100dvh', background: T.bg, color: T.inkLight, display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: "'Inter', system-ui, sans-serif" }}>
         Loading...
       </main>
     );
   }
 
   return (
-    <main style={{ minHeight: '100dvh', background: T.bg, color: T.paper, fontFamily: "'IBM Plex Sans', sans-serif", paddingBottom: 110 }}>
+    <main style={{ minHeight: '100dvh', background: T.bg, color: T.paper, fontFamily: "'Inter', system-ui, sans-serif", paddingBottom: 110 }}>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500..700&family=IBM+Plex+Mono:wght@500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap');
         .ws-wrap { max-width: 1080px; margin: 0 auto; padding: 0 24px; }
         .ws-grid { display: grid; grid-template-columns: minmax(0, 1fr) 320px; gap: 28px; align-items: start; }
         .ws-side { position: sticky; top: 20px; display: flex; flex-direction: column; gap: 16px; }
@@ -249,8 +248,7 @@ export default function CreatePage() {
             <h1 style={{ ...SERIF, fontSize: 'clamp(26px, 5vw, 34px)', fontWeight: 700, margin: 0 }}>Write a story</h1>
           </div>
           <p style={{ fontSize: 15, color: T.inkLight, lineHeight: 1.6, maxWidth: 640, margin: 0 }}>
-            Share news, a field report or a how-to guide with your community. An editor reviews every story before it goes live,
-            and readers can <strong style={{ color: T.goldLight }}>tip published stories in KES</strong>.
+            Share news, a field report or a how-to guide with your community. An editor reviews every story before it goes live.
           </p>
         </header>
 
@@ -260,7 +258,7 @@ export default function CreatePage() {
             { icon: PenLine, t: 'Write', d: 'Title and story' },
             { icon: Sparkles, t: 'Check', d: 'Free AI check' },
             { icon: Send, t: 'Submit', d: 'Send to editor' },
-            { icon: Coins, t: 'Go live', d: 'Readers can tip' },
+            { icon: Check, t: 'Go live', d: 'Everyone can read it' },
           ].map((s, i) => {
             const Icon = s.icon;
             return (
@@ -304,7 +302,7 @@ export default function CreatePage() {
                         borderRadius: 12, padding: '12px 14px', cursor: 'pointer', textAlign: 'left', minWidth: 210, maxWidth: 240, fontFamily: 'inherit', color: T.paper,
                       }}>
                         <span style={{ display: 'block', fontSize: 13.5, fontWeight: 600, marginBottom: 6, overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis' }}>{d.title || 'Untitled'}</span>
-                        <span style={{ ...MONO, fontSize: 10.5, fontWeight: 600, color: info.color }}>{info.label}</span>
+                        <span style={{ ...MONO, fontSize: 12.5, fontWeight: 600, color: info.color }}>{info.label}</span>
                       </button>
                     );
                   })}
@@ -323,7 +321,7 @@ export default function CreatePage() {
 
                 {editorNote && (status === 'CHANGES_REQUESTED' || status === 'REJECTED') && (
                   <div style={{ borderRadius: 12, padding: '12px 14px', margin: '0 0 16px', background: 'rgba(200,155,60,0.10)', border: `1px solid ${T.gold}55` }}>
-                    <p style={{ ...MONO, fontSize: 10.5, letterSpacing: 1.2, textTransform: 'uppercase', color: T.goldLight, fontWeight: 600, margin: '0 0 4px' }}>Note from the editor</p>
+                    <p style={{ ...MONO, fontSize: 12.5, letterSpacing: 1.2, textTransform: 'uppercase', color: T.goldLight, fontWeight: 600, margin: '0 0 4px' }}>Note from the editor</p>
                     <p style={{ fontSize: 14, lineHeight: 1.55, margin: 0, whiteSpace: 'pre-wrap' }}>{editorNote}</p>
                   </div>
                 )}
@@ -401,7 +399,7 @@ export default function CreatePage() {
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
                     <p style={{ ...sectionLabel, margin: 0 }}>Next steps</p>
                     {status && (
-                      <span style={{ ...MONO, fontSize: 10.5, fontWeight: 700, color: STATUS_INFO[status].color, border: `1px solid ${STATUS_INFO[status].color}55`, padding: '2px 8px', borderRadius: 999 }}>
+                      <span style={{ ...MONO, fontSize: 12.5, fontWeight: 700, color: STATUS_INFO[status].color, border: `1px solid ${STATUS_INFO[status].color}55`, padding: '2px 8px', borderRadius: 999 }}>
                         {STATUS_INFO[status].label}
                       </span>
                     )}
@@ -492,7 +490,7 @@ const field: React.CSSProperties = {
 };
 const fieldLabel: React.CSSProperties = { display: 'block', fontSize: 12.5, fontWeight: 600, color: T.paperDim, margin: '0 0 6px' };
 const optional: React.CSSProperties = { fontWeight: 400, color: T.inkLight, marginLeft: 4 };
-const sectionLabel: React.CSSProperties = { ...MONO, fontSize: 10.5, letterSpacing: 1.3, textTransform: 'uppercase', color: T.goldLight, fontWeight: 600, margin: '0 0 12px' };
+const sectionLabel: React.CSSProperties = { ...MONO, fontSize: 12.5, letterSpacing: 1.3, textTransform: 'uppercase', color: T.goldLight, fontWeight: 600, margin: '0 0 12px' };
 const topLink: React.CSSProperties = { ...MONO, fontSize: 12, letterSpacing: 1, textTransform: 'uppercase', color: T.goldLight, textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 6 };
 const btnPrimary: React.CSSProperties = {
   display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 8, padding: '13px 20px', borderRadius: 10,

@@ -49,7 +49,7 @@ const VAULTS = ['kvyBOB (7.5% APY)','kvNVR (15.2% APY)','kvYTOKEN (14.8% APY)','
    every input, glowing stat cards); a real profile — Facebook, LinkedIn —
    doesn't box every field, it just lays content out clearly. */
 const C = {
-  bg:        '#0B1C14',
+  bg:        '#0E2418',
   gold:      '#C89B3C',
   goldLight: '#E4C878',
   paper:     '#F6F2E7',
@@ -59,9 +59,9 @@ const C = {
   hairline:  'rgba(200,155,60,0.14)',
   red:       '#E88C7D',
 };
-const MONO: React.CSSProperties = { fontFamily: 'var(--font-plex-mono), monospace' };
-const SERIF: React.CSSProperties = { fontFamily: "'Poppins', sans-serif" };
-const label: React.CSSProperties = { ...MONO, fontSize: 10, letterSpacing: 1.4, textTransform: 'uppercase', color: C.goldLight, fontWeight: 600, margin: 0 };
+const MONO: React.CSSProperties = { fontFamily: "'Inter', system-ui, sans-serif" };
+const SERIF: React.CSSProperties = { fontFamily: "'Inter', system-ui, sans-serif" };
+const label: React.CSSProperties = { ...MONO, fontSize: 12, letterSpacing: 1.4, textTransform: 'uppercase', color: C.goldLight, fontWeight: 600, margin: 0 };
 
 /* Flat inputs — bottom border only, same language as every other form in
    the app (wallet Send, the AI textarea). No glow, no filled box. */
@@ -108,7 +108,7 @@ function FormRow({ label: rowLabel, children }:{ label:string; children:React.Re
   const text = required ? rowLabel.trim().slice(0, -1).trim() : rowLabel;
   return (
     <div style={{ display:'flex', flexDirection:'column', gap:8 }}>
-      <span style={{ ...MONO, fontSize:10, fontWeight:600, letterSpacing:1.0, textTransform:'uppercase', color: C.inkLight }}>
+      <span style={{ ...MONO, fontSize: 12, fontWeight:600, letterSpacing:1.0, textTransform:'uppercase', color: C.inkLight }}>
         {text}
         {required && <span style={{ color: C.goldLight, marginLeft:4 }}>*</span>}
       </span>
@@ -217,13 +217,11 @@ export default function ProfilePage() {
   const TABS = [
     { id:'personal', label:'Personal',  color: C.goldLight, Icon:Award    },
     { id:'cfa',      label:'CFA Group', color: '#7DC383',   Icon:Trees    },
-    { id:'sme',      label:'Business',  color: '#6FA8DC',   Icon:Store    },
-    { id:'chama',    label:'Chama',     color: '#C48FE0',   Icon:Users    },
-    { id:'prefs',    label:'KAI Prefs', color: C.gold,      Icon:Settings },
+    // Business, Chama and DeFi preference tabs are hidden with the crypto features.
   ] as const;
 
   return (
-    <main style={{ minHeight:'100dvh', background: C.bg, color: C.paper, fontFamily: "'Poppins', 'IBM Plex Sans', var(--font-sans)", paddingBottom:100, position:'relative' }}>
+    <main style={{ minHeight:'100dvh', background: C.bg, color: C.paper, fontFamily: "'Inter', system-ui, sans-serif", paddingBottom:100, position:'relative' }}>
       <style>{`
         /* min-width: 0 on the grid items — without it, the mobile tab row's
            non-shrinking horizontal-scroll buttons drag the whole grid track
@@ -248,7 +246,7 @@ export default function ProfilePage() {
       {/* Cover banner — flat pine gradient, no glowing orbs or stripe
           textures. A real profile cover is a simple backdrop, not a light show. */}
       <div style={{ position:'relative', height:180, overflow:'hidden', borderBottom: `1px solid ${C.hairline}` }}>
-        <div style={{ position:'absolute', inset:0, background:'linear-gradient(135deg, #123526 0%, #0B1C14 100%)' }}/>
+        <div style={{ position:'absolute', inset:0, background:'#12301F' }}/>
       </div>
 
       {/* IDENTITY HERO — avatar + name */}
@@ -273,10 +271,10 @@ export default function ProfilePage() {
           <div style={{ flex:1, paddingBottom:12 }}>
             <div style={{ display:'flex', alignItems:'center', gap:12, marginBottom:8, flexWrap: 'wrap' }}>
               <h1 style={{ ...SERIF, fontSize:'clamp(24px,3vw,34px)', fontWeight:700, margin:0, letterSpacing:'-0.5px', color: C.paper }}>
-                {profile.displayName || <span style={{ color: C.inkLight }}>Your Name</span>}
+                {profile.displayName || <span style={{ color: C.inkLight }}>Add your name</span>}
               </h1>
               {canAuth && (
-                <span style={{ ...MONO, padding:'4px 12px', borderRadius:999, border: `1px solid ${C.hairline}`, fontSize:10, fontWeight:600, letterSpacing: 0.6, color: C.goldLight, flexShrink:0 }}>
+                <span style={{ ...MONO, padding:'4px 12px', borderRadius:999, border: `1px solid ${C.hairline}`, fontSize: 12, fontWeight:600, letterSpacing: 0.6, color: C.goldLight, flexShrink:0 }}>
                   KAI MEMBER
                 </span>
               )}
@@ -293,7 +291,7 @@ export default function ProfilePage() {
                 </span>
               )}
               {canAuth && (
-                <button onClick={copyAddr} style={{ display:'flex', alignItems:'center', gap:6, background:'none', border:'none', cursor:'pointer', fontSize:12.5, color: C.inkLight, fontFamily: 'var(--font-plex-mono), monospace', padding:0 }}>
+                <button onClick={copyAddr} style={{ display:'flex', alignItems:'center', gap:6, background:'none', border:'none', cursor:'pointer', fontSize:12.5, color: C.inkLight, fontFamily: "'Inter', system-ui, sans-serif", padding:0 }}>
                   {effectiveAddress?.slice(0,10)}...{effectiveAddress?.slice(-6)}
                   {copied ? <CheckCircle size={12} color={C.goldLight}/> : <Copy size={12}/>}
                 </button>
@@ -436,14 +434,14 @@ export default function ProfilePage() {
                       {tab==='prefs'    && <>KAI <span style={{color:C.gold}}>Ecosystem Preferences</span></>}
                     </h2>
                     {editing && (
-                      <span style={{ marginLeft:'auto', ...MONO, fontSize:10, fontWeight:700, color: C.goldLight, flexShrink:0 }}>
+                      <span style={{ marginLeft:'auto', ...MONO, fontSize: 12, fontWeight:700, color: C.goldLight, flexShrink:0 }}>
                         EDITING
                       </span>
                     )}
                   </div>
                   <p style={{ fontSize:14, color: C.inkLight, margin:0, lineHeight:1.6 }}>
-                    {tab==='personal' && 'Your core identity on KAI Nuvari'}
-                    {tab==='cfa'      && 'Membership unlocks forest yield vaults, governance voting and carbon credit rewards'}
+                    {tab==='personal' && 'Your name and contact details on KAI Nuvari'}
+                    {tab==='cfa'      && 'Your Community Forest Association and nursery group'}
                     {tab==='sme'      && 'Unlock working capital loans, yBOB merchant accounts and revenue tokenisation on Avalanche'}
                     {tab==='chama'    && 'Pool contributions auto-routed to the highest-yield vault strategy. Current best: 22% APY'}
                     {tab==='prefs'    && 'Personalise your DeFi risk strategy and vault preferences'}

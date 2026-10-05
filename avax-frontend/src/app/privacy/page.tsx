@@ -18,7 +18,7 @@ const li: React.CSSProperties = { fontSize: 14, lineHeight: 1.7, color: '#EFE9D9
  */
 export default function PrivacyPage() {
   return (
-    <main style={{ minHeight: '100dvh', background: '#0B1C14', color: '#F6F2E7', fontFamily: "'Poppins', 'IBM Plex Sans', var(--font-sans)", padding: '0 16px 110px' }}>
+    <main style={{ minHeight: '100dvh', background: '#0B1C14', color: '#F6F2E7', fontFamily: "'Inter', system-ui, sans-serif", padding: '0 16px 110px' }}>
       <div style={{ maxWidth: 720, margin: '0 auto', paddingTop: 24 }}>
         <Link href="/workspace" style={{ display: 'inline-flex', alignItems: 'center', gap: 6, color: '#9BA396', fontSize: 13, textDecoration: 'none', marginBottom: 20 }}>
           <ArrowLeft size={14} /> Kanuvari

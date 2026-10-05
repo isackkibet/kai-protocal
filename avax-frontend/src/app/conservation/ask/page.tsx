@@ -100,16 +100,16 @@ export default function AskPage() {
           <motion.div key={i} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }}>
             {m.role === 'user' ? (
               <div style={{ padding: '16px 2px', borderTop: `1px solid ${HUB_THEME.hairline}` }}>
-                <p style={{ ...MONO, fontSize: 9, letterSpacing: 1.4, textTransform: 'uppercase', color: HUB_THEME.inkLight, margin: '0 0 6px' }}>You</p>
+                <p style={{ ...MONO, fontSize: 11.5, letterSpacing: 1.4, textTransform: 'uppercase', color: HUB_THEME.inkLight, margin: '0 0 6px' }}>You</p>
                 <p style={{ fontSize: 15, color: HUB_THEME.paper, lineHeight: 1.6, margin: 0 }}>{m.text}</p>
               </div>
             ) : (
               <div style={{ padding: '18px 2px 26px', borderTop: `1px solid ${HUB_THEME.hairline}` }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
                   <Sparkles size={13} color={HUB_THEME.goldLight} />
-                  <span style={{ ...MONO, fontSize: 9, letterSpacing: 1.4, textTransform: 'uppercase', color: HUB_THEME.goldLight }}>Ask KAI</span>
+                  <span style={{ ...MONO, fontSize: 11.5, letterSpacing: 1.4, textTransform: 'uppercase', color: HUB_THEME.goldLight }}>Ask KAI</span>
                   {m.grounded && (
-                    <span style={{ ...MONO, fontSize: 9, letterSpacing: 1, textTransform: 'uppercase', color: HUB_THEME.pineLight }}>Grounded in hub content</span>
+                    <span style={{ ...MONO, fontSize: 11.5, letterSpacing: 1, textTransform: 'uppercase', color: HUB_THEME.pineLight }}>Grounded in hub content</span>
                   )}
                 </div>
                 {/* KAI answers use light markdown; formatChat escapes HTML first. */}
@@ -124,13 +124,13 @@ export default function AskPage() {
                         <div style={{ flex: 1, minWidth: 0 }}>
                           <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
                             <b style={{ fontSize: 13, color: HUB_THEME.paper }}>{r.title}</b>
-                            <span style={{ ...MONO, fontSize: 9, letterSpacing: 1, textTransform: 'uppercase', color: HUB_THEME.goldLight }}>{r.kind} · {Math.round(r.score * 100)}%</span>
+                            <span style={{ ...MONO, fontSize: 11.5, letterSpacing: 1, textTransform: 'uppercase', color: HUB_THEME.goldLight }}>{r.kind} · {Math.round(r.score * 100)}%</span>
                           </div>
                           <p style={{ fontSize: 12, color: HUB_THEME.inkLight, lineHeight: 1.5, margin: '4px 0 0' }}>{r.summary} · {r.source}</p>
                         </div>
                         {r.slug && (
                           <Link href={r.kind === 'methodology' ? `/conservation/methodologies/${r.slug}` : `/conservation/knowledge?cat=All`}
-                            style={{ ...MONO, fontSize: 10, color: HUB_THEME.goldLight, textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 4, whiteSpace: 'nowrap' }}>
+                            style={{ ...MONO, fontSize: 12, color: HUB_THEME.goldLight, textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 4, whiteSpace: 'nowrap' }}>
                             Open <ExternalLink size={11} />
                           </Link>
                         )}
@@ -144,7 +144,7 @@ export default function AskPage() {
         ))}
 
         {messages.length > 0 && (
-          <p style={{ ...MONO, fontSize: 10, color: HUB_THEME.inkLight, display: 'flex', alignItems: 'center', gap: 6, margin: '10px 0 0' }}>
+          <p style={{ ...MONO, fontSize: 12, color: HUB_THEME.inkLight, display: 'flex', alignItems: 'center', gap: 6, margin: '10px 0 0' }}>
             <Globe2 size={12} /> Answered from indexed hub content with sources; external search is the fallback when the hub has no answer.
           </p>
         )}

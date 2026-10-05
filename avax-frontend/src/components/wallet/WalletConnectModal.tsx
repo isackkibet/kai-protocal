@@ -25,7 +25,7 @@ const C = {
   hairline:  'rgba(200,155,60,0.16)',
   red:       '#E88C7D',
 };
-const MONO: React.CSSProperties = { fontFamily: 'var(--font-plex-mono), monospace' };
+const MONO: React.CSSProperties = { fontFamily: "'Inter', system-ui, sans-serif" };
 
 // ── Wallet display config ─────────────────────────────────────────────────────
 function getWalletMeta(connector: Connector) {
@@ -213,7 +213,7 @@ export default function WalletConnectModal({ onClose }: WalletConnectModalProps)
           width: '100%', maxWidth: 460, borderRadius: 22, padding: '34px 30px 28px',
           background: C.bg, border: `1px solid ${C.hairline}`,
           boxShadow: '0 24px 80px rgba(0,0,0,0.55)', position: 'relative',
-          fontFamily: "'Poppins', 'IBM Plex Sans', var(--font-sans)",
+          fontFamily: "'Inter', system-ui, sans-serif",
         }}
       >
         {/* Close */}

@@ -4,74 +4,77 @@
  * 2. Oloolua Conservation Hub (The Green Hub — Youth Guardians & CFA Tree MRV)
  */
 export const HUB_THEME = {
-  bg:        '#0B1C14',
-  bgSoft:    '#0A2A20',
-  card:      '#0F2419',
-  pine:      '#0F3D2E',
+  bg:        '#0E2418',
+  bgSoft:    '#12301F',
+  card:      '#15352A',
+  pine:      '#12301F',
   pineLight: '#2D5A3D',
   gold:      '#C89B3C',
   goldLight: '#E4C878',
-  clay:      '#9C4B2D',
+  clay:      '#E0926F',
   red:       '#E88C7D',
   paper:     '#F6F2E7',
-  paperDim:  '#EFE9D9',
+  paperDim:  '#C9CFC2',
   ink:       '#1B1A14',
   inkLight:  '#9BA396',
-  hairline:  'rgba(200,155,60,0.14)',
+  hairline:  'rgba(246,242,231,0.08)',
 } as const;
 
-/** Authentic SIHU Blue Information Hub Theme (Sango Media & Knowledge Portal) */
+/** SIHU (Sango) hub: the same calm pine surfaces as the rest of the app,
+ *  with blue only as its accent so people can tell the two hubs apart. */
 export const SIHU_THEME = {
-  bg:        '#020617', // Slate 950
-  bgSoft:    '#081226',
-  card:      '#0B1934',
-  cardAlt:   '#0F2346',
-  blue:      '#38BDF8', // Sky 400
-  blueDeep:  '#0284C7', // Sky 600
-  blueLight: '#7DD3FC',
-  blueGlow:  'rgba(56, 189, 248, 0.18)',
-  indigo:    '#6366F1',
-  cyan:      '#06B6D4',
-  hairline:  'rgba(56, 189, 248, 0.22)',
-  text:      '#F8FAFC',
-  textDim:   '#94A3B8',
-  textMuted: '#64748B',
-  accent:    '#58B3F2',
+  bg:        '#0E2418',
+  bgSoft:    '#12301F',
+  card:      '#15352A',
+  cardAlt:   '#1B4032',
+  blue:      '#6FA8DC',
+  blueDeep:  '#4C88C2',
+  blueLight: '#9CC3E8',
+  blueGlow:  'rgba(111,168,220,0.16)',
+  indigo:    '#8C9EE0',
+  cyan:      '#6FC3B8',
+  hairline:  'rgba(246,242,231,0.08)',
+  text:      '#F6F2E7',
+  textDim:   '#C9CFC2',
+  textMuted: '#9BA396',
+  accent:    '#6FA8DC',
 } as const;
 
-/** Authentic Oloolua Green Conservation Hub Theme (Youth Guardians CFA) */
+/** Oloolua hub: pine surfaces with a soft green accent. */
 export const OLOOLUA_THEME = {
-  bg:        '#04150E',
-  bgSoft:    '#072217',
-  card:      '#0A2D20',
-  cardAlt:   '#0E3A2A',
-  emerald:   '#10B981',
-  emeraldDark:'#059669',
-  emeraldLight:'#34D399',
-  emeraldGlow:'rgba(16, 185, 129, 0.18)',
-  gold:      '#F59E0B',
-  goldLight: '#FDE68A',
-  hairline:  'rgba(16, 185, 129, 0.22)',
-  text:      '#ECFDF5',
-  textDim:   '#A7F3D0',
-  textMuted: '#6EE7B7',
-  accent:    '#10B981',
+  bg:        '#0E2418',
+  bgSoft:    '#12301F',
+  card:      '#15352A',
+  cardAlt:   '#1B4032',
+  emerald:   '#7DC383',
+  emeraldDark:'#5FA866',
+  emeraldLight:'#A9D8AE',
+  emeraldGlow:'rgba(125,195,131,0.16)',
+  gold:      '#C89B3C',
+  goldLight: '#E4C878',
+  hairline:  'rgba(246,242,231,0.08)',
+  text:      '#F6F2E7',
+  textDim:   '#C9CFC2',
+  textMuted: '#9BA396',
+  accent:    '#7DC383',
 } as const;
 
-export const MONO: React.CSSProperties = { fontFamily: "'IBM Plex Mono', var(--font-plex-mono), monospace" };
-export const SERIF: React.CSSProperties = { fontFamily: "'Fraunces', serif" };
-export const SANS: React.CSSProperties = { fontFamily: "'IBM Plex Sans', sans-serif" };
+/* One font family everywhere (Inter, as on the home page). The names stay so
+   existing pages keep working: MONO is the small "eyebrow" label style. */
+export const MONO: React.CSSProperties = { fontFamily: "'Inter', system-ui, sans-serif" };
+export const SERIF: React.CSSProperties = { fontFamily: "'Inter', system-ui, sans-serif", letterSpacing: '-0.01em' };
+export const SANS: React.CSSProperties = { fontFamily: "'Inter', system-ui, sans-serif" };
 
 export function labelStyle(over?: React.CSSProperties): React.CSSProperties {
-  return { ...MONO, fontSize: 10, letterSpacing: 1.4, textTransform: 'uppercase', color: HUB_THEME.goldLight, fontWeight: 600, margin: 0, ...over };
+  return { ...MONO, fontSize: 12, letterSpacing: 0.8, textTransform: 'uppercase', color: HUB_THEME.goldLight, fontWeight: 700, margin: 0, ...over };
 }
 
 export function sihuLabelStyle(over?: React.CSSProperties): React.CSSProperties {
-  return { ...MONO, fontSize: 10, letterSpacing: 1.4, textTransform: 'uppercase', color: SIHU_THEME.blueLight, fontWeight: 600, margin: 0, ...over };
+  return { ...MONO, fontSize: 12, letterSpacing: 0.8, textTransform: 'uppercase', color: SIHU_THEME.blueLight, fontWeight: 700, margin: 0, ...over };
 }
 
 export function olooluaLabelStyle(over?: React.CSSProperties): React.CSSProperties {
-  return { ...MONO, fontSize: 10, letterSpacing: 1.4, textTransform: 'uppercase', color: OLOOLUA_THEME.emeraldLight, fontWeight: 600, margin: 0, ...over };
+  return { ...MONO, fontSize: 12, letterSpacing: 0.8, textTransform: 'uppercase', color: OLOOLUA_THEME.emeraldLight, fontWeight: 700, margin: 0, ...over };
 }
 
 /** Editorial hairline section separator used across hub pages. */
