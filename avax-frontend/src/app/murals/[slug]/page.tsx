@@ -4,7 +4,8 @@ import { notFound } from 'next/navigation';
 import { ArrowLeft, CheckCircle2, Clock, ExternalLink, Fingerprint, ImageIcon, ShieldAlert, ShieldCheck, Sprout, Users } from 'lucide-react';
 import { getPrisma } from '@/lib/db/db';
 import { getMuralDetail } from '@/lib/murals/store';
-import EnquiryForm from '@/components/murals/EnquiryForm';
+import BuyBox from '@/components/murals/BuyBox';
+import { muralCheckoutEnabled } from '@/lib/murals/checkout';
 
 /**
  * /murals/:slug — one mural and its provenance: the CFA, who planted, the
@@ -31,8 +32,10 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   return m ? { title: `${m.title} by ${m.artist} | KAI Murals`, description: `A conservation mural with a verified story from ${m.cfa.name}.` } : { title: 'Mural not found' };
 }
 
-export default async function MuralPage({ params }: { params: Promise<{ slug: string }> }) {
+export default async function MuralPage({ params, searchParams }: { params: Promise<{ slug: string }>; searchParams: Promise<{ reference?: string }> }) {
   const m = await load((await params).slug);
+  const ref = (await searchParams).reference;
+  const returnedReference = typeof ref === 'string' && /^kai_mural_[a-f0-9]{20}$/.test(ref) ? ref : null;
   if (!m) notFound();
   const anchored = m.records.filter((r) => r.anchorStatus === 'ANCHORED').length;
 
@@ -94,11 +97,11 @@ export default async function MuralPage({ params }: { params: Promise<{ slug: st
           <p className="mv-small">SHA-256 of the mural (title, artist, picture fingerprint, CFA) and the fingerprints of the records above. Anyone with the same facts gets the same value.</p>
         </section>
 
-        {m.status !== 'sold' && (
+        {(m.status !== 'sold' || returnedReference) && (
           <section className="mv-order">
             <h2 className="mv-h2">I want this mural</h2>
-            <p className="mv-intro">Leave your details and we will call you about payment and delivery.</p>
-            <EnquiryForm slug={m.slug} title={m.title} />
+            {!returnedReference && <p className="mv-intro">{muralCheckoutEnabled() && m.status === 'available' ? 'Pay now with M-Pesa or card, or ask us first.' : 'Leave your details and we will call you about payment and delivery.'}</p>}
+            <BuyBox slug={m.slug} title={m.title} priceKes={m.priceKes} checkoutEnabled={muralCheckoutEnabled() && m.status === 'available'} returnedReference={returnedReference} />
           </section>
         )}
       </div>
@@ -148,6 +151,11 @@ export default async function MuralPage({ params }: { params: Promise<{ slug: st
         .mv-form input, .mv-form textarea { box-sizing: border-box; width: 100%; padding: 12px; border-radius: 10px; border: 1px solid rgba(246,242,231,0.14); background: ${C.bg}; color: ${C.paper}; font-size: 15px; font-family: inherit; }
         .mv-btn { display: inline-flex; align-items: center; justify-content: center; gap: 7px; padding: 13px 22px; border-radius: 999px; border: none; background: ${C.gold}; color: #1B1A14; font-weight: 700; font-size: 15px; cursor: pointer; font-family: inherit; width: fit-content; }
         .mv-btn:disabled { opacity: .6; }
+        .mv-tabs { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; padding: 4px; border-radius: 12px; background: ${C.bg}; margin-bottom: 14px; max-width: 520px; }
+        .mv-tabs button { padding: 10px; border-radius: 9px; border: none; background: none; color: ${C.dim}; font-weight: 700; font-size: 14px; cursor: pointer; font-family: inherit; }
+        .mv-tabs button.on { background: ${C.gold}; color: #1B1A14; }
+        .mv-linkbtn { border: none; background: none; padding: 0; color: ${C.goldLight}; font-weight: 600; cursor: pointer; font-family: inherit; text-decoration: underline; }
+        .mv-err { display: flex; align-items: center; gap: 8px; }
         .mv-ok { display: flex; align-items: center; gap: 8px; color: ${C.green}; margin: 0; font-size: 15px; }
         .mv-err { margin: 0; color: ${C.red}; font-size: 14px; }
         .mv-spin { animation: mv-spin 1s linear infinite; }

@@ -119,6 +119,7 @@ docs/                   PRDs and design notes (SECURITY.md, db-integration.md, .
 | Playground policy won't save / "payment…" errors | `src/app/api/policies/route.ts` (checks the fee on Fuji), rules in `src/lib/policies/payment.ts`; table `playground_policies` |
 | KAI website (/kai, /kaiweb) words or layout | Edit `scripts/build-kaiweb.py`, then run `python3 scripts/build-kaiweb.py`; styles in `public/kaiweb/css/kai.css` |
 | Murals: list, provenance page, "Add a mural", enquiries | `src/app/murals/`, `src/app/api/murals/`, `src/lib/murals/` (provenance hash in `provenance.ts`); tables in `prisma/sql/2026-10-05_murals.sql` |
+| Mural "Pay now" (Paystack) | Off unless `MURAL_CHECKOUT_ENABLED=true` (live key = real money). `src/app/api/murals/[slug]/checkout/route.ts`, settling in `src/lib/murals/checkout.ts` (also called by the Paystack webhook) |
 | Information Hubs portal (/hubs) | `src/app/hubs/page.tsx`; SIHU editors are `SIHU_EDITOR_EMAILS` |
 | A crypto page redirects home | Hidden on purpose: `CRYPTO_ROUTES` in `next.config.ts`; set `NEXT_PUBLIC_CRYPTO_FEATURES=on` to bring them back |
 | Login (Privy) fails | `src/components/providers/PrivyAuthProvider.tsx`; allowed origins in the Privy dashboard |

@@ -23,6 +23,7 @@
 import { NextResponse } from "next/server";
 import { verifyWebhookSignature } from "@/lib/payments/paystack";
 import { prisma } from "@/lib/db/prisma";
+import { settleMuralPayment } from "@/lib/murals/checkout";
 
 export const dynamic = "force-dynamic";
 
@@ -100,6 +101,10 @@ export async function POST(request: Request) {
         },
       });
       console.log(`[paystack/webhook] charge.success — ref: ${data.reference}`);
+      // A mural sale: mark it sold and tell the CFA team who bought it.
+      if ((payment.metadata as { kind?: string } | null)?.kind === "mural") {
+        await settleMuralPayment(prisma, data.reference).catch((e) => console.error("[paystack/webhook] mural settle failed", e instanceof Error ? e.message : e));
+      }
     } else if (eventName === "charge.failed") {
       await prisma.payment.updateMany({
         where: { reference: data.reference, status: { not: "success" } },
