@@ -28,7 +28,7 @@ const kes = (n: number) => `KES ${n.toLocaleString()}`;
 
 export default function MuralsPage() {
   const router = useRouter();
-  const { authenticated, getAccessToken, signInWithGoogle, signInWithEmail } = usePrivyAuth();
+  const { authenticated, getAccessToken, signInWithGoogle, signInWithEmail, email, logout } = usePrivyAuth();
   const [murals, setMurals] = useState<MuralCard[] | null>(null);
   const [manage, setManage] = useState<Manage>({ admin: false });
   const [checked, setChecked] = useState(false);
@@ -80,11 +80,20 @@ export default function MuralsPage() {
             </div>
           </div>
         ) : checked && !manage.admin ? (
-          <p className="mu-note">You are signed in, but only CFA admins can add murals. Ask an admin to add you, or sign in with an admin account.</p>
+          <div className="mu-signin">
+            <div>
+              <b>Signed in as {email ?? 'this account'}</b>
+              <small>This account is not a CFA admin, so it cannot add murals. Sign out, then sign in with an admin account.</small>
+            </div>
+            <button className="mu-btn mu-btn--small" onClick={() => { void logout(); }}>Sign out</button>
+          </div>
         ) : manage.admin && !adding ? (
           <div className="mu-signin">
-            <div><b>You are a CFA admin.</b><small>Add a mural and link it to your verified records.</small></div>
-            <button className="mu-btn mu-btn--small" onClick={() => setAdding(true)}><Plus size={15} /> Add a mural</button>
+            <div><b>You are a CFA admin{email ? ` (${email})` : ''}.</b><small>Add a mural and link it to your verified records.</small></div>
+            <div className="mu-signin-btns">
+              <button className="mu-btn mu-btn--small" onClick={() => setAdding(true)}><Plus size={15} /> Add a mural</button>
+              <button className="mu-btn mu-btn--small mu-btn--ghost" onClick={() => { void logout(); }}>Sign out</button>
+            </div>
           </div>
         ) : null}
 
