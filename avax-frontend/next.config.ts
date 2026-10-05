@@ -5,7 +5,7 @@ const OLOOLUA_URL = process.env.NEXT_PUBLIC_OLOOLUA_URL || "http://localhost:300
 
 const CRYPTO_ROUTES = [
   "pools", "swap", "vaults", "taas", "securities", "connft", "mine", "nuvari", "products", "pay",
-  "kai-bar", "saving", "sme", "policy", "sdg", "apps", "wallet", "ai", "chat", "voice",
+  "kai-bar", "saving", "sme", "policy", "sdg", "apps", "wallet", "ai", "chat", "voice", "waitlist",
 ];
 
 const nextConfig: NextConfig = {

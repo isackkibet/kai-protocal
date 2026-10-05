@@ -5,7 +5,7 @@ import Link from 'next/link';
 import {
   Newspaper, TreePine, ArrowRight, ExternalLink, PenTool, Sprout,
   BookOpen, MessageCircle, Mic, FileText, ShieldCheck, Library,
-  Users, Coins, Gift, Search, Sparkles, Send,
+  Users, Coins, Search, Sparkles, Send,
 } from 'lucide-react';
 import { SIHU_THEME, OLOOLUA_THEME, MONO, SERIF, SANS } from '@/lib/hubs/hub-theme';
 
@@ -35,18 +35,18 @@ const ACTIONS = [
   {
     title: 'Log a tree planting',
     desc: 'Record seedlings you planted with your Community Forest Association.',
-    reward: '+50 points',
-    rewardIcon: Gift,
-    href: '/cfa',
-    cta: 'Open CFA dashboard',
+    reward: 'Verified record',
+    rewardIcon: ShieldCheck,
+    href: '/nursery',
+    cta: 'Open nursery groups',
     icon: Sprout,
     accent: GREEN,
   },
   {
     title: 'Write a story',
-    desc: 'Share news from your area. Readers can tip your stories in KES.',
-    reward: 'Earn tips',
-    rewardIcon: Coins,
+    desc: 'Share news from your area. An editor reviews it before it is published.',
+    reward: 'Reviewed by editors',
+    rewardIcon: ShieldCheck,
     href: '/hub/create',
     cta: 'Start writing',
     icon: PenTool,
@@ -107,7 +107,7 @@ const HUBS = [
       { label: 'Conservation home', href: '/conservation', icon: TreePine },
       { label: 'Knowledge base', href: '/conservation/knowledge', icon: BookOpen },
       { label: 'Resources', href: '/conservation/resources', icon: Library },
-      { label: 'CFA dashboard', href: '/cfa', icon: Users },
+      { label: 'Nursery groups', href: '/nursery', icon: Users },
     ],
     portal: OLOOLUA_PORTAL_URL
       ? { label: 'Open full Oloolua site', href: OLOOLUA_PORTAL_URL, extras: [

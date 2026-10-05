@@ -9,15 +9,13 @@ const geistMono = Geist_Mono({ variable: '--font-geist-mono', subsets: ['latin']
 const plexMono = IBM_Plex_Mono({ variable: '--font-plex-mono', subsets: ['latin'], weight: ['400', '500', '700'] });
 
 export const metadata: Metadata = {
-  title: 'KAI Nuvari - Avalanche C-Chain DeFi Ecosystem',
-  description: 'Forest-finance DeFi on Avalanche. Yield vaults, AMM pools, community commodities, DAO governance, and M-Pesa payments.',
+  title: 'KAI Nuvari - Conservation records and murals',
+  description: 'Community Forest Associations record and publish their conservation work, verified and timestamped on Avalanche. Murals and portraits carry that verified story.',
 };
 
 export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
-  maximumScale: 1,
-  userScalable: false,
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

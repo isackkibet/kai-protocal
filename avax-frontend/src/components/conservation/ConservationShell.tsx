@@ -29,7 +29,7 @@ export default function ConservationShell({ children }: { children: React.ReactN
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
             <Link href="/conservation/ask" style={{ ...MONO, fontSize: 11, color: HUB_THEME.inkLight, textDecoration: 'none' }}>Ask KAI</Link>
             <Link href="/conservation/methodologies" style={{ ...MONO, fontSize: 11, color: HUB_THEME.inkLight, textDecoration: 'none' }}>Methodologies</Link>
-            <Link href="/hub" style={{ ...MONO, fontSize: 11, color: HUB_THEME.inkLight, textDecoration: 'none' }}>SIHU — stories &amp; tips</Link>
+            <Link href="/hub" style={{ ...MONO, fontSize: 11, color: HUB_THEME.inkLight, textDecoration: 'none' }}>SIHU stories</Link>
           </div>
         </footer>
       </div>

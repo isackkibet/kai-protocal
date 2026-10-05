@@ -5,7 +5,7 @@ export default function manifest(): MetadataRoute.Manifest {
   return {
     name: 'KAI Nuvari',
     short_name: 'KAI Nuvari',
-    description: 'Community conservation and forest finance on Avalanche.',
+    description: 'Conservation records you can trust, and murals that carry their story.',
     start_url: '/',
     display: 'standalone',
     background_color: '#0B1C14',

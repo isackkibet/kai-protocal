@@ -191,8 +191,8 @@ export const KNOWLEDGE: KnowledgeArticleData[] = [
     slug: 'conservation-finance-primer',
     category: CAT.FINANCE,
     title: 'Conservation Finance: How Verified Work Becomes Value',
-    summary: 'Carbon, credits, finance and tokens — a primer for CFA members on how conservation work can be paid for.',
-    body: 'Conservation finance pays for verified conservation outcomes: restored hectares, surviving trees, protected water catchments. The currency can be grants, results-based payments, carbon credits, or — as Kai Nuvari develops it — tokenized representations on Avalanche.\n\nNone of it works without verification. A record that cannot be checked is not financeable. The path is: activity → structured record → evidence → human verification → verified record → digital representation. Everything on this hub is oriented to that path.',
+    summary: 'Grants, results-based payments, carbon credits and art — how verified conservation work can be paid for.',
+    body: 'Conservation finance pays for verified conservation outcomes: restored hectares, surviving trees, protected water catchments. The money can come from grants, results-based payments, carbon credits, or the sale of art — like KAI's conservation murals — that carries a verified story.\n\nNone of it works without verification. A record that cannot be checked is not financeable. The path is: activity → structured record → evidence → human verification → verified record → published proof on Avalanche. Everything on this hub is oriented to that path.',
     sourceAttribution: 'KAI Nuvari knowledge series',
   },
 ];
