@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { PrivyProvider, usePrivy, useWallets } from '@privy-io/react-auth';
+import { PrivyProvider, useLoginWithOAuth, usePrivy, useWallets } from '@privy-io/react-auth';
 import { avalancheFuji } from 'wagmi/chains';
 import { createWalletClient, custom, type Address } from 'viem';
 import {
@@ -113,9 +113,6 @@ function PrivyAuthContextProvider({ children }: { children: React.ReactNode }) {
     stateRef.current = { privyUserId, email, name, authProvider, address };
   }, [privyUserId, email, name, authProvider, address]);
 
-  const builtLogin = useCallback(() => login({ loginMethods: ['google'] }), [login]);
-  const builtEmailLogin = useCallback(() => login({ loginMethods: ['email'] }), [login]);
-
   // Temporary: report the raw client-side error to the server so it can be
   // inspected without needing browser devtools access. Fire-and-forget,
   // never throws, never blocks the caller.
@@ -131,6 +128,18 @@ function PrivyAuthContextProvider({ children }: { children: React.ReactNode }) {
       /* diagnostic only */
     }
   };
+
+  // Google uses Privy's full-page redirect (initOAuth) instead of a popup.
+  // The popup closed after a second for people with a popup blocker, an
+  // in-app browser (WhatsApp, Instagram) or blocked third-party cookies, and
+  // the login never finished. The redirect comes back to the same page and
+  // Privy completes the login there.
+  const { initOAuth } = useLoginWithOAuth({
+    onError: (err) => reportClientError('google-oauth-error', String(err)),
+  });
+  const builtLogin = useCallback(() => initOAuth({ provider: 'google' }), [initOAuth]);
+  const builtEmailLogin = useCallback(() => login({ loginMethods: ['email'] }), [login]);
+
 
   // Log the page the user was on before starting login, so that if Privy uses
   // its redirect-based OAuth flow (browser popup blocked, embedded/mobile
