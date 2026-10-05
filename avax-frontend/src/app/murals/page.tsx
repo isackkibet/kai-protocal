@@ -28,9 +28,10 @@ const kes = (n: number) => `KES ${n.toLocaleString()}`;
 
 export default function MuralsPage() {
   const router = useRouter();
-  const { authenticated, getAccessToken } = usePrivyAuth();
+  const { authenticated, getAccessToken, signInWithGoogle, signInWithEmail } = usePrivyAuth();
   const [murals, setMurals] = useState<MuralCard[] | null>(null);
   const [manage, setManage] = useState<Manage>({ admin: false });
+  const [checked, setChecked] = useState(false);
   const [adding, setAdding] = useState(false);
   const [reload, setReload] = useState(0);
 
@@ -44,7 +45,7 @@ export default function MuralsPage() {
     if (!authenticated) return;
     let on = true;
     getAccessToken().then((token) => fetch('/api/murals/manage', { headers: token ? { Authorization: `Bearer ${token}` } : {} }))
-      .then((r) => r.json()).then((d: Manage) => { if (on) setManage(d); }).catch(() => {});
+      .then((r) => r.json()).then((d: Manage) => { if (on) { setManage(d); setChecked(true); } }).catch(() => { if (on) setChecked(true); });
     return () => { on = false; };
   }, [authenticated, getAccessToken, reload]);
 
@@ -68,6 +69,24 @@ export default function MuralsPage() {
           Every mural and portrait is linked to real conservation work: the CFA, the nursery group, who planted the trees and when.
           Each record was checked by a CFA verifier and its fingerprint is timestamped on Avalanche, so the story behind the art can be proven.
         </p>
+
+        {/* CFA admins add murals; tell everyone else how to get there. */}
+        {!authenticated ? (
+          <div className="mu-signin">
+            <div><b>Are you a CFA admin?</b><small>Sign in to add a mural and see who wants to buy.</small></div>
+            <div className="mu-signin-btns">
+              <button className="mu-btn mu-btn--small" onClick={() => { void signInWithGoogle(); }}>Sign in with Google</button>
+              <button className="mu-btn mu-btn--small mu-btn--ghost" onClick={() => { void signInWithEmail(); }}>Sign in with email</button>
+            </div>
+          </div>
+        ) : checked && !manage.admin ? (
+          <p className="mu-note">You are signed in, but only CFA admins can add murals. Ask an admin to add you, or sign in with an admin account.</p>
+        ) : manage.admin && !adding ? (
+          <div className="mu-signin">
+            <div><b>You are a CFA admin.</b><small>Add a mural and link it to your verified records.</small></div>
+            <button className="mu-btn mu-btn--small" onClick={() => setAdding(true)}><Plus size={15} /> Add a mural</button>
+          </div>
+        ) : null}
 
         {adding && manage.admin && (
           <AddMural records={manage.records ?? []} getAccessToken={getAccessToken}
@@ -233,6 +252,12 @@ const CSS = `
 
   .mu-btn { display: inline-flex; align-items: center; justify-content: center; gap: 7px; padding: 12px 20px; border-radius: 999px; border: none; background: ${C.gold}; color: #1B1A14; font-weight: 700; font-size: 14.5px; cursor: pointer; font-family: inherit; min-height: 46px; width: fit-content; }
   .mu-btn:disabled { opacity: .6; cursor: default; }
+  .mu-btn--ghost { background: rgba(246,242,231,0.08); color: ${C.paper}; }
+  .mu-signin { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; padding: 16px 18px; border-radius: 16px; background: ${C.band}; border-left: 3px solid ${C.gold}; }
+  .mu-signin b { display: block; font-size: 15.5px; }
+  .mu-signin small { display: block; color: ${C.dim}; font-size: 13.5px; margin-top: 2px; }
+  .mu-signin-btns { display: flex; flex-wrap: wrap; gap: 8px; }
+  .mu-note { margin: 0; padding: 14px 16px; border-radius: 14px; background: ${C.band}; color: ${C.dim}; font-size: 14px; }
   .mu-btn--small { padding: 9px 14px; min-height: 40px; font-size: 13.5px; }
   .mu-add { display: grid; gap: 14px; padding: 18px; border-radius: 18px; background: ${C.band}; border: 1px solid rgba(200,155,60,0.3); }
   .mu-add-head { display: flex; align-items: center; justify-content: space-between; }
