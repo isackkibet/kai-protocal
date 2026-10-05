@@ -3,7 +3,7 @@ import type { NextConfig } from "next";
 // The SIHU (Sango Information Hub) website, kept in its own design and hosted
 // on its own. Its content comes from this app's Information Hub admin.
 const SIHU_URL = [process.env.NEXT_PUBLIC_SIHU_PORTAL_URL, process.env.NEXT_PUBLIC_SIHU_URL]
-  .find((u) => u && /^https:\/\//.test(u))?.replace(/\/+$/, "") || "https://sihu-com.vercel.app";
+  .find((u) => u && /^https:\/\//.test(u))?.replace(/\/+$/, "") || "https://sihu-com-t86m.vercel.app";
 // The original Oloolua Youth Guardians website, kept exactly as its makers
 // designed it and hosted on its own. Information Hub links open it directly.
 const OLOOLUA_URL = [process.env.NEXT_PUBLIC_OLOOLUA_PORTAL_URL, process.env.NEXT_PUBLIC_OLOOLUA_URL]
