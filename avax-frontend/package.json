@@ -12,7 +12,7 @@
     "test:airdrop": "node --test src/lib/airdrop/engine.test.ts",
     "test:security": "node --experimental-strip-types --test src/lib/security/security.test.ts",
     "test": "npm run test:mining && npm run test:airdrop && npm run test:security && npm run test:mrv && npm run test:nursery && npm run test:ai && npm run test:defi",
-    "test:mrv": "node --test src/lib/mrv/canonical.test.ts src/lib/mrv/merkle.test.ts src/lib/mrv/verification.test.ts",
+    "test:mrv": "node --test src/lib/mrv/canonical.test.ts src/lib/mrv/merkle.test.ts src/lib/mrv/verification.test.ts src/lib/murals/provenance.test.ts",
     "test:nursery": "node --test src/lib/nursery/validate.test.ts src/lib/nursery/agent-logic.test.ts src/lib/nursery/evidence-rules.test.ts src/lib/nursery/quality-rules.test.ts src/lib/nursery/compliance-rules.test.ts",
     "test:ai": "node --test src/lib/ai/redact.test.ts",
     "test:defi": "node --test src/lib/defi/math.test.ts src/lib/defi/yield.test.ts src/lib/policies/payment.test.ts src/lib/sdg/tiers.test.ts",

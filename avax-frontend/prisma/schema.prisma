@@ -1609,3 +1609,57 @@ model PlaygroundPolicy {
   @@index([owner, createdAt(sort: Desc)], map: "playground_policies_owner")
   @@map("playground_policies")
 }
+
+/// Murals and portraits with conservation provenance. SQL:
+/// prisma/sql/2026-10-05_murals.sql
+model Mural {
+  id             String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  cfaId          String    @map("cfa_id") @db.Uuid
+  slug           String    @unique
+  title          String
+  artist         String
+  description    String?
+  sizeLabel      String?   @map("size_label")
+  priceKes       Int       @map("price_kes")
+  /// draft | available | reserved | sold
+  status         String    @default("available")
+  image          Bytes?
+  imageMime      String?   @map("image_mime")
+  imageSha256    String?   @map("image_sha256")
+  /// SHA-256 of the canonical mural + linked record fingerprints.
+  provenanceHash String?   @map("provenance_hash")
+  createdBy      String?   @map("created_by") @db.Uuid
+  createdAt      DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt      DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  records   MuralRecord[]
+  enquiries MuralEnquiry[]
+
+  @@index([cfaId, status, createdAt(sort: Desc)], map: "murals_cfa_status")
+  @@map("murals")
+}
+
+model MuralRecord {
+  muralId  String @map("mural_id") @db.Uuid
+  recordId String @map("record_id")
+  mural    Mural  @relation(fields: [muralId], references: [id], onDelete: Cascade)
+
+  @@id([muralId, recordId])
+  @@map("mural_records")
+}
+
+model MuralEnquiry {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  muralId   String   @map("mural_id") @db.Uuid
+  name      String
+  phone     String?
+  email     String?
+  message   String?
+  /// new | contacted | closed
+  status    String   @default("new")
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  mural     Mural    @relation(fields: [muralId], references: [id], onDelete: Cascade)
+
+  @@index([muralId, createdAt(sort: Desc)], map: "mural_enquiries_mural")
+  @@map("mural_enquiries")
+}
