@@ -35,8 +35,12 @@ export async function GET(req: Request) {
   try {
     const found = await prisma.cfaMember.findUnique({ where: { authUserId: privyUserId } });
     const member = found ? await promoteIfConfiguredAdmin(prisma, found) : null;
+    const cfa = member ? await prisma.cfa.findUnique({ where: { id: member.cfaId }, select: { name: true, location: true } }) : null;
     return NextResponse.json({
-      member: member && { id: member.id, name: member.name, role: member.role, status: member.status, createdAt: member.createdAt },
+      member: member && {
+        id: member.id, name: member.name, role: member.role, status: member.status, createdAt: member.createdAt,
+        cfaName: cfa?.name ?? null, cfaLocation: cfa?.location ?? null,
+      },
     });
   } catch (e) {
     console.error('[cfa/join] database unavailable', e);

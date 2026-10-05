@@ -10,7 +10,7 @@ import { safeNext } from '@/components/shared/SignInOnProfile';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Trees, Users, Wallet, ChevronRight, CheckCircle2, Copy, LogOut, MapPin, Mail,
-  Save, RefreshCw, Sprout, Gift, Globe2, ShieldCheck, BookOpen, Circle, type LucideIcon,
+  Save, RefreshCw, Sprout, Gift, Globe2, ShieldCheck, BookOpen, Circle, Flame, Trophy, Clock, type LucideIcon,
 } from 'lucide-react';
 
 interface Profile {
@@ -32,8 +32,44 @@ const EMPTY:Profile = {
   riskTolerance:'medium', preferredVault:'', notifications:true,
 };
 
-const CFA_ROLES = ['Guardian','Treasurer','Secretary','Admin','Auditor','Member'];
-const COUNTIES  = ['Nairobi','Mombasa','Kisumu','Nakuru','Eldoret','Thika','Meru','Nyeri','Kericho','Kakamega','Machakos','Garissa','Other'];
+const CFA_ROLES = ['Member','Guardian','Treasurer','Secretary','Admin','Verifier','Site manager','Auditor','Partner'];
+/* Kenya's 47 counties, A to Z. */
+const COUNTIES = [
+  'Baringo','Bomet','Bungoma','Busia','Elgeyo-Marakwet','Embu','Garissa','Homa Bay','Isiolo','Kajiado',
+  'Kakamega','Kericho','Kiambu','Kilifi','Kirinyaga','Kisii','Kisumu','Kitui','Kwale','Laikipia',
+  'Lamu','Machakos','Makueni','Mandera','Marsabit','Meru','Migori','Mombasa',"Murang'a",'Nairobi',
+  'Nakuru','Nandi','Narok','Nyamira','Nyandarua','Nyeri','Samburu','Siaya','Taita-Taveta','Tana River',
+  'Tharaka-Nithi','Trans Nzoia','Turkana','Uasin Gishu','Vihiga','Wajir','West Pokot',
+];
+/* CFA roles as stored in the nursery records, in plain words. */
+const ROLE_WORDS: Record<string, string> = {
+  member: 'Member', admin: 'Admin', verifier: 'Verifier', auditor: 'Auditor', partner: 'Partner', site_manager: 'Site manager',
+};
+const THIS_YEAR = new Date().getFullYear();
+const YEARS = Array.from({ length: THIS_YEAR - 1989 }, (_, i) => String(THIS_YEAR - i));
+
+/* Kenyan numbers written any common way (0712..., 254712..., 712...) become +254 712 345 678. */
+const tidyPhone = (v: string) => {
+  const d = v.replace(/[^0-9+]/g, '');
+  let n = d;
+  if (/^0[17]\d{8}$/.test(d)) n = '+254' + d.slice(1);
+  else if (/^254[17]\d{8}$/.test(d)) n = '+' + d;
+  else if (/^[17]\d{8}$/.test(d)) n = '+254' + d;
+  return /^\+254[17]\d{8}$/.test(n) ? `${n.slice(0, 4)} ${n.slice(4, 7)} ${n.slice(7, 10)} ${n.slice(10)}` : v.trim();
+};
+const phoneLooksWrong = (v: string) => !!v.trim() && !/^\+?[0-9 ()-]{9,20}$/.test(v.trim());
+const fmtWait = (s: number) => { const h = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60); return h ? `${h}h ${m}m` : `${Math.max(1, m)}m`; };
+const ago = (iso: string) => {
+  const s = (Date.now() - new Date(iso).getTime()) / 1000;
+  if (s < 3600) return `${Math.max(1, Math.round(s / 60))} min ago`;
+  if (s < 86400) return `${Math.round(s / 3600)} h ago`;
+  if (s < 86400 * 7) return `${Math.round(s / 86400)} d ago`;
+  return new Date(iso).toLocaleDateString('en-KE', { day: 'numeric', month: 'short' });
+};
+
+interface Points { total: number; lifetime: number; streak: number; rank: number; nextClaim: number; cooldown: number }
+interface Member { role: string; status: string; createdAt: string; cfaName: string | null; cfaLocation: string | null }
+interface Activity { id: string; title: string; points: number; createdAt: string }
 
 /* The server sends null for empty fields; inputs need strings, or React
    stops controlling them and the form shows stale values. */
@@ -59,7 +95,7 @@ const STEPS: { key: keyof Profile; todo: string; done: string }[] = [
 ];
 
 const GO_TO: { label: string; hint: string; href: string; Icon: LucideIcon }[] = [
-  { label: 'Points and badges', hint: 'Daily points, missions, invites', href: '/mine', Icon: Gift },
+  { label: 'Points and badges', hint: 'Missions, invites, leaderboard', href: '/mine', Icon: Gift },
   { label: 'SDG impact',        hint: 'Log actions for the global goals', href: '/sdg', Icon: Globe2 },
   { label: 'Nursery groups',    hint: 'Record seedlings and planting', href: '/nursery', Icon: Sprout },
   { label: 'Information Hubs',  hint: 'News from Oloolua and SIHU', href: '/hubs', Icon: Users },
@@ -118,7 +154,11 @@ export default function ProfilePage() {
   const [saving, setSaving] = useState(false);
   const [copied, setCopied] = useState(false);
   const [toast, setToast] = useState<{ text: string; ok: boolean } | null>(null);
-  const [points, setPoints] = useState<{ total: number; lifetime: number } | null>(null);
+  const [points, setPoints] = useState<Points | null>(null);
+  const [member, setMember] = useState<Member | null | undefined>(undefined);
+  const [activity, setActivity] = useState<Activity[]>([]);
+  const [wait, setWait] = useState(0);
+  const [claiming, setClaiming] = useState(false);
 
   const say = (text: string, ok: boolean) => { setToast({ text, ok }); setTimeout(() => setToast(null), 3200); };
 
@@ -161,11 +201,22 @@ export default function ProfilePage() {
         if (p) loaded(clean({ ...p, walletAddress: p.wallet ?? '' }));
       }
     } catch { /* keep the empty form */ }
-    try {
-      const r = await fetch('/api/airdrop/me', { headers });
-      const d = await r.json().catch(() => null);
-      if (r.ok && d?.data) setPoints({ total: d.data.totalPoints ?? 0, lifetime: d.data.lifetimePoints ?? d.data.totalPoints ?? 0 });
-    } catch { /* points are optional here */ }
+    // Points, real CFA membership and recent activity: shown when available.
+    const [pr, mr, ar] = await Promise.all([
+      fetch('/api/airdrop/me', { headers }).catch(() => null),
+      fetch('/api/cfa/join', { headers }).catch(() => null),
+      fetch('/api/airdrop/activity', { headers }).catch(() => null),
+    ]);
+    const d = pr?.ok ? await pr.json().catch(() => null) : null;
+    if (d?.data) {
+      const x = d.data;
+      setPoints({ total: x.totalPoints ?? 0, lifetime: x.lifetimePoints ?? x.totalPoints ?? 0, streak: x.streak ?? 0, rank: x.rank ?? 0, nextClaim: x.projectedNextClaim ?? x.baseDailyClaim ?? 10, cooldown: x.canClaimDaily ? 0 : (x.dailyClaimCooldownSeconds ?? 0) });
+      setWait(x.canClaimDaily ? 0 : (x.dailyClaimCooldownSeconds ?? 0));
+    }
+    const m = mr?.ok ? await mr.json().catch(() => null) : null;
+    setMember(m ? (m.member ?? null) : undefined);
+    const a = ar?.ok ? await ar.json().catch(() => null) : null;
+    if (Array.isArray(a?.data)) setActivity(a.data.slice(0, 4));
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [privy.authenticated]);
 
@@ -173,6 +224,35 @@ export default function ProfilePage() {
     if (privy.authenticated) { void loadMe(); return; }
     if (effectiveAddress) load(effectiveAddress);
   }, [privy.authenticated, effectiveAddress, load, loadMe]);
+
+  // Count down to the next daily points.
+  useEffect(() => {
+    if (wait <= 0) return;
+    const t = setInterval(() => setWait((w) => (w > 60 ? w - 60 : 0)), 60_000);
+    return () => clearInterval(t);
+  }, [wait]);
+
+  const collect = async () => {
+    if (claiming || wait > 0) return;
+    setClaiming(true);
+    try {
+      const r = await fetch('/api/airdrop/claim', { method: 'POST', headers: { 'Content-Type': 'application/json', ...(await getAuthHeader()) }, body: '{}' });
+      const d = await r.json().catch(() => ({}));
+      if (r.ok && d.ok) { say(`+${Number(d.data?.claimPoints ?? 0)} points collected`, true); await loadMe(); }
+      else { if (r.status === 409 && d.remainingSeconds) setWait(Number(d.remainingSeconds)); say(d.error ?? 'Could not collect your points. Try again.', false); }
+    } catch { say('No connection. Try again', false); } finally { setClaiming(false); }
+  };
+
+  const fillFromMembership = () => {
+    if (!member) return;
+    setProfile((p) => ({
+      ...p,
+      cfaGroup: p.cfaGroup || member.cfaName || p.cfaGroup,
+      cfaRole: p.cfaRole || ROLE_WORDS[member.role] || p.cfaRole,
+      cfaRegion: p.cfaRegion || member.cfaLocation || p.cfaRegion,
+      cfaJoinYear: p.cfaJoinYear || String(new Date(member.createdAt).getFullYear()),
+    }));
+  };
 
   const set = (k: keyof Profile) => (v: string) => setProfile((p) => ({ ...p, [k]: v }));
   const dirty = JSON.stringify(profile) !== baseline;
@@ -287,13 +367,34 @@ export default function ProfilePage() {
                 </div>
                 <div className="pf-chips">
                   <span className="pf-chip pf-chip--gold">KAI member</span>
-                  {profile.cfaGroup && <Link href="/nursery" prefetch={false} className="pf-chip pf-chip--green"><Trees size={13} /> {profile.cfaGroup}{profile.cfaRole ? ` · ${profile.cfaRole}` : ''}</Link>}
+                  {member ? (
+                    <Link href="/nursery" prefetch={false} className="pf-chip pf-chip--green" title="Confirmed in the nursery records"><ShieldCheck size={13} /> {member.cfaName ?? 'CFA'} · {ROLE_WORDS[member.role] ?? member.role}</Link>
+                  ) : profile.cfaGroup ? (
+                    <Link href="/nursery" prefetch={false} className="pf-chip pf-chip--green"><Trees size={13} /> {profile.cfaGroup}{profile.cfaRole ? ` · ${profile.cfaRole}` : ''}</Link>
+                  ) : null}
                   {points && <Link href="/mine" prefetch={false} className="pf-chip"><Gift size={13} /> {LEVELS[levelIdx].name}</Link>}
                 </div>
               </div>
               <button className="pf-btn pf-btn--ghost pf-signout" onClick={() => { void signOut(); }}><LogOut size={15} /> Sign out</button>
             </div>
           </header>
+
+          {/* Points at a glance, with one-tap daily points */}
+          {points && (
+            <div className="pf-wrap">
+              <div className="pf-stats">
+                <Link href="/mine" prefetch={false} className="pf-stat"><small>Points</small><b>{points.total.toLocaleString()}</b></Link>
+                <Link href="/mine" prefetch={false} className="pf-stat"><small>Level</small><b>{LEVELS[levelIdx].name}</b>{nextLevel && <em>{(nextLevel.from - points.lifetime).toLocaleString()} to {nextLevel.name}</em>}</Link>
+                <div className="pf-stat"><small>Streak</small><b><Flame size={17} /> {points.streak} {points.streak === 1 ? 'day' : 'days'}</b></div>
+                {points.rank > 0 && <Link href="/mine" prefetch={false} className="pf-stat"><small>Rank</small><b><Trophy size={16} /> #{points.rank}</b></Link>}
+                <button type="button" className={`pf-claim${wait > 0 ? ' is-wait' : ''}`} onClick={() => { void collect(); }} disabled={claiming || wait > 0}>
+                  {claiming ? <><RefreshCw size={16} className="pf-spin" /> Collecting…</>
+                    : wait > 0 ? <><Clock size={16} /> Next points in {fmtWait(wait)}</>
+                    : <><Gift size={16} /> Collect +{points.nextClaim} today</>}
+                </button>
+              </div>
+            </div>
+          )}
 
           <div className="pf-wrap pf-grid">
             <div className="pf-main">
@@ -332,8 +433,9 @@ export default function ProfilePage() {
                       <input id="pf-displayName" value={profile.displayName} onChange={(e) => set('displayName')(e.target.value)} placeholder="e.g. Grace Wangari" autoComplete="name" />
                     </Field>
                   </div>
-                  <Field id="pf-phone" label="Phone number">
-                    <input id="pf-phone" type="tel" value={profile.phone} onChange={(e) => set('phone')(e.target.value)} placeholder="+254 7XX XXX XXX" autoComplete="tel" />
+                  <Field id="pf-phone" label="Phone number" hint="Any format works. We tidy it for you.">
+                    <input id="pf-phone" type="tel" value={profile.phone} onChange={(e) => set('phone')(e.target.value)} onBlur={(e) => set('phone')(tidyPhone(e.target.value))} placeholder="0712 345 678" autoComplete="tel" aria-invalid={phoneLooksWrong(profile.phone)} />
+                    {phoneLooksWrong(profile.phone) && <span className="pf-warn">Check this number, for example 0712 345 678</span>}
                   </Field>
                   <Field id="pf-county" label="County">
                     <select id="pf-county" value={profile.county} onChange={(e) => set('county')(e.target.value)} className={profile.county ? '' : 'is-empty'}>
@@ -353,6 +455,22 @@ export default function ProfilePage() {
               <section className="pf-sec">
                 <h2>CFA group</h2>
                 <p className="pf-muted">Your Community Forest Association and nursery group.</p>
+                {member ? (
+                  <div className="pf-verified">
+                    <ShieldCheck size={20} />
+                    <div>
+                      <b>{member.cfaName ?? 'Your CFA'} · {ROLE_WORDS[member.role] ?? member.role}</b>
+                      <small>Confirmed in the nursery records{member.status !== 'active' ? ` (${member.status})` : ''} · since {new Date(member.createdAt).toLocaleDateString('en-KE', { month: 'short', year: 'numeric' })}</small>
+                    </div>
+                    {(!profile.cfaGroup || !profile.cfaRole) && <button type="button" className="pf-btn pf-btn--small" onClick={fillFromMembership}>Fill in for me</button>}
+                  </div>
+                ) : member === null ? (
+                  <Link href="/nursery" prefetch={false} className="pf-verified pf-verified--join">
+                    <Sprout size={20} />
+                    <div><b>Join your nursery group</b><small>Members record seedlings and planting, and earn points.</small></div>
+                    <ChevronRight size={16} />
+                  </Link>
+                ) : null}
                 <div className="pf-fields">
                   <div className="pf-span">
                     <Field id="pf-cfaGroup" label="Group name">
@@ -366,7 +484,10 @@ export default function ProfilePage() {
                     </select>
                   </Field>
                   <Field id="pf-cfaJoinYear" label="Year you joined">
-                    <input id="pf-cfaJoinYear" type="number" inputMode="numeric" min={1990} max={2100} value={profile.cfaJoinYear} onChange={(e) => set('cfaJoinYear')(e.target.value)} placeholder="2024" />
+                    <select id="pf-cfaJoinYear" value={profile.cfaJoinYear} onChange={(e) => set('cfaJoinYear')(e.target.value)} className={profile.cfaJoinYear ? '' : 'is-empty'}>
+                      <option value="" disabled>Choose a year</option>
+                      {YEARS.map((y) => <option key={y} value={y}>{y}</option>)}
+                    </select>
                   </Field>
                   <div className="pf-span">
                     <Field id="pf-cfaRegion" label="Forest or region">
@@ -379,13 +500,18 @@ export default function ProfilePage() {
             </div>
 
             <aside className="pf-side">
-              {points && (
-                <Link href="/mine" prefetch={false} className="pf-points">
-                  <span className="pf-label">Your points</span>
-                  <b>{points.total.toLocaleString()}</b>
-                  <span className="pf-muted">{LEVELS[levelIdx].name}{nextLevel ? ` · ${(nextLevel.from - points.lifetime).toLocaleString()} to ${nextLevel.name}` : ' · top level'}</span>
-                  <span className="pf-points-go">Collect today&rsquo;s points <ChevronRight size={14} /></span>
-                </Link>
+              {activity.length > 0 && (
+                <section className="pf-sec">
+                  <div className="pf-sec-top"><h2>Recent activity</h2><Link href="/mine" prefetch={false}>See all</Link></div>
+                  <ul className="pf-activity">
+                    {activity.map((e) => (
+                      <li key={e.id}>
+                        <span><b>{e.title}</b><small>{ago(e.createdAt)}</small></span>
+                        <em className={e.points < 0 ? 'is-minus' : ''}>{e.points >= 0 ? '+' : ''}{e.points}</em>
+                      </li>
+                    ))}
+                  </ul>
+                </section>
               )}
 
               <nav className="pf-sec pf-links" aria-label="Go to">
@@ -532,13 +658,46 @@ a.pf-chip:hover { background: rgba(246,242,231,.06); }
 .pf-field option { background: ${C.bg}; color: ${C.paper}; }
 .pf-hint { font-size: 12.5px; color: ${C.inkLight}; }
 
+/* Points strip */
+.pf-stats { display: flex; flex-wrap: wrap; align-items: stretch; gap: 10px; margin-top: 28px; }
+.pf-stat { flex: 1 1 120px; display: flex; flex-direction: column; gap: 2px; padding: 14px 16px; border-radius: 16px; background: rgba(246,242,231,.04); border: 1px solid ${C.line}; text-decoration: none; color: ${C.paper}; transition: border-color .15s ease, background-color .15s ease; }
+a.pf-stat:hover { border-color: rgba(228,200,120,.35); background: rgba(246,242,231,.06); }
+.pf-stat small { font-size: 12px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: ${C.inkLight}; }
+.pf-stat b { display: inline-flex; align-items: center; gap: 6px; font-size: 20px; font-weight: 700; }
+.pf-stat b svg { color: ${C.goldLight}; }
+.pf-stat em { font-style: normal; font-size: 12px; color: ${C.inkLight}; }
+.pf-claim { flex: 1 1 220px; display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 14px 18px; border-radius: 16px; border: none; background: ${C.gold}; color: ${C.ink}; font: 700 15px 'Inter', system-ui, sans-serif; cursor: pointer; transition: background-color .15s ease, transform .15s ease; min-height: 56px; }
+.pf-claim:hover { background: ${C.goldLight}; }
+.pf-claim:active { transform: scale(.98); }
+.pf-claim.is-wait { background: rgba(246,242,231,.05); color: ${C.paperDim}; border: 1px dashed rgba(228,200,120,.35); cursor: default; }
+.pf-claim:disabled { opacity: 1; }
+
+/* Membership */
+.pf-verified { display: flex; align-items: center; gap: 14px; margin-top: 18px; padding: 14px 16px; border-radius: 16px; background: rgba(125,195,131,.08); border: 1px solid rgba(125,195,131,.28); color: ${C.paper}; text-decoration: none; }
+.pf-verified > svg:first-child { color: ${C.green}; flex-shrink: 0; }
+.pf-verified > div { flex: 1; min-width: 0; }
+.pf-verified b { display: block; font-size: 14.5px; }
+.pf-verified small { display: block; font-size: 12.5px; color: ${C.inkLight}; margin-top: 2px; }
+.pf-verified--join { background: rgba(228,200,120,.07); border-color: rgba(228,200,120,.3); }
+.pf-verified--join > svg { color: ${C.goldLight} !important; }
+.pf-verified--join:hover { border-color: rgba(228,200,120,.55); }
+.pf-btn--small { padding: 8px 14px; min-height: 36px; font-size: 13px; flex-shrink: 0; }
+.pf-warn { font-size: 12.5px; color: ${C.red}; }
+.pf-field input[aria-invalid="true"] { border-color: rgba(232,140,125,.6); }
+
+/* Recent activity */
+.pf-sec-top { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 8px; }
+.pf-sec-top a { color: ${C.goldLight}; font-size: 13px; font-weight: 600; text-decoration: none; }
+.pf-activity { list-style: none; padding: 0; margin: 0; }
+.pf-activity li { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 0; border-bottom: 1px solid ${C.line}; }
+.pf-activity li:last-child { border-bottom: 0; }
+.pf-activity b { display: block; font-size: 13.5px; font-weight: 600; }
+.pf-activity small { display: block; font-size: 12px; color: ${C.inkLight}; margin-top: 1px; }
+.pf-activity em { font-style: normal; font-weight: 700; font-size: 14px; color: ${C.green}; flex-shrink: 0; }
+.pf-activity em.is-minus { color: ${C.red}; }
+
 /* Side */
 .pf-side .pf-sec:first-child { border-top: 0; padding-top: 0; }
-.pf-points { display: flex; flex-direction: column; gap: 4px; padding: 20px; margin-bottom: 8px; border-radius: 18px; text-decoration: none; color: ${C.paper};
-  background: linear-gradient(135deg, rgba(200,155,60,.18), rgba(200,155,60,.05)); border: 1px solid rgba(228,200,120,.25); transition: border-color .15s ease; }
-.pf-points:hover { border-color: rgba(228,200,120,.5); }
-.pf-points b { font-size: 34px; font-weight: 700; line-height: 1.1; }
-.pf-points-go { display: inline-flex; align-items: center; gap: 4px; margin-top: 8px; color: ${C.goldLight}; font-size: 13.5px; font-weight: 600; }
 .pf-links h2, .pf-side .pf-sec h2 { margin-bottom: 8px; }
 .pf-link { display: flex; align-items: center; gap: 12px; padding: 10px 8px; margin: 0 -8px; border-radius: 12px; text-decoration: none; color: ${C.paper}; transition: background-color .15s ease; }
 .pf-link:hover { background: rgba(246,242,231,.05); }
@@ -552,12 +711,12 @@ a.pf-chip:hover { background: rgba(246,242,231,.06); }
 .pf-copy { display: inline-flex; align-items: center; gap: 6px; background: none; border: 0; padding: 0; color: ${C.paperDim}; font: 500 13px 'Inter', system-ui, sans-serif; cursor: pointer; }
 .pf-copy:hover { color: ${C.goldLight}; }
 
-/* Save bar and toast */
-.pf-savebar { position: fixed; left: 50%; bottom: 88px; transform: translateX(-50%); z-index: 60; width: min(560px, calc(100% - 24px)); box-sizing: border-box;
+/* Save bar and toast (centred with margins: framer-motion owns transform) */
+.pf-savebar { position: fixed; left: 0; right: 0; margin: 0 auto; bottom: 88px; z-index: 60; width: min(560px, calc(100% - 24px)); box-sizing: border-box;
   display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 10px 10px 20px; border-radius: 999px;
   background: ${C.band}; border: 1px solid rgba(228,200,120,.3); box-shadow: 0 16px 40px rgba(0,0,0,.4); font-size: 14px; font-weight: 600; }
 .pf-savebar > div { display: flex; gap: 4px; }
-.pf-toast { position: fixed; left: 50%; bottom: 152px; transform: translateX(-50%); z-index: 70; display: inline-flex; align-items: center; gap: 8px; padding: 11px 20px; border-radius: 999px; background: ${C.band}; border: 1px solid ${C.line}; font-size: 14px; font-weight: 600; white-space: nowrap; }
+.pf-toast { position: fixed; left: 0; right: 0; margin: 0 auto; width: max-content; max-width: calc(100% - 24px); bottom: 152px; z-index: 70; display: flex; align-items: center; gap: 8px; padding: 11px 20px; border-radius: 999px; background: ${C.band}; border: 1px solid ${C.line}; font-size: 14px; font-weight: 600; white-space: nowrap; }
 .pf-toast.is-ok { color: ${C.green}; }
 .pf-toast.is-bad { color: ${C.red}; }
 
@@ -574,5 +733,11 @@ a.pf-chip:hover { background: rgba(246,242,231,.06); }
   .pf-fields { grid-template-columns: 1fr; }
   .pf-savebar { border-radius: 18px; flex-wrap: wrap; padding: 12px 12px 12px 16px; }
   .pf-savebar > span { font-size: 13px; }
+  .pf-savebar > div { margin-left: auto; }
+  .pf-stats { gap: 8px; }
+  .pf-stat { flex: 1 1 40%; padding: 12px 14px; }
+  .pf-stat b { font-size: 18px; }
+  .pf-claim { flex-basis: 100%; }
+  .pf-verified { flex-wrap: wrap; }
 }
 `;
