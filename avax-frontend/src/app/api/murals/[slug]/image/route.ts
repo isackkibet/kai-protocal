@@ -15,6 +15,8 @@ export async function GET(_req: Request, { params }: { params: Promise<{ slug: s
       'X-Content-Type-Options': 'nosniff',
       'Content-Security-Policy': "sandbox; default-src 'none'",
       'Cache-Control': 'public, max-age=3600',
+      // The Oloolua website shows these pictures.
+      'Access-Control-Allow-Origin': '*', 'Cross-Origin-Resource-Policy': 'cross-origin',
     },
   });
 }

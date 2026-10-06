@@ -6,6 +6,7 @@ import { requireRateLimit } from '@/lib/security/route-guard';
 import { createMural, listMurals, MAX_MURAL_IMAGE_BYTES } from '@/lib/murals/store';
 import { MURAL_STATUSES, type MuralStatus } from '@/lib/murals/provenance';
 import { muralCheckoutEnabled } from '@/lib/murals/checkout';
+import { PUBLIC_READ_HEADERS } from '@/lib/hubs/hub-content';
 
 /**
  * /api/murals
@@ -17,9 +18,10 @@ import { muralCheckoutEnabled } from '@/lib/murals/checkout';
  */
 export async function GET() {
   const prisma = await getPrisma();
-  if (!prisma) return NextResponse.json({ murals: [], checkout: muralCheckoutEnabled() });
+  // Public: the Oloolua website's Arts in Nature page reads this list too.
+  if (!prisma) return NextResponse.json({ murals: [], checkout: muralCheckoutEnabled() }, { headers: PUBLIC_READ_HEADERS });
   try {
-    return NextResponse.json({ murals: await listMurals(prisma), checkout: muralCheckoutEnabled() });
+    return NextResponse.json({ murals: await listMurals(prisma), checkout: muralCheckoutEnabled() }, { headers: PUBLIC_READ_HEADERS });
   } catch (e) {
     console.error('[murals] list failed', e);
     return NextResponse.json({ murals: [], error: 'Could not load the murals.' }, { status: 500 });

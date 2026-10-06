@@ -3,6 +3,7 @@ import { getPrisma } from '@/lib/db/db';
 import { canManageCatalogue, getNurseryCfa, getSessionMember } from '@/lib/nursery/db';
 import { getMuralDetail } from '@/lib/murals/store';
 import { MURAL_STATUSES } from '@/lib/murals/provenance';
+import { PUBLIC_READ_HEADERS } from '@/lib/hubs/hub-content';
 
 /**
  * GET   /api/murals/:slug — a mural and its provenance (public)
@@ -14,8 +15,8 @@ export async function GET(_req: Request, { params }: { params: Promise<{ slug: s
   const prisma = await getPrisma();
   if (!prisma) return NextResponse.json({ error: 'Not found' }, { status: 404 });
   const mural = await getMuralDetail(prisma, slug);
-  if (!mural) return NextResponse.json({ error: 'Not found' }, { status: 404 });
-  return NextResponse.json({ mural });
+  if (!mural) return NextResponse.json({ error: 'Not found' }, { status: 404, headers: PUBLIC_READ_HEADERS });
+  return NextResponse.json({ mural }, { headers: PUBLIC_READ_HEADERS });
 }
 
 export async function PATCH(req: Request, { params }: { params: Promise<{ slug: string }> }) {
