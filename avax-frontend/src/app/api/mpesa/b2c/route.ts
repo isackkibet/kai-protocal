@@ -57,7 +57,14 @@ export async function POST(request: Request) {
       );
     }
 
-    const amount = Math.max(10, Math.round(amountKes));  // B2C minimum is KES 10
+    const amount = Math.max(10, Math.round(Number(amountKes)));  // B2C minimum is KES 10
+    // A ceiling per payout, so a leaked admin key cannot empty the float in
+    // one request. Raise it with MPESA_B2C_MAX_KES when a bigger payout is due.
+    const maxKes = Number(process.env.MPESA_B2C_MAX_KES) > 0 ? Number(process.env.MPESA_B2C_MAX_KES) : 5000;
+    if (!Number.isFinite(amount) || amount > maxKes) {
+      return NextResponse.json({ error: `A single payout can be at most KES ${maxKes}.` }, { status: 400 });
+    }
+    console.warn(`[/api/mpesa/b2c] admin payout KES ${amount} to ***${clean.slice(-3)}`);
 
     const result = await b2cSend({
       phone:    clean,
