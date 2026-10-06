@@ -1,7 +1,8 @@
 import Link from 'next/link';
 import {
   ArrowLeft, Bot, CircleDollarSign, Droplets, FlaskConical, Gift,
-  Globe, ImageIcon, LayoutGrid, Link2, Lock, Mic, ScanLine, ShieldCheck, type LucideIcon,
+  Globe, ImageIcon, LayoutGrid, Link2, Lock, Mic, ScanLine, ShieldCheck,
+  Wrench, TreePine, type LucideIcon,
 } from 'lucide-react';
 
 /* Same palette/fonts as the home page — pine + gold + paper, Poppins heads. */
@@ -50,11 +51,13 @@ const GROUPS: AppGroup[] = [
     ],
   },
   {
-    title: 'Explore',
+    title: 'Explore · Tools',
     items: [
-      { name: 'Playground', href: '/nuvari', icon: FlaskConical, image: '/images/apps/playground.jpg' },
-      { name: 'SDG Impact', href: '/sdg',    icon: Globe, image: '/images/apps/sdg.jpg' },
-      { name: 'KAI Web',    href: '/kai',    icon: Link2, image: '/images/apps/kai-web.jpg' },
+      { name: 'Tools Hub',    href: 'http://localhost:3002/tools', icon: Wrench },
+      { name: 'Conservation', href: '/conservation',               icon: TreePine },
+      { name: 'Playground',   href: '/nuvari',                     icon: FlaskConical, image: '/images/apps/playground.jpg' },
+      { name: 'SDG Impact',   href: '/sdg',                        icon: Globe, image: '/images/apps/sdg.jpg' },
+      { name: 'KAI Web',      href: '/kai',                        icon: Link2, image: '/images/apps/kai-web.jpg' },
     ],
   },
 ];

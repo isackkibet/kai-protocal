@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import {
-  BookOpen, Frame, Gift, Globe, Globe2, Link2, MessagesSquare, Newspaper, PenTool, ShieldCheck, Sprout, UserRound, type LucideIcon,
+  BookOpen, Frame, Gift, Globe, Globe2, Link2, MessagesSquare, Newspaper, PenTool, ShieldCheck, Sprout, UserRound, Wrench, type LucideIcon,
 } from 'lucide-react';
 
 /**
@@ -20,6 +20,7 @@ export const QUICK_GROUPS: Group[] = [
   {
     title: 'Conservation', tint: '#7DC383',
     items: [
+      { name: 'Tools Hub', hint: 'Guardian & Logger', href: 'http://localhost:3002/tools', icon: Wrench },
       { name: 'Nursery groups', hint: 'Seedlings & planting', href: '/nursery', icon: Sprout, image: '/images/apps/nursery.jpg', live: 'nursery' },
       { name: 'Kanuvari AI', hint: 'Just say it', href: '/workspace', icon: MessagesSquare, image: '/images/apps/kanuvari-ai.jpg' },
       { name: 'Verification', hint: 'Check records', href: '/mrv', icon: ShieldCheck, image: '/images/apps/verification.jpg', live: 'verify' },
