@@ -5,6 +5,7 @@ import Link from 'next/link';
 import {
   BookOpen, Frame, Gift, Globe, Globe2, Link2, MessagesSquare, Newspaper, PenTool, ShieldCheck, Sprout, UserRound, Wrench, type LucideIcon,
 } from 'lucide-react';
+import { OLOOLUA_SITE_URL } from '@/lib/hubs/hub-links';
 
 /**
  * Home "Quick actions": every conservation app as a tile with a line icon in a tinted
@@ -20,7 +21,7 @@ export const QUICK_GROUPS: Group[] = [
   {
     title: 'Conservation', tint: '#7DC383',
     items: [
-      { name: 'Tools Hub', hint: 'Guardian & Logger', href: 'http://localhost:3002/tools', icon: Wrench },
+      { name: 'Tools Hub', hint: 'Guardian & Logger', href: `${OLOOLUA_SITE_URL}/tools`, icon: Wrench },
       { name: 'Nursery groups', hint: 'Seedlings & planting', href: '/nursery', icon: Sprout, image: '/images/apps/nursery.jpg', live: 'nursery' },
       { name: 'Kanuvari AI', hint: 'Just say it', href: '/workspace', icon: MessagesSquare, image: '/images/apps/kanuvari-ai.jpg' },
       { name: 'Verification', hint: 'Check records', href: '/mrv', icon: ShieldCheck, image: '/images/apps/verification.jpg', live: 'verify' },

@@ -4,6 +4,7 @@ import {
   Globe, ImageIcon, LayoutGrid, Link2, Lock, Mic, ScanLine, ShieldCheck,
   Wrench, TreePine, type LucideIcon,
 } from 'lucide-react';
+import { OLOOLUA_SITE_URL } from '@/lib/hubs/hub-links';
 
 /* Same palette/fonts as the home page — pine + gold + paper, Poppins heads. */
 const C = {
@@ -53,7 +54,7 @@ const GROUPS: AppGroup[] = [
   {
     title: 'Explore · Tools',
     items: [
-      { name: 'Tools Hub',    href: 'http://localhost:3002/tools', icon: Wrench },
+      { name: 'Tools Hub',    href: `${OLOOLUA_SITE_URL}/tools`,   icon: Wrench },
       { name: 'Conservation', href: '/conservation',               icon: TreePine },
       { name: 'Playground',   href: '/nuvari',                     icon: FlaskConical, image: '/images/apps/playground.jpg' },
       { name: 'SDG Impact',   href: '/sdg',                        icon: Globe, image: '/images/apps/sdg.jpg' },

@@ -85,6 +85,8 @@ const nextConfig: NextConfig = {
         destination: OLOOLUA_URL,
         permanent: false,
       },
+      { source: "/tools", destination: `${OLOOLUA_URL}/tools`, permanent: false },
+      { source: "/hubs/tools", destination: `${OLOOLUA_URL}/tools`, permanent: false },
       { source: "/hubs/oloolua", destination: OLOOLUA_URL, permanent: false },
       { source: "/hubs/sihu", destination: SIHU_URL, permanent: false },
       // Crypto features (exchange, tokens, pools, NFT trading...) are
