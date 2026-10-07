@@ -60,5 +60,16 @@
     "hardhat": "^2.22.18",
     "tailwindcss": "^4",
     "typescript": "^5"
+  },
+  "overrides": {
+    "ws": "^8.21.0",
+    "deepmerge-ts": "^8.0.2",
+    "openai": {
+      "undici": "^6.28.1"
+    },
+    "undici": "^6.28.1",
+    "hardhat": {
+      "undici": "^5.29.0"
+    }
   }
 }
