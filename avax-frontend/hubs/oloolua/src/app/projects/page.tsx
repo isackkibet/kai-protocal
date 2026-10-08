@@ -88,9 +88,9 @@ export default function ProjectsPage() {
       <div style={{ maxWidth: 1200, margin: '0 auto', padding: '4rem 2rem' }}>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '3rem', alignItems: 'center' }}>
           <div>
-            <span style={{ color: '#2a6040', fontWeight: 700, textTransform: 'uppercase', letterSpacing: 2, fontSize: '0.85rem' }}>Flagship Initiative</span>
-            <h3 style={{ fontSize: '2rem', color: '#0b2e14', fontWeight: 700, margin: '0.75rem 0 1rem' }}>Jaza Miti: Tokenized Tree Planting</h3>
-            <p style={{ color: '#334a34', marginBottom: '1.5rem', fontSize: '1.05rem', lineHeight: 1.7 }}>
+            <span style={{ color: '#e4c878', fontWeight: 700, textTransform: 'uppercase', letterSpacing: 2, fontSize: '0.85rem' }}>Flagship Initiative</span>
+            <h3 style={{ fontSize: '2rem', color: '#f6f2e7', fontWeight: 700, margin: '0.75rem 0 1rem' }}>Jaza Miti: Tokenized Tree Planting</h3>
+            <p style={{ color: '#c3dccf', marginBottom: '1.5rem', fontSize: '1.05rem', lineHeight: 1.7 }}>
               Jaza Miti goes beyond traditional tree planting by creating measurable, verifiable, and monetizable environmental impact. We solve the lack of transparency in traditional reforestation by assigning local youth as guardians and geo-tagging every sapling.
             </p>
             <ul style={{ listStyle: 'none', padding: 0 }}>
@@ -137,8 +137,8 @@ export default function ProjectsPage() {
       {/* Regenerative Strategies */}
       <div style={{ maxWidth: 1200, margin: '0 auto', padding: '4rem 2rem' }}>
         <div style={{ textAlign: 'center', marginBottom: '3rem' }}>
-          <span style={{ color: '#2a6040', fontWeight: 700, textTransform: 'uppercase', letterSpacing: 2, fontSize: '0.85rem', display: 'block', marginBottom: '0.5rem' }}>Holistic Approach</span>
-          <h2 style={{ fontSize: '2.5rem', color: '#0b2e14', fontWeight: 700 }}>Regenerative Ecosystem Strategies</h2>
+          <span style={{ color: '#e4c878', fontWeight: 700, textTransform: 'uppercase', letterSpacing: 2, fontSize: '0.85rem', display: 'block', marginBottom: '0.5rem' }}>Holistic Approach</span>
+          <h2 style={{ fontSize: '2.5rem', color: '#f6f2e7', fontWeight: 700 }}>Regenerative Ecosystem Strategies</h2>
         </div>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '2rem' }}>
           {REGEN_CARDS.map(({ icon: Icon, title, color, desc, items }) => (
@@ -160,9 +160,9 @@ export default function ProjectsPage() {
       <div style={{ maxWidth: 1200, margin: '0 auto', padding: '2rem 2rem 4rem' }}>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '3rem', alignItems: 'center' }}>
           <div>
-            <span style={{ color: '#2a6040', fontWeight: 700, textTransform: 'uppercase', letterSpacing: 2, fontSize: '0.85rem' }}>Trust Infrastructure</span>
-            <h3 style={{ fontSize: '2rem', color: '#0b2e14', fontWeight: 700, margin: '0.75rem 0 1rem' }}>Hedera Guardian Model</h3>
-            <p style={{ color: '#334a34', marginBottom: '1.5rem', fontSize: '1.05rem', lineHeight: 1.7 }}>
+            <span style={{ color: '#e4c878', fontWeight: 700, textTransform: 'uppercase', letterSpacing: 2, fontSize: '0.85rem' }}>Trust Infrastructure</span>
+            <h3 style={{ fontSize: '2rem', color: '#f6f2e7', fontWeight: 700, margin: '0.75rem 0 1rem' }}>Hedera Guardian Model</h3>
+            <p style={{ color: '#c3dccf', marginBottom: '1.5rem', fontSize: '1.05rem', lineHeight: 1.7 }}>
               Conservation has historically suffered from poor data verification and lack of trust. We use Hedera Guardian as a policy-driven, verifiable data system to solve this.
             </p>
             <ul style={{ listStyle: 'none', padding: 0 }}>

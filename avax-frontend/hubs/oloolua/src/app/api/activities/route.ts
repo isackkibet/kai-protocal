@@ -1,6 +1,35 @@
 import { NextResponse } from 'next/server';
 import { sql, initDbSchema } from '@/lib/db';
 
+/** Mirrors ActivityType in src/types/kai.ts — the one list the server trusts. */
+const ALLOWED_EVENT_TYPES = new Set([
+  'PROPAGATION', 'SEED_COLLECTION', 'SOWING', 'GERMINATION', 'PRICKING_OUT',
+  'POTTING', 'WATERING', 'WEEDING', 'PEST_MANAGEMENT', 'FERTILIZATION',
+  'HARDENING', 'SEEDLING_MOVEMENT', 'SALE', 'DONATION', 'TRANSFER',
+  'PLANTING', 'MORTALITY', 'OTHER',
+]);
+
+const ISO_DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
+
+/** Keys that must never survive a round-trip from untrusted JSON. */
+const FORBIDDEN_KEYS = new Set(['__proto__', 'constructor', 'prototype']);
+
+/** Strips prototype-pollution vectors from a plain object. Never mutates input. */
+function sanitizeShallow<T extends Record<string, unknown>>(input: T): T {
+  const out: Record<string, unknown> = {};
+  for (const [key, value] of Object.entries(input)) {
+    if (FORBIDDEN_KEYS.has(key)) continue;
+    out[key] = value;
+  }
+  return out as T;
+}
+
+/** Trims a value to a plain, length-capped string (or the fallback). */
+function cappedString(value: unknown, maxLen: number, fallback = ''): string {
+  const s = typeof value === 'string' ? value : fallback;
+  return s.slice(0, maxLen);
+}
+
 export async function GET() {
   try {
     await initDbSchema();
@@ -76,28 +105,36 @@ export async function GET() {
 export async function POST(request: Request) {
   try {
     await initDbSchema();
-    const body = await request.json();
+    const rawBody = await request.json();
+    if (!rawBody || typeof rawBody !== 'object' || Array.isArray(rawBody)) {
+      return NextResponse.json({ success: false, error: 'Request body must be a JSON object' }, { status: 400 });
+    }
 
-    // Drop client-supplied identity and status fields before storing the payload.
-    const { id: _clientId, verificationStatus: _clientStatus, status: _status, ...payload } = body ?? {};
+    // Strip prototype-pollution vectors, then drop client-supplied identity
+    // and status fields before storing the payload.
+    const { id: _clientId, verificationStatus: _clientStatus, status: _status, ...payload } = sanitizeShallow(rawBody as Record<string, unknown>);
 
-    const {
-      eventType,
-      cfaId = 'CFA-OLO-001',
-      nurseryId = 'NUR-OLO-01',
-      seedbedId = 'SB-01',
-      speciesId = 'SP-01',
-      quantity,
-      recordedBy = 'Guardian Member',
-      date = new Date().toISOString().split('T')[0],
-      notes = ''
-    } = payload;
+    const eventType = typeof payload.eventType === 'string' ? payload.eventType.toUpperCase() : '';
+    const cfaId = cappedString(payload.cfaId, 32, 'CFA-OLO-001');
+    const nurseryId = cappedString(payload.nurseryId, 32, 'NUR-OLO-01');
+    const seedbedId = cappedString(payload.seedbedId, 32, 'SB-01');
+    const speciesId = cappedString(payload.speciesId, 32, 'SP-01');
+    const recordedBy = cappedString(payload.recordedBy, 128, 'Guardian Member') || 'Guardian Member';
+    const notes = cappedString(payload.notes, 2000, '');
+    const dateInput = cappedString(payload.date, 10, new Date().toISOString().split('T')[0]);
+    const date = ISO_DATE_RE.test(dateInput) ? dateInput : new Date().toISOString().split('T')[0];
 
-    const qty = Number(quantity);
-    if (!eventType || !Number.isInteger(qty) || qty < 0) {
+    const qty = Number(payload.quantity);
+    if (!ALLOWED_EVENT_TYPES.has(eventType)) {
       return NextResponse.json({
         success: false,
-        error: 'eventType and a non-negative whole-number quantity are required'
+        error: `eventType must be one of: ${[...ALLOWED_EVENT_TYPES].join(', ')}`
+      }, { status: 400 });
+    }
+    if (!Number.isInteger(qty) || qty < 0 || qty > 1_000_000) {
+      return NextResponse.json({
+        success: false,
+        error: 'quantity must be a whole number between 0 and 1,000,000'
       }, { status: 400 });
     }
 
