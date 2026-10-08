@@ -1,7 +1,6 @@
 'use client';
 
 import Navigation from './Navigation';
-import Footer from './Footer';
 
 function PageHeader({ title, subtitle, bgImage }: { title: string; subtitle?: string; bgImage?: string }) {
   return (
@@ -33,8 +32,8 @@ export default function PageLayout({ children, title, subtitle, bgImage, showHea
     <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', background: '#0b1c14', color: '#f6f2e7', fontFamily: "'Roboto', sans-serif" }}>
       <Navigation />
       {showHeader && title && <PageHeader title={title} subtitle={subtitle} bgImage={bgImage} />}
-      <main style={{ flex: 1 }}>{children}</main>
-      <Footer />
+      {/* The root layout already provides <main> and the site footer. */}
+      <div style={{ flex: 1 }}>{children}</div>
     </div>
   );
 }

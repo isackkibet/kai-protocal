@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import Link from 'next/link';
 import Navigation from '@/components/Navigation';
 import RecordActivityModal from '@/components/RecordActivityModal';
-import { PlusCircle, ArrowRight } from 'lucide-react';
+import { PlusCircle, ArrowRight, Search } from 'lucide-react';
 import { INITIAL_SPECIES, INITIAL_SEEDBEDS, INITIAL_TRANSACTIONS, calculateNurseryMetrics } from '@/services/kaiLedger';
 
 const NURSERY_SPECIES_CATALOGUE = [
@@ -208,11 +208,15 @@ const NURSERY_SPECIES_CATALOGUE = [
 export default function SeedlingsPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [activeFilter, setActiveFilter] = useState('all');
+  const [query, setQuery] = useState('');
   const metrics = calculateNurseryMetrics(INITIAL_TRANSACTIONS);
 
+  const q = query.trim().toLowerCase();
   const filteredSpecies = NURSERY_SPECIES_CATALOGUE.filter((item) => {
-    if (activeFilter === 'all') return true;
-    return item.categories.includes(activeFilter);
+    if (activeFilter !== 'all' && !item.categories.includes(activeFilter)) return false;
+    if (!q) return true;
+    return [item.name, item.sci, item.eco, ...item.tags, ...item.uses.flatMap(u => [u.title, u.text])]
+      .some(text => text.toLowerCase().includes(q));
   });
 
   return (
@@ -343,10 +347,42 @@ export default function SeedlingsPage() {
             </div>
           </div>
 
+          {/* Live search across name, scientific name, tags and uses */}
+          <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+            <div className="relative flex-1 max-w-md">
+              <Search className="w-4 h-4 text-gray-500 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+              <label htmlFor="species-search" className="sr-only">Search species</label>
+              <input
+                id="species-search"
+                type="search"
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                placeholder="Search by name, scientific name or use (e.g. malaria, timber, bees)"
+                className="w-full bg-[#122b1f] border border-white/10 rounded-xl pl-9 pr-3 py-2.5 text-xs text-white placeholder-gray-500 focus:outline-none focus:border-[#e4c878]/60"
+              />
+            </div>
+            <p className="text-xs text-gray-400" aria-live="polite">
+              Showing {filteredSpecies.length} of {NURSERY_SPECIES_CATALOGUE.length} species
+            </p>
+          </div>
+
+          {filteredSpecies.length === 0 && (
+            <div className="p-8 rounded-2xl bg-[#122b1f] border border-dashed border-[#e4c878]/30 text-center space-y-2">
+              <p className="text-sm text-white font-semibold">No species match &ldquo;{query}&rdquo;.</p>
+              <button
+                type="button"
+                onClick={() => { setQuery(''); setActiveFilter('all'); }}
+                className="text-xs font-bold text-[#e4c878] hover:underline"
+              >
+                Clear search and filters
+              </button>
+            </div>
+          )}
+
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredSpecies.map((sp, idx) => (
+            {filteredSpecies.map((sp) => (
               <div
-                key={idx}
+                key={sp.name}
                 className="rounded-2xl bg-[#122b1f] border border-[#e4c878]/20 overflow-hidden flex flex-col hover:border-[#e4c878]/50 transition-all group"
               >
                 <div className="relative h-48 w-full overflow-hidden bg-black/40">

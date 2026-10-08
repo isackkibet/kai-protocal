@@ -3,7 +3,7 @@
  *
  * Origin-verification CSRF defence for state-changing requests.
  *
- * This app authenticates nothing (no login, no session cookie) — anyone can
+ * This app authenticates nothing (no login, no session cookie) - anyone can
  * call POST /api/activities, by design, since it is a public activity log.
  * That means classic cookie-riding CSRF does not apply here either: there is
  * no session to ride. What we still want to stop is a third-party page
@@ -50,7 +50,7 @@ export function isAllowedOrigin(origin: string | null): boolean {
 
 /**
  * A request whose Origin is the host it was sent to is same-origin by
- * definition — never CSRF. Checked directly so the site reached through an
+ * definition - never CSRF. Checked directly so the site reached through an
  * alias that isn't in the env-derived allow-list still accepts its own forms.
  */
 function isSameOrigin(req: Request, origin: string): boolean {

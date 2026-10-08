@@ -62,6 +62,20 @@ async function runSchemaSetup() {
       );
     `;
 
+    // Contact, commitment, pledge and newsletter submissions. Holds personal
+    // data, so no route ever lists it publicly.
+    await sql`
+      CREATE TABLE IF NOT EXISTS kai_messages (
+        id VARCHAR(64) PRIMARY KEY,
+        kind VARCHAR(16) NOT NULL,
+        name VARCHAR(120),
+        contact VARCHAR(160) NOT NULL,
+        message TEXT,
+        created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+      );
+    `;
+    await sql`CREATE INDEX IF NOT EXISTS idx_kai_messages_kind_created ON kai_messages (kind, created_at DESC);`;
+
     // These match the actual query patterns in /api/activities: ORDER BY
     // created_at, WHERE created_at/activity_date, GROUP BY recorded_by.
     await sql`CREATE INDEX IF NOT EXISTS idx_kai_activities_created_at ON kai_activities (created_at DESC);`;

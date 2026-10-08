@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { sql, initDbSchema } from '@/lib/db';
 
-/** Mirrors ActivityType in src/types/kai.ts — the one list the server trusts. */
+/** Mirrors ActivityType in src/types/kai.ts - the one list the server trusts. */
 const ALLOWED_EVENT_TYPES = new Set([
   'PROPAGATION', 'SEED_COLLECTION', 'SOWING', 'GERMINATION', 'PRICKING_OUT',
   'POTTING', 'WATERING', 'WEEDING', 'PEST_MANAGEMENT', 'FERTILIZATION',

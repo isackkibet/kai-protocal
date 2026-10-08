@@ -1,14 +1,18 @@
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
+import { useReducedMotion } from 'framer-motion';
 import Navigation from '@/components/Navigation';
 import RecordActivityModal from '@/components/RecordActivityModal';
+import { Reveal, CountUp } from '@/components/Motion';
+import { Honeypot, FormFeedback } from '@/components/FormBits';
+import { useMessageForm } from '@/lib/useMessageForm';
 import {
   TreePine, Users, HeartHandshake, Globe, ArrowRight,
-  Sparkles, ShieldCheck, BarChart3, ChevronRight,
-  Phone, Mail, Leaf, Camera, Rocket, Landmark, Clipboard, Check
+  Sparkles, ShieldCheck, BarChart3, Leaf, Camera, Rocket,
+  Landmark, Clipboard, Check, Loader2
 } from 'lucide-react';
 import { 
   INITIAL_SPECIES, INITIAL_SEEDBEDS, INITIAL_TRANSACTIONS,
@@ -78,6 +82,11 @@ export default function HomePage() {
   const [transactions, setTransactions] = useState(INITIAL_TRANSACTIONS);
   const [heroBg, setHeroBg] = useState(0);
   const [copiedPaybill, setCopiedPaybill] = useState(false);
+  const [heroHovered, setHeroHovered] = useState(false);
+  const [zoomKeys, setZoomKeys] = useState<number[]>(() => HERO_IMAGES.map(() => 0));
+  const reduceMotion = useReducedMotion();
+  const commitment = useMessageForm('commitment');
+  const contact = useMessageForm('contact');
   const metrics = calculateNurseryMetrics(transactions);
 
   const copyPaybillDetails = () => {
@@ -86,11 +95,22 @@ export default function HomePage() {
     setTimeout(() => setCopiedPaybill(false), 2000);
   };
 
-  // Rotate hero background every 5s
+  // Rotate the hero background every 6s, but only while someone could be
+  // watching: paused on hover, in a background tab, or for reduced motion.
   useEffect(() => {
-    const id = setInterval(() => setHeroBg(i => (i + 1) % HERO_IMAGES.length), 5000);
+    if (reduceMotion || heroHovered) return;
+    const id = setInterval(() => {
+      if (document.visibilityState === 'visible') {
+        setHeroBg(i => (i + 1) % HERO_IMAGES.length);
+      }
+    }, 6000);
     return () => clearInterval(id);
-  }, []);
+  }, [reduceMotion, heroHovered]);
+
+  // Restart the Ken Burns zoom on whichever slide just became active.
+  useEffect(() => {
+    setZoomKeys(keys => keys.map((k, i) => (i === heroBg ? k + 1 : k)));
+  }, [heroBg]);
 
   const handleAddActivity = (activity: ConservationActivity) => {
     const newTxn = {
@@ -114,23 +134,12 @@ export default function HomePage() {
     <div className="min-h-screen bg-[#0b1c14] text-[#f6f2e7] flex flex-col">
       <Navigation onOpenRecordActivity={() => setIsModalOpen(true)} />
 
-      {/* ── KAI Ecosystem Bar (from original HTML) ── */}
-      <div className="bg-[#060f0a] text-xs px-5 py-2 border-b border-[#e4c878]/20 flex flex-wrap justify-between items-center gap-2 font-medium">
-        <div className="flex items-center gap-2">
-          <span className="text-[#e4c878] font-bold uppercase tracking-wide">KAI Nuvari Ecosystem</span>
-          <span className="opacity-30">·</span>
-          <span className="text-gray-400">Pilot CFA Partner</span>
-        </div>
-        <div className="flex items-center gap-4">
-          <Link href="/portal" className="text-[#e4c878] hover:text-amber-300 font-semibold transition-colors">Conservation / CFA Hub →</Link>
-          <Link href="/portal" className="text-[#a0c4b4] hover:text-white transition-colors">SIHU Media Hub</Link>
-          <Link href="/portal" className="text-[#a0c4b4] hover:text-white transition-colors">KAI CFA Dashboard</Link>
-          <Link href="/portal" className="bg-emerald-600 hover:bg-emerald-500 text-white px-3 py-1 rounded font-bold transition-colors text-[11px]">Guardian Portal</Link>
-        </div>
-      </div>
-
       {/* ── HERO ── */}
-      <section className="relative min-h-[92vh] flex items-center justify-center overflow-hidden">
+      <section
+        className="relative min-h-[92vh] flex items-center justify-center overflow-hidden"
+        onMouseEnter={() => setHeroHovered(true)}
+        onMouseLeave={() => setHeroHovered(false)}
+      >
         {/* Crossfading background images with a slow Ken Burns zoom, synced to the rotation */}
         {HERO_IMAGES.map((src, i) => (
           <div
@@ -138,15 +147,18 @@ export default function HomePage() {
             className="absolute inset-0 transition-opacity duration-[1500ms] overflow-hidden"
             style={{ opacity: i === heroBg ? 0.45 : 0 }}
           >
-            <Image
-              src={src}
-              alt=""
-              fill
-              priority={i === 0}
-              sizes="100vw"
-              className="object-cover animate-[heroZoom_25s_ease-in-out_infinite]"
-              style={{ animationDelay: `${i * 5}s` }}
-            />
+            {/* Re-keyed on each activation so the zoom restarts from scale 1;
+                outgoing slides keep their key and fade out without snapping. */}
+            <div key={zoomKeys[i]} className="absolute inset-0 animate-[heroZoom_9s_ease-out_forwards]">
+              <Image
+                src={src}
+                alt=""
+                fill
+                priority={i === 0}
+                sizes="100vw"
+                className="object-cover"
+              />
+            </div>
           </div>
         ))}
         {/* Gradient overlay */}
@@ -173,18 +185,18 @@ export default function HomePage() {
           </p>
 
           <div className="flex flex-wrap items-center justify-center gap-4 pt-2">
-            <Link href="/portal" className="px-7 py-3.5 rounded-xl font-bold text-sm bg-[#e4c878] hover:bg-amber-300 text-neutral-950 transition-all transform hover:-translate-y-0.5 shadow-2xl flex items-center gap-2">
+            <Link href="/portal" className="w-full max-w-xs sm:w-auto sm:max-w-none justify-center px-7 py-3.5 rounded-xl font-bold text-sm bg-[#e4c878] hover:bg-amber-300 text-neutral-950 transition-all transform hover:-translate-y-0.5 shadow-2xl flex items-center gap-2">
               <ShieldCheck className="w-5 h-5" />
               <span>Explore Kai Hub &amp; Ledger</span>
             </Link>
             <button
               onClick={() => setIsModalOpen(true)}
-              className="px-7 py-3.5 rounded-xl font-bold text-sm bg-emerald-700/80 hover:bg-emerald-600 text-white border border-emerald-400/30 transition-all flex items-center gap-2 shadow-lg backdrop-blur-md"
+              className="w-full max-w-xs sm:w-auto sm:max-w-none justify-center px-7 py-3.5 rounded-xl font-bold text-sm bg-emerald-700/80 hover:bg-emerald-600 text-white border border-emerald-400/30 transition-all flex items-center gap-2 shadow-lg backdrop-blur-md"
             >
               <Leaf className="w-4 h-4" />
               <span>+ Record Activity</span>
             </button>
-            <Link href="/activities" className="px-7 py-3.5 rounded-xl font-bold text-sm bg-white/10 hover:bg-white/20 text-white border border-white/20 transition-all flex items-center gap-2 backdrop-blur-md">
+            <Link href="/photogallery" className="w-full max-w-xs sm:w-auto sm:max-w-none justify-center px-7 py-3.5 rounded-xl font-bold text-sm bg-white/10 hover:bg-white/20 text-white border border-white/20 transition-all flex items-center gap-2 backdrop-blur-md">
               <Camera className="w-4 h-4" />
               <span>Photo Gallery</span>
               <ArrowRight className="w-4 h-4" />
@@ -192,27 +204,43 @@ export default function HomePage() {
           </div>
         </div>
 
+        {/* Slide indicators: click to jump to a background */}
+        <div className="absolute bottom-16 left-1/2 -translate-x-1/2 z-10 flex items-center gap-2" role="group" aria-label="Hero background slides">
+          {HERO_IMAGES.map((src, i) => (
+            <button
+              key={src}
+              type="button"
+              onClick={() => setHeroBg(i)}
+              aria-label={`Show background ${i + 1} of ${HERO_IMAGES.length}`}
+              aria-current={i === heroBg}
+              className={`h-2 rounded-full transition-all duration-500 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#e4c878] ${
+                i === heroBg ? 'w-8 bg-[#e4c878]' : 'w-2 bg-white/40 hover:bg-white/70'
+              }`}
+            />
+          ))}
+        </div>
+
         {/* Scroll indicator */}
-        <div className="absolute bottom-6 left-1/2 -translate-x-1/2 animate-bounce text-[#e4c878]/60">
+        <a href="#stats" aria-label="Scroll to content" className="absolute bottom-4 left-1/2 -translate-x-1/2 z-10 animate-bounce text-[#e4c878]/60 hover:text-[#e4c878]">
           <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
           </svg>
-        </div>
+        </a>
       </section>
 
       {/* ── STATS BAR ── */}
-      <section className="relative z-20 max-w-5xl mx-auto px-4 w-full -mt-10">
+      <section id="stats" className="relative z-20 max-w-5xl mx-auto px-4 w-full -mt-10">
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 p-5 rounded-2xl bg-[#0d2219]/95 border border-[#e4c878]/30 shadow-2xl backdrop-blur-xl">
           {[
-            { icon: <TreePine className="w-6 h-6" />, val: metrics.currentStock.toLocaleString(), label: 'Seedlings in Nursery' },
-            { icon: <Users className="w-6 h-6" />, val: '30+', label: 'Youth Guardians' },
-            { icon: <HeartHandshake className="w-6 h-6" />, val: `${metrics.plantedTotal + 600}+`, label: 'Trees Planted' },
-            { icon: <Globe className="w-6 h-6" />, val: '600+', label: 'Hectares Protected' },
-          ].map(({ icon, val, label }) => (
-            <div key={label} className="flex items-center gap-3 p-3 rounded-xl bg-emerald-950/50 border border-emerald-800/30">
+            { icon: <TreePine className="w-6 h-6" />, value: metrics.currentStock, suffix: '', label: 'Seedlings in Nursery' },
+            { icon: <Users className="w-6 h-6" />, value: 30, suffix: '+', label: 'Youth Guardians' },
+            { icon: <HeartHandshake className="w-6 h-6" />, value: metrics.plantedTotal + 600, suffix: '+', label: 'Trees Planted' },
+            { icon: <Globe className="w-6 h-6" />, value: 600, suffix: '+', label: 'Hectares Protected' },
+          ].map(({ icon, value, suffix, label }) => (
+            <div key={label} className="flex items-center gap-3 p-3 rounded-xl bg-emerald-950/50 border border-emerald-800/30 transition-colors hover:border-[#e4c878]/40">
               <div className="w-11 h-11 rounded-xl bg-emerald-600/30 flex items-center justify-center text-[#e4c878] shrink-0">{icon}</div>
               <div>
-                <div className="text-2xl font-black text-white">{val}</div>
+                <div className="text-2xl font-black text-white tabular-nums"><CountUp value={value} suffix={suffix} /></div>
                 <div className="text-[11px] text-emerald-300/80 font-medium leading-tight">{label}</div>
               </div>
             </div>
@@ -222,52 +250,62 @@ export default function HomePage() {
 
       {/* ── ACTIVITIES (from HTML template) ── */}
       <section className="py-20 px-4 max-w-7xl mx-auto w-full">
-        <div className="text-center mb-12 space-y-2">
+        <Reveal className="text-center mb-12 space-y-2">
           <span className="text-[#e4c878] text-xs font-bold uppercase tracking-widest">What We Do</span>
           <h2 className="text-3xl sm:text-4xl font-extrabold text-white">Our Activities &amp; Indigenous Trees</h2>
           <p className="text-gray-400 max-w-xl mx-auto text-sm">
             From tree planting and seedling collection to beekeeping and community education.
           </p>
-        </div>
+        </Reveal>
 
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-5">
-          {ACTIVITY_CARDS.map(({ img, label, desc, href }) => (
-            <Link key={label} href={href} className="group block rounded-2xl overflow-hidden border border-[#e4c878]/20 hover:border-[#e4c878]/60 transition-all shadow-xl hover:shadow-emerald-900/40 hover:-translate-y-1 duration-300">
-              <div className="relative h-48 overflow-hidden">
-                <img src={img} alt={label} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" />
-                <div className="absolute inset-0 bg-gradient-to-t from-[#0b1c14] via-transparent to-transparent" />
-              </div>
-              <div className="p-4 bg-[#122b1f]">
-                <h3 className="font-bold text-white group-hover:text-[#e4c878] transition-colors">{label}</h3>
-                <p className="text-xs text-gray-400 mt-1">{desc}</p>
-              </div>
-            </Link>
+          {ACTIVITY_CARDS.map(({ img, label, desc, href }, i) => (
+            <Reveal key={label} delay={i * 0.08}>
+              <Link href={href} className="group block h-full rounded-2xl overflow-hidden border border-[#e4c878]/20 hover:border-[#e4c878]/60 transition-all shadow-xl hover:shadow-emerald-900/40 hover:-translate-y-1 duration-300">
+                <div className="relative h-48 overflow-hidden">
+                  <img src={img} alt={label} loading="lazy" className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" />
+                  <div className="absolute inset-0 bg-gradient-to-t from-[#0b1c14] via-transparent to-transparent" />
+                </div>
+                <div className="p-4 bg-[#122b1f]">
+                  <h3 className="font-bold text-white group-hover:text-[#e4c878] transition-colors">{label}</h3>
+                  <p className="text-xs text-gray-400 mt-1">{desc}</p>
+                </div>
+              </Link>
+            </Reveal>
           ))}
         </div>
       </section>
 
       {/* ── GALLERY STRIP ── */}
       <section className="py-12 bg-[#0a1910] border-y border-[#e4c878]/15 overflow-hidden">
-        <div className="text-center mb-8 px-4">
+        <Reveal className="text-center mb-8 px-4">
           <span className="text-[#e4c878] text-xs font-bold uppercase tracking-widest">Our Forest</span>
           <h2 className="text-2xl sm:text-3xl font-extrabold text-white mt-1">Discover Oloolua&apos;s Beauty</h2>
-          <p className="text-gray-400 text-sm mt-1">Journey through conservation work, wildlife, and native flora.</p>
-        </div>
-        {/* Scrolling strip */}
+          <p className="text-gray-400 text-sm mt-1">Journey through conservation work, wildlife, and native flora. Hover to pause.</p>
+        </Reveal>
+        {/* Scrolling strip; pauses on hover (see .marquee-track in globals.css) */}
         <div className="relative overflow-hidden">
-          <div
-            className="flex gap-3 w-max animate-[slideLeft_40s_linear_infinite]"
-            style={{ animationPlayState: 'running' }}
-          >
+          <div className="marquee-track flex gap-3 w-max animate-[slideLeft_40s_linear_infinite]">
             {[...GALLERY_STRIP, ...GALLERY_STRIP].map((src, i) => (
-              <div key={i} className="w-56 h-40 rounded-xl overflow-hidden shrink-0 border border-white/10">
-                <img src={src} alt="" className="w-full h-full object-cover hover:scale-105 transition-transform duration-500" />
-              </div>
+              <Link
+                key={i}
+                href="/photogallery"
+                aria-hidden={i >= GALLERY_STRIP.length}
+                tabIndex={i >= GALLERY_STRIP.length ? -1 : undefined}
+                className="w-56 h-40 rounded-xl overflow-hidden shrink-0 border border-white/10 hover:border-[#e4c878]/60 transition-colors"
+              >
+                <img
+                  src={src}
+                  alt={i < GALLERY_STRIP.length ? `Oloolua Forest photo ${i + 1}` : ''}
+                  loading="lazy"
+                  className="w-full h-full object-cover hover:scale-105 transition-transform duration-500"
+                />
+              </Link>
             ))}
           </div>
         </div>
         <div className="text-center mt-8">
-          <Link href="/activities" className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-[#e4c878] hover:bg-amber-300 text-neutral-950 font-bold text-sm transition-all shadow-lg">
+          <Link href="/photogallery" className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-[#e4c878] hover:bg-amber-300 text-neutral-950 font-bold text-sm transition-all shadow-lg">
             <Camera className="w-4 h-4" />
             Explore Full Photo Stream
           </Link>
@@ -276,45 +314,49 @@ export default function HomePage() {
 
       {/* ── TREE SPECIES (from HTML planted-trees section) ── */}
       <section className="py-20 px-4 max-w-7xl mx-auto w-full">
-        <div className="text-center mb-12 space-y-2">
+        <Reveal className="text-center mb-12 space-y-2">
           <span className="text-[#e4c878] text-xs font-bold uppercase tracking-widest">Nursery Stock</span>
           <h2 className="text-3xl sm:text-4xl font-extrabold text-white">Species in Our Nursery</h2>
           <p className="text-gray-400 max-w-xl mx-auto text-sm">
             Indigenous, fruit, timber, and restoration species propagated for the Oloolua ecosystem.
           </p>
-        </div>
+        </Reveal>
 
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
-          {TREE_SPECIES.map(({ img, name, sci, local }) => (
-            <Link key={name} href="/seedlings" className="group block rounded-2xl overflow-hidden border border-[#e4c878]/20 hover:border-[#e4c878]/50 bg-[#122b1f] transition-all hover:-translate-y-1 duration-300 shadow-lg">
-              <div className="relative h-44 overflow-hidden">
-                <img src={img} alt={name} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" />
-                <div className="absolute inset-0 bg-gradient-to-t from-[#0b1c14] to-transparent" />
-                <div className="absolute bottom-2 left-3 right-3">
-                  <span className="text-[10px] font-bold text-emerald-300 bg-emerald-950/80 px-2 py-0.5 rounded-full">{local}</span>
+          {TREE_SPECIES.map(({ img, name, sci, local }, i) => (
+            <Reveal key={name} delay={(i % 5) * 0.06}>
+              <Link href="/seedlings" className="group block h-full rounded-2xl overflow-hidden border border-[#e4c878]/20 hover:border-[#e4c878]/50 bg-[#122b1f] transition-all hover:-translate-y-1 duration-300 shadow-lg">
+                <div className="relative h-44 overflow-hidden">
+                  <img src={img} alt={name} loading="lazy" className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" />
+                  <div className="absolute inset-0 bg-gradient-to-t from-[#0b1c14] to-transparent" />
+                  <div className="absolute bottom-2 left-3 right-3">
+                    <span className="text-[10px] font-bold text-emerald-300 bg-emerald-950/80 px-2 py-0.5 rounded-full">{local}</span>
+                  </div>
                 </div>
-              </div>
-              <div className="p-3 space-y-0.5">
-                <h3 className="font-bold text-white text-sm group-hover:text-[#e4c878] transition-colors leading-tight">{name}</h3>
-                <p className="text-[11px] italic text-gray-400">{sci}</p>
-              </div>
-            </Link>
+                <div className="p-3 space-y-0.5">
+                  <h3 className="font-bold text-white text-sm group-hover:text-[#e4c878] transition-colors leading-tight">{name}</h3>
+                  <p className="text-[11px] italic text-gray-400">{sci}</p>
+                </div>
+              </Link>
+            </Reveal>
           ))}
 
           {/* "View All" tile */}
-          <Link href="/seedlings" className="group block rounded-2xl overflow-hidden border-2 border-dashed border-[#e4c878]/30 hover:border-[#e4c878]/60 bg-[#0d2219] transition-all hover:-translate-y-1 duration-300 flex items-center justify-center min-h-[220px]">
-            <div className="text-center p-4 space-y-2">
-              <Leaf className="w-6 h-6 text-[#e4c878] mx-auto" />
-              <div className="text-sm font-bold text-[#e4c878]">View All Species</div>
-              <div className="text-[11px] text-gray-400">Full Seedbed Ledger →</div>
-            </div>
-          </Link>
+          <Reveal delay={0.3}>
+            <Link href="/seedlings" className="group h-full rounded-2xl overflow-hidden border-2 border-dashed border-[#e4c878]/30 hover:border-[#e4c878]/60 bg-[#0d2219] transition-all hover:-translate-y-1 duration-300 flex items-center justify-center min-h-[220px]">
+              <div className="text-center p-4 space-y-2">
+                <Leaf className="w-6 h-6 text-[#e4c878] mx-auto transition-transform duration-300 group-hover:rotate-12" />
+                <div className="text-sm font-bold text-[#e4c878]">View All Species</div>
+                <div className="text-[11px] text-gray-400">Full Seedbed Ledger &rarr;</div>
+              </div>
+            </Link>
+          </Reveal>
         </div>
       </section>
 
       {/* ── KAI HUB BANNER ── */}
       <section className="py-12 bg-gradient-to-r from-emerald-950 via-[#0b1c14] to-emerald-950 border-y border-[#e4c878]/30 px-4">
-        <div className="max-w-6xl mx-auto flex flex-col md:flex-row items-center justify-between gap-8">
+        <Reveal className="max-w-6xl mx-auto flex flex-col md:flex-row items-center justify-between gap-8">
           <div className="space-y-3 text-center md:text-left">
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-md bg-emerald-900/60 border border-emerald-700 text-xs font-semibold text-emerald-300">
               <BarChart3 className="w-4 h-4 text-[#e4c878]" />
@@ -328,15 +370,16 @@ export default function HomePage() {
               transactions, evidence photos, and verifier check-offs according to the Kai PRD.
             </p>
           </div>
-          <Link href="/portal" className="px-7 py-3.5 rounded-xl font-bold text-sm bg-[#e4c878] hover:bg-amber-300 text-neutral-950 transition-all shadow-xl shrink-0 flex items-center gap-2">
-            Open Guardian Portal →
+          <Link href="/portal" className="group px-7 py-3.5 rounded-xl font-bold text-sm bg-[#e4c878] hover:bg-amber-300 text-neutral-950 transition-all shadow-xl shrink-0 flex items-center gap-2">
+            Open Guardian Portal
+            <ArrowRight className="w-4 h-4 transition-transform duration-300 group-hover:translate-x-1" />
           </Link>
-        </div>
+        </Reveal>
       </section>
 
       {/* ── FUTURE PLANS (from HTML) ── */}
       <section className="py-20 px-4 max-w-7xl mx-auto w-full" id="future-plans">
-        <div className="text-center mb-12 space-y-2">
+        <Reveal className="text-center mb-12 space-y-2">
           <span className="text-[#e4c878] text-xs font-bold uppercase tracking-widest">What We&apos;re Building Next</span>
           <h2 className="text-3xl sm:text-4xl font-extrabold text-white flex items-center justify-center gap-2.5">
             <Rocket className="w-7 h-7 text-[#e4c878]" />
@@ -346,16 +389,18 @@ export default function HomePage() {
             From eco-tourism to science, art, and green enterprise: a glimpse into the projects
             we intend to develop with your support.
           </p>
-        </div>
+        </Reveal>
 
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
-          {FUTURE_PLANS.map(({ img, label }) => (
-            <div key={label} className="group relative rounded-2xl overflow-hidden border border-white/10 hover:border-[#e4c878]/40 transition-all shadow-lg aspect-[4/3]">
-              <img src={img} alt={label} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" />
-              <div className="absolute inset-0 bg-gradient-to-t from-[#0b1c14]/90 to-transparent flex items-end p-3">
-                <span className="text-xs font-bold text-white opacity-90 group-hover:text-[#e4c878] transition-colors">{label}</span>
+          {FUTURE_PLANS.map(({ img, label }, i) => (
+            <Reveal key={label} delay={(i % 4) * 0.06}>
+              <div className="group relative rounded-2xl overflow-hidden border border-white/10 hover:border-[#e4c878]/40 transition-all shadow-lg aspect-[4/3]">
+                <img src={img} alt={label} loading="lazy" className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" />
+                <div className="absolute inset-0 bg-gradient-to-t from-[#0b1c14]/90 to-transparent flex items-end p-3">
+                  <span className="text-xs font-bold text-white opacity-90 group-hover:text-[#e4c878] transition-colors">{label}</span>
+                </div>
               </div>
-            </div>
+            </Reveal>
           ))}
         </div>
 
@@ -370,14 +415,14 @@ export default function HomePage() {
       {/* ── EQUITY / DONATE (from HTML) ── */}
       <section className="py-16 px-4 bg-[#071209] border-t border-[#e4c878]/20" id="donate">
         <div className="max-w-4xl mx-auto">
-          <div className="text-center mb-10 space-y-2">
+          <Reveal className="text-center mb-10 space-y-2">
             <span className="text-[#e4c878] text-xs font-bold uppercase tracking-widest">Support Our Mission</span>
             <h2 className="text-3xl font-extrabold text-white flex items-center justify-center gap-2.5">
               <HeartHandshake className="w-7 h-7 text-emerald-400" />
               <span>Invest in Oloolua Forest</span>
             </h2>
             <p className="text-gray-400 text-sm">Your contribution plants trees, pays youth guardians, and protects Kenya&apos;s natural heritage.</p>
-          </div>
+          </Reveal>
 
           <div className="grid md:grid-cols-2 gap-8 items-start">
             {/* Paybill Card */}
@@ -412,28 +457,31 @@ export default function HomePage() {
             {/* Commitment Form */}
             <div className="rounded-2xl bg-[#0d2219] border border-[#e4c878]/30 p-6 space-y-4">
               <h3 className="font-bold text-white text-lg">Make a Commitment</h3>
-              <form
-                onSubmit={(e) => { e.preventDefault(); alert('Thank you for your commitment! We will be in touch.'); }}
-                className="space-y-4"
-              >
-                <div className="grid grid-cols-2 gap-3">
+              <form onSubmit={commitment.onSubmit} className="space-y-4 relative">
+                <Honeypot />
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
-                    <label className="text-xs text-gray-400 mb-1 block">Full Name</label>
-                    <input type="text" required placeholder="Your full name" className="w-full bg-[#071209] border border-white/10 rounded-lg px-3 py-2.5 text-sm text-white focus:outline-none focus:border-[#e4c878]/50 placeholder-gray-600" />
+                    <label htmlFor="commit-name" className="text-xs text-gray-400 mb-1 block">Full Name</label>
+                    <input id="commit-name" name="name" type="text" required maxLength={120} autoComplete="name" placeholder="Your full name" className="w-full bg-[#071209] border border-white/10 rounded-lg px-3 py-2.5 text-sm text-white focus:outline-none focus:border-[#e4c878]/50 placeholder-gray-600" />
                   </div>
                   <div>
-                    <label className="text-xs text-gray-400 mb-1 block">Email / Phone</label>
-                    <input type="text" required placeholder="Email or phone" className="w-full bg-[#071209] border border-white/10 rounded-lg px-3 py-2.5 text-sm text-white focus:outline-none focus:border-[#e4c878]/50 placeholder-gray-600" />
+                    <label htmlFor="commit-contact" className="text-xs text-gray-400 mb-1 block">Email / Phone</label>
+                    <input id="commit-contact" name="contact" type="text" required maxLength={160} autoComplete="email" placeholder="Email or phone" className="w-full bg-[#071209] border border-white/10 rounded-lg px-3 py-2.5 text-sm text-white focus:outline-none focus:border-[#e4c878]/50 placeholder-gray-600" />
                   </div>
                 </div>
                 <div>
-                  <label className="text-xs text-gray-400 mb-1 block">Your Message (optional)</label>
-                  <input type="text" placeholder="E.g., in memory of someone, dedicate to a school…" className="w-full bg-[#071209] border border-white/10 rounded-lg px-3 py-2.5 text-sm text-white focus:outline-none focus:border-[#e4c878]/50 placeholder-gray-600" />
+                  <label htmlFor="commit-message" className="text-xs text-gray-400 mb-1 block">Your Message (optional)</label>
+                  <input id="commit-message" name="message" type="text" maxLength={2000} placeholder="E.g., in memory of someone, dedicate to a school…" className="w-full bg-[#071209] border border-white/10 rounded-lg px-3 py-2.5 text-sm text-white focus:outline-none focus:border-[#e4c878]/50 placeholder-gray-600" />
                 </div>
-                <button type="submit" className="w-full py-3 rounded-xl bg-[#e4c878] hover:bg-amber-300 text-neutral-950 font-bold text-sm transition-colors flex items-center justify-center gap-2">
-                  <TreePine className="w-4 h-4" />
-                  <span>Send Commitment</span>
+                <button
+                  type="submit"
+                  disabled={commitment.status === 'sending'}
+                  className="w-full py-3 rounded-xl bg-[#e4c878] hover:bg-amber-300 disabled:opacity-60 disabled:cursor-wait text-neutral-950 font-bold text-sm transition-colors flex items-center justify-center gap-2"
+                >
+                  {commitment.status === 'sending' ? <Loader2 className="w-4 h-4 animate-spin" /> : <TreePine className="w-4 h-4" />}
+                  <span>{commitment.status === 'sending' ? 'Sending...' : 'Send Commitment'}</span>
                 </button>
+                <FormFeedback status={commitment.status} message={commitment.feedback} />
               </form>
               <p className="text-xs text-gray-500 text-center">We&apos;ll acknowledge your support and keep you updated on impact.</p>
             </div>
@@ -441,95 +489,31 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* ── CONTACT & NEWSLETTER ── */}
+      {/* ── CONTACT ── (newsletter + contact details live in the global Footer) */}
       <section className="py-16 px-4 max-w-4xl mx-auto w-full" id="contact">
-        <div className="text-center mb-10 space-y-2">
+        <Reveal className="text-center mb-10 space-y-2">
           <h2 className="text-2xl font-extrabold text-white">Contact Us</h2>
           <p className="text-gray-400 text-sm">Have questions? Reach out to our community leaders.</p>
-        </div>
-        <form
-          onSubmit={(e) => { e.preventDefault(); alert('Message sent! We will get back to you soon.'); }}
-          className="space-y-4 max-w-lg mx-auto"
-        >
-          <input type="text" placeholder="Your Name" required className="w-full bg-[#0d2219] border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-[#e4c878]/50 placeholder-gray-600" />
-          <input type="email" placeholder="Your Email" required className="w-full bg-[#0d2219] border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-[#e4c878]/50 placeholder-gray-600" />
-          <textarea rows={4} placeholder="Your Message" required className="w-full bg-[#0d2219] border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-[#e4c878]/50 placeholder-gray-600 resize-none" />
-          <button type="submit" className="w-full py-3 rounded-xl bg-[#e4c878] hover:bg-amber-300 text-neutral-950 font-bold text-sm transition-colors">
-            Send Message
+        </Reveal>
+        <form onSubmit={contact.onSubmit} className="space-y-4 max-w-lg mx-auto relative">
+          <Honeypot />
+          <label htmlFor="contact-name" className="sr-only">Your name</label>
+          <input id="contact-name" name="name" type="text" placeholder="Your Name" required maxLength={120} autoComplete="name" className="w-full bg-[#0d2219] border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-[#e4c878]/50 placeholder-gray-600" />
+          <label htmlFor="contact-email" className="sr-only">Your email</label>
+          <input id="contact-email" name="contact" type="email" placeholder="Your Email" required maxLength={160} autoComplete="email" className="w-full bg-[#0d2219] border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-[#e4c878]/50 placeholder-gray-600" />
+          <label htmlFor="contact-message" className="sr-only">Your message</label>
+          <textarea id="contact-message" name="message" rows={4} placeholder="Your Message" required maxLength={2000} className="w-full bg-[#0d2219] border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-[#e4c878]/50 placeholder-gray-600 resize-none" />
+          <button
+            type="submit"
+            disabled={contact.status === 'sending'}
+            className="w-full py-3 rounded-xl bg-[#e4c878] hover:bg-amber-300 disabled:opacity-60 disabled:cursor-wait text-neutral-950 font-bold text-sm transition-colors flex items-center justify-center gap-2"
+          >
+            {contact.status === 'sending' && <Loader2 className="w-4 h-4 animate-spin" />}
+            {contact.status === 'sending' ? 'Sending...' : 'Send Message'}
           </button>
+          <FormFeedback status={contact.status} message={contact.feedback} />
         </form>
       </section>
-
-      {/* ── FOOTER (from HTML) ── */}
-      <footer className="bg-[#060f0a] border-t border-[#e4c878]/15 px-4 py-12">
-        <div className="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-8">
-          {/* Info */}
-          <div className="space-y-4">
-            <div className="flex items-center gap-3">
-              <img src="/assets/images/logo.jpeg" alt="Logo" className="w-10 h-10 rounded-full object-cover border border-[#e4c878]/30" />
-              <h3 className="font-bold text-white flex items-center gap-1.5">
-                <TreePine className="w-4 h-4 text-[#e4c878]" />
-                <span>Oloolua Forest</span>
-              </h3>
-            </div>
-            <p className="text-xs text-gray-400 leading-relaxed">
-              Dedicated to forest conservation and community engagement through sustainable practices.
-            </p>
-            <div className="space-y-1 text-xs text-gray-400">
-              <div className="flex items-center gap-2"><Phone className="w-3.5 h-3.5 text-[#e4c878]" /> 0112583681</div>
-              <div className="flex items-center gap-2"><Phone className="w-3.5 h-3.5 text-[#e4c878]" /> 0742004641</div>
-              <div className="flex items-center gap-2"><Phone className="w-3.5 h-3.5 text-[#e4c878]" /> 0725772240</div>
-              <div className="flex items-center gap-2"><Mail className="w-3.5 h-3.5 text-[#e4c878]" /> austinnamuye@gmail.com</div>
-            </div>
-          </div>
-
-          {/* Quick Links */}
-          <div>
-            <h3 className="font-bold text-white mb-4">Quick Links</h3>
-            <ul className="space-y-2 text-sm text-gray-400">
-              {[['About', '/about'], ['Mission', '/mission'], ['Vision', '/vision'], ['Activities', '/activities'], ['Seedlings & Nursery', '/seedlings'], ['Guardian Portal', '/portal']].map(([label, href]) => (
-                <li key={label}>
-                  <Link href={href} className="hover:text-[#e4c878] transition-colors flex items-center gap-1.5">
-                    <ChevronRight className="w-3.5 h-3.5" /> {label}
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          </div>
-
-          {/* Connect + Newsletter */}
-          <div className="space-y-5">
-            <div>
-              <h3 className="font-bold text-white mb-4">Connect With Us</h3>
-              <a
-                href="https://www.instagram.com/oloolua_forest_youth_guardians?igsh=MXBkaXpyd2tuMTQ1Mw=="
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-gradient-to-r from-purple-700 to-pink-600 text-white font-semibold text-sm hover:opacity-90 transition-opacity"
-              >
-                Instagram
-              </a>
-            </div>
-
-            <div>
-              <h3 className="font-bold text-white mb-3">Stay Updated</h3>
-              <form
-                onSubmit={(e) => { e.preventDefault(); alert('Subscribed!'); }}
-                className="flex gap-2"
-              >
-                <input type="email" placeholder="Your email" required className="flex-1 bg-[#0d2219] border border-white/10 rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-[#e4c878]/50 placeholder-gray-600" />
-                <button type="submit" className="px-4 py-2 rounded-lg bg-[#e4c878] hover:bg-amber-300 text-neutral-950 font-bold text-xs transition-colors whitespace-nowrap">
-                  Subscribe
-                </button>
-              </form>
-            </div>
-          </div>
-        </div>
-
-        <div className="mt-10 border-t border-white/5 pt-6 text-center text-xs text-gray-600">
-          © 2026 Oloolua Forest Youth Guardians. All rights reserved. · KAI Nuvari Ecosystem
-        </div>
-      </footer>
 
       <RecordActivityModal
         isOpen={isModalOpen}
@@ -546,9 +530,8 @@ export default function HomePage() {
           to { transform: translateX(-50%); }
         }
         @keyframes heroZoom {
-          0% { transform: scale(1); }
-          50% { transform: scale(1.08); }
-          100% { transform: scale(1); }
+          from { transform: scale(1); }
+          to { transform: scale(1.08); }
         }
       `}</style>
     </div>

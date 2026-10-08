@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Clock, Calendar, Trophy, Sparkles, RefreshCw, CheckCircle, UserCheck } from 'lucide-react';
+import { Clock, Calendar, Trophy, Sparkles, RefreshCw, AlertCircle } from 'lucide-react';
 
 interface HourlyStats {
   count: number;
@@ -27,6 +27,8 @@ export default function LiveActivityTracker() {
   const [today, setToday] = useState<TodayStats>({ count: 0, totalSeedlings: 0, recentRecords: [] });
   const [topPlanters, setTopPlanters] = useState<TopPlanter[]>([]);
   const [lastUpdated, setLastUpdated] = useState<string>('');
+  const [hasLoaded, setHasLoaded] = useState(false);
+  const [unavailable, setUnavailable] = useState(false);
 
   const fetchLiveStats = async () => {
     setLoading(true);
@@ -37,19 +39,34 @@ export default function LiveActivityTracker() {
         setHourly(json.analytics.hourly);
         setToday(json.analytics.today);
         setTopPlanters(json.analytics.topPlantersToday || []);
+        setUnavailable(false);
+        setLastUpdated(new Date().toLocaleTimeString());
+      } else {
+        setUnavailable(true);
       }
     } catch (err) {
       console.error('Failed to fetch Neon DB live activity:', err);
+      setUnavailable(true);
     } finally {
       setLoading(false);
-      setLastUpdated(new Date().toLocaleTimeString());
+      setHasLoaded(true);
     }
   };
 
   useEffect(() => {
     fetchLiveStats();
-    const interval = setInterval(fetchLiveStats, 30000); // refresh every 30s
-    return () => clearInterval(interval);
+    // Refresh every 30s, but skip polls while the tab is in the background.
+    const interval = setInterval(() => {
+      if (document.visibilityState === 'visible') fetchLiveStats();
+    }, 30000);
+    const onVisible = () => {
+      if (document.visibilityState === 'visible') fetchLiveStats();
+    };
+    document.addEventListener('visibilitychange', onVisible);
+    return () => {
+      clearInterval(interval);
+      document.removeEventListener('visibilitychange', onVisible);
+    };
   }, []);
 
   return (
@@ -57,9 +74,9 @@ export default function LiveActivityTracker() {
       {/* Top Banner */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 p-4 rounded-2xl bg-gradient-to-r from-emerald-950 via-[#122b1f] to-emerald-950 border border-[#e4c878]/30">
         <div className="flex items-center gap-3">
-          <div className="relative">
-            <span className="w-3 h-3 rounded-full bg-emerald-400 block animate-ping absolute top-0 left-0" />
-            <span className="w-3 h-3 rounded-full bg-emerald-500 block relative" />
+          <div className="relative" title={unavailable ? 'Live data unavailable' : 'Live'}>
+            {!unavailable && <span className="w-3 h-3 rounded-full bg-emerald-400 block animate-ping absolute top-0 left-0" />}
+            <span className={`w-3 h-3 rounded-full block relative ${unavailable ? 'bg-amber-500' : 'bg-emerald-500'}`} />
           </div>
           <div>
             <h3 className="text-base font-bold text-white flex items-center gap-2">
@@ -80,11 +97,34 @@ export default function LiveActivityTracker() {
           className="px-3.5 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 text-white text-xs font-semibold border border-white/20 transition-all flex items-center gap-1.5 shrink-0"
         >
           <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
-          <span>Sync DB ({lastUpdated || 'Live'})</span>
+          <span>{unavailable ? 'Retry' : `Sync DB (${lastUpdated || 'Live'})`}</span>
         </button>
       </div>
 
+      {!hasLoaded && (
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-5" aria-busy="true" aria-label="Loading live activity">
+          {[0, 1, 2].map((i) => (
+            <div key={i} className="p-5 rounded-2xl bg-[#122b1f] border border-[#e4c878]/20 space-y-3 animate-pulse">
+              <div className="h-3 w-1/2 rounded bg-white/10" />
+              <div className="h-8 w-1/3 rounded bg-white/10" />
+              <div className="h-3 w-3/4 rounded bg-white/10" />
+            </div>
+          ))}
+        </div>
+      )}
+
+      {hasLoaded && unavailable && (
+        <div role="alert" className="p-4 rounded-2xl bg-amber-950/40 border border-amber-700/50 text-xs text-amber-100 flex items-start gap-2">
+          <AlertCircle className="w-4 h-4 shrink-0 mt-0.5 text-amber-400" />
+          <span>
+            Live activity data is unavailable right now. The ledger below shows the last known records;
+            {lastUpdated ? ` live figures were last synced at ${lastUpdated}.` : ' try Retry in a moment.'}
+          </span>
+        </div>
+      )}
+
       {/* Hourly vs Today Metric Cards */}
+      {hasLoaded && !unavailable && (
       <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
         
         {/* Card 1: Last 1 Hour */}
@@ -205,6 +245,7 @@ export default function LiveActivityTracker() {
         </div>
 
       </div>
+      )}
     </div>
   );
 }

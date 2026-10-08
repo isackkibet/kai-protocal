@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import Link from 'next/link';
 
 // Exact image list from the original photogallery.html JS array
@@ -16,22 +16,49 @@ const IMAGE_PATHS = [
 export default function PhotoGalleryPage() {
   const [current, setCurrent] = useState(0);
   const total = IMAGE_PATHS.length;
+  const touchStartX = useRef<number | null>(null);
 
   const next = useCallback(() => setCurrent(i => (i + 1) % total), [total]);
   const prev = useCallback(() => setCurrent(i => (i - 1 + total) % total), [total]);
 
-  // Keyboard support from original HTML
+  // Keyboard: arrows to browse, Home/End to jump to the first/last photo.
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       if (e.key === 'ArrowRight') next();
       if (e.key === 'ArrowLeft') prev();
+      if (e.key === 'Home') setCurrent(0);
+      if (e.key === 'End') setCurrent(total - 1);
     };
     window.addEventListener('keydown', handler);
     return () => window.removeEventListener('keydown', handler);
-  }, [next, prev]);
+  }, [next, prev, total]);
+
+  // Warm the cache for both neighbours so the next tap or swipe is instant.
+  useEffect(() => {
+    for (const offset of [1, -1]) {
+      const img = new window.Image();
+      img.src = `/assets/images/${IMAGE_PATHS[(current + offset + total) % total]}`;
+    }
+  }, [current, total]);
+
+  const onTouchStart = (e: React.TouchEvent) => {
+    touchStartX.current = e.touches[0].clientX;
+  };
+  const onTouchEnd = (e: React.TouchEvent) => {
+    if (touchStartX.current === null) return;
+    const dx = e.changedTouches[0].clientX - touchStartX.current;
+    touchStartX.current = null;
+    if (Math.abs(dx) < 40) return;
+    if (dx < 0) next();
+    else prev();
+  };
 
   return (
-    <div style={{ background: '#000', height: '100vh', width: '100vw', overflow: 'hidden', position: 'relative' }}>
+    <div
+      onTouchStart={onTouchStart}
+      onTouchEnd={onTouchEnd}
+      style={{ background: '#000', height: '100vh', width: '100%', overflow: 'hidden', position: 'relative' }}
+    >
       {/* Back button */}
       <Link
         href="/"
@@ -50,10 +77,12 @@ export default function PhotoGalleryPage() {
       <div style={{ position: 'fixed', top: '50%', width: '100%', display: 'flex', justifyContent: 'space-between', padding: '0 20px', pointerEvents: 'none', zIndex: 1000, transform: 'translateY(-50%)', boxSizing: 'border-box' }}>
         <button
           onClick={prev}
+          aria-label="Previous photo"
           style={{ pointerEvents: 'auto', color: 'rgba(255,255,255,0.7)', fontSize: '2rem', cursor: 'pointer', background: 'rgba(0,0,0,0.3)', border: 'none', borderRadius: '50%', width: 60, height: 60, display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.3s' }}
         >‹</button>
         <button
           onClick={next}
+          aria-label="Next photo"
           style={{ pointerEvents: 'auto', color: 'rgba(255,255,255,0.7)', fontSize: '2rem', cursor: 'pointer', background: 'rgba(0,0,0,0.3)', border: 'none', borderRadius: '50%', width: 60, height: 60, display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.3s' }}
         >›</button>
       </div>
@@ -62,7 +91,7 @@ export default function PhotoGalleryPage() {
       <div style={{ height: '100vh', width: '100vw', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
         <img
           src={`/assets/images/${IMAGE_PATHS[current]}`}
-          alt="Oloolua Photo"
+          alt={`Oloolua Forest photo ${current + 1} of ${total}`}
           style={{ maxWidth: '95%', maxHeight: '90vh', objectFit: 'contain', boxShadow: '0 0 50px rgba(0,0,0,0.5)', borderRadius: 8, background: '#111' }}
         />
       </div>
@@ -73,7 +102,7 @@ export default function PhotoGalleryPage() {
         color: 'white', background: 'rgba(0,0,0,0.6)', padding: '8px 20px', borderRadius: 30, backdropFilter: 'blur(5px)',
         fontFamily: 'Roboto, sans-serif', zIndex: 1000,
       }}>
-        {current + 1} / {total}
+        <span aria-live="polite">{current + 1} / {total}</span>
       </div>
     </div>
   );

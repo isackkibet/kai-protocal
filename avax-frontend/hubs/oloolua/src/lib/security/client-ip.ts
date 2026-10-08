@@ -3,7 +3,7 @@
  *
  * Resolves the caller's real IP and derives a coarse "anonymity" risk signal.
  *
- * IMPORTANT — trusting forwarding headers:
+ * IMPORTANT - trusting forwarding headers:
  * A proxy header such as `x-forwarded-for` is trivially spoofable by any
  * client unless a trusted proxy overwrites it. On Vercel the platform
  * appends to `x-forwarded-for` and sets `x-vercel-forwarded-for`, but if this
@@ -20,7 +20,7 @@
 
 /** Headers in priority order for reading the client address. */
 const IP_HEADERS = [
-  'x-vercel-forwarded-for', // Vercel platform — overwrites, not appends
+  'x-vercel-forwarded-for', // Vercel platform - overwrites, not appends
   'cf-connecting-ip',       // Cloudflare, if ever fronted by it
   'x-real-ip',              // nginx convention
   'x-forwarded-for',        // generic, last resort (append-style, spoofable)
@@ -46,7 +46,7 @@ function stripPort(value: string): string {
 }
 
 /**
- * Very small shape check — not a full validator. We only want to reject
+ * Very small shape check - not a full validator. We only want to reject
  * obvious garbage so it cannot poison rate-limit keys with unbounded values.
  * Accepts IPv4 dotted-quad and IPv6 (including compressed and v4-mapped).
  */
@@ -129,7 +129,7 @@ export interface RiskSignal {
 /**
  * Classify how likely this caller is to be an abusive automated client.
  *
- * Deliberately NOT a hard block — this only tightens rate limits for callers
+ * Deliberately NOT a hard block - this only tightens rate limits for callers
  * that look scripted, so legitimate browsers on carrier NAT are never
  * locked out.
  */
@@ -151,7 +151,7 @@ export function assessRisk(req: Request): RiskSignal {
   if (!trusted) reasons.push('untrusted_proxy_headers');
 
   // `Accept: application/json` with no text/html is exactly what a browser
-  // fetch() sends — flagging it would punish the app's own frontend. Real
+  // fetch() sends - flagging it would punish the app's own frontend. Real
   // browsers always attach Sec-Fetch-*, so use their absence as the signal.
   const browserFetch =
     req.headers.has('sec-fetch-mode') || req.headers.has('sec-fetch-site');

@@ -5,7 +5,7 @@
  *
  * This app is a static conservation marketing site plus one small Neon-backed
  * API route. It has no auth provider, no wallet connect flow and no payment
- * iframes, so — unlike a Web3/fintech app — the CSP here can stay close to
+ * iframes, so - unlike a Web3/fintech app - the CSP here can stay close to
  * the strict default rather than carrying a long provider allow-list.
  *
  * The two concessions:
@@ -133,7 +133,7 @@ export function hstsHeader(): Record<string, string> {
  *   - Origin in the allow-list → echo it back.
  *   - Anything else → no headers at all, so the browser blocks the read.
  *
- * We never reflect an arbitrary origin — that is the classic CORS bypass.
+ * We never reflect an arbitrary origin - that is the classic CORS bypass.
  */
 export function applyCors<T extends NextResponse>(res: T, req: Request): T {
   const origin = req.headers.get('origin');

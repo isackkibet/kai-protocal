@@ -1,13 +1,13 @@
 /**
  * src/proxy.ts
  *
- * Global request gate for the Oloolua hub (Next.js 16 — this file convention
+ * Global request gate for the Oloolua hub (Next.js 16 - this file convention
  * was `middleware.ts` before Next 16; `middleware.ts` is deprecated).
  *
  * Runs before any route handler and applies, in order:
  *   1. A nonce per request, threaded into the CSP.
  *   2. Security response headers + HSTS (production only).
- *   3. CORS — allow-listed origins only, never reflected blindly.
+ *   3. CORS - allow-listed origins only, never reflected blindly.
  *   4. Body-size and content-type guards on /api writes.
  *   5. Bot heuristic screening.
  *   6. Layered rate limiting: global → IP.
@@ -15,7 +15,7 @@
  *
  * WHAT THIS IS NOT: proxy.ts is a cheap pre-filter, not the whole security
  * boundary. The route handler still validates and sanitises its own input
- * (see src/app/api/activities/route.ts) — defence in depth, so a mis-scoped
+ * (see src/app/api/activities/route.ts) - defence in depth, so a mis-scoped
  * `config.matcher` here can never be the only thing standing between a
  * request and the database.
  */
@@ -75,7 +75,7 @@ export function proxy(req: NextRequest) {
   requestHeaders.set('x-nonce', nonce);
   requestHeaders.set('Content-Security-Policy', buildCsp(nonce));
 
-  // 1. Preflight — answer and stop before any other work.
+  // 1. Preflight - answer and stop before any other work.
   if (req.method === 'OPTIONS') {
     return finalize(NextResponse.next({ request: { headers: requestHeaders } }), req, nonce);
   }
@@ -113,7 +113,7 @@ export function proxy(req: NextRequest) {
     }
   }
 
-  // 5. Origin verification — only meaningful for state-changing requests.
+  // 5. Origin verification - only meaningful for state-changing requests.
   if (isApi) {
     const csrf = verifyCsrf(req);
     if (csrf.ok === false) {
@@ -168,7 +168,7 @@ function finalize(res: NextResponse, req: NextRequest, nonce: string): NextRespo
 export const config = {
   matcher: [
     /*
-     * Skip Next internals and static assets — otherwise every image/CSS/JS
+     * Skip Next internals and static assets - otherwise every image/CSS/JS
      * chunk request pays for rate-limit bookkeeping and header work.
      */
     '/((?!_next/static|_next/image|favicon.ico|assets/|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico|css|js|map|woff|woff2)$).*)',

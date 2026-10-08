@@ -33,8 +33,11 @@ import {
   Sparkles,
   Landmark,
   Edit3,
+  Loader2,
   X
 } from 'lucide-react';
+import { useMessageForm } from '@/lib/useMessageForm';
+import { Honeypot, FormFeedback } from '@/components/FormBits';
 import EditRecordModal, { EditRecordType } from '@/components/EditRecordModal';
 import { 
   INITIAL_CFA, 
@@ -48,9 +51,28 @@ import {
 } from '@/services/kaiLedger';
 import { ConservationActivity, InventoryTransaction, VerificationStatus, Seedbed, Species } from '@/types/kai';
 
+const PORTAL_TABS = ['dashboard', 'ledger', 'nursery', 'sales_donations', 'planting', 'verification', 'reports'] as const;
+type PortalTab = typeof PORTAL_TABS[number];
+
 export default function KaiHubPage() {
   const [hubMode, setHubMode] = useState<'INTERNAL' | 'EXTERNAL'>('INTERNAL');
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'ledger' | 'nursery' | 'sales_donations' | 'planting' | 'verification' | 'reports'>('dashboard');
+  const [activeTab, setActiveTabState] = useState<PortalTab>('dashboard');
+
+  // Deep links like /portal?tab=ledger (used by the footer and seedlings page)
+  // open the right tab, and switching tabs keeps the URL shareable.
+  useEffect(() => {
+    const requested = new URLSearchParams(window.location.search).get('tab');
+    if (requested && (PORTAL_TABS as readonly string[]).includes(requested)) {
+      setActiveTabState(requested as PortalTab);
+    }
+  }, []);
+
+  const setActiveTab = (tab: PortalTab) => {
+    setActiveTabState(tab);
+    const url = new URL(window.location.href);
+    url.searchParams.set('tab', tab);
+    window.history.replaceState(null, '', url);
+  };
   const [transactions, setTransactions] = useState<InventoryTransaction[]>(INITIAL_TRANSACTIONS);
   const [seedbeds, setSeedbeds] = useState<Seedbed[]>(INITIAL_SEEDBEDS);
   const [speciesList, setSpeciesList] = useState<Species[]>(INITIAL_SPECIES);
@@ -62,7 +84,7 @@ export default function KaiHubPage() {
 
   const [filterType, setFilterType] = useState<string>('ALL');
   const [copiedPaybill, setCopiedPaybill] = useState(false);
-  const [pledgeSubmitted, setPledgeSubmitted] = useState(false);
+  const pledge = useMessageForm('pledge');
 
   // Sync with Neon DB on mount
   useEffect(() => {
@@ -694,11 +716,11 @@ export default function KaiHubPage() {
                         Impact stats: total seedlings produced, trees planted in Oloolua Forest, 94.7% survival rate, and 30+ active youth guardians.
                       </p>
                       <button
-                        onClick={() => alert("Conservation Impact Report generated! PDF export ready.")}
+                        onClick={() => window.print()}
                         className="w-full py-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs flex items-center justify-center gap-2"
                       >
                         <FileText className="w-4 h-4" />
-                        <span>Generate Impact PDF</span>
+                        <span>Print / Save as PDF</span>
                       </button>
                     </div>
                   </div>
@@ -774,8 +796,8 @@ export default function KaiHubPage() {
                 <span className="text-[#e4c878] font-bold text-xs uppercase tracking-widest">Public Calendar</span>
                 <h3 className="text-2xl font-bold text-white mt-1">Upcoming Events & Workshops</h3>
               </div>
-              <Link href="/events" className="text-xs font-bold text-emerald-300 hover:underline">
-                View Calendar →
+              <Link href="/#contact" className="text-xs font-bold text-emerald-300 hover:underline">
+                Join an Event &rarr;
               </Link>
             </div>
 
@@ -865,30 +887,39 @@ export default function KaiHubPage() {
               {/* Commitment Pledge Form */}
               <div className="p-6 rounded-2xl bg-[#0b1c14] border border-white/10 space-y-4">
                 <h4 className="font-bold text-white text-base">Make a Conservation Commitment</h4>
-                {pledgeSubmitted ? (
-                  <div className="p-6 text-center space-y-2">
+                {pledge.status === 'success' ? (
+                  <div className="p-6 text-center space-y-2" role="status">
                     <CheckCircle className="w-12 h-12 text-emerald-400 mx-auto animate-bounce" />
                     <h5 className="font-bold text-white text-base">Thank You for Your Support!</h5>
-                    <p className="text-xs text-gray-300">Your pledge has been logged. Our CFA team will be in touch.</p>
+                    <p className="text-xs text-gray-300">{pledge.feedback}</p>
+                    <button type="button" onClick={pledge.reset} className="text-xs font-semibold text-[#e4c878] hover:underline">
+                      Make another pledge
+                    </button>
                   </div>
                 ) : (
-                  <form onSubmit={(e) => { e.preventDefault(); setPledgeSubmitted(true); }} className="space-y-3 text-xs">
+                  <form onSubmit={pledge.onSubmit} className="space-y-3 text-xs relative">
+                    <Honeypot />
                     <div>
-                      <label className="block text-gray-300 font-semibold mb-1">Full Name</label>
-                      <input type="text" required placeholder="Your full name" className="w-full bg-[#122b1f] border border-[#e4c878]/30 rounded-lg p-2.5 text-white focus:outline-none" />
+                      <label htmlFor="pledge-name" className="block text-gray-300 font-semibold mb-1">Full Name</label>
+                      <input id="pledge-name" name="name" type="text" required maxLength={120} autoComplete="name" placeholder="Your full name" className="w-full bg-[#122b1f] border border-[#e4c878]/30 rounded-lg p-2.5 text-white focus:outline-none focus:border-[#e4c878]" />
                     </div>
                     <div>
-                      <label className="block text-gray-300 font-semibold mb-1">Email or Phone Number</label>
-                      <input type="text" required placeholder="contact@example.com / +254..." className="w-full bg-[#122b1f] border border-[#e4c878]/30 rounded-lg p-2.5 text-white focus:outline-none" />
+                      <label htmlFor="pledge-contact" className="block text-gray-300 font-semibold mb-1">Email or Phone Number</label>
+                      <input id="pledge-contact" name="contact" type="text" required maxLength={160} placeholder="contact@example.com / +254..." className="w-full bg-[#122b1f] border border-[#e4c878]/30 rounded-lg p-2.5 text-white focus:outline-none focus:border-[#e4c878]" />
                     </div>
                     <div>
-                      <label className="block text-gray-300 font-semibold mb-1">Pledge Amount or Message</label>
-                      <input type="text" placeholder="e.g. KES 5,000 to sponsor 100 Croton seedlings" className="w-full bg-[#122b1f] border border-[#e4c878]/30 rounded-lg p-2.5 text-white focus:outline-none" />
+                      <label htmlFor="pledge-message" className="block text-gray-300 font-semibold mb-1">Pledge Amount or Message</label>
+                      <input id="pledge-message" name="message" type="text" maxLength={2000} placeholder="e.g. KES 5,000 to sponsor 100 Croton seedlings" className="w-full bg-[#122b1f] border border-[#e4c878]/30 rounded-lg p-2.5 text-white focus:outline-none focus:border-[#e4c878]" />
                     </div>
-                    <button type="submit" className="w-full py-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs transition-colors shadow-lg flex items-center justify-center gap-2">
-                      <TreePine className="w-4 h-4" />
-                      <span>Send Commitment Pledge</span>
+                    <button
+                      type="submit"
+                      disabled={pledge.status === 'sending'}
+                      className="w-full py-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 disabled:opacity-60 disabled:cursor-wait text-white font-bold text-xs transition-colors shadow-lg flex items-center justify-center gap-2"
+                    >
+                      {pledge.status === 'sending' ? <Loader2 className="w-4 h-4 animate-spin" /> : <TreePine className="w-4 h-4" />}
+                      <span>{pledge.status === 'sending' ? 'Sending...' : 'Send Commitment Pledge'}</span>
                     </button>
+                    <FormFeedback status={pledge.status} message={pledge.feedback} />
                   </form>
                 )}
               </div>

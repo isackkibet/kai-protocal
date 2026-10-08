@@ -4,8 +4,8 @@
  * Fixed-window rate limiting with two independent dimensions, evaluated per
  * request:
  *
- *   global — protects the whole deployment from volumetric floods
- *   ip     — one client cannot spend the entire budget
+ *   global - protects the whole deployment from volumetric floods
+ *   ip     - one client cannot spend the entire budget
  *
  * This app has no login/session, so there is no "user" dimension to key on;
  * every caller is scoped by IP.
@@ -19,7 +19,7 @@
  * (Vercel Firewall / WAF rate-limit rules, or Cloudflare in front).
  *
  * For a shared, durable counter, swap `MemoryStore` for an Upstash Redis or
- * Vercel KV store — the `RateLimitStore` interface below is the seam for that.
+ * Vercel KV store - the `RateLimitStore` interface below is the seam for that.
  */
 
 import { createHash } from 'node:crypto';
@@ -161,7 +161,7 @@ export const POLICIES = {
 
 /**
  * Multiplier applied when the request looks like an anonymous/abusive
- * client. High-risk callers get the SAME limit divided, not a hard block —
+ * client. High-risk callers get the SAME limit divided, not a hard block -
  * that is how we slow abuse without locking out real users behind carrier
  * NAT.
  */
@@ -195,7 +195,7 @@ export function checkPolicy(
 
 function buildKey(scope: Policy['scope'], req: Request): string {
   if (scope === 'global') {
-    // Deliberately NOT keyed by route or IP — the whole point of the global
+    // Deliberately NOT keyed by route or IP - the whole point of the global
     // ceiling is to be one shared budget a flood cannot sidestep by
     // spreading requests across endpoints or rotating source addresses.
     return hashKey('global');
@@ -219,7 +219,7 @@ export function rateLimitHeaders(result: CheckResult): Record<string, string> {
   return headers;
 }
 
-/** Test seam — resets all counters. */
+/** Test seam - resets all counters. */
 export function __resetRateLimits(): void {
   store.clear();
 }

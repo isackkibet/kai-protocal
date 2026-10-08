@@ -3,6 +3,7 @@ import type { Metadata } from 'next';
 import './globals.css';
 import KaiTopBar from '@/components/KaiTopBar';
 import Footer from '@/components/Footer';
+import BackToTop from '@/components/BackToTop';
 
 export const metadata: Metadata = {
   title: 'OLOOLUA YOUTH GUARDIANS | KAI Conservation Information Hub',
@@ -20,6 +21,7 @@ export default function RootLayout({
         <KaiTopBar />
         <main className="flex-1">{children}</main>
         <Footer />
+        <BackToTop />
       </body>
     </html>
   );

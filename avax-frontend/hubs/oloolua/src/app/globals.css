@@ -12,6 +12,12 @@
   --accent-green: #27ae60;
 }
 
+html {
+  scroll-behavior: smooth;
+  /* Keep in-page anchors (#donate, #contact) clear of the sticky nav. */
+  scroll-padding-top: 80px;
+}
+
 body {
   font-family: var(--font-roboto);
   background-color: #0b1c14;
@@ -19,6 +25,24 @@ body {
   min-height: 100vh;
   margin: 0;
   padding: 0;
+}
+
+/* Pause the scrolling gallery strip while someone is looking at it. */
+.marquee-track:hover {
+  animation-play-state: paused !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }
 
 /* Glassmorphism Card Utilities */
