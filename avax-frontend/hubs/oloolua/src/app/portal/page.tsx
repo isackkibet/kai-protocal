@@ -31,7 +31,9 @@ import {
   Calendar, 
   Share2, 
   Sparkles,
-  X 
+  Landmark,
+  Edit3,
+  X
 } from 'lucide-react';
 import EditRecordModal, { EditRecordType } from '@/components/EditRecordModal';
 import { 
@@ -151,7 +153,7 @@ export default function KaiHubPage() {
           <div className="space-y-1">
             <div className="flex flex-wrap items-center gap-2">
               <span className="px-3 py-1 rounded bg-emerald-950 border border-emerald-800 text-xs font-semibold text-[#e4c878]">
-                Kai CFA Information Hub — MVP v1
+                Kai CFA Information Hub: MVP v1
               </span>
               <span className="text-xs text-emerald-300/80 font-mono">Reg: {INITIAL_CFA.registrationNumber}</span>
             </div>
@@ -489,9 +491,10 @@ export default function KaiHubPage() {
                           <span className="text-gray-400">Capacity: <span className="font-bold text-white">{bed.capacity.toLocaleString()}</span></span>
                           <button
                             onClick={() => { setEditingRecord(bed); setEditRecordType('SEEDBED'); setIsEditModalOpen(true); }}
-                            className="px-2 py-1 rounded bg-[#e4c878]/20 hover:bg-[#e4c878]/40 text-[#e4c878] font-bold text-[10px] transition-colors"
+                            className="px-2 py-1 rounded bg-[#e4c878]/20 hover:bg-[#e4c878]/40 text-[#e4c878] font-bold text-[10px] transition-colors flex items-center gap-1"
                           >
-                            Edit ✏️
+                            <Edit3 className="w-3 h-3" />
+                            <span>Edit</span>
                           </button>
                         </div>
                       </div>
@@ -510,9 +513,10 @@ export default function KaiHubPage() {
                             <span className="text-[10px] font-bold text-emerald-400">{sp.category}</span>
                             <button
                               onClick={() => { setEditingRecord(sp); setEditRecordType('SPECIES'); setIsEditModalOpen(true); }}
-                              className="px-2 py-0.5 rounded bg-[#e4c878]/20 hover:bg-[#e4c878]/40 text-[#e4c878] font-bold text-[10px]"
+                              className="px-2 py-0.5 rounded bg-[#e4c878]/20 hover:bg-[#e4c878]/40 text-[#e4c878] font-bold text-[10px] flex items-center gap-1"
                             >
-                              Edit ✏️
+                              <Edit3 className="w-3 h-3" />
+                              <span>Edit</span>
                             </button>
                           </div>
                         </div>
@@ -812,7 +816,10 @@ export default function KaiHubPage() {
           <div className="p-8 rounded-3xl bg-[#122b1f] border border-[#e4c878]/40 space-y-8" id="donate">
             <div className="text-center space-y-2 max-w-2xl mx-auto">
               <span className="text-[#e4c878] font-bold text-xs uppercase tracking-widest">Support Our Mission</span>
-              <h3 className="text-3xl font-extrabold text-white">💚 Invest in Oloolua Forest Reserve</h3>
+              <h3 className="text-3xl font-extrabold text-white flex items-center justify-center gap-2.5">
+                <HeartHandshake className="w-7 h-7 text-emerald-400" />
+                <span>Invest in Oloolua Forest Reserve</span>
+              </h3>
               <p className="text-xs text-gray-300">
                 Your contribution directly purchases potting soil, polybags, pays youth guardian stipends, and funds indigenous tree planting.
               </p>
@@ -822,8 +829,8 @@ export default function KaiHubPage() {
               {/* Paybill Card */}
               <div className="p-6 rounded-2xl bg-[#0b1c14] border border-[#e4c878]/40 space-y-4 shadow-xl">
                 <div className="flex items-center gap-3 border-b border-white/10 pb-3">
-                  <div className="w-10 h-10 rounded-xl bg-amber-500/20 border border-amber-500/40 flex items-center justify-center text-[#e4c878] text-xl font-bold">
-                    🏦
+                  <div className="w-10 h-10 rounded-xl bg-amber-500/20 border border-amber-500/40 flex items-center justify-center text-[#e4c878]">
+                    <Landmark className="w-5 h-5" />
                   </div>
                   <div>
                     <div className="font-bold text-white text-base">Equity Bank Kenya</div>
@@ -878,8 +885,9 @@ export default function KaiHubPage() {
                       <label className="block text-gray-300 font-semibold mb-1">Pledge Amount or Message</label>
                       <input type="text" placeholder="e.g. KES 5,000 to sponsor 100 Croton seedlings" className="w-full bg-[#122b1f] border border-[#e4c878]/30 rounded-lg p-2.5 text-white focus:outline-none" />
                     </div>
-                    <button type="submit" className="w-full py-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs transition-colors shadow-lg">
-                      Send Commitment Pledge 🌳
+                    <button type="submit" className="w-full py-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs transition-colors shadow-lg flex items-center justify-center gap-2">
+                      <TreePine className="w-4 h-4" />
+                      <span>Send Commitment Pledge</span>
                     </button>
                   </form>
                 )}

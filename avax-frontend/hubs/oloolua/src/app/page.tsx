@@ -5,10 +5,10 @@ import Link from 'next/link';
 import Image from 'next/image';
 import Navigation from '@/components/Navigation';
 import RecordActivityModal from '@/components/RecordActivityModal';
-import { 
+import {
   TreePine, Users, HeartHandshake, Globe, ArrowRight,
   Sparkles, ShieldCheck, BarChart3, ChevronRight,
-  Phone, Mail
+  Phone, Mail, Leaf, Camera, Rocket, Landmark, Clipboard, Check
 } from 'lucide-react';
 import { 
   INITIAL_SPECIES, INITIAL_SEEDBEDS, INITIAL_TRANSACTIONS,
@@ -63,7 +63,7 @@ const HERO_IMAGES = [
   '/assets/images/act1.jpeg',
 ];
 
-// Gallery strip — real photos from the forest
+// Gallery strip: real photos from the forest
 const GALLERY_STRIP = [
   '/assets/images/gal2.jpeg', '/assets/images/gal4.jpeg', '/assets/images/gal6.jpeg',
   '/assets/images/gal10.jpeg', '/assets/images/gal13.jpeg', '/assets/images/gal14.jpeg',
@@ -77,7 +77,14 @@ export default function HomePage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [transactions, setTransactions] = useState(INITIAL_TRANSACTIONS);
   const [heroBg, setHeroBg] = useState(0);
+  const [copiedPaybill, setCopiedPaybill] = useState(false);
   const metrics = calculateNurseryMetrics(transactions);
+
+  const copyPaybillDetails = () => {
+    navigator.clipboard.writeText('247247 / 813367');
+    setCopiedPaybill(true);
+    setTimeout(() => setCopiedPaybill(false), 2000);
+  };
 
   // Rotate hero background every 5s
   useEffect(() => {
@@ -124,16 +131,23 @@ export default function HomePage() {
 
       {/* ── HERO ── */}
       <section className="relative min-h-[92vh] flex items-center justify-center overflow-hidden">
-        {/* Crossfading background images */}
+        {/* Crossfading background images with a slow Ken Burns zoom, synced to the rotation */}
         {HERO_IMAGES.map((src, i) => (
           <div
             key={src}
-            className="absolute inset-0 bg-cover bg-center transition-opacity duration-[1500ms]"
-            style={{
-              backgroundImage: `url('${src}')`,
-              opacity: i === heroBg ? 0.45 : 0,
-            }}
-          />
+            className="absolute inset-0 transition-opacity duration-[1500ms] overflow-hidden"
+            style={{ opacity: i === heroBg ? 0.45 : 0 }}
+          >
+            <Image
+              src={src}
+              alt=""
+              fill
+              priority={i === 0}
+              sizes="100vw"
+              className="object-cover animate-[heroZoom_25s_ease-in-out_infinite]"
+              style={{ animationDelay: `${i * 5}s` }}
+            />
+          </div>
         ))}
         {/* Gradient overlay */}
         <div className="absolute inset-0 bg-gradient-to-t from-[#0b1c14] via-[#0b1c14]/70 to-[#0b1c14]/30" />
@@ -153,7 +167,7 @@ export default function HomePage() {
           </h1>
 
           <p className="max-w-2xl mx-auto text-base sm:text-lg text-gray-200 leading-relaxed font-light">
-            Join us in conserving and protecting our natural heritage —
+            Join us in conserving and protecting our natural heritage,
             restoring the native biological heritage of Oloolua Forest through
             high-quality tree nursery propagation and youth stewardship.
           </p>
@@ -167,11 +181,11 @@ export default function HomePage() {
               onClick={() => setIsModalOpen(true)}
               className="px-7 py-3.5 rounded-xl font-bold text-sm bg-emerald-700/80 hover:bg-emerald-600 text-white border border-emerald-400/30 transition-all flex items-center gap-2 shadow-lg backdrop-blur-md"
             >
-              <span>🌿</span>
+              <Leaf className="w-4 h-4" />
               <span>+ Record Activity</span>
             </button>
             <Link href="/activities" className="px-7 py-3.5 rounded-xl font-bold text-sm bg-white/10 hover:bg-white/20 text-white border border-white/20 transition-all flex items-center gap-2 backdrop-blur-md">
-              <span>📷</span>
+              <Camera className="w-4 h-4" />
               <span>Photo Gallery</span>
               <ArrowRight className="w-4 h-4" />
             </Link>
@@ -254,7 +268,7 @@ export default function HomePage() {
         </div>
         <div className="text-center mt-8">
           <Link href="/activities" className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-[#e4c878] hover:bg-amber-300 text-neutral-950 font-bold text-sm transition-all shadow-lg">
-            <span>📷</span>
+            <Camera className="w-4 h-4" />
             Explore Full Photo Stream
           </Link>
         </div>
@@ -290,7 +304,7 @@ export default function HomePage() {
           {/* "View All" tile */}
           <Link href="/seedlings" className="group block rounded-2xl overflow-hidden border-2 border-dashed border-[#e4c878]/30 hover:border-[#e4c878]/60 bg-[#0d2219] transition-all hover:-translate-y-1 duration-300 flex items-center justify-center min-h-[220px]">
             <div className="text-center p-4 space-y-2">
-              <span>🌱</span>
+              <Leaf className="w-6 h-6 text-[#e4c878] mx-auto" />
               <div className="text-sm font-bold text-[#e4c878]">View All Species</div>
               <div className="text-[11px] text-gray-400">Full Seedbed Ledger →</div>
             </div>
@@ -324,9 +338,12 @@ export default function HomePage() {
       <section className="py-20 px-4 max-w-7xl mx-auto w-full" id="future-plans">
         <div className="text-center mb-12 space-y-2">
           <span className="text-[#e4c878] text-xs font-bold uppercase tracking-widest">What We&apos;re Building Next</span>
-          <h2 className="text-3xl sm:text-4xl font-extrabold text-white">🚀 Our Future Plans</h2>
+          <h2 className="text-3xl sm:text-4xl font-extrabold text-white flex items-center justify-center gap-2.5">
+            <Rocket className="w-7 h-7 text-[#e4c878]" />
+            <span>Our Future Plans</span>
+          </h2>
           <p className="text-gray-400 max-w-2xl mx-auto text-sm">
-            From eco-tourism to science, art, and green enterprise — a glimpse into the projects
+            From eco-tourism to science, art, and green enterprise: a glimpse into the projects
             we intend to develop with your support.
           </p>
         </div>
@@ -344,7 +361,8 @@ export default function HomePage() {
 
         <div className="text-center mt-10">
           <a href="#donate" className="inline-flex items-center gap-2 px-7 py-3.5 rounded-xl bg-emerald-700 hover:bg-emerald-600 text-white font-bold text-sm transition-all shadow-xl">
-            Support Our Future 🌳
+            <TreePine className="w-4 h-4" />
+            Support Our Future
           </a>
         </div>
       </section>
@@ -354,7 +372,10 @@ export default function HomePage() {
         <div className="max-w-4xl mx-auto">
           <div className="text-center mb-10 space-y-2">
             <span className="text-[#e4c878] text-xs font-bold uppercase tracking-widest">Support Our Mission</span>
-            <h2 className="text-3xl font-extrabold text-white">💚 Invest in Oloolua Forest</h2>
+            <h2 className="text-3xl font-extrabold text-white flex items-center justify-center gap-2.5">
+              <HeartHandshake className="w-7 h-7 text-emerald-400" />
+              <span>Invest in Oloolua Forest</span>
+            </h2>
             <p className="text-gray-400 text-sm">Your contribution plants trees, pays youth guardians, and protects Kenya&apos;s natural heritage.</p>
           </div>
 
@@ -362,7 +383,7 @@ export default function HomePage() {
             {/* Paybill Card */}
             <div className="rounded-2xl bg-[#0d2219] border border-[#e4c878]/30 p-6 space-y-4">
               <div className="flex items-center gap-3">
-                <span className="text-3xl">🏦</span>
+                <Landmark className="w-8 h-8 text-[#e4c878]" />
                 <div>
                   <div className="font-bold text-white">Equity Bank</div>
                   <div className="text-xs text-gray-400">M-Pesa Paybill</div>
@@ -379,12 +400,13 @@ export default function HomePage() {
                 </div>
               </div>
               <button
-                onClick={() => { navigator.clipboard.writeText('247247 / 813367'); }}
-                className="w-full py-3 rounded-xl bg-emerald-700 hover:bg-emerald-600 text-white font-bold text-sm transition-colors"
+                onClick={copyPaybillDetails}
+                className="w-full py-3 rounded-xl bg-emerald-700 hover:bg-emerald-600 text-white font-bold text-sm transition-colors flex items-center justify-center gap-2"
               >
-                📋 Copy Details
+                {copiedPaybill ? <Check className="w-4 h-4" /> : <Clipboard className="w-4 h-4" />}
+                <span>{copiedPaybill ? 'Details Copied' : 'Copy Details'}</span>
               </button>
-              <p className="text-xs text-gray-500 text-center">M-Pesa → Lipa na M-Pesa → Paybill → Enter details above</p>
+              <p className="text-xs text-gray-500 text-center">M-Pesa &rarr; Lipa na M-Pesa &rarr; Paybill &rarr; Enter details above</p>
             </div>
 
             {/* Commitment Form */}
@@ -408,8 +430,9 @@ export default function HomePage() {
                   <label className="text-xs text-gray-400 mb-1 block">Your Message (optional)</label>
                   <input type="text" placeholder="E.g., in memory of someone, dedicate to a school…" className="w-full bg-[#071209] border border-white/10 rounded-lg px-3 py-2.5 text-sm text-white focus:outline-none focus:border-[#e4c878]/50 placeholder-gray-600" />
                 </div>
-                <button type="submit" className="w-full py-3 rounded-xl bg-[#e4c878] hover:bg-amber-300 text-neutral-950 font-bold text-sm transition-colors">
-                  Send Commitment 🌳
+                <button type="submit" className="w-full py-3 rounded-xl bg-[#e4c878] hover:bg-amber-300 text-neutral-950 font-bold text-sm transition-colors flex items-center justify-center gap-2">
+                  <TreePine className="w-4 h-4" />
+                  <span>Send Commitment</span>
                 </button>
               </form>
               <p className="text-xs text-gray-500 text-center">We&apos;ll acknowledge your support and keep you updated on impact.</p>
@@ -444,7 +467,10 @@ export default function HomePage() {
           <div className="space-y-4">
             <div className="flex items-center gap-3">
               <img src="/assets/images/logo.jpeg" alt="Logo" className="w-10 h-10 rounded-full object-cover border border-[#e4c878]/30" />
-              <h3 className="font-bold text-white">🌳 Oloolua Forest</h3>
+              <h3 className="font-bold text-white flex items-center gap-1.5">
+                <TreePine className="w-4 h-4 text-[#e4c878]" />
+                <span>Oloolua Forest</span>
+              </h3>
             </div>
             <p className="text-xs text-gray-400 leading-relaxed">
               Dedicated to forest conservation and community engagement through sustainable practices.
@@ -481,7 +507,6 @@ export default function HomePage() {
                 rel="noopener noreferrer"
                 className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-gradient-to-r from-purple-700 to-pink-600 text-white font-semibold text-sm hover:opacity-90 transition-opacity"
               >
-                <span>📷</span>
                 Instagram
               </a>
             </div>
@@ -514,11 +539,16 @@ export default function HomePage() {
         onAddActivity={handleAddActivity}
       />
 
-      {/* Keyframe for scrolling gallery strip */}
+      {/* Keyframes for the scrolling gallery strip and the hero Ken Burns zoom */}
       <style>{`
         @keyframes slideLeft {
           from { transform: translateX(0); }
           to { transform: translateX(-50%); }
+        }
+        @keyframes heroZoom {
+          0% { transform: scale(1); }
+          50% { transform: scale(1.08); }
+          100% { transform: scale(1); }
         }
       `}</style>
     </div>

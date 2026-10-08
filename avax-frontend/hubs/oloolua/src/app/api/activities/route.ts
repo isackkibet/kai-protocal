@@ -6,30 +6,30 @@ export async function GET() {
     await initDbSchema();
 
     // Fetch activities from Neon Postgres
-    const activities = await sql`
+    const activities = (await sql`
       SELECT * FROM kai_activities ORDER BY created_at DESC LIMIT 100
-    `;
+    `) as Record<string, any>[];
 
     // Calculate hourly stats (past 1 hour)
     const pastHour = new Date(Date.now() - 60 * 60 * 1000).toISOString();
-    const hourlyActivities = await sql`
+    const hourlyActivities = (await sql`
       SELECT recorded_by, quantity, event_type, created_at, species_id
       FROM kai_activities
       WHERE created_at >= ${pastHour}::timestamptz
       ORDER BY created_at DESC
-    `;
+    `) as Record<string, any>[];
 
     // Calculate today stats (current date)
     const today = new Date().toISOString().split('T')[0];
-    const todayActivities = await sql`
+    const todayActivities = (await sql`
       SELECT recorded_by, quantity, event_type, created_at, species_id
       FROM kai_activities
       WHERE activity_date = ${today}::date OR created_at >= CURRENT_DATE
       ORDER BY created_at DESC
-    `;
+    `) as Record<string, any>[];
 
     // Top planters today (grouped by recorded_by)
-    const topPlanters = await sql`
+    const topPlanters = (await sql`
       SELECT recorded_by, SUM(quantity) as total_seedlings, COUNT(*) as activity_count
       FROM kai_activities
       WHERE (activity_date = ${today}::date OR created_at >= CURRENT_DATE)
@@ -37,7 +37,7 @@ export async function GET() {
       GROUP BY recorded_by
       ORDER BY total_seedlings DESC
       LIMIT 10
-    `;
+    `) as Record<string, any>[];
 
     return NextResponse.json({
       success: true,
@@ -70,7 +70,7 @@ export async function GET() {
  * Records a new conservation activity. Records are append-only: the server
  * assigns the id and every record starts as DRAFT or SUBMITTED. The client
  * can never choose an existing id (which would overwrite that record) or mark
- * a record verified — only a trusted backend verification step may do that
+ * a record verified; only a trusted backend verification step may do that
  * (Canuvari MRV PRD §4.2, §6.1).
  */
 export async function POST(request: Request) {

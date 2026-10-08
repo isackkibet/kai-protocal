@@ -1,6 +1,6 @@
 import { neon } from '@neondatabase/serverless';
 
-// The connection string must only ever come from the environment — never
+// The connection string must only ever come from the environment; never
 // commit a fallback URL. Without it, queries throw and routes return 500.
 const DATABASE_URL = process.env.DATABASE_URL;
 
@@ -62,11 +62,18 @@ async function runSchemaSetup() {
       );
     `;
 
+    // These match the actual query patterns in /api/activities: ORDER BY
+    // created_at, WHERE created_at/activity_date, GROUP BY recorded_by.
+    await sql`CREATE INDEX IF NOT EXISTS idx_kai_activities_created_at ON kai_activities (created_at DESC);`;
+    await sql`CREATE INDEX IF NOT EXISTS idx_kai_activities_activity_date ON kai_activities (activity_date);`;
+    await sql`CREATE INDEX IF NOT EXISTS idx_kai_activities_recorded_by ON kai_activities (recorded_by);`;
+    await sql`CREATE INDEX IF NOT EXISTS idx_kai_transactions_created_at ON kai_transactions (created_at DESC);`;
+
     // Seed baseline records if table is empty. They start as SUBMITTED: nothing
     // here has been through verification, so nothing may claim to be VERIFIED.
     const checkCount = await sql`SELECT COUNT(*) as cnt FROM kai_activities`;
     if (Number(checkCount[0]?.cnt || 0) === 0) {
-      console.log('🌱 Seeding real baseline CFA operational records into Neon DB...');
+      console.log('Seeding baseline CFA operational records into Neon DB...');
 
       const initialActivities = [
         {
@@ -170,12 +177,12 @@ async function runSchemaSetup() {
           ) ON CONFLICT DO NOTHING;
         `;
       }
-      console.log('✅ Real operational dataset seeded into Neon DB.');
+      console.log('Baseline operational dataset seeded into Neon DB.');
     }
 
-    console.log('✅ Neon Postgres schema ready for Kai Oloolua Hub');
+    console.log('Neon Postgres schema ready for Kai Oloolua Hub');
   } catch (err) {
-    console.error('⚠️ Neon DB auto-schema init note:', err);
+    console.error('Neon DB auto-schema init error:', err);
     throw err;
   }
 }

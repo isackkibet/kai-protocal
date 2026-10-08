@@ -1,7 +1,11 @@
 'use client';
 
 import React, { useState } from 'react';
-import { X, CheckCircle, Upload, Leaf, AlertCircle } from 'lucide-react';
+import {
+  X, CheckCircle, Leaf, AlertCircle,
+  Sprout, Wheat, Droplet, TreePine, DollarSign, Gift, RefreshCw, MinusCircle,
+  type LucideIcon,
+} from 'lucide-react';
 import { ActivityType, ConservationActivity, Species, Seedbed } from '../types/kai';
 
 interface Props {
@@ -24,16 +28,16 @@ export default function RecordActivityModal({ isOpen, onClose, speciesList, seed
 
   if (!isOpen) return null;
 
-  const activityOptions: { type: ActivityType; label: string; icon: string }[] = [
-    { type: 'PROPAGATION', label: 'Propagation / Potting', icon: '🌱' },
-    { type: 'SOWING', label: 'Seed Sowing', icon: '🌾' },
-    { type: 'PRICKING_OUT', label: 'Pricking Out', icon: '🌿' },
-    { type: 'WATERING', label: 'Watering & Weeding', icon: '💧' },
-    { type: 'PLANTING', label: 'Planting Out', icon: '🌳' },
-    { type: 'SALE', label: 'Seedling Sale', icon: '💰' },
-    { type: 'DONATION', label: 'Donation', icon: '🎁' },
-    { type: 'TRANSFER', label: 'Transfer Bed/CFA', icon: '🔄' },
-    { type: 'MORTALITY', label: 'Loss / Mortality', icon: '🍂' },
+  const activityOptions: { type: ActivityType; label: string; icon: LucideIcon }[] = [
+    { type: 'PROPAGATION', label: 'Propagation / Potting', icon: Sprout },
+    { type: 'SOWING', label: 'Seed Sowing', icon: Wheat },
+    { type: 'PRICKING_OUT', label: 'Pricking Out', icon: Leaf },
+    { type: 'WATERING', label: 'Watering & Weeding', icon: Droplet },
+    { type: 'PLANTING', label: 'Planting Out', icon: TreePine },
+    { type: 'SALE', label: 'Seedling Sale', icon: DollarSign },
+    { type: 'DONATION', label: 'Donation', icon: Gift },
+    { type: 'TRANSFER', label: 'Transfer Bed/CFA', icon: RefreshCw },
+    { type: 'MORTALITY', label: 'Loss / Mortality', icon: MinusCircle },
   ];
 
   const handleSubmit = async (status: 'DRAFT' | 'SUBMITTED') => {
@@ -113,21 +117,24 @@ export default function RecordActivityModal({ isOpen, onClose, speciesList, seed
                 1. What happened? (Activity Type)
               </label>
               <div className="grid grid-cols-3 sm:grid-cols-3 gap-2">
-                {activityOptions.map((opt) => (
-                  <button
-                    key={opt.type}
-                    type="button"
-                    onClick={() => setEventType(opt.type)}
-                    className={`p-2.5 rounded-xl border text-left flex items-center gap-2 transition-all ${
-                      eventType === opt.type
-                        ? 'bg-emerald-600 text-white border-[#e4c878] font-bold shadow-md'
-                        : 'bg-emerald-950/60 text-gray-300 border-white/10 hover:border-emerald-500/50'
-                    }`}
-                  >
-                    <span className="text-base">{opt.icon}</span>
-                    <span className="truncate leading-tight text-[11px]">{opt.label}</span>
-                  </button>
-                ))}
+                {activityOptions.map((opt) => {
+                  const Icon = opt.icon;
+                  return (
+                    <button
+                      key={opt.type}
+                      type="button"
+                      onClick={() => setEventType(opt.type)}
+                      className={`p-2.5 rounded-xl border text-left flex items-center gap-2 transition-all ${
+                        eventType === opt.type
+                          ? 'bg-emerald-600 text-white border-[#e4c878] font-bold shadow-md'
+                          : 'bg-emerald-950/60 text-gray-300 border-white/10 hover:border-emerald-500/50'
+                      }`}
+                    >
+                      <Icon className={`w-4 h-4 shrink-0 ${eventType === opt.type ? 'text-[#e4c878]' : 'text-emerald-400'}`} />
+                      <span className="truncate leading-tight text-[11px]">{opt.label}</span>
+                    </button>
+                  );
+                })}
               </div>
             </div>
 

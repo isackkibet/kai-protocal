@@ -12,7 +12,7 @@ export default function MissionPage() {
 
           <h2 style={h2}>Conserving, Protecting, and Restoring Forest Ecosystems</h2>
           <p style={p}>
-            Forests are the lungs of the Earth — they stabilize our climate, shelter biodiversity, and sustain human wellbeing. Our mission is to conserve, protect, and restore these invaluable ecosystems, not only by planting indigenous and medicinal trees but also by creating healing green spaces, empowering communities with training and green jobs, and making every conservation action visible, trusted, and rewarding through decentralized technology.
+            Forests are the lungs of the Earth: they stabilize our climate, shelter biodiversity, and sustain human wellbeing. Our mission is to conserve, protect, and restore these invaluable ecosystems, not only by planting indigenous and medicinal trees but also by creating healing green spaces, empowering communities with training and green jobs, and making every conservation action visible, trusted, and rewarding through decentralized technology.
           </p>
 
           <h3 style={h3}>Planting Indigenous and Medicinal Trees</h3>

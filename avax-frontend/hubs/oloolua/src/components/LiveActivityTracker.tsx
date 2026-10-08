@@ -143,15 +143,19 @@ export default function LiveActivityTracker() {
 
           <div className="flex items-baseline gap-2">
             <span className="text-3xl font-black text-[#e4c878]">
-              {(today.totalSeedlings || 600).toLocaleString()}
+              {today.totalSeedlings.toLocaleString()}
             </span>
             <span className="text-xs text-gray-300 font-semibold">seedlings today</span>
           </div>
 
           <div className="text-xs text-gray-400">
-            <span className="text-emerald-300 font-medium">
-              {today.count > 0 ? today.count : 4} activity log(s) recorded today
-            </span>
+            {today.count > 0 ? (
+              <span className="text-emerald-300 font-medium">
+                {today.count} activity log{today.count === 1 ? '' : 's'} recorded today
+              </span>
+            ) : (
+              <span>No activity logged today yet.</span>
+            )}
           </div>
 
           {today.recentRecords.length > 0 && (
@@ -193,19 +197,8 @@ export default function LiveActivityTracker() {
                 </div>
               ))
             ) : (
-              <div className="space-y-2">
-                <div className="flex justify-between items-center p-2 rounded-lg bg-[#0b1c14] border border-white/5">
-                  <span className="font-bold text-white">#1 Austin Namuye</span>
-                  <span className="font-mono text-[#e4c878] font-bold">600 seedlings</span>
-                </div>
-                <div className="flex justify-between items-center p-2 rounded-lg bg-[#0b1c14] border border-white/5">
-                  <span className="font-bold text-white">#2 Jane N.</span>
-                  <span className="font-mono text-emerald-300 font-bold">450 seedlings</span>
-                </div>
-                <div className="flex justify-between items-center p-2 rounded-lg bg-[#0b1c14] border border-white/5">
-                  <span className="font-bold text-white">#3 Peter K.</span>
-                  <span className="font-mono text-emerald-300 font-bold">350 seedlings</span>
-                </div>
+              <div className="p-3 rounded-lg bg-[#0b1c14] border border-white/5 text-gray-400">
+                No planting or propagation logged today yet.
               </div>
             )}
           </div>
