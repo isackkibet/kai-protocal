@@ -157,6 +157,8 @@ export const POLICIES = {
   global: { scope: 'global', limit: 3_000, windowMs: 60_000 },
   /** Writes that create ledger records (activity submissions). */
   write: { scope: 'ip', limit: 20, windowMs: 60_000 },
+  /** Team inbox password attempts: tight, to make guessing impractical. */
+  login: { scope: 'ip', limit: 10, windowMs: 15 * 60_000 },
 } as const satisfies Record<string, Policy>;
 
 /**
@@ -180,7 +182,7 @@ export function checkPolicy(
 ): CheckResult {
   const { risk, cost = 1 } = opts;
 
-  const key = buildKey(policy.scope, req);
+  const key = buildKey(policy, req);
   const limit = Math.max(1, Math.floor(policy.limit / (risk ? riskMultiplier(risk) : 1)));
   const bucket = store.hit(key, policy.windowMs, cost);
 
@@ -193,15 +195,17 @@ export function checkPolicy(
   };
 }
 
-function buildKey(scope: Policy['scope'], req: Request): string {
-  if (scope === 'global') {
+function buildKey(policy: Policy, req: Request): string {
+  if (policy.scope === 'global') {
     // Deliberately NOT keyed by route or IP - the whole point of the global
     // ceiling is to be one shared budget a flood cannot sidestep by
     // spreading requests across endpoints or rotating source addresses.
     return hashKey('global');
   }
   const ip = getClientIp(req);
-  return hashKey('ip', ip, routeKey(req));
+  // Including the policy's shape keeps two policies on the same route (e.g.
+  // write + login) in separate buckets with their own windows.
+  return hashKey('ip', ip, routeKey(req), `${policy.limit}/${policy.windowMs}`);
 }
 
 /** Standard RateLimit-* headers, plus Retry-After when rejecting. */

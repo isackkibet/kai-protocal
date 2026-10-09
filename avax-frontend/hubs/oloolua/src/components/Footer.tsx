@@ -117,6 +117,8 @@ export default function Footer() {
             <Link href="/portal" className="hover:text-gray-300 transition-colors">Member Portal</Link>
             <span>·</span>
             <Link href="/login" className="hover:text-gray-300 transition-colors">Verifier Login</Link>
+            <span>·</span>
+            <Link href="/inbox" className="hover:text-gray-300 transition-colors">Team Inbox</Link>
           </div>
         </div>
       </div>

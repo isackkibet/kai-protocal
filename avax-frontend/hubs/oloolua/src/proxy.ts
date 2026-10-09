@@ -38,7 +38,9 @@ import { securityHeaders, hstsHeader, applyCors, buildCsp } from '@/lib/security
  */
 const CSP_ENFORCE = process.env.CSP_ENFORCE === 'true';
 
-function policyFor(method: string): Policy[] {
+function policyFor(pathname: string, method: string): Policy[] {
+  // Password attempts get their own tight budget on top of the write budget.
+  if (pathname === '/api/inbox/session' && method === 'POST') return [POLICIES.write, POLICIES.login];
   return method === 'GET' || method === 'HEAD' ? [POLICIES.api] : [POLICIES.write];
 }
 
@@ -105,7 +107,7 @@ export function proxy(req: NextRequest) {
       return finalize(tooManyRequests(req, globalResult), req, nonce);
     }
 
-    for (const policy of policyFor(req.method)) {
+    for (const policy of policyFor(pathname, req.method)) {
       const result = checkPolicy(policy, req, { risk });
       if (!result.allowed) {
         return finalize(tooManyRequests(req, result), req, nonce);

@@ -74,6 +74,8 @@ async function runSchemaSetup() {
         created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
       );
     `;
+    // Added for the team inbox: when a message was dealt with (NULL = open).
+    await sql`ALTER TABLE kai_messages ADD COLUMN IF NOT EXISTS handled_at TIMESTAMPTZ;`;
     await sql`CREATE INDEX IF NOT EXISTS idx_kai_messages_kind_created ON kai_messages (kind, created_at DESC);`;
 
     // These match the actual query patterns in /api/activities: ORDER BY
