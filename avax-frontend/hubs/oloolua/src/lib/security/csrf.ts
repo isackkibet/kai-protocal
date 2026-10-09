@@ -3,12 +3,10 @@
  *
  * Origin-verification CSRF defence for state-changing requests.
  *
- * This app authenticates nothing (no login, no session cookie) - anyone can
- * call POST /api/activities, by design, since it is a public activity log.
- * That means classic cookie-riding CSRF does not apply here either: there is
- * no session to ride. What we still want to stop is a third-party page
- * silently firing POSTs at this API from a visitor's browser (e.g. to spam
- * the ledger or burn the rate-limit budget). verifyCsrf() enforces the OWASP
+ * Public forms (/api/messages) need no login, and the Guardian Hub and inbox
+ * use cookie sessions. Either way we must stop a third-party page silently
+ * firing state-changing requests from a visitor's browser: riding a signed-in
+ * session, spamming the forms, or burning the rate-limit budget. verifyCsrf() enforces the OWASP
  * "verify origin with standard headers" defence, which needs no client work:
  *   - reject when the browser says the request is cross-site (Sec-Fetch-Site)
  *   - reject when an Origin is present and not on the allow-list

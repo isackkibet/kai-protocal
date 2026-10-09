@@ -70,13 +70,13 @@ export default function Footer() {
 
           {/* Col 3: Kai ledger */}
           <div>
-            <h4 className="text-[#e4c878] font-bold text-sm uppercase tracking-wider mb-4">Kai Ledger & Portal</h4>
+            <h4 className="text-[#e4c878] font-bold text-sm uppercase tracking-wider mb-4">Guardian Hub</h4>
             <ul className="space-y-2 text-xs">
-              <li><Link href="/portal?tab=dashboard" className="hover:text-white transition-colors">Nursery Live Dashboard</Link></li>
-              <li><Link href="/portal?tab=ledger" className="hover:text-white transition-colors">Inventory Transaction Ledger</Link></li>
-              <li><Link href="/portal?tab=planting" className="hover:text-white transition-colors">Planting & Survival Records</Link></li>
-              <li><Link href="/portal?tab=verification" className="hover:text-white transition-colors">Verification Queue</Link></li>
-              <li><Link href="/portal?tab=reports" className="hover:text-white transition-colors">Impact & Production Reports</Link></li>
+              <li><Link href="/portal" className="hover:text-white transition-colors">AI Guardian</Link></li>
+              <li><Link href="/portal?tab=nursery" className="hover:text-white transition-colors">Nursery Records</Link></li>
+              <li><Link href="/portal?tab=diary" className="hover:text-white transition-colors">Keeper Diary</Link></li>
+              <li><Link href="/portal?tab=record" className="hover:text-white transition-colors">Record an Activity</Link></li>
+              <li><Link href="/portal?tab=verify" className="hover:text-white transition-colors">Verification Queue</Link></li>
             </ul>
           </div>
 
@@ -114,9 +114,7 @@ export default function Footer() {
             © {new Date().getFullYear()} Oloolua Forest Youth Guardians CFA. Powered by <span className="text-[#e4c878]">Kai Conservation Information Hub</span>.
           </div>
           <div className="flex items-center gap-4">
-            <Link href="/portal" className="hover:text-gray-300 transition-colors">Member Portal</Link>
-            <span>·</span>
-            <Link href="/login" className="hover:text-gray-300 transition-colors">Verifier Login</Link>
+            <Link href="/portal" className="hover:text-gray-300 transition-colors">Sign in</Link>
             <span>·</span>
             <Link href="/inbox" className="hover:text-gray-300 transition-colors">Team Inbox</Link>
           </div>

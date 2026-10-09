@@ -5,20 +5,15 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { useReducedMotion } from 'framer-motion';
 import Navigation from '@/components/Navigation';
-import RecordActivityModal from '@/components/RecordActivityModal';
+import { NURSERY_SPECIES_CATALOGUE } from '@/data/species';
 import { Reveal, CountUp } from '@/components/Motion';
 import { Honeypot, FormFeedback } from '@/components/FormBits';
 import { useMessageForm } from '@/lib/useMessageForm';
 import {
   TreePine, Users, HeartHandshake, Globe, ArrowRight,
-  Sparkles, ShieldCheck, BarChart3, Leaf, Camera, Rocket,
+  Sparkles, BarChart3, Leaf, Camera, Rocket, Bot,
   Landmark, Clipboard, Check, Loader2
 } from 'lucide-react';
-import { 
-  INITIAL_SPECIES, INITIAL_SEEDBEDS, INITIAL_TRANSACTIONS,
-  calculateNurseryMetrics 
-} from '@/services/kaiLedger';
-import { ConservationActivity } from '@/types/kai';
 
 /* ─────────────── DATA ─────────────── */
 
@@ -78,8 +73,6 @@ const GALLERY_STRIP = [
 /* ─────────────── COMPONENT ─────────────── */
 
 export default function HomePage() {
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [transactions, setTransactions] = useState(INITIAL_TRANSACTIONS);
   const [heroBg, setHeroBg] = useState(0);
   const [copiedPaybill, setCopiedPaybill] = useState(false);
   const [heroHovered, setHeroHovered] = useState(false);
@@ -87,7 +80,6 @@ export default function HomePage() {
   const reduceMotion = useReducedMotion();
   const commitment = useMessageForm('commitment');
   const contact = useMessageForm('contact');
-  const metrics = calculateNurseryMetrics(transactions);
 
   const copyPaybillDetails = () => {
     navigator.clipboard.writeText('247247 / 813367');
@@ -112,27 +104,10 @@ export default function HomePage() {
     setZoomKeys(keys => keys.map((k, i) => (i === heroBg ? k + 1 : k)));
   }, [heroBg]);
 
-  const handleAddActivity = (activity: ConservationActivity) => {
-    const newTxn = {
-      id: `TXN-${Date.now().toString().slice(-5)}`,
-      transactionType: activity.eventType as any,
-      nurseryId: activity.nurseryId,
-      seedbedId: activity.seedbedId,
-      speciesId: activity.speciesId,
-      quantity: activity.quantity,
-      direction: (['SALE','DONATION','PLANTING','MORTALITY'].includes(activity.eventType)) ? 'OUT' : 'IN' as any,
-      date: activity.date,
-      source: `ACTIVITY_${activity.eventType}`,
-      recordedBy: activity.recordedBy,
-      verificationStatus: activity.verificationStatus,
-      createdAt: new Date().toISOString()
-    };
-    setTransactions(prev => [newTxn, ...prev]);
-  };
 
   return (
     <div className="min-h-screen bg-[#0b1c14] text-[#f6f2e7] flex flex-col">
-      <Navigation onOpenRecordActivity={() => setIsModalOpen(true)} />
+      <Navigation />
 
       {/* ── HERO ── */}
       <section
@@ -186,16 +161,16 @@ export default function HomePage() {
 
           <div className="flex flex-wrap items-center justify-center gap-4 pt-2">
             <Link href="/portal" className="w-full max-w-xs sm:w-auto sm:max-w-none justify-center px-7 py-3.5 rounded-xl font-bold text-sm bg-[#e4c878] hover:bg-amber-300 text-neutral-950 transition-all transform hover:-translate-y-0.5 shadow-2xl flex items-center gap-2">
-              <ShieldCheck className="w-5 h-5" />
-              <span>Explore Kai Hub &amp; Ledger</span>
+              <Bot className="w-5 h-5" />
+              <span>Ask AI Guardian</span>
             </Link>
-            <button
-              onClick={() => setIsModalOpen(true)}
+            <Link
+              href="/portal?tab=record"
               className="w-full max-w-xs sm:w-auto sm:max-w-none justify-center px-7 py-3.5 rounded-xl font-bold text-sm bg-emerald-700/80 hover:bg-emerald-600 text-white border border-emerald-400/30 transition-all flex items-center gap-2 shadow-lg backdrop-blur-md"
             >
               <Leaf className="w-4 h-4" />
-              <span>+ Record Activity</span>
-            </button>
+              <span>Record Activity</span>
+            </Link>
             <Link href="/photogallery" className="w-full max-w-xs sm:w-auto sm:max-w-none justify-center px-7 py-3.5 rounded-xl font-bold text-sm bg-white/10 hover:bg-white/20 text-white border border-white/20 transition-all flex items-center gap-2 backdrop-blur-md">
               <Camera className="w-4 h-4" />
               <span>Photo Gallery</span>
@@ -232,9 +207,8 @@ export default function HomePage() {
       <section id="stats" className="relative z-20 max-w-5xl mx-auto px-4 w-full -mt-10">
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 p-5 rounded-2xl bg-[#0d2219]/95 border border-[#e4c878]/30 shadow-2xl backdrop-blur-xl">
           {[
-            { icon: <TreePine className="w-6 h-6" />, value: metrics.currentStock, suffix: '', label: 'Seedlings in Nursery' },
+            { icon: <TreePine className="w-6 h-6" />, value: NURSERY_SPECIES_CATALOGUE.length, suffix: '', label: 'Species in our catalogue' },
             { icon: <Users className="w-6 h-6" />, value: 30, suffix: '+', label: 'Youth Guardians' },
-            { icon: <HeartHandshake className="w-6 h-6" />, value: metrics.plantedTotal + 600, suffix: '+', label: 'Trees Planted' },
             { icon: <Globe className="w-6 h-6" />, value: 600, suffix: '+', label: 'Hectares Protected' },
           ].map(({ icon, value, suffix, label }) => (
             <div key={label} className="flex items-center gap-3 p-3 rounded-xl bg-emerald-950/50 border border-emerald-800/30 transition-colors hover:border-[#e4c878]/40">
@@ -245,6 +219,14 @@ export default function HomePage() {
               </div>
             </div>
           ))}
+          {/* Live nursery figures are Guardian data: shown only to signed-in members (PRD B2). */}
+          <Link href="/portal" className="group flex items-center gap-3 p-3 rounded-xl bg-emerald-900/40 border border-[#e4c878]/30 hover:border-[#e4c878]/70 transition-colors">
+            <div className="w-11 h-11 rounded-xl bg-[#e4c878]/20 flex items-center justify-center text-[#e4c878] shrink-0"><Bot className="w-6 h-6" /></div>
+            <div>
+              <div className="text-sm font-black text-white group-hover:text-[#e4c878] transition-colors">AI Guardian</div>
+              <div className="text-[11px] text-emerald-300/80 font-medium leading-tight">Live nursery records, sign in</div>
+            </div>
+          </Link>
         </div>
       </section>
 
@@ -371,7 +353,7 @@ export default function HomePage() {
             </p>
           </div>
           <Link href="/portal" className="group px-7 py-3.5 rounded-xl font-bold text-sm bg-[#e4c878] hover:bg-amber-300 text-neutral-950 transition-all shadow-xl shrink-0 flex items-center gap-2">
-            Open Guardian Portal
+            Open AI Guardian
             <ArrowRight className="w-4 h-4 transition-transform duration-300 group-hover:translate-x-1" />
           </Link>
         </Reveal>
@@ -515,13 +497,7 @@ export default function HomePage() {
         </form>
       </section>
 
-      <RecordActivityModal
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-        speciesList={INITIAL_SPECIES}
-        seedbedList={INITIAL_SEEDBEDS}
-        onAddActivity={handleAddActivity}
-      />
+
 
       {/* Keyframes for the scrolling gallery strip and the hero Ken Burns zoom */}
       <style>{`

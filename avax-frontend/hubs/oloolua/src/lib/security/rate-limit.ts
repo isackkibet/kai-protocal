@@ -122,7 +122,7 @@ function hashKey(...parts: (string | number | undefined | null)[]): string {
   return createHash('sha256').update(parts.filter(Boolean).join('|')).digest('hex').slice(0, 32);
 }
 
-/** Stable identifier for the request's route, e.g. "POST:/api/activities". */
+/** Stable identifier for the request's route, e.g. "POST:/api/messages". */
 export function routeKey(req: Request): string {
   const path = new URL(req.url).pathname.replace(/\/+$/, '') || '/';
   return `${req.method.toUpperCase()}:${path}`;

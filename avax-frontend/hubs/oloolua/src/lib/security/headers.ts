@@ -95,7 +95,7 @@ export function securityHeaders(nonce?: string): Record<string, string> {
     // Only send the Origin on cross-origin requests.
     'Referrer-Policy': 'strict-origin-when-cross-origin',
 
-    // This app uses none of these browser features anywhere.
+    // Only the microphone is used (AI Guardian voice input, this site only).
     'Permissions-Policy': [
       'accelerometer=()',
       'autoplay=()',
@@ -106,7 +106,7 @@ export function securityHeaders(nonce?: string): Record<string, string> {
       'gyroscope=()',
       'interest-cohort=()',
       'magnetometer=()',
-      'microphone=()',
+      'microphone=(self)',
       'payment=()',
       'usb=()',
     ].join(', '),

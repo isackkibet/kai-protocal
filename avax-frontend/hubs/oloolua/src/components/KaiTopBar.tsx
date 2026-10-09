@@ -16,20 +16,20 @@ export default function KaiTopBar() {
         </span>
       </div>
       <div className="flex items-center gap-3 text-[11px] whitespace-nowrap">
-        <Link href="/portal?tab=ledger" className="text-[#E4C878] font-semibold hover:underline flex items-center gap-1">
-          <span>Conservation Ledger</span>
+        <Link href="/portal?tab=diary" className="text-[#E4C878] font-semibold hover:underline flex items-center gap-1">
+          <span>Keeper Diary</span>
           <span className="text-[10px]">&rarr;</span>
         </Link>
         <span className="opacity-30 hidden sm:inline">|</span>
-        <Link href="/portal?tab=dashboard" className="text-emerald-300 hover:text-white transition-colors hidden sm:inline">
-          KAI Dashboard
+        <Link href="/portal?tab=nursery" className="text-emerald-300 hover:text-white transition-colors hidden sm:inline">
+          Nursery Records
         </Link>
         <span className="opacity-30">|</span>
         <Link
           href="/portal"
           className="bg-emerald-600 hover:bg-emerald-500 text-white font-bold px-2.5 py-0.5 rounded text-[11px] transition-colors shadow-sm"
         >
-          Guardian Portal
+          AI Guardian
         </Link>
       </div>
     </div>

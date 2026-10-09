@@ -15,7 +15,7 @@
  *
  * WHAT THIS IS NOT: proxy.ts is a cheap pre-filter, not the whole security
  * boundary. The route handler still validates and sanitises its own input
- * (see src/app/api/activities/route.ts) - defence in depth, so a mis-scoped
+ * (see the routes under src/app/api) - defence in depth, so a mis-scoped
  * `config.matcher` here can never be the only thing standing between a
  * request and the database.
  */

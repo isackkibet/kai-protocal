@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { TreePine, Menu, X, Shield, PlusCircle } from 'lucide-react';
+import { TreePine, Menu, X, Bot } from 'lucide-react';
 
 const NAV_LINKS = [
   { name: 'Home', href: '/' },
@@ -17,7 +17,7 @@ const NAV_LINKS = [
   { name: 'Gallery', href: '/photogallery' },
 ];
 
-export default function Navigation({ onOpenRecordActivity }: { onOpenRecordActivity?: () => void }) {
+export default function Navigation() {
   const [isOpen, setIsOpen] = useState(false);
   const pathname = usePathname();
 
@@ -74,25 +74,15 @@ export default function Navigation({ onOpenRecordActivity }: { onOpenRecordActiv
           </div>
 
           <div className="flex items-center gap-2 shrink-0">
-            {onOpenRecordActivity && (
-              <button
-                onClick={onOpenRecordActivity}
-                aria-label="Record activity"
-                title="Record activity"
-                className="flex items-center gap-1.5 px-2.5 py-2 rounded-lg text-xs font-bold bg-[#e4c878] text-neutral-950 hover:bg-amber-300 transition-colors shadow-sm whitespace-nowrap"
-              >
-                <PlusCircle className="w-4 h-4" />
-                {/* Icon-only until there is room for the full label */}
-                <span className="hidden 2xl:inline">Record Activity</span>
-              </button>
-            )}
-
+            {/* Recording happens inside the Guardian Hub: signed in, right role, explicit confirmation (PRD B2, B5). */}
             <Link
               href="/portal"
-              className="hidden md:flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold bg-emerald-600 hover:bg-emerald-500 text-white transition-all shadow-sm border border-emerald-400/30 whitespace-nowrap"
+              aria-label="AI Guardian"
+              aria-current={pathname === '/portal' ? 'page' : undefined}
+              className="flex items-center gap-1.5 px-2.5 md:px-3 py-2 md:py-1.5 rounded-lg text-xs font-bold bg-emerald-600 hover:bg-emerald-500 text-white transition-all shadow-sm border border-emerald-400/30 whitespace-nowrap"
             >
-              <Shield className="w-4 h-4 text-[#e4c878]" />
-              <span>Guardian Hub</span>
+              <Bot className="w-4 h-4 text-[#e4c878]" />
+              <span className="hidden md:inline">AI Guardian</span>
             </Link>
 
             <button
@@ -135,8 +125,8 @@ export default function Navigation({ onOpenRecordActivity }: { onOpenRecordActiv
               onClick={() => setIsOpen(false)}
               className="w-full text-center px-4 py-2 rounded-md font-bold text-sm bg-emerald-600 text-white flex items-center justify-center gap-2"
             >
-              <Shield className="w-4 h-4 text-[#e4c878]" />
-              <span>Guardian Portal &amp; Kai Hub</span>
+              <Bot className="w-4 h-4 text-[#e4c878]" />
+              <span>AI Guardian &amp; Guardian Hub</span>
             </Link>
           </div>
         </div>
