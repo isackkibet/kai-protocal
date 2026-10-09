@@ -41,6 +41,8 @@ const CSP_ENFORCE = process.env.CSP_ENFORCE === 'true';
 function policyFor(pathname: string, method: string): Policy[] {
   // Password attempts get their own tight budget on top of the write budget.
   if (pathname === '/api/inbox/session' && method === 'POST') return [POLICIES.write, POLICIES.login];
+  // Each visitor session gets its own AI allowance, so starting them is tightly limited.
+  if (pathname === '/api/guardian/auth/guest' && method === 'POST') return [POLICIES.write, POLICIES.login];
   return method === 'GET' || method === 'HEAD' ? [POLICIES.api] : [POLICIES.write];
 }
 

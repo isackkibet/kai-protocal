@@ -69,7 +69,7 @@ export default function GuardianHubPage() {
         <div className="flex-1 flex items-center justify-center py-24"><Loader2 className="w-6 h-6 animate-spin text-[#e4c878]" aria-label="Loading" /></div>
       )}
 
-      {session && !session.signedIn && <SignInGate session={session} onSignedIn={loadSession} />}
+      {session && !session.signedIn && <SignInGate session={session} onSignedIn={loadSession} onGuest={() => { setTab('record'); void loadSession(); }} />}
 
       {session?.signedIn && !role && (
         <div className="flex-1 flex items-center justify-center p-4 py-20">
@@ -95,8 +95,11 @@ export default function GuardianHubPage() {
               <h1 className="text-2xl sm:text-3xl font-extrabold text-white">Guardian Hub</h1>
               <p className="text-xs text-gray-400">
                 Oloolua Youth Guardians · Turako Nursery · Signed in as <span className="text-white font-semibold">{session.user.name}</span>
-                <span className="ml-2 px-2 py-0.5 rounded bg-emerald-900 text-[#e4c878] font-bold">{ROLE_LABELS[role]}</span>
+                <span className="ml-2 px-2 py-0.5 rounded bg-emerald-900 text-[#e4c878] font-bold">{session.user.guest ? 'Visitor' : ROLE_LABELS[role]}</span>
               </p>
+              {session.user.guest && (
+                <p className="text-[11px] text-gray-400 mt-1">Your records are saved as waiting for verification. They count in the verified totals once a Guardian Verifier checks them.</p>
+              )}
             </div>
             <SignOutButton onDone={() => { setQuota(null); void loadSession(); }} className="self-start sm:self-auto px-3 py-2 rounded-lg border border-white/15 hover:bg-white/10 text-xs font-semibold inline-flex items-center gap-1.5" />
           </div>
@@ -158,9 +161,21 @@ function SignOutButton({ onDone, className }: { onDone: () => void; className: s
   );
 }
 
-function SignInGate({ session, onSignedIn }: { session: SessionInfo; onSignedIn: () => void }) {
+function SignInGate({ session, onSignedIn, onGuest }: { session: SessionInfo; onSignedIn: () => void; onGuest: () => void }) {
   const auth = useGuardianAuth();
   const [devEmail, setDevEmail] = useState('');
+  const [guestName, setGuestName] = useState('');
+  const [guestBusy, setGuestBusy] = useState(false);
+  const [guestError, setGuestError] = useState('');
+  const startGuest = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setGuestBusy(true);
+    setGuestError('');
+    const r = await api<{ error?: string }>('/api/guardian/auth/guest', { body: { name: guestName } });
+    setGuestBusy(false);
+    if (r.ok) onGuest();
+    else setGuestError(r.data?.error ?? 'Could not start. Please try again.');
+  };
   const devLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     const r = await api('/api/guardian/auth/dev', { body: { email: devEmail, name: devEmail.split('@')[0] } });
@@ -174,8 +189,21 @@ function SignInGate({ session, onSignedIn }: { session: SessionInfo; onSignedIn:
         <div className="w-14 h-14 rounded-2xl bg-emerald-600/30 border border-emerald-500/40 flex items-center justify-center text-[#e4c878] mx-auto"><Lock className="w-7 h-7" /></div>
         <div className="space-y-1.5">
           <h1 className="text-2xl font-bold text-white">AI Guardian</h1>
-          <p className="text-sm text-gray-300">The conversational keeper of the Guardian Hub. Sign in to ask about the nursery, search the Keeper Diary and record activities, by text or voice.</p>
+          <p className="text-sm text-gray-300">The conversational keeper of the Guardian Hub. {session.openRecording ? 'Type your name' : 'Sign in'} to ask about the nursery, search the Keeper Diary and record activities, by text or voice.</p>
         </div>
+
+        {session.openRecording && (
+          <form onSubmit={startGuest} className="space-y-2.5 text-left">
+            <label htmlFor="guest-name" className="block text-sm font-semibold text-white">Record a tree activity</label>
+            <input id="guest-name" required minLength={2} maxLength={60} autoComplete="name" value={guestName} onChange={(e) => setGuestName(e.target.value)} placeholder="Your name"
+              className="w-full bg-[#0b1c14] border border-white/15 rounded-xl px-3 py-3 text-sm text-white placeholder:text-gray-500" />
+            {guestError && <p role="alert" className="text-xs text-red-200">{guestError}</p>}
+            <button disabled={guestBusy} className="w-full py-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 disabled:opacity-60 text-white font-bold text-sm flex items-center justify-center gap-2 transition-colors">
+              {guestBusy && <Loader2 className="w-4 h-4 animate-spin" />} Start recording
+            </button>
+            <p className="text-[11px] text-gray-400">No account needed. Your records are checked by the Guardian team before they count in the verified totals.</p>
+          </form>
+        )}
 
         {auth.error && <p role="alert" className="text-xs text-red-200 bg-red-950/60 border border-red-800 rounded-lg px-3 py-2">{auth.error}</p>}
 
@@ -193,10 +221,10 @@ function SignInGate({ session, onSignedIn }: { session: SessionInfo; onSignedIn:
               Continue with email code
             </button>
           </div>
-        ) : (
+        ) : session.openRecording ? null : (
           <p className="text-xs text-amber-200 bg-amber-950/40 border border-amber-700/50 rounded-lg px-3 py-2">Sign-in is not available yet. Please check back soon.</p>
         )}
-        <p className="text-[11px] text-gray-400">Use your KAI Nuvari account: the same sign-in works on the main KAI site. New here? Continuing creates your account, and a Guardian Admin then approves your access and role.</p>
+        {(signInReady || !session.openRecording) && <p className="text-[11px] text-gray-400">Use your KAI Nuvari account: the same sign-in works on the main KAI site. New here? Continuing creates your account, and a Guardian Admin then approves your access and role.</p>}
 
         {session.devLogin && (
           <form onSubmit={devLogin} className="pt-3 border-t border-white/10 space-y-2 text-left">

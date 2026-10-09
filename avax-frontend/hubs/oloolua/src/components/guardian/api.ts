@@ -29,8 +29,9 @@ export interface SessionInfo {
   devLogin: boolean;
   aiEnabled: boolean;
   privy?: boolean;
+  openRecording?: boolean;
   signedIn: boolean;
-  user?: { id: string; name: string; email: string | null };
+  user?: { id: string; name: string; email: string | null; guest?: boolean };
   role?: Role | null;
   membershipStatus?: 'active' | 'pending' | 'suspended' | 'none';
   quota?: Quota | null;

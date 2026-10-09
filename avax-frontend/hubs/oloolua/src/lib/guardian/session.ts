@@ -16,7 +16,7 @@ export const SESSION_COOKIE = 'guardian_session';
 const SESSION_TTL_SECONDS = 7 * 24 * 60 * 60;
 
 export interface Viewer {
-  user: { id: string; name: string; email: string | null };
+  user: { id: string; name: string; email: string | null; guest?: boolean };
   hubId: string;
   role: Role | null;
   membershipStatus: 'active' | 'pending' | 'suspended' | 'none';
@@ -41,6 +41,16 @@ export function authConfigured(): { ok: boolean; missing: string[] } {
     missing.push('GOOGLE_CLIENT_SECRET');
   }
   return { ok: missing.length === 0 || devLoginEnabled(), missing };
+}
+
+/**
+ * Open recording: a visitor types their name and can record activities
+ * without an account, as the site worked before sign-in existed. Their
+ * records are saved unverified, so verified totals are unaffected until a
+ * Verifier or Admin reviews them.
+ */
+export function openRecordingEnabled(): boolean {
+  return process.env.GUARDIAN_OPEN_RECORDING === 'true' && !!secret();
 }
 
 /** Local testing only: never available in a production build. */
@@ -99,16 +109,19 @@ export async function getViewer(request: NextRequest): Promise<Viewer | null> {
   if (!session) return null;
   await ensureGuardianSchema();
   const rows = (await sql`
-    SELECT u.id, u.name, u.email, u.status AS user_status, m.role, m.status AS membership_status
+    SELECT u.id, u.name, u.email, u.auth_sub, u.status AS user_status, m.role, m.status AS membership_status
     FROM guardian_users u
     LEFT JOIN guardian_memberships m ON m.user_id = u.id AND m.hub_id = ${HUB_ID}
     WHERE u.id = ${session.uid}
-  `) as { id: string; name: string; email: string | null; user_status: string; role: Role | null; membership_status: string | null }[];
+  `) as { id: string; name: string; email: string | null; auth_sub: string | null; user_status: string; role: Role | null; membership_status: string | null }[];
   const row = rows[0];
   if (!row || row.user_status === 'suspended') return null;
+  const guest = row.auth_sub?.startsWith('guest:') ?? false;
+  // Turning open recording off ends every visitor session at once.
+  if (guest && !openRecordingEnabled()) return null;
   const membershipStatus = (row.membership_status ?? 'none') as Viewer['membershipStatus'];
   return {
-    user: { id: row.id, name: row.name, email: row.email },
+    user: { id: row.id, name: row.name, email: row.email, guest },
     hubId: HUB_ID,
     role: membershipStatus === 'active' ? row.role : null,
     membershipStatus,
@@ -165,4 +178,15 @@ export async function upsertSignedInUser(identity: { sub: string; email: string;
       ON CONFLICT (user_id, hub_id) DO NOTHING`;
   }
   return userId;
+}
+
+/** Creates a visitor (open recording) with Keeper access: they can read and record, never verify. */
+export async function createGuestUser(name: string): Promise<string> {
+  await ensureGuardianSchema();
+  const [row] = (await sql`
+    INSERT INTO guardian_users (auth_sub, email, name, last_login_at)
+    VALUES (${`guest:${randomToken(16)}`}, NULL, ${name.slice(0, 60)}, now()) RETURNING id
+  `) as { id: string }[];
+  await sql`INSERT INTO guardian_memberships (user_id, hub_id, role, status) VALUES (${row.id}, ${HUB_ID}, 'keeper', 'active')`;
+  return row.id;
 }
