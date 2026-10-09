@@ -99,12 +99,19 @@ async function setup() {
 
   await sql`CREATE TABLE IF NOT EXISTS guardian_users (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    google_sub TEXT UNIQUE,
+    auth_sub TEXT UNIQUE,
     email TEXT,
     name TEXT NOT NULL,
     status TEXT NOT NULL DEFAULT 'active',
     created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
     last_login_at TIMESTAMPTZ)`;
+  // auth_sub holds the sign-in provider's user id (the Privy DID). Earlier
+  // builds called it google_sub; rename it if a database still has that.
+  await sql`DO $$ BEGIN
+    IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'guardian_users' AND column_name = 'google_sub') THEN
+      ALTER TABLE guardian_users RENAME COLUMN google_sub TO auth_sub;
+    END IF;
+  END $$`;
   await sql`CREATE UNIQUE INDEX IF NOT EXISTS guardian_users_email_uq ON guardian_users (lower(email)) WHERE email IS NOT NULL`;
 
   await sql`CREATE TABLE IF NOT EXISTS guardian_memberships (

@@ -28,6 +28,7 @@ export interface SessionInfo {
   authConfigured: boolean;
   devLogin: boolean;
   aiEnabled: boolean;
+  privy?: boolean;
   signedIn: boolean;
   user?: { id: string; name: string; email: string | null };
   role?: Role | null;

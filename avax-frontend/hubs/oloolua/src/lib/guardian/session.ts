@@ -13,7 +13,6 @@ import { ensureGuardianSchema, HUB_ID } from './schema';
 import type { Role } from './constants';
 
 export const SESSION_COOKIE = 'guardian_session';
-export const OAUTH_COOKIE = 'guardian_oauth';
 const SESSION_TTL_SECONDS = 7 * 24 * 60 * 60;
 
 export interface Viewer {
@@ -28,11 +27,19 @@ function secret(): Buffer | null {
   return s.length >= 32 ? createHash('sha256').update(`guardian-session|${s}`).digest() : null;
 }
 
+/** Sign-in uses the KAI Nuvari Privy app, so one account works on both sites. */
 export function authConfigured(): { ok: boolean; missing: string[] } {
   const missing: string[] = [];
   if (!secret()) missing.push('GUARDIAN_SESSION_SECRET (32+ characters)');
-  if (!process.env.GOOGLE_CLIENT_ID) missing.push('GOOGLE_CLIENT_ID');
-  if (!process.env.GOOGLE_CLIENT_SECRET) missing.push('GOOGLE_CLIENT_SECRET');
+  // Sign-in is satisfied by either of two interchangeable providers: direct
+  // Google OAuth, or KAI's shared Privy app (Google + email). Neither is
+  // required when the other is present.
+  const google = !!process.env.GOOGLE_CLIENT_ID && !!process.env.GOOGLE_CLIENT_SECRET;
+  const privy = !!process.env.NEXT_PUBLIC_PRIVY_APP_ID && !!process.env.PRIVY_APP_SECRET;
+  if (!google && !privy) {
+    missing.push('GOOGLE_CLIENT_ID');
+    missing.push('GOOGLE_CLIENT_SECRET');
+  }
   return { ok: missing.length === 0 || devLoginEnabled(), missing };
 }
 
@@ -81,7 +88,6 @@ export function sessionCookieOptions(maxAge = SESSION_TTL_SECONDS) {
   return {
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
-    // Lax, not Strict: the session is set on the redirect back from Google.
     sameSite: 'lax' as const,
     path: '/',
     maxAge,
@@ -131,19 +137,19 @@ export async function upsertSignedInUser(identity: { sub: string; email: string;
 
   let rows = (await sql`
     UPDATE guardian_users SET email = ${email}, last_login_at = now()
-    WHERE google_sub = ${identity.sub} RETURNING id
+    WHERE auth_sub = ${identity.sub} RETURNING id
   `) as { id: string }[];
 
   if (rows.length === 0) {
     // A team member seeded by name (B4) whose email an Admin has added.
     rows = (await sql`
-      UPDATE guardian_users SET google_sub = ${identity.sub}, status = 'active', last_login_at = now()
-      WHERE google_sub IS NULL AND lower(email) = ${email} RETURNING id
+      UPDATE guardian_users SET auth_sub = ${identity.sub}, status = 'active', last_login_at = now()
+      WHERE auth_sub IS NULL AND lower(email) = ${email} RETURNING id
     `) as { id: string }[];
   }
   if (rows.length === 0) {
     rows = (await sql`
-      INSERT INTO guardian_users (google_sub, email, name, last_login_at)
+      INSERT INTO guardian_users (auth_sub, email, name, last_login_at)
       VALUES (${identity.sub}, ${email}, ${name}, now()) RETURNING id
     `) as { id: string }[];
   }
@@ -159,17 +165,4 @@ export async function upsertSignedInUser(identity: { sub: string; email: string;
       ON CONFLICT (user_id, hub_id) DO NOTHING`;
   }
   return userId;
-}
-
-/** Where to send people after sign-in: only same-site relative paths (no open redirect). */
-export function safeReturnTo(value: string | null | undefined): string {
-  if (!value || !value.startsWith('/') || value.startsWith('//') || value.includes('\\')) return '/portal';
-  return value.slice(0, 200);
-}
-
-/** The public origin used for the Google redirect URI. */
-export function siteOrigin(request: NextRequest): string {
-  if (process.env.GUARDIAN_SITE_URL) return process.env.GUARDIAN_SITE_URL.replace(/\/$/, '');
-  if (process.env.VERCEL_PROJECT_PRODUCTION_URL) return `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`;
-  return request.nextUrl.origin;
 }

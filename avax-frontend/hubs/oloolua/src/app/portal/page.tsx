@@ -6,6 +6,7 @@ import Navigation from '@/components/Navigation';
 import GuardianChat from '@/components/guardian/GuardianChat';
 import { AuditPanel, DiaryPanel, NurseryPanel, RecordPanel, TeamPanel, VerifyPanel } from '@/components/guardian/HubPanels';
 import { api, type Quota, type SessionInfo } from '@/components/guardian/api';
+import { GuardianAuthProvider, useGuardianAuth } from '@/components/guardian/PrivyAuth';
 import { ROLE_LABELS, can, type Capability, type Role } from '@/lib/guardian/constants';
 import {
   Bot, Sprout, BookOpen, PlusCircle, ShieldCheck, ScrollText, Users, Lock, LogOut, Loader2, Clock, AlertCircle, Calendar,
@@ -21,14 +22,6 @@ const TABS: { id: string; label: string; icon: typeof Bot; need: Capability }[] 
   { id: 'team', label: 'Team', icon: Users, need: 'manageUsers' },
 ];
 
-const AUTH_ERRORS: Record<string, string> = {
-  not_configured: 'Google sign-in is not set up yet on this site.',
-  cancelled: 'Sign-in was cancelled.',
-  invalid_state: 'Your sign-in link expired. Please try again.',
-  token_exchange: 'Google sign-in could not be completed. Please try again.',
-  bad_token: 'Google sign-in could not be verified. Please try again.',
-};
-
 const EVENTS = [
   { date: 'October 15, 2026', title: 'Jaza Miti Riparian Planting Day', text: 'Community volunteers planting Croton and Markhamia seedlings along the Oloolua stream.' },
   { date: 'November 2, 2026', title: 'Art in Nature Rock Mural Festival', text: 'Live environmental mural painting with local youth artists and wildlife experts.' },
@@ -38,7 +31,6 @@ const EVENTS = [
 export default function GuardianHubPage() {
   const [session, setSession] = useState<SessionInfo | null>(null);
   const [tab, setTabState] = useState('ai');
-  const [authError, setAuthError] = useState('');
   const [quota, setQuota] = useState<Quota | null>(null);
   const [refreshKey, setRefreshKey] = useState(0);
 
@@ -52,8 +44,6 @@ export default function GuardianHubPage() {
     const params = new URLSearchParams(window.location.search);
     const requested = params.get('record') ? 'record' : params.get('tab');
     if (requested && TABS.some((t) => t.id === requested)) setTabState(requested);
-    const err = params.get('auth_error');
-    if (err) setAuthError(AUTH_ERRORS[err] ?? 'Sign-in failed. Please try again.');
     void loadSession();
   }, [loadSession]);
 
@@ -62,14 +52,7 @@ export default function GuardianHubPage() {
     const url = new URL(window.location.href);
     url.searchParams.set('tab', id);
     url.searchParams.delete('record');
-    url.searchParams.delete('auth_error');
     window.history.replaceState(null, '', url);
-  };
-
-  const signOut = async () => {
-    await api('/api/guardian/auth/session', { method: 'DELETE' });
-    setQuota(null);
-    await loadSession();
   };
 
   const role = (session?.role ?? null) as Role | null;
@@ -78,6 +61,7 @@ export default function GuardianHubPage() {
   const bump = () => setRefreshKey((k) => k + 1);
 
   return (
+    <GuardianAuthProvider needsSession={!!session && !session.signedIn} onSessionCreated={loadSession}>
     <div className="min-h-screen bg-[#0b1c14] text-[#f6f2e7] flex flex-col">
       <Navigation />
 
@@ -85,7 +69,7 @@ export default function GuardianHubPage() {
         <div className="flex-1 flex items-center justify-center py-24"><Loader2 className="w-6 h-6 animate-spin text-[#e4c878]" aria-label="Loading" /></div>
       )}
 
-      {session && !session.signedIn && <SignInGate session={session} authError={authError} onSignedIn={loadSession} />}
+      {session && !session.signedIn && <SignInGate session={session} onSignedIn={loadSession} />}
 
       {session?.signedIn && !role && (
         <div className="flex-1 flex items-center justify-center p-4 py-20">
@@ -99,7 +83,7 @@ export default function GuardianHubPage() {
                 ? 'Your access to the Guardian Hub has been suspended. Please contact a Guardian Admin.'
                 : `You are signed in as ${session.user?.email ?? session.user?.name}. Being signed in does not give access to Guardian data yet: a Guardian Admin must approve your account and choose your role.`}
             </p>
-            <button onClick={signOut} className="px-4 py-2 rounded-lg border border-white/15 hover:bg-white/10 text-sm font-semibold inline-flex items-center gap-2"><LogOut className="w-4 h-4" /> Sign out</button>
+            <SignOutButton onDone={() => { setQuota(null); void loadSession(); }} className="px-4 py-2 rounded-lg border border-white/15 hover:bg-white/10 text-sm font-semibold inline-flex items-center gap-2" />
           </div>
         </div>
       )}
@@ -114,7 +98,7 @@ export default function GuardianHubPage() {
                 <span className="ml-2 px-2 py-0.5 rounded bg-emerald-900 text-[#e4c878] font-bold">{ROLE_LABELS[role]}</span>
               </p>
             </div>
-            <button onClick={signOut} className="self-start sm:self-auto px-3 py-2 rounded-lg border border-white/15 hover:bg-white/10 text-xs font-semibold inline-flex items-center gap-1.5"><LogOut className="w-3.5 h-3.5" /> Sign out</button>
+            <SignOutButton onDone={() => { setQuota(null); void loadSession(); }} className="self-start sm:self-auto px-3 py-2 rounded-lg border border-white/15 hover:bg-white/10 text-xs font-semibold inline-flex items-center gap-1.5" />
           </div>
 
           <div className="flex gap-2 overflow-x-auto pb-1" role="tablist" aria-label="Guardian Hub sections">
@@ -149,16 +133,40 @@ export default function GuardianHubPage() {
         </div>
       )}
     </div>
+    </GuardianAuthProvider>
   );
 }
 
-function SignInGate({ session, authError, onSignedIn }: { session: SessionInfo; authError: string; onSignedIn: () => void }) {
+/** Ends both the Guardian session and the Privy session. */
+function SignOutButton({ onDone, className }: { onDone: () => void; className: string }) {
+  const auth = useGuardianAuth();
+  const [busy, setBusy] = useState(false);
+  return (
+    <button
+      disabled={busy}
+      onClick={async () => {
+        setBusy(true);
+        await auth.signOutOfPrivy();
+        await api('/api/guardian/auth/session', { method: 'DELETE' });
+        setBusy(false);
+        onDone();
+      }}
+      className={className}
+    >
+      {busy ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <LogOut className="w-3.5 h-3.5" />} Sign out
+    </button>
+  );
+}
+
+function SignInGate({ session, onSignedIn }: { session: SessionInfo; onSignedIn: () => void }) {
+  const auth = useGuardianAuth();
   const [devEmail, setDevEmail] = useState('');
   const devLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     const r = await api('/api/guardian/auth/dev', { body: { email: devEmail, name: devEmail.split('@')[0] } });
     if (r.ok) onSignedIn();
   };
+  const signInReady = session.authConfigured && auth.available;
 
   return (
     <div className="flex-1 px-4 py-12 sm:py-16">
@@ -169,18 +177,26 @@ function SignInGate({ session, authError, onSignedIn }: { session: SessionInfo; 
           <p className="text-sm text-gray-300">The conversational keeper of the Guardian Hub. Sign in to ask about the nursery, search the Keeper Diary and record activities, by text or voice.</p>
         </div>
 
-        {authError && <p role="alert" className="text-xs text-red-200 bg-red-950/60 border border-red-800 rounded-lg px-3 py-2">{authError}</p>}
+        {auth.error && <p role="alert" className="text-xs text-red-200 bg-red-950/60 border border-red-800 rounded-lg px-3 py-2">{auth.error}</p>}
 
-        {session.authConfigured ? (
-          <a href="/api/guardian/auth/google?returnTo=/portal"
-            className="w-full py-3 rounded-xl bg-white hover:bg-gray-100 text-neutral-900 font-bold text-sm flex items-center justify-center gap-3 transition-colors">
-            <svg width="18" height="18" viewBox="0 0 48 48" aria-hidden="true"><path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3C33.7 32.7 29.2 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.2 7.9 3.1l5.7-5.7C34 6.1 29.3 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.3-.1-2.4-.4-3.5z" /><path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.7 15.1 19 12 24 12c3.1 0 5.8 1.2 7.9 3.1l5.7-5.7C34 6.1 29.3 4 24 4 16.3 4 9.7 8.3 6.3 14.7z" /><path fill="#4CAF50" d="M24 44c5.2 0 9.9-2 13.4-5.2l-6.2-5.2C29.2 35.1 26.7 36 24 36c-5.2 0-9.6-3.3-11.3-8l-6.5 5C9.5 39.6 16.2 44 24 44z" /><path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-.8 2.2-2.2 4.2-4.1 5.6l6.2 5.2C37 39.2 44 34 44 24c0-1.3-.1-2.4-.4-3.5z" /></svg>
-            Continue with Google
-          </a>
+        {auth.linking ? (
+          <p className="flex items-center justify-center gap-2 text-sm text-gray-200"><Loader2 className="w-4 h-4 animate-spin" /> Signing you in...</p>
+        ) : signInReady ? (
+          <div className="space-y-2.5">
+            <button type="button" onClick={auth.signInWithGoogle} disabled={!auth.ready}
+              className="w-full py-3 rounded-xl bg-white hover:bg-gray-100 disabled:opacity-60 text-neutral-900 font-bold text-sm flex items-center justify-center gap-3 transition-colors">
+              <svg width="18" height="18" viewBox="0 0 48 48" aria-hidden="true"><path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3C33.7 32.7 29.2 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.2 7.9 3.1l5.7-5.7C34 6.1 29.3 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.3-.1-2.4-.4-3.5z" /><path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.7 15.1 19 12 24 12c3.1 0 5.8 1.2 7.9 3.1l5.7-5.7C34 6.1 29.3 4 24 4 16.3 4 9.7 8.3 6.3 14.7z" /><path fill="#4CAF50" d="M24 44c5.2 0 9.9-2 13.4-5.2l-6.2-5.2C29.2 35.1 26.7 36 24 36c-5.2 0-9.6-3.3-11.3-8l-6.5 5C9.5 39.6 16.2 44 24 44z" /><path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-.8 2.2-2.2 4.2-4.1 5.6l6.2 5.2C37 39.2 44 34 44 24c0-1.3-.1-2.4-.4-3.5z" /></svg>
+              Continue with Google
+            </button>
+            <button type="button" onClick={auth.signInWithEmail} disabled={!auth.ready}
+              className="w-full py-3 rounded-xl border border-white/20 hover:bg-white/10 disabled:opacity-60 text-white font-semibold text-sm transition-colors">
+              Continue with email code
+            </button>
+          </div>
         ) : (
           <p className="text-xs text-amber-200 bg-amber-950/40 border border-amber-700/50 rounded-lg px-3 py-2">Sign-in is not available yet. Please check back soon.</p>
         )}
-        <p className="text-[11px] text-gray-400">New here? Continuing with Google creates your account. A Guardian Admin then approves your access and role.</p>
+        <p className="text-[11px] text-gray-400">Use your KAI Nuvari account: the same sign-in works on the main KAI site. New here? Continuing creates your account, and a Guardian Admin then approves your access and role.</p>
 
         {session.devLogin && (
           <form onSubmit={devLogin} className="pt-3 border-t border-white/10 space-y-2 text-left">

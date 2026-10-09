@@ -4,6 +4,7 @@ import './globals.css';
 import KaiTopBar from '@/components/KaiTopBar';
 import Footer from '@/components/Footer';
 import BackToTop from '@/components/BackToTop';
+import PrivyOAuthReturn from '@/components/guardian/PrivyOAuthReturn';
 
 export const metadata: Metadata = {
   title: 'OLOOLUA YOUTH GUARDIANS | KAI Conservation Information Hub',
@@ -18,6 +19,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className="bg-[#0b1c14] text-[#f6f2e7] flex flex-col min-h-screen antialiased">
+        <PrivyOAuthReturn />
         <KaiTopBar />
         <main className="flex-1">{children}</main>
         <Footer />

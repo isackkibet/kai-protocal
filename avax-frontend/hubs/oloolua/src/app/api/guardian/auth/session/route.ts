@@ -2,11 +2,12 @@ import { NextResponse, type NextRequest } from 'next/server';
 import { SESSION_COOKIE, authConfigured, devLoginEnabled, getViewer, sessionCookieOptions } from '@/lib/guardian/session';
 import { getQuota } from '@/lib/guardian/quota';
 import { aiConfigured } from '@/lib/guardian/llm';
+import { privyConfigured } from '@/lib/guardian/privy';
 
 /** Who is signed in, their role and prompt allowance. */
 export async function GET(request: NextRequest) {
   const config = authConfigured();
-  const base = { authConfigured: config.ok, devLogin: devLoginEnabled(), aiEnabled: aiConfigured() };
+  const base = { authConfigured: config.ok, devLogin: devLoginEnabled(), aiEnabled: aiConfigured(), privy: privyConfigured() };
   try {
     const viewer = await getViewer(request);
     if (!viewer) return NextResponse.json({ ...base, signedIn: false });

@@ -257,7 +257,7 @@ export const TOOLS: Record<string, ToolDef> = {
       if (args.email !== undefined) {
         const email = str(args.email, 160)?.toLowerCase() ?? '';
         if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return { ok: false, error: 'invalid', message: 'Enter a valid email address.' };
-        const rows = (await sql`UPDATE guardian_users SET email = ${email} WHERE id = ${userId} AND google_sub IS NULL RETURNING id`) as unknown[];
+        const rows = (await sql`UPDATE guardian_users SET email = ${email} WHERE id = ${userId} AND auth_sub IS NULL RETURNING id`) as unknown[];
         if (!rows.length) return { ok: false, error: 'conflict', message: 'Only members who have not signed in yet can have their email set.' };
       }
       await auditTool(ctx, 'update_member', { userId, role: args.role, status: args.status, email: args.email });

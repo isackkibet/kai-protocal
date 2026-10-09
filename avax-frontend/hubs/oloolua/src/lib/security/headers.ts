@@ -3,10 +3,10 @@
  *
  * Security response headers and CORS handling.
  *
- * This app is a static conservation marketing site plus one small Neon-backed
- * API route. It has no auth provider, no wallet connect flow and no payment
- * iframes, so - unlike a Web3/fintech app - the CSP here can stay close to
- * the strict default rather than carrying a long provider allow-list.
+ * This app is a conservation site plus the Guardian Hub. Its only third-party
+ * runtime is Privy (Guardian sign-in, shared with the main KAI site); there
+ * is no wallet connect flow and no payment iframe, so the CSP stays close to
+ * the strict default with a short Privy allow-list.
  *
  * The two concessions:
  *   img-src needs the external species-photo hosts used on /seedlings
@@ -25,7 +25,7 @@ const CSP_DIRECTIVES: Record<string, string[]> = {
 
   // Nonce-based where available; 'strict-dynamic' lets Next's own bootstrap
   // load the chunks it needs without enumerating every hashed bundle file.
-  'script-src': ["'self'", "'nonce-{NONCE}'", "'strict-dynamic'"],
+  'script-src': ["'self'", "'nonce-{NONCE}'", "'strict-dynamic'", 'https://auth.privy.io', 'https://*.privy.io'],
 
   // Inline styles are pervasive in this app's Tailwind + inline style props.
   'style-src': ["'self'", "'unsafe-inline'"],
@@ -37,12 +37,14 @@ const CSP_DIRECTIVES: Record<string, string[]> = {
     'blob:',
     'https://upload.wikimedia.org',
     'https://imgs.search.brave.com',
+    'https://*.privy.io',
   ],
 
-  // The dashboard polls its own API; nothing else is called client-side.
-  'connect-src': ["'self'"],
+  // Own API, plus Privy for Guardian sign-in (shared KAI Nuvari accounts).
+  'connect-src': ["'self'", 'https://auth.privy.io', 'https://*.privy.io', 'wss://*.privy.io'],
 
-  'frame-src': ["'none'"],
+  // Privy renders parts of its sign-in flow in an iframe.
+  'frame-src': ['https://auth.privy.io', 'https://*.privy.io'],
 
   // Clickjacking + plugin XSS. These stay strict.
   'frame-ancestors': ["'none'"],
@@ -111,7 +113,8 @@ export function securityHeaders(nonce?: string): Record<string, string> {
       'usb=()',
     ].join(', '),
 
-    'Cross-Origin-Opener-Policy': 'same-origin',
+    // Allow popups so Privy's sign-in windows can report back.
+    'Cross-Origin-Opener-Policy': 'same-origin-allow-popups',
 
     'X-DNS-Prefetch-Control': 'off',
   };
